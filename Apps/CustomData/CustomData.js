@@ -5,9 +5,10 @@ window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
 import {
   Cesium3DTileset,
   Color,
+  Matrix4,
   formatError,
-  queryToObject,
   Viewer,
+  Terrain,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -30,29 +31,22 @@ async function main() {
                            [height,heading,pitch,roll] default is looking straight down, [300,0,-90,0]
        saveCamera=false    Don't automatically update the camera view in the URL when it changes.
      */
-  const endUserOptions = queryToObject(window.location.search.substring(1));
+  // const endUserOptions = queryToObject(window.location.search.substring(1));
 
   const loadingIndicator = document.getElementById("loadingIndicator");
 
   let viewer;
   try {
     viewer = new Viewer("cesiumContainer", {
-      imageryProvider: false,
-      baseLayerPicker: false,
+      terrain: Terrain.fromWorldTerrain(),
       timeline: false,
       animation: false,
-      globe: false,
       geocoder: false,
-      homeButton: false,
+      baseLayerPicker: false,
       sceneModePicker: false,
       navigationHelpButton: false,
-      fullscreenButton: false,
-      infoBox: false,
       selectionIndicator: false,
-      skyBox: false,
-      skyAtmosphere: false,
-      useDefaultRenderLoop: true,
-      scene3DOnly: true,
+      infoBox: false,
     });
   } catch (exception) {
     loadingIndicator.style.display = "none";
@@ -66,49 +60,37 @@ async function main() {
   }
 
   const scene = viewer.scene;
-  const context = scene.context;
-  if (endUserOptions.debug) {
-    context.validateShaderProgram = true;
-    context.validateFramebuffer = true;
-    context.logShaderCompilation = true;
-    context.throwOnWebGLError = true;
-  }
 
-  scene.skyBox = undefined;
-  scene.skyAtmosphere = undefined;
-  scene.fog.enabled = false;
-
+  // OPTIONAL — black background but keep the globe
   scene.backgroundColor = Color.BLACK;
 
   const loadTileset = async () => {
     try {
       const tileset = await Cesium3DTileset.fromUrl(
-        "http://172.18.21.46:8000/get/centered/tileset.json",
+        "http://172.18.21.46:8000/get/20240820_Sauen/tileset.json",
       );
 
       viewer.scene.primitives.add(tileset);
 
-      tileset.cullRequestsWhileMoving = false;
-      tileset.cullRequestsWhileMovingMult = 0;
-      tileset.cullRequestsWhileMovingThreshold = 0;
+      // Wait until bounding volumes are ready
+      await tileset.ready;
 
-      tileset.cullWithChildrenBounds = false;
+      // If your point cloud is already in EPSG:4978 (ECEF), leave this as identity
+      // If NOT — I need the EPSG to generate the correct matrix
+      if (tileset.root.transform) {
+        console.log("Tileset already contains a transform.");
+      } else {
+        tileset.root.transform = Matrix4.IDENTITY;
+      }
 
-      tileset.skipLevelOfDetail = false;
-      tileset.immediatelyLoadDesiredLevelOfDetail = true;
-
-      tileset.enableVisibilityTest = false;
-
-      tileset.maximumScreenSpaceError = 1;
-      tileset.maximumMemoryUsage = 10240;
-
-      viewer.zoomTo(tileset);
+      // Now fly to point cloud
+      viewer.flyTo(tileset);
     } catch (error) {
-      console.log(`Error loading tileset: ${error}`);
+      console.log("Error loading tileset:", error);
     }
   };
 
-  loadTileset();
+  await loadTileset();
 
   loadingIndicator.style.display = "none";
 }
