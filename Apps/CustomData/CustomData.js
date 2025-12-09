@@ -79,7 +79,6 @@ async function main() {
   scene.fog.enabled = false;
 
   scene.backgroundColor = Color.BLACK;
-  scene.globe.depthTestAgainstTerrain = false;
 
   const loadTileset = async () => {
     try {
