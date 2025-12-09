@@ -128,6 +128,13 @@ void main()
     // When not picking metadata END
     //========================================================================
 
+    // Round Points
+
+    //float dist = distance(gl_PointCoord, vec2(0.5));
+    //if (dist > 0.5) {
+    //    discard;
+    //}
+
     out_FragColor = color;
 }
 
