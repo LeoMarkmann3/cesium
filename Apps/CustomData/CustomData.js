@@ -5,7 +5,6 @@ window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
 import {
   Cesium3DTileset,
   Color,
-  Matrix4,
   formatError,
   Viewer,
   Terrain,
@@ -71,17 +70,6 @@ async function main() {
       );
 
       viewer.scene.primitives.add(tileset);
-
-      // Wait until bounding volumes are ready
-      await tileset.ready;
-
-      // If your point cloud is already in EPSG:4978 (ECEF), leave this as identity
-      // If NOT — I need the EPSG to generate the correct matrix
-      if (tileset.root.transform) {
-        console.log("Tileset already contains a transform.");
-      } else {
-        tileset.root.transform = Matrix4.IDENTITY;
-      }
 
       // Now fly to point cloud
       viewer.flyTo(tileset);
