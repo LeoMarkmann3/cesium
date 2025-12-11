@@ -67,7 +67,7 @@ async function main() {
   const loadTileset = async () => {
     try {
       const tileset = await Cesium3DTileset.fromUrl(
-        "http://172.18.21.46:8000/get/20240820_Sauen/tileset.json",
+        "http://172.18.21.46:8000/get/xyz_georef/tileset.json",
       );
 
       viewer.scene.primitives.add(tileset);
