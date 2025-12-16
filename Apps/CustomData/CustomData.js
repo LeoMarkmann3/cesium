@@ -8,6 +8,7 @@ import {
   formatError,
   Viewer,
   Terrain,
+  RequestScheduler,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -33,6 +34,9 @@ async function main() {
   // const endUserOptions = queryToObject(window.location.search.substring(1));
 
   const loadingIndicator = document.getElementById("loadingIndicator");
+
+  RequestScheduler.maximumRequests = 2000000;
+  RequestScheduler.maximumRequestsPerServer = 100000;
 
   let viewer;
   try {
@@ -61,12 +65,38 @@ async function main() {
   const scene = viewer.scene;
 
   // OPTIONAL — black background but keep the globe
-  scene.backgroundColor = Color.BLACK;
+  scene.skyBox = undefined;
+  scene.skyAtmosphere = undefined;
+
+  scene.backgroundColor = Color.BLUE;
 
   const loadTileset = async () => {
     try {
       const tileset = await Cesium3DTileset.fromUrl(
-        "http://172.18.21.46:8000/get/xyz_georef/tileset.json",
+        "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_0_1_TRANSFORMED_2024-12-12_13h21_05_585_georef/tileset.json",
+        {
+          skipLevelOfDetail: false,
+
+          immediatelyLoadDesiredLevelOfDetail: true,
+
+          loadSiblings: true,
+          preferLeaves: true,
+
+          dynamicScreenSpaceError: false,
+          progressiveResolutionHeightFraction: 0.0,
+
+          foveatedScreenSpaceError: 0.0,
+          foveatedConeSize: 0.0,
+          foveatedMinimumScreenSpaceErrorRelaxation: 0.0,
+
+          cullRequestsWhileMoving: false,
+
+          baseScreenSpaceError: 1024,
+          maximumScreenSpaceError: 1.0,
+
+          preloadWhenHidden: true,
+          preloadFlightDestinations: true,
+        },
       );
 
       viewer.scene.primitives.add(tileset);
