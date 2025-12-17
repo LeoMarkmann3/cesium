@@ -4,11 +4,13 @@ window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
 
 import {
   Cesium3DTileset,
-  Color,
   formatError,
   Viewer,
   Terrain,
   RequestScheduler,
+  Matrix4,
+  Cartesian3,
+  Cartographic,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -62,16 +64,20 @@ async function main() {
     return;
   }
 
-  const scene = viewer.scene;
+  //const scene = viewer.scene;
 
-  // OPTIONAL — black background but keep the globe
-  scene.skyBox = undefined;
-  scene.skyAtmosphere = undefined;
+  // // OPTIONAL — black background but keep the globe
+  // scene.skyBox = undefined;
+  // scene.skyAtmosphere = undefined;
 
-  scene.backgroundColor = Color.BLUE;
+  // scene.backgroundColor = Color.RED;
 
   const loadTileset = async () => {
     try {
+      // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
+      const heightOffsetMeters = 15.0;
+
+      // Load Tileset from URL with various options for performance and LOD management
       const tileset = await Cesium3DTileset.fromUrl(
         "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_0_1_TRANSFORMED_2024-12-12_13h21_05_585_georef/tileset.json",
         {
@@ -99,9 +105,40 @@ async function main() {
         },
       );
 
+      // Add tileset to the scene
       viewer.scene.primitives.add(tileset);
 
-      // Now fly to point cloud
+      await tileset.readyPromise;
+
+      // Compute offset to raise tileset above terrain
+
+      const boundingSphere = tileset.boundingSphere;
+      const cartographic = Cartographic.fromCartesian(boundingSphere.center);
+
+      // Create surface and offset positions
+      const surface = Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        cartographic.height,
+      );
+
+      const offset = Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        cartographic.height + heightOffsetMeters,
+      );
+
+      // Compute translation vector
+      const translation = Cartesian3.subtract(
+        offset,
+        surface,
+        new Cartesian3(),
+      );
+
+      // Apply model matrix
+      tileset.modelMatrix = Matrix4.fromTranslation(translation);
+
+      // Fly to point cloud
       viewer.flyTo(tileset);
     } catch (error) {
       console.log("Error loading tileset:", error);
