@@ -86,6 +86,7 @@ async function main() {
           preferLeaves: true,
 
           dynamicScreenSpaceError: false,
+
           progressiveResolutionHeightFraction: 0.0,
 
           foveatedScreenSpaceError: false,
