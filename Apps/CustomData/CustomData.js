@@ -83,9 +83,6 @@ async function main() {
         {
           skipLevelOfDetail: false,
 
-          immediatelyLoadDesiredLevelOfDetail: true,
-
-          loadSiblings: true,
           preferLeaves: true,
 
           dynamicScreenSpaceError: false,
