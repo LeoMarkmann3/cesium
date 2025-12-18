@@ -76,22 +76,17 @@ async function main() {
         {
           skipLevelOfDetail: false,
 
-          immediatelyLoadDesiredLevelOfDetail: true,
-
-          loadSiblings: true,
           preferLeaves: true,
 
           dynamicScreenSpaceError: false,
+
           progressiveResolutionHeightFraction: 0.0,
 
-          foveatedScreenSpaceError: 0.0,
-          foveatedConeSize: 0.0,
-          foveatedMinimumScreenSpaceErrorRelaxation: 0.0,
+          foveatedScreenSpaceError: false,
 
           cullRequestsWhileMoving: false,
 
-          baseScreenSpaceError: 1024,
-          maximumScreenSpaceError: 1.0,
+          maximumScreenSpaceError: 0.0001,
 
           preloadWhenHidden: true,
           preloadFlightDestinations: true,
