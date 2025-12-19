@@ -58,22 +58,22 @@ import Cesium3DTileStyle from "./Cesium3DTileStyle.js";
  * }
  */
 async function createOsmBuildingsAsync(options) {
-  const tileset = await Cesium3DTileset.fromIonAssetId(96188, options);
+    const tileset = await Cesium3DTileset.fromIonAssetId(96188, options);
 
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  let style = options.style;
+    let style = options.style;
 
-  if (!defined(style)) {
-    const color = (options.defaultColor ?? Color.WHITE).toCssColorString();
-    style = new Cesium3DTileStyle({
-      color: `Boolean(\${feature['cesium#color']}) ? color(\${feature['cesium#color']}) : ${color}`,
-    });
-  }
+    if (!defined(style)) {
+        const color = (options.defaultColor ?? Color.WHITE).toCssColorString();
+        style = new Cesium3DTileStyle({
+            color: `Boolean(\${feature['cesium#color']}) ? color(\${feature['cesium#color']}) : ${color}`,
+        });
+    }
 
-  tileset.style = style;
+    tileset.style = style;
 
-  return tileset;
+    return tileset;
 }
 
 export default createOsmBuildingsAsync;

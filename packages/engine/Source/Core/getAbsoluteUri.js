@@ -15,32 +15,32 @@ import DeveloperError from "./DeveloperError.js";
  * const absoluteUri = Cesium.getAbsoluteUri('awesome.png', 'https://test.com');
  */
 function getAbsoluteUri(relative, base) {
-  let documentObject;
-  if (typeof document !== "undefined") {
-    documentObject = document;
-  }
+    let documentObject;
+    if (typeof document !== "undefined") {
+        documentObject = document;
+    }
 
-  return getAbsoluteUri._implementation(relative, base, documentObject);
+    return getAbsoluteUri._implementation(relative, base, documentObject);
 }
 
 getAbsoluteUri._implementation = function (relative, base, documentObject) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(relative)) {
-    throw new DeveloperError("relative uri is required.");
-  }
-  //>>includeEnd('debug');
-
-  if (!defined(base)) {
-    if (typeof documentObject === "undefined") {
-      return relative;
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(relative)) {
+        throw new DeveloperError("relative uri is required.");
     }
-    base = documentObject.baseURI ?? documentObject.location.href;
-  }
+    //>>includeEnd('debug');
 
-  const relativeUri = new Uri(relative);
-  if (relativeUri.scheme() !== "") {
-    return relativeUri.toString();
-  }
-  return relativeUri.absoluteTo(base).toString();
+    if (!defined(base)) {
+        if (typeof documentObject === "undefined") {
+            return relative;
+        }
+        base = documentObject.baseURI ?? documentObject.location.href;
+    }
+
+    const relativeUri = new Uri(relative);
+    if (relativeUri.scheme() !== "") {
+        return relativeUri.toString();
+    }
+    return relativeUri.absoluteTo(base).toString();
 };
 export default getAbsoluteUri;

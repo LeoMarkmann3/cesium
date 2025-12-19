@@ -5,25 +5,25 @@ import Quaternion from "./Quaternion.js";
 import Spline from "./Spline.js";
 
 function createEvaluateFunction(spline) {
-  const points = spline.points;
-  const times = spline.times;
+    const points = spline.points;
+    const times = spline.times;
 
-  // use slerp interpolation
-  return function (time, result) {
-    if (!defined(result)) {
-      result = new Quaternion();
-    }
-    const i = (spline._lastTimeIndex = spline.findTimeInterval(
-      time,
-      spline._lastTimeIndex,
-    ));
-    const u = (time - times[i]) / (times[i + 1] - times[i]);
+    // use slerp interpolation
+    return function (time, result) {
+        if (!defined(result)) {
+            result = new Quaternion();
+        }
+        const i = (spline._lastTimeIndex = spline.findTimeInterval(
+            time,
+            spline._lastTimeIndex,
+        ));
+        const u = (time - times[i]) / (times[i + 1] - times[i]);
 
-    const q0 = points[i];
-    const q1 = points[i + 1];
+        const q0 = points[i];
+        const q1 = points[i + 1];
 
-    return Quaternion.fastSlerp(q0, q1, u, result);
-  };
+        return Quaternion.fastSlerp(q0, q1, u, result);
+    };
 }
 
 /**
@@ -50,60 +50,62 @@ function createEvaluateFunction(spline) {
  * @see MorphWeightSpline
  */
 function QuaternionSpline(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const points = options.points;
-  const times = options.times;
+    const points = options.points;
+    const times = options.times;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(points) || !defined(times)) {
-    throw new DeveloperError("points and times are required.");
-  }
-  if (points.length < 2) {
-    throw new DeveloperError(
-      "points.length must be greater than or equal to 2.",
-    );
-  }
-  if (times.length !== points.length) {
-    throw new DeveloperError("times.length must be equal to points.length.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(points) || !defined(times)) {
+        throw new DeveloperError("points and times are required.");
+    }
+    if (points.length < 2) {
+        throw new DeveloperError(
+            "points.length must be greater than or equal to 2.",
+        );
+    }
+    if (times.length !== points.length) {
+        throw new DeveloperError(
+            "times.length must be equal to points.length.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  this._times = times;
-  this._points = points;
+    this._times = times;
+    this._points = points;
 
-  this._evaluateFunction = createEvaluateFunction(this);
-  this._lastTimeIndex = 0;
+    this._evaluateFunction = createEvaluateFunction(this);
+    this._lastTimeIndex = 0;
 }
 
 Object.defineProperties(QuaternionSpline.prototype, {
-  /**
-   * An array of times for the control points.
-   *
-   * @memberof QuaternionSpline.prototype
-   *
-   * @type {number[]}
-   * @readonly
-   */
-  times: {
-    get: function () {
-      return this._times;
+    /**
+     * An array of times for the control points.
+     *
+     * @memberof QuaternionSpline.prototype
+     *
+     * @type {number[]}
+     * @readonly
+     */
+    times: {
+        get: function () {
+            return this._times;
+        },
     },
-  },
 
-  /**
-   * An array of {@link Quaternion} control points.
-   *
-   * @memberof QuaternionSpline.prototype
-   *
-   * @type {Quaternion[]}
-   * @readonly
-   */
-  points: {
-    get: function () {
-      return this._points;
+    /**
+     * An array of {@link Quaternion} control points.
+     *
+     * @memberof QuaternionSpline.prototype
+     *
+     * @type {Quaternion[]}
+     * @readonly
+     */
+    points: {
+        get: function () {
+            return this._points;
+        },
     },
-  },
 });
 
 /**
@@ -150,6 +152,6 @@ QuaternionSpline.prototype.clampTime = Spline.prototype.clampTime;
  *                             in the array <code>times</code>.
  */
 QuaternionSpline.prototype.evaluate = function (time, result) {
-  return this._evaluateFunction(time, result);
+    return this._evaluateFunction(time, result);
 };
 export default QuaternionSpline;

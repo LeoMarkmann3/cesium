@@ -10,9 +10,9 @@ import ShaderDestination from "../../Renderer/ShaderDestination.js";
  * @private
  */
 const ModelSplitterPipelineStage = {
-  name: "ModelSplitterPipelineStage", // Helps with debugging
+    name: "ModelSplitterPipelineStage", // Helps with debugging
 
-  SPLIT_DIRECTION_UNIFORM_NAME: "model_splitDirection",
+    SPLIT_DIRECTION_UNIFORM_NAME: "model_splitDirection",
 };
 
 /**
@@ -31,35 +31,35 @@ const ModelSplitterPipelineStage = {
  * @private
  */
 ModelSplitterPipelineStage.process = function (
-  renderResources,
-  model,
-  frameState,
+    renderResources,
+    model,
+    frameState,
 ) {
-  const shaderBuilder = renderResources.shaderBuilder;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addDefine(
-    "HAS_MODEL_SPLITTER",
-    undefined,
-    ShaderDestination.FRAGMENT,
-  );
-  shaderBuilder.addFragmentLines(ModelSplitterStageFS);
+    shaderBuilder.addDefine(
+        "HAS_MODEL_SPLITTER",
+        undefined,
+        ShaderDestination.FRAGMENT,
+    );
+    shaderBuilder.addFragmentLines(ModelSplitterStageFS);
 
-  const stageUniforms = {};
+    const stageUniforms = {};
 
-  shaderBuilder.addUniform(
-    "float",
-    ModelSplitterPipelineStage.SPLIT_DIRECTION_UNIFORM_NAME,
-    ShaderDestination.FRAGMENT,
-  );
-  stageUniforms[ModelSplitterPipelineStage.SPLIT_DIRECTION_UNIFORM_NAME] =
-    function () {
-      return model.splitDirection;
-    };
+    shaderBuilder.addUniform(
+        "float",
+        ModelSplitterPipelineStage.SPLIT_DIRECTION_UNIFORM_NAME,
+        ShaderDestination.FRAGMENT,
+    );
+    stageUniforms[ModelSplitterPipelineStage.SPLIT_DIRECTION_UNIFORM_NAME] =
+        function () {
+            return model.splitDirection;
+        };
 
-  renderResources.uniformMap = combine(
-    stageUniforms,
-    renderResources.uniformMap,
-  );
+    renderResources.uniformMap = combine(
+        stageUniforms,
+        renderResources.uniformMap,
+    );
 };
 
 export default ModelSplitterPipelineStage;

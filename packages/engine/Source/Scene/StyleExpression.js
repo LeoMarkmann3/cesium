@@ -33,7 +33,7 @@ function StyleExpression() {}
  * @returns {boolean|number|string|RegExp|Cartesian2|Cartesian3|Cartesian4|Color} The result of evaluating the expression.
  */
 StyleExpression.prototype.evaluate = function (feature, result) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -47,7 +47,7 @@ StyleExpression.prototype.evaluate = function (feature, result) {
  * @returns {Color} The modified result parameter or a new Color instance if one was not provided.
  */
 StyleExpression.prototype.evaluateColor = function (feature, result) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -64,12 +64,12 @@ StyleExpression.prototype.evaluateColor = function (feature, result) {
  * @private
  */
 StyleExpression.prototype.getShaderFunction = function (
-  functionSignature,
-  variableSubstitutionMap,
-  shaderState,
-  returnType,
+    functionSignature,
+    variableSubstitutionMap,
+    shaderState,
+    returnType,
 ) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -80,7 +80,7 @@ StyleExpression.prototype.getShaderFunction = function (
  * @private
  */
 StyleExpression.prototype.getVariables = function () {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 export default StyleExpression;

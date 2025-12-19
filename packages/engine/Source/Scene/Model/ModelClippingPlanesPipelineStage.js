@@ -13,7 +13,7 @@ import ShaderDestination from "../../Renderer/ShaderDestination.js";
  * @private
  */
 const ModelClippingPlanesPipelineStage = {
-  name: "ModelClippingPlanesPipelineStage", // Helps with debugging
+    name: "ModelClippingPlanesPipelineStage", // Helps with debugging
 };
 
 const textureResolutionScratch = new Cartesian2();
@@ -34,93 +34,96 @@ const textureResolutionScratch = new Cartesian2();
  * @private
  */
 ModelClippingPlanesPipelineStage.process = function (
-  renderResources,
-  model,
-  frameState,
+    renderResources,
+    model,
+    frameState,
 ) {
-  const clippingPlanes = model.clippingPlanes;
-  const context = frameState.context;
-  const shaderBuilder = renderResources.shaderBuilder;
+    const clippingPlanes = model.clippingPlanes;
+    const context = frameState.context;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addDefine(
-    "HAS_CLIPPING_PLANES",
-    undefined,
-    ShaderDestination.FRAGMENT,
-  );
-
-  shaderBuilder.addDefine(
-    "CLIPPING_PLANES_LENGTH",
-    clippingPlanes.length,
-    ShaderDestination.FRAGMENT,
-  );
-
-  if (clippingPlanes.unionClippingRegions) {
     shaderBuilder.addDefine(
-      "UNION_CLIPPING_REGIONS",
-      undefined,
-      ShaderDestination.FRAGMENT,
+        "HAS_CLIPPING_PLANES",
+        undefined,
+        ShaderDestination.FRAGMENT,
     );
-  }
 
-  if (ClippingPlaneCollection.useFloatTexture(context)) {
     shaderBuilder.addDefine(
-      "USE_CLIPPING_PLANES_FLOAT_TEXTURE",
-      undefined,
-      ShaderDestination.FRAGMENT,
+        "CLIPPING_PLANES_LENGTH",
+        clippingPlanes.length,
+        ShaderDestination.FRAGMENT,
     );
-  }
 
-  const textureResolution = ClippingPlaneCollection.getTextureResolution(
-    clippingPlanes,
-    context,
-    textureResolutionScratch,
-  );
+    if (clippingPlanes.unionClippingRegions) {
+        shaderBuilder.addDefine(
+            "UNION_CLIPPING_REGIONS",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
+    }
 
-  shaderBuilder.addDefine(
-    "CLIPPING_PLANES_TEXTURE_WIDTH",
-    textureResolution.x,
-    ShaderDestination.FRAGMENT,
-  );
+    if (ClippingPlaneCollection.useFloatTexture(context)) {
+        shaderBuilder.addDefine(
+            "USE_CLIPPING_PLANES_FLOAT_TEXTURE",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
+    }
 
-  shaderBuilder.addDefine(
-    "CLIPPING_PLANES_TEXTURE_HEIGHT",
-    textureResolution.y,
-    ShaderDestination.FRAGMENT,
-  );
+    const textureResolution = ClippingPlaneCollection.getTextureResolution(
+        clippingPlanes,
+        context,
+        textureResolutionScratch,
+    );
 
-  shaderBuilder.addUniform(
-    "sampler2D",
-    "model_clippingPlanes",
-    ShaderDestination.FRAGMENT,
-  );
-  shaderBuilder.addUniform(
-    "vec4",
-    "model_clippingPlanesEdgeStyle",
-    ShaderDestination.FRAGMENT,
-  );
-  shaderBuilder.addUniform(
-    "mat4",
-    "model_clippingPlanesMatrix",
-    ShaderDestination.FRAGMENT,
-  );
+    shaderBuilder.addDefine(
+        "CLIPPING_PLANES_TEXTURE_WIDTH",
+        textureResolution.x,
+        ShaderDestination.FRAGMENT,
+    );
 
-  shaderBuilder.addFragmentLines(ModelClippingPlanesStageFS);
+    shaderBuilder.addDefine(
+        "CLIPPING_PLANES_TEXTURE_HEIGHT",
+        textureResolution.y,
+        ShaderDestination.FRAGMENT,
+    );
 
-  const uniformMap = {
-    model_clippingPlanes: function () {
-      return clippingPlanes.texture;
-    },
-    model_clippingPlanesEdgeStyle: function () {
-      const style = Color.clone(clippingPlanes.edgeColor);
-      style.alpha = clippingPlanes.edgeWidth;
-      return style;
-    },
-    model_clippingPlanesMatrix: function () {
-      return model._clippingPlanesMatrix;
-    },
-  };
+    shaderBuilder.addUniform(
+        "sampler2D",
+        "model_clippingPlanes",
+        ShaderDestination.FRAGMENT,
+    );
+    shaderBuilder.addUniform(
+        "vec4",
+        "model_clippingPlanesEdgeStyle",
+        ShaderDestination.FRAGMENT,
+    );
+    shaderBuilder.addUniform(
+        "mat4",
+        "model_clippingPlanesMatrix",
+        ShaderDestination.FRAGMENT,
+    );
 
-  renderResources.uniformMap = combine(uniformMap, renderResources.uniformMap);
+    shaderBuilder.addFragmentLines(ModelClippingPlanesStageFS);
+
+    const uniformMap = {
+        model_clippingPlanes: function () {
+            return clippingPlanes.texture;
+        },
+        model_clippingPlanesEdgeStyle: function () {
+            const style = Color.clone(clippingPlanes.edgeColor);
+            style.alpha = clippingPlanes.edgeWidth;
+            return style;
+        },
+        model_clippingPlanesMatrix: function () {
+            return model._clippingPlanesMatrix;
+        },
+    };
+
+    renderResources.uniformMap = combine(
+        uniformMap,
+        renderResources.uniformMap,
+    );
 };
 
 export default ModelClippingPlanesPipelineStage;

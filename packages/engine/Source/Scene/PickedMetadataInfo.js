@@ -11,47 +11,47 @@
  * @private
  */
 function PickedMetadataInfo(
-  schemaId,
-  className,
-  propertyName,
-  classProperty,
-  metadataProperty,
+    schemaId,
+    className,
+    propertyName,
+    classProperty,
+    metadataProperty,
 ) {
-  /**
-   * The optional ID of the metadata schema
-   *
-   * @type {string|undefined}
-   */
-  this.schemaId = schemaId;
-  /**
-   * The name of the metadata class
-   *
-   * @type {string}
-   */
-  this.className = className;
-  /**
-   * The name of the metadata property
-   *
-   * @type {string}
-   */
-  this.propertyName = propertyName;
+    /**
+     * The optional ID of the metadata schema
+     *
+     * @type {string|undefined}
+     */
+    this.schemaId = schemaId;
+    /**
+     * The name of the metadata class
+     *
+     * @type {string}
+     */
+    this.className = className;
+    /**
+     * The name of the metadata property
+     *
+     * @type {string}
+     */
+    this.propertyName = propertyName;
 
-  /**
-   * The the `MetadataClassProperty` that is described by this
-   * structure, as obtained from the `MetadataSchema`
-   *
-   * @type {MetadataClassProperty}
-   */
-  this.classProperty = classProperty;
+    /**
+     * The the `MetadataClassProperty` that is described by this
+     * structure, as obtained from the `MetadataSchema`
+     *
+     * @type {MetadataClassProperty}
+     */
+    this.classProperty = classProperty;
 
-  /**
-   * The `PropertyTextureProperty` or `PropertyAttributeProperty` that
-   * is described by this structure, as obtained from the property texture
-   * or property attribute of the `StructuralMetadata` that matches the
-   * class name and property name.
-   *
-   * @type {object}
-   */
-  this.metadataProperty = metadataProperty;
+    /**
+     * The `PropertyTextureProperty` or `PropertyAttributeProperty` that
+     * is described by this structure, as obtained from the property texture
+     * or property attribute of the `StructuralMetadata` that matches the
+     * class name and property name.
+     *
+     * @type {object}
+     */
+    this.metadataProperty = metadataProperty;
 }
 export default PickedMetadataInfo;

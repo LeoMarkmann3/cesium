@@ -25,7 +25,7 @@ InterpolationAlgorithm.type = undefined;
  * @returns {number} The number of required data points needed for the desired degree of interpolation.
  */
 InterpolationAlgorithm.getRequiredDataPoints =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Performs zero order interpolation.
@@ -43,7 +43,7 @@ InterpolationAlgorithm.getRequiredDataPoints =
  * @returns {number[]} The array of interpolated values, or the result parameter if one was provided.
  */
 InterpolationAlgorithm.interpolateOrderZero =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Performs higher order interpolation.  Not all interpolators need to support high-order interpolation,

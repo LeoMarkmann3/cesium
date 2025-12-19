@@ -13,7 +13,7 @@ import PrimitiveOutlineStageFS from "../../Shaders/Model/PrimitiveOutlineStageFS
  * @private
  */
 const PrimitiveOutlinePipelineStage = {
-  name: "PrimitiveOutlinePipelineStage", // Helps with debugging
+    name: "PrimitiveOutlinePipelineStage", // Helps with debugging
 };
 
 /**
@@ -30,70 +30,70 @@ const PrimitiveOutlinePipelineStage = {
  * @private
  */
 PrimitiveOutlinePipelineStage.process = function (
-  renderResources,
-  primitive,
-  frameState,
+    renderResources,
+    primitive,
+    frameState,
 ) {
-  const shaderBuilder = renderResources.shaderBuilder;
-  const uniformMap = renderResources.uniformMap;
+    const shaderBuilder = renderResources.shaderBuilder;
+    const uniformMap = renderResources.uniformMap;
 
-  shaderBuilder.addDefine(
-    "HAS_PRIMITIVE_OUTLINE",
-    undefined,
-    ShaderDestination.BOTH,
-  );
+    shaderBuilder.addDefine(
+        "HAS_PRIMITIVE_OUTLINE",
+        undefined,
+        ShaderDestination.BOTH,
+    );
 
-  shaderBuilder.addAttribute("vec3", "a_outlineCoordinates");
-  shaderBuilder.addVarying("vec3", "v_outlineCoordinates");
+    shaderBuilder.addAttribute("vec3", "a_outlineCoordinates");
+    shaderBuilder.addVarying("vec3", "v_outlineCoordinates");
 
-  const outlineCoordinates = primitive.outlineCoordinates;
-  const vertexAttribute = {
-    index: renderResources.attributeIndex++,
-    vertexBuffer: outlineCoordinates.buffer,
-    componentsPerAttribute: AttributeType.getNumberOfComponents(
-      outlineCoordinates.type,
-    ),
-    componentDatatype: outlineCoordinates.componentDatatype,
-    offsetInBytes: outlineCoordinates.byteOffset,
-    strideInBytes: outlineCoordinates.byteStride,
-    normalize: outlineCoordinates.normalized,
-  };
-  renderResources.attributes.push(vertexAttribute);
+    const outlineCoordinates = primitive.outlineCoordinates;
+    const vertexAttribute = {
+        index: renderResources.attributeIndex++,
+        vertexBuffer: outlineCoordinates.buffer,
+        componentsPerAttribute: AttributeType.getNumberOfComponents(
+            outlineCoordinates.type,
+        ),
+        componentDatatype: outlineCoordinates.componentDatatype,
+        offsetInBytes: outlineCoordinates.byteOffset,
+        strideInBytes: outlineCoordinates.byteStride,
+        normalize: outlineCoordinates.normalized,
+    };
+    renderResources.attributes.push(vertexAttribute);
 
-  shaderBuilder.addUniform(
-    "sampler2D",
-    "model_outlineTexture",
-    ShaderDestination.FRAGMENT,
-  );
+    shaderBuilder.addUniform(
+        "sampler2D",
+        "model_outlineTexture",
+        ShaderDestination.FRAGMENT,
+    );
 
-  // This automatically handles caching the texture on the context
-  const outlineTexture = PrimitiveOutlineGenerator.createTexture(
-    frameState.context,
-  );
-  uniformMap.model_outlineTexture = function () {
-    return outlineTexture;
-  };
+    // This automatically handles caching the texture on the context
+    const outlineTexture = PrimitiveOutlineGenerator.createTexture(
+        frameState.context,
+    );
+    uniformMap.model_outlineTexture = function () {
+        return outlineTexture;
+    };
 
-  const model = renderResources.model;
-  shaderBuilder.addUniform(
-    "vec4",
-    "model_outlineColor",
-    ShaderDestination.FRAGMENT,
-  );
-  uniformMap.model_outlineColor = function () {
-    return model.outlineColor;
-  };
-  shaderBuilder.addUniform(
-    "bool",
-    "model_showOutline",
-    ShaderDestination.FRAGMENT,
-  );
-  uniformMap.model_showOutline = function () {
-    return model.showOutline;
-  };
+    const model = renderResources.model;
+    shaderBuilder.addUniform(
+        "vec4",
+        "model_outlineColor",
+        ShaderDestination.FRAGMENT,
+    );
+    uniformMap.model_outlineColor = function () {
+        return model.outlineColor;
+    };
+    shaderBuilder.addUniform(
+        "bool",
+        "model_showOutline",
+        ShaderDestination.FRAGMENT,
+    );
+    uniformMap.model_showOutline = function () {
+        return model.showOutline;
+    };
 
-  shaderBuilder.addVertexLines(PrimitiveOutlineStageVS);
-  shaderBuilder.addFragmentLines(PrimitiveOutlineStageFS);
+    shaderBuilder.addVertexLines(PrimitiveOutlineStageVS);
+    shaderBuilder.addFragmentLines(PrimitiveOutlineStageFS);
 };
 
 export default PrimitiveOutlinePipelineStage;

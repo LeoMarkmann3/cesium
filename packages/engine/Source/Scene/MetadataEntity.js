@@ -21,20 +21,20 @@ import DeveloperError from "../Core/DeveloperError.js";
 function MetadataEntity() {}
 
 Object.defineProperties(MetadataEntity.prototype, {
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof MetadataEntity.prototype
-   * @type {MetadataClass}
-   * @readonly
-   * @private
-   */
-  class: {
-    // eslint-disable-next-line getter-return
-    get: function () {
-      DeveloperError.throwInstantiationError();
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof MetadataEntity.prototype
+     * @type {MetadataClass}
+     * @readonly
+     * @private
+     */
+    class: {
+        // eslint-disable-next-line getter-return
+        get: function () {
+            DeveloperError.throwInstantiationError();
+        },
     },
-  },
 });
 
 /**
@@ -45,7 +45,7 @@ Object.defineProperties(MetadataEntity.prototype, {
  * @private
  */
 MetadataEntity.prototype.hasProperty = function (propertyId) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -56,7 +56,7 @@ MetadataEntity.prototype.hasProperty = function (propertyId) {
  * @private
  */
 MetadataEntity.prototype.hasPropertyBySemantic = function (semantic) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -67,7 +67,7 @@ MetadataEntity.prototype.hasPropertyBySemantic = function (semantic) {
  * @private
  */
 MetadataEntity.prototype.getPropertyIds = function (results) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -81,7 +81,7 @@ MetadataEntity.prototype.getPropertyIds = function (results) {
  * @private
  */
 MetadataEntity.prototype.getProperty = function (propertyId) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -96,7 +96,7 @@ MetadataEntity.prototype.getProperty = function (propertyId) {
  * @private
  */
 MetadataEntity.prototype.setProperty = function (propertyId, value) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -107,7 +107,7 @@ MetadataEntity.prototype.setProperty = function (propertyId, value) {
  * @private
  */
 MetadataEntity.prototype.getPropertyBySemantic = function (semantic) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -119,7 +119,7 @@ MetadataEntity.prototype.getPropertyBySemantic = function (semantic) {
  * @private
  */
 MetadataEntity.prototype.setPropertyBySemantic = function (semantic, value) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -133,31 +133,31 @@ MetadataEntity.prototype.setPropertyBySemantic = function (semantic, value) {
  * @private
  */
 MetadataEntity.hasProperty = function (
-  propertyId,
-  properties,
-  classDefinition,
+    propertyId,
+    properties,
+    classDefinition,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("propertyId", propertyId);
-  Check.typeOf.object("properties", properties);
-  Check.typeOf.object("classDefinition", classDefinition);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("propertyId", propertyId);
+    Check.typeOf.object("properties", properties);
+    Check.typeOf.object("classDefinition", classDefinition);
+    //>>includeEnd('debug');
 
-  if (defined(properties[propertyId])) {
-    return true;
-  }
+    if (defined(properties[propertyId])) {
+        return true;
+    }
 
-  const classProperties = classDefinition.properties;
-  if (!defined(classProperties)) {
+    const classProperties = classDefinition.properties;
+    if (!defined(classProperties)) {
+        return false;
+    }
+
+    const classProperty = classProperties[propertyId];
+    if (defined(classProperty) && defined(classProperty.default)) {
+        return true;
+    }
+
     return false;
-  }
-
-  const classProperty = classProperties[propertyId];
-  if (defined(classProperty) && defined(classProperty.default)) {
-    return true;
-  }
-
-  return false;
 };
 
 /**
@@ -171,23 +171,23 @@ MetadataEntity.hasProperty = function (
  * @private
  */
 MetadataEntity.hasPropertyBySemantic = function (
-  semantic,
-  properties,
-  classDefinition,
+    semantic,
+    properties,
+    classDefinition,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  Check.typeOf.object("properties", properties);
-  Check.typeOf.object("classDefinition", classDefinition);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("semantic", semantic);
+    Check.typeOf.object("properties", properties);
+    Check.typeOf.object("classDefinition", classDefinition);
+    //>>includeEnd('debug');
 
-  const propertiesBySemantic = classDefinition.propertiesBySemantic;
-  if (!defined(propertiesBySemantic)) {
-    return false;
-  }
+    const propertiesBySemantic = classDefinition.propertiesBySemantic;
+    if (!defined(propertiesBySemantic)) {
+        return false;
+    }
 
-  const property = propertiesBySemantic[semantic];
-  return defined(property);
+    const property = propertiesBySemantic[semantic];
+    return defined(property);
 };
 
 /**
@@ -201,43 +201,43 @@ MetadataEntity.hasPropertyBySemantic = function (
  * @private
  */
 MetadataEntity.getPropertyIds = function (
-  properties,
-  classDefinition,
-  results,
+    properties,
+    classDefinition,
+    results,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("properties", properties);
-  Check.typeOf.object("classDefinition", classDefinition);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("properties", properties);
+    Check.typeOf.object("classDefinition", classDefinition);
+    //>>includeEnd('debug');
 
-  results = defined(results) ? results : [];
-  results.length = 0;
+    results = defined(results) ? results : [];
+    results.length = 0;
 
-  // Add entity properties
-  for (const propertyId in properties) {
-    if (
-      properties.hasOwnProperty(propertyId) &&
-      defined(properties[propertyId])
-    ) {
-      results.push(propertyId);
+    // Add entity properties
+    for (const propertyId in properties) {
+        if (
+            properties.hasOwnProperty(propertyId) &&
+            defined(properties[propertyId])
+        ) {
+            results.push(propertyId);
+        }
     }
-  }
 
-  // Add default properties
-  const classProperties = classDefinition.properties;
-  if (defined(classProperties)) {
-    for (const classPropertyId in classProperties) {
-      if (
-        classProperties.hasOwnProperty(classPropertyId) &&
-        !defined(properties[classPropertyId]) &&
-        defined(classProperties[classPropertyId].default)
-      ) {
-        results.push(classPropertyId);
-      }
+    // Add default properties
+    const classProperties = classDefinition.properties;
+    if (defined(classProperties)) {
+        for (const classPropertyId in classProperties) {
+            if (
+                classProperties.hasOwnProperty(classPropertyId) &&
+                !defined(properties[classPropertyId]) &&
+                defined(classProperties[classPropertyId].default)
+            ) {
+                results.push(classPropertyId);
+            }
+        }
     }
-  }
 
-  return results;
+    return results;
 };
 
 /**
@@ -254,45 +254,50 @@ MetadataEntity.getPropertyIds = function (
  * @private
  */
 MetadataEntity.getProperty = function (
-  propertyId,
-  properties,
-  classDefinition,
+    propertyId,
+    properties,
+    classDefinition,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("propertyId", propertyId);
-  Check.typeOf.object("properties", properties);
-  Check.typeOf.object("classDefinition", classDefinition);
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("propertyId", propertyId);
+    Check.typeOf.object("properties", properties);
+    Check.typeOf.object("classDefinition", classDefinition);
 
-  if (!defined(classDefinition.properties[propertyId])) {
-    throw new DeveloperError(`Class definition missing property ${propertyId}`);
-  }
-  //>>includeEnd('debug');
+    if (!defined(classDefinition.properties[propertyId])) {
+        throw new DeveloperError(
+            `Class definition missing property ${propertyId}`,
+        );
+    }
+    //>>includeEnd('debug');
 
-  const classProperty = classDefinition.properties[propertyId];
-  let value = properties[propertyId];
+    const classProperty = classDefinition.properties[propertyId];
+    let value = properties[propertyId];
 
-  // Clone array values
-  if (Array.isArray(value)) {
-    value = value.slice();
-  }
+    // Clone array values
+    if (Array.isArray(value)) {
+        value = value.slice();
+    }
 
-  // Arrays of vectors are represented as nested arrays in JSON
-  const enableNestedArrays = true;
+    // Arrays of vectors are represented as nested arrays in JSON
+    const enableNestedArrays = true;
 
-  // Handle noData and default
-  value = classProperty.handleNoData(value);
-  if (!defined(value) && defined(classProperty.default)) {
-    value = clone(classProperty.default, true);
+    // Handle noData and default
+    value = classProperty.handleNoData(value);
+    if (!defined(value) && defined(classProperty.default)) {
+        value = clone(classProperty.default, true);
+        return classProperty.unpackVectorAndMatrixTypes(
+            value,
+            enableNestedArrays,
+        );
+    }
+
+    if (!defined(value)) {
+        return undefined;
+    }
+
+    value = classProperty.normalize(value);
+    value = classProperty.applyValueTransform(value);
     return classProperty.unpackVectorAndMatrixTypes(value, enableNestedArrays);
-  }
-
-  if (!defined(value)) {
-    return undefined;
-  }
-
-  value = classProperty.normalize(value);
-  value = classProperty.applyValueTransform(value);
-  return classProperty.unpackVectorAndMatrixTypes(value, enableNestedArrays);
 };
 
 /**
@@ -310,42 +315,45 @@ MetadataEntity.getProperty = function (
  * @private
  */
 MetadataEntity.setProperty = function (
-  propertyId,
-  value,
-  properties,
-  classDefinition,
+    propertyId,
+    value,
+    properties,
+    classDefinition,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("propertyId", propertyId);
-  Check.defined("value", value);
-  Check.typeOf.object("properties", properties);
-  Check.typeOf.object("classDefinition", classDefinition);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("propertyId", propertyId);
+    Check.defined("value", value);
+    Check.typeOf.object("properties", properties);
+    Check.typeOf.object("classDefinition", classDefinition);
+    //>>includeEnd('debug');
 
-  if (!defined(properties[propertyId])) {
-    return false;
-  }
+    if (!defined(properties[propertyId])) {
+        return false;
+    }
 
-  if (Array.isArray(value)) {
-    value = value.slice(); // clone
-  }
+    if (Array.isArray(value)) {
+        value = value.slice(); // clone
+    }
 
-  let classProperty;
-  const classProperties = classDefinition.properties;
-  if (defined(classProperties)) {
-    classProperty = classProperties[propertyId];
-  }
+    let classProperty;
+    const classProperties = classDefinition.properties;
+    if (defined(classProperties)) {
+        classProperty = classProperties[propertyId];
+    }
 
-  // arrays of vectors are represented as nested arrays in JSON
-  const enableNestedArrays = true;
-  if (defined(classProperty)) {
-    value = classProperty.packVectorAndMatrixTypes(value, enableNestedArrays);
-    value = classProperty.unapplyValueTransform(value);
-    value = classProperty.unnormalize(value);
-  }
+    // arrays of vectors are represented as nested arrays in JSON
+    const enableNestedArrays = true;
+    if (defined(classProperty)) {
+        value = classProperty.packVectorAndMatrixTypes(
+            value,
+            enableNestedArrays,
+        );
+        value = classProperty.unapplyValueTransform(value);
+        value = classProperty.unnormalize(value);
+    }
 
-  properties[propertyId] = value;
-  return true;
+    properties[propertyId] = value;
+    return true;
 };
 
 /**
@@ -359,26 +367,30 @@ MetadataEntity.setProperty = function (
  * @private
  */
 MetadataEntity.getPropertyBySemantic = function (
-  semantic,
-  properties,
-  classDefinition,
+    semantic,
+    properties,
+    classDefinition,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  Check.typeOf.object("properties", properties);
-  Check.typeOf.object("classDefinition", classDefinition);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("semantic", semantic);
+    Check.typeOf.object("properties", properties);
+    Check.typeOf.object("classDefinition", classDefinition);
+    //>>includeEnd('debug');
 
-  const propertiesBySemantic = classDefinition.propertiesBySemantic;
-  if (!defined(propertiesBySemantic)) {
+    const propertiesBySemantic = classDefinition.propertiesBySemantic;
+    if (!defined(propertiesBySemantic)) {
+        return undefined;
+    }
+
+    const property = propertiesBySemantic[semantic];
+    if (defined(property)) {
+        return MetadataEntity.getProperty(
+            property.id,
+            properties,
+            classDefinition,
+        );
+    }
     return undefined;
-  }
-
-  const property = propertiesBySemantic[semantic];
-  if (defined(property)) {
-    return MetadataEntity.getProperty(property.id, properties, classDefinition);
-  }
-  return undefined;
 };
 
 /**
@@ -392,34 +404,34 @@ MetadataEntity.getPropertyBySemantic = function (
  * @private
  */
 MetadataEntity.setPropertyBySemantic = function (
-  semantic,
-  value,
-  properties,
-  classDefinition,
+    semantic,
+    value,
+    properties,
+    classDefinition,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  Check.defined("value", value);
-  Check.typeOf.object("properties", properties);
-  Check.typeOf.object("classDefinition", classDefinition);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("semantic", semantic);
+    Check.defined("value", value);
+    Check.typeOf.object("properties", properties);
+    Check.typeOf.object("classDefinition", classDefinition);
+    //>>includeEnd('debug');
 
-  const propertiesBySemantic = classDefinition.propertiesBySemantic;
-  if (!defined(propertiesBySemantic)) {
+    const propertiesBySemantic = classDefinition.propertiesBySemantic;
+    if (!defined(propertiesBySemantic)) {
+        return false;
+    }
+
+    const property = classDefinition.propertiesBySemantic[semantic];
+    if (defined(property)) {
+        return MetadataEntity.setProperty(
+            property.id,
+            value,
+            properties,
+            classDefinition,
+        );
+    }
+
     return false;
-  }
-
-  const property = classDefinition.propertiesBySemantic[semantic];
-  if (defined(property)) {
-    return MetadataEntity.setProperty(
-      property.id,
-      value,
-      properties,
-      classDefinition,
-    );
-  }
-
-  return false;
 };
 
 export default MetadataEntity;

@@ -11,30 +11,30 @@ import VoxelEllipsoidShape from "./VoxelEllipsoidShape.js";
  * @experimental This feature is not final and is subject to change without Cesium's standard deprecation policy.
  */
 const VoxelShapeType = {
-  /**
-   * A box shape.
-   *
-   * @type {string}
-   * @constant
-   * @private
-   */
-  BOX: "BOX",
-  /**
-   * An ellipsoid shape.
-   *
-   * @type {string}
-   * @constant
-   * @private
-   */
-  ELLIPSOID: "ELLIPSOID",
-  /**
-   * A cylinder shape.
-   *
-   * @type {string}
-   * @constant
-   * @private
-   */
-  CYLINDER: "CYLINDER",
+    /**
+     * A box shape.
+     *
+     * @type {string}
+     * @constant
+     * @private
+     */
+    BOX: "BOX",
+    /**
+     * An ellipsoid shape.
+     *
+     * @type {string}
+     * @constant
+     * @private
+     */
+    ELLIPSOID: "ELLIPSOID",
+    /**
+     * A cylinder shape.
+     *
+     * @type {string}
+     * @constant
+     * @private
+     */
+    CYLINDER: "CYLINDER",
 };
 
 /**
@@ -43,18 +43,18 @@ const VoxelShapeType = {
  * @returns {Cartesian3} The minimum bounds.
  */
 VoxelShapeType.getMinBounds = function (shapeType) {
-  switch (shapeType) {
-    case VoxelShapeType.BOX:
-      return VoxelBoxShape.DefaultMinBounds;
-    case VoxelShapeType.ELLIPSOID:
-      return VoxelEllipsoidShape.DefaultMinBounds;
-    case VoxelShapeType.CYLINDER:
-      return VoxelCylinderShape.DefaultMinBounds;
-    //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError(`Invalid shape type ${shapeType}`);
-    //>>includeEnd('debug');
-  }
+    switch (shapeType) {
+        case VoxelShapeType.BOX:
+            return VoxelBoxShape.DefaultMinBounds;
+        case VoxelShapeType.ELLIPSOID:
+            return VoxelEllipsoidShape.DefaultMinBounds;
+        case VoxelShapeType.CYLINDER:
+            return VoxelCylinderShape.DefaultMinBounds;
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError(`Invalid shape type ${shapeType}`);
+        //>>includeEnd('debug');
+    }
 };
 
 /**
@@ -63,18 +63,18 @@ VoxelShapeType.getMinBounds = function (shapeType) {
  * @returns {Cartesian3} The maximum bounds.
  */
 VoxelShapeType.getMaxBounds = function (shapeType) {
-  switch (shapeType) {
-    case VoxelShapeType.BOX:
-      return VoxelBoxShape.DefaultMaxBounds;
-    case VoxelShapeType.ELLIPSOID:
-      return VoxelEllipsoidShape.DefaultMaxBounds;
-    case VoxelShapeType.CYLINDER:
-      return VoxelCylinderShape.DefaultMaxBounds;
-    //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError(`Invalid shape type ${shapeType}`);
-    //>>includeEnd('debug');
-  }
+    switch (shapeType) {
+        case VoxelShapeType.BOX:
+            return VoxelBoxShape.DefaultMaxBounds;
+        case VoxelShapeType.ELLIPSOID:
+            return VoxelEllipsoidShape.DefaultMaxBounds;
+        case VoxelShapeType.CYLINDER:
+            return VoxelCylinderShape.DefaultMaxBounds;
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError(`Invalid shape type ${shapeType}`);
+        //>>includeEnd('debug');
+    }
 };
 
 /**
@@ -88,18 +88,18 @@ VoxelShapeType.getMaxBounds = function (shapeType) {
  * @private
  */
 VoxelShapeType.getShapeConstructor = function (shapeType) {
-  switch (shapeType) {
-    case VoxelShapeType.BOX:
-      return VoxelBoxShape;
-    case VoxelShapeType.ELLIPSOID:
-      return VoxelEllipsoidShape;
-    case VoxelShapeType.CYLINDER:
-      return VoxelCylinderShape;
-    //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError(`Invalid shape type ${shapeType}`);
-    //>>includeEnd('debug');
-  }
+    switch (shapeType) {
+        case VoxelShapeType.BOX:
+            return VoxelBoxShape;
+        case VoxelShapeType.ELLIPSOID:
+            return VoxelEllipsoidShape;
+        case VoxelShapeType.CYLINDER:
+            return VoxelCylinderShape;
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError(`Invalid shape type ${shapeType}`);
+        //>>includeEnd('debug');
+    }
 };
 
 export default Object.freeze(VoxelShapeType);

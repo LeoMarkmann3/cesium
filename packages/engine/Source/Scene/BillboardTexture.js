@@ -12,125 +12,125 @@ import BillboardLoadState from "./BillboardLoadState.js";
  * @param {BillboardCollection} billboardCollection The associated billboard collecion.
  */
 function BillboardTexture(billboardCollection) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("billboardCollection", billboardCollection);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("billboardCollection", billboardCollection);
+    //>>includeEnd('debug');
 
-  this._billboardCollection = billboardCollection;
+    this._billboardCollection = billboardCollection;
 
-  this._id = undefined;
-  this._loadState = BillboardLoadState.NONE;
-  this._loadError = undefined;
+    this._id = undefined;
+    this._loadState = BillboardLoadState.NONE;
+    this._loadError = undefined;
 
-  this._index = -1;
-  this._width = undefined;
-  this._height = undefined;
+    this._index = -1;
+    this._width = undefined;
+    this._height = undefined;
 
-  this._hasSubregion = false;
+    this._hasSubregion = false;
 
-  /**
-   * Used by billboardCollection to track whcih billboards to update.
-   * @type {boolean}
-   * @private
-   */
-  this.dirty = false;
+    /**
+     * Used by billboardCollection to track whcih billboards to update.
+     * @type {boolean}
+     * @private
+     */
+    this.dirty = false;
 }
 
 Object.defineProperties(BillboardTexture.prototype, {
-  /**
-   * If defined, this error was encountered during the loading process.
-   * @memberof BillboardTexture.prototype
-   * @type {Error|undefined}
-   * @readonly
-   * @private
-   */
-  loadError: {
-    get: function () {
-      return this._loadError;
+    /**
+     * If defined, this error was encountered during the loading process.
+     * @memberof BillboardTexture.prototype
+     * @type {Error|undefined}
+     * @readonly
+     * @private
+     */
+    loadError: {
+        get: function () {
+            return this._loadError;
+        },
     },
-  },
 
-  /**
-   * The current status of the image load. When <code>BillboardLoadState.LOADED</code>, this billboard is ready to render, i.e., the image
-   * has been downloaded and the WebGL resources are created.
-   * @memberof BillboardTexture.prototype
-   * @type {BillboardLoadState}
-   * @readonly
-   * @default BillboardLoadState.NONE
-   * @private
-   */
-  loadState: {
-    get: function () {
-      return this._loadState;
+    /**
+     * The current status of the image load. When <code>BillboardLoadState.LOADED</code>, this billboard is ready to render, i.e., the image
+     * has been downloaded and the WebGL resources are created.
+     * @memberof BillboardTexture.prototype
+     * @type {BillboardLoadState}
+     * @readonly
+     * @default BillboardLoadState.NONE
+     * @private
+     */
+    loadState: {
+        get: function () {
+            return this._loadState;
+        },
     },
-  },
 
-  /**
-   * When <code>true</code>, this texture is ready to render, i.e., the image
-   * has been downloaded and the WebGL resources are created.
-   * @memberof BillboardTexture.prototype
-   * @type {boolean}
-   * @readonly
-   * @default false
-   * @private
-   */
-  ready: {
-    get: function () {
-      return this._loadState === BillboardLoadState.LOADED;
+    /**
+     * When <code>true</code>, this texture is ready to render, i.e., the image
+     * has been downloaded and the WebGL resources are created.
+     * @memberof BillboardTexture.prototype
+     * @type {boolean}
+     * @readonly
+     * @default false
+     * @private
+     */
+    ready: {
+        get: function () {
+            return this._loadState === BillboardLoadState.LOADED;
+        },
     },
-  },
 
-  /**
-   * Returns <code>true</code> if there is image data associated with this instance.
-   * @memberof BillboardTexture.prototype
-   * @type {boolean}
-   * @readonly
-   * @private
-   */
-  hasImage: {
-    get: function () {
-      return this._loadState !== BillboardLoadState.NONE;
+    /**
+     * Returns <code>true</code> if there is image data associated with this instance.
+     * @memberof BillboardTexture.prototype
+     * @type {boolean}
+     * @readonly
+     * @private
+     */
+    hasImage: {
+        get: function () {
+            return this._loadState !== BillboardLoadState.NONE;
+        },
     },
-  },
 
-  /**
-   * A unique identifier for the image, or undefined if no image data has been associated with this instance.
-   * @memberof BillboardTexture.prototype
-   * @type {string|undefined}
-   * @readonly
-   * @private
-   */
-  id: {
-    get: function () {
-      return this._id;
+    /**
+     * A unique identifier for the image, or undefined if no image data has been associated with this instance.
+     * @memberof BillboardTexture.prototype
+     * @type {string|undefined}
+     * @readonly
+     * @private
+     */
+    id: {
+        get: function () {
+            return this._id;
+        },
     },
-  },
 
-  /**
-   * The width of the associated image. Before the instance is <code>ready</code>, this will be <code>undefined</code>.
-   * @memberof BillboardTexture.prototype
-   * @type {number|undefined}
-   * @readonly
-   * @private
-   */
-  width: {
-    get: function () {
-      return this._width;
+    /**
+     * The width of the associated image. Before the instance is <code>ready</code>, this will be <code>undefined</code>.
+     * @memberof BillboardTexture.prototype
+     * @type {number|undefined}
+     * @readonly
+     * @private
+     */
+    width: {
+        get: function () {
+            return this._width;
+        },
     },
-  },
 
-  /**
-   * The height of the associated image. Before the instance is <code>ready</code>, this will be <code>undefined</code>.
-   * @memberof BillboardTexture.prototype
-   * @type {number|undefined}
-   * @readonly
-   * @private
-   */
-  height: {
-    get: function () {
-      return this._height;
+    /**
+     * The height of the associated image. Before the instance is <code>ready</code>, this will be <code>undefined</code>.
+     * @memberof BillboardTexture.prototype
+     * @type {number|undefined}
+     * @readonly
+     * @private
+     */
+    height: {
+        get: function () {
+            return this._height;
+        },
     },
-  },
 });
 
 /**
@@ -138,19 +138,19 @@ Object.defineProperties(BillboardTexture.prototype, {
  * @private
  */
 BillboardTexture.prototype.unload = async function () {
-  if (this._loadState === BillboardLoadState.NONE) {
-    return;
-  }
+    if (this._loadState === BillboardLoadState.NONE) {
+        return;
+    }
 
-  this._id = undefined;
-  this._loadError = undefined;
-  this._loadState = BillboardLoadState.NONE;
+    this._id = undefined;
+    this._loadError = undefined;
+    this._loadState = BillboardLoadState.NONE;
 
-  this._index = -1;
-  this._width = undefined;
-  this._height = undefined;
+    this._index = -1;
+    this._width = undefined;
+    this._height = undefined;
 
-  this.dirty = true;
+    this.dirty = true;
 };
 
 /**
@@ -164,91 +164,91 @@ BillboardTexture.prototype.unload = async function () {
  * @param {number} height A number specifying the height of the texture. If undefined, the image height will be used.
  */
 BillboardTexture.prototype.loadImage = async function (
-  id,
-  image,
-  width,
-  height,
+    id,
+    image,
+    width,
+    height,
 ) {
-  if (this._id === id) {
-    // This image has already been loaded
-    return;
-  }
-
-  const collection = this._billboardCollection;
-  const cache = collection.billboardTextureCache;
-  let billboardTexture = cache.get(id);
-  if (
-    (defined(billboardTexture) &&
-      image.loadState === BillboardLoadState.LOADING) ||
-    image.loadState === BillboardLoadState.LOADED
-  ) {
-    // Use the cached texture if it is in progress or successful.
-    BillboardTexture.clone(billboardTexture, this);
-    return;
-  }
-  // Otherwise, load if not yet assigned an image, and try the load again if anything failed during the last billboard creation
-  if (!defined(billboardTexture)) {
-    billboardTexture = new BillboardTexture(collection);
-    cache.set(id, billboardTexture);
-  }
-
-  billboardTexture._id = this._id = id;
-  billboardTexture._loadState = this._loadState = BillboardLoadState.LOADING;
-  billboardTexture._loadError = this._loadError = undefined;
-
-  let index;
-  const atlas = this._billboardCollection.textureAtlas;
-  try {
-    index = await atlas.addImage(id, image, width, height);
-  } catch (error) {
-    // There was an error loading the image
-    billboardTexture._loadState = BillboardLoadState.ERROR;
-    billboardTexture._loadError = error;
-
-    if (this._id !== id) {
-      // Another load was initiated and resolved resolved before this one. This operation is cancelled.
-      return;
+    if (this._id === id) {
+        // This image has already been loaded
+        return;
     }
 
-    this._loadState = BillboardLoadState.ERROR;
-    this._loadError = error;
-    return;
-  }
-
-  if (!defined(index) || index === -1) {
-    // Resources destroyed or otherwise
-    billboardTexture._loadState = BillboardLoadState.FAILED;
-    billboardTexture._index = -1;
-
-    if (this._id !== id) {
-      // Another load was initiated and resolved resolved before this one. This operation is cancelled.
-      return;
+    const collection = this._billboardCollection;
+    const cache = collection.billboardTextureCache;
+    let billboardTexture = cache.get(id);
+    if (
+        (defined(billboardTexture) &&
+            image.loadState === BillboardLoadState.LOADING) ||
+        image.loadState === BillboardLoadState.LOADED
+    ) {
+        // Use the cached texture if it is in progress or successful.
+        BillboardTexture.clone(billboardTexture, this);
+        return;
+    }
+    // Otherwise, load if not yet assigned an image, and try the load again if anything failed during the last billboard creation
+    if (!defined(billboardTexture)) {
+        billboardTexture = new BillboardTexture(collection);
+        cache.set(id, billboardTexture);
     }
 
-    this._loadState = BillboardLoadState.FAILED;
-    this._index = -1;
+    billboardTexture._id = this._id = id;
+    billboardTexture._loadState = this._loadState = BillboardLoadState.LOADING;
+    billboardTexture._loadError = this._loadError = undefined;
 
-    return;
-  }
+    let index;
+    const atlas = this._billboardCollection.textureAtlas;
+    try {
+        index = await atlas.addImage(id, image, width, height);
+    } catch (error) {
+        // There was an error loading the image
+        billboardTexture._loadState = BillboardLoadState.ERROR;
+        billboardTexture._loadError = error;
 
-  billboardTexture._index = index;
-  billboardTexture._loadState = BillboardLoadState.LOADED;
+        if (this._id !== id) {
+            // Another load was initiated and resolved resolved before this one. This operation is cancelled.
+            return;
+        }
 
-  const rectangle = atlas.rectangles[index];
-  billboardTexture._width = rectangle.width;
-  billboardTexture._height = rectangle.height;
+        this._loadState = BillboardLoadState.ERROR;
+        this._loadError = error;
+        return;
+    }
 
-  if (this._id !== id) {
-    // Another load was initiated and resolved resolved before this one. This operation is cancelled.
-    return;
-  }
+    if (!defined(index) || index === -1) {
+        // Resources destroyed or otherwise
+        billboardTexture._loadState = BillboardLoadState.FAILED;
+        billboardTexture._index = -1;
 
-  this._index = index;
-  this._loadState = BillboardLoadState.LOADED;
-  this._width = rectangle.width;
-  this._height = rectangle.height;
+        if (this._id !== id) {
+            // Another load was initiated and resolved resolved before this one. This operation is cancelled.
+            return;
+        }
 
-  this.dirty = true;
+        this._loadState = BillboardLoadState.FAILED;
+        this._index = -1;
+
+        return;
+    }
+
+    billboardTexture._index = index;
+    billboardTexture._loadState = BillboardLoadState.LOADED;
+
+    const rectangle = atlas.rectangles[index];
+    billboardTexture._width = rectangle.width;
+    billboardTexture._height = rectangle.height;
+
+    if (this._id !== id) {
+        // Another load was initiated and resolved resolved before this one. This operation is cancelled.
+        return;
+    }
+
+    this._index = index;
+    this._loadState = BillboardLoadState.LOADED;
+    this._width = rectangle.width;
+    this._height = rectangle.height;
+
+    this.dirty = true;
 };
 
 /**
@@ -259,19 +259,19 @@ BillboardTexture.prototype.loadImage = async function (
  * @param {BoundingRectangle} subRegion An {@link BoundingRectangle} defining a region of an existing image, measured in pixels from the bottom-left of the image.
  */
 BillboardTexture.prototype.addImageSubRegion = function (id, subRegion) {
-  this._id = id;
-  this._loadError = undefined;
-  this._hasSubregion = true;
+    this._id = id;
+    this._loadError = undefined;
+    this._hasSubregion = true;
 
-  const atlas = this._billboardCollection.textureAtlas;
-  const indexOrPromise = atlas.addImageSubRegion(id, subRegion);
+    const atlas = this._billboardCollection.textureAtlas;
+    const indexOrPromise = atlas.addImageSubRegion(id, subRegion);
 
-  if (typeof indexOrPromise === "number") {
-    this.setImageSubRegion(indexOrPromise, subRegion);
-    return;
-  }
+    if (typeof indexOrPromise === "number") {
+        this.setImageSubRegion(indexOrPromise, subRegion);
+        return;
+    }
 
-  this.loadImageSubRegion(id, subRegion, indexOrPromise);
+    this.loadImageSubRegion(id, subRegion, indexOrPromise);
 };
 
 /**
@@ -282,29 +282,29 @@ BillboardTexture.prototype.addImageSubRegion = function (id, subRegion) {
  * @param {Promise<number>} indexPromise A promise that resolves to the image region index.
  */
 BillboardTexture.prototype.loadImageSubRegion = async function (
-  id,
-  subRegion,
-  indexPromise,
+    id,
+    subRegion,
+    indexPromise,
 ) {
-  let index;
-  try {
-    this._loadState = BillboardLoadState.LOADING;
-    index = await indexPromise;
-  } catch (error) {
-    // There was an error loading the referenced image
-    this._loadState = BillboardLoadState.ERROR;
-    this._loadError = error;
-    return;
-  }
+    let index;
+    try {
+        this._loadState = BillboardLoadState.LOADING;
+        index = await indexPromise;
+    } catch (error) {
+        // There was an error loading the referenced image
+        this._loadState = BillboardLoadState.ERROR;
+        this._loadError = error;
+        return;
+    }
 
-  if (this._id !== id) {
-    // Another load was initiated and resolved resolved before this one. This operation is cancelled.
-    return;
-  }
+    if (this._id !== id) {
+        // Another load was initiated and resolved resolved before this one. This operation is cancelled.
+        return;
+    }
 
-  this._loadState = BillboardLoadState.LOADED;
+    this._loadState = BillboardLoadState.LOADED;
 
-  this.setImageSubRegion(index, subRegion);
+    this.setImageSubRegion(index, subRegion);
 };
 
 /**
@@ -314,24 +314,24 @@ BillboardTexture.prototype.loadImageSubRegion = async function (
  * @param {BoundingRectangle} subRegion An {@link BoundingRectangle} defining a region of an existing image, measured in pixels from the bottom-left of the image.
  */
 BillboardTexture.prototype.setImageSubRegion = function (index, subRegion) {
-  if (this._index === index) {
-    return;
-  }
+    if (this._index === index) {
+        return;
+    }
 
-  if (!defined(index) || index === -1) {
-    this._loadState = BillboardLoadState.FAILED;
-    this._index = -1;
-    this._width = undefined;
-    this._height = undefined;
-    return;
-  }
+    if (!defined(index) || index === -1) {
+        this._loadState = BillboardLoadState.FAILED;
+        this._index = -1;
+        this._width = undefined;
+        this._height = undefined;
+        return;
+    }
 
-  this._width = subRegion.width;
-  this._height = subRegion.height;
+    this._width = subRegion.width;
+    this._height = subRegion.height;
 
-  this._index = index;
+    this._index = index;
 
-  this.dirty = true;
+    this.dirty = true;
 };
 
 /**
@@ -341,8 +341,8 @@ BillboardTexture.prototype.setImageSubRegion = function (index, subRegion) {
  * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
  */
 BillboardTexture.prototype.computeTextureCoordinates = function (result) {
-  const atlas = this._billboardCollection.textureAtlas;
-  return atlas.computeTextureCoordinates(this._index, result);
+    const atlas = this._billboardCollection.textureAtlas;
+    return atlas.computeTextureCoordinates(this._index, result);
 };
 
 /**
@@ -352,46 +352,46 @@ BillboardTexture.prototype.computeTextureCoordinates = function (result) {
  * @returns {BillboardTexture} target
  */
 BillboardTexture.clone = function (billboardTexture, target) {
-  target._id = billboardTexture._id;
-  target._loadState = billboardTexture._loadState;
-  target._loadError = undefined;
-  target._index = billboardTexture._index;
-  target._width = billboardTexture._width;
-  target._height = billboardTexture._height;
-  target._hasSubregion = billboardTexture._hasSubregion;
-
-  if (billboardTexture.ready) {
-    target.dirty = true;
-    return;
-  }
-
-  const completeLoad = async () => {
-    const id = billboardTexture._id;
-    const atlas = billboardTexture._billboardCollection.textureAtlas;
-    await atlas._indexPromiseById.get(id);
-
-    // Any errors should have already been handled
-    if (target._id !== id) {
-      // Another load was initiated and resolved resolved before this one. This operation is cancelled.
-      return;
-    }
-
-    if (billboardTexture._hasSubregion) {
-      // Subregions must wait an additional frame to be ready
-      await Promise.resolve();
-    }
-
-    target._id = id;
+    target._id = billboardTexture._id;
     target._loadState = billboardTexture._loadState;
-    target._loadError = billboardTexture._loadError;
+    target._loadError = undefined;
     target._index = billboardTexture._index;
     target._width = billboardTexture._width;
     target._height = billboardTexture._height;
-    target.dirty = true;
-  };
+    target._hasSubregion = billboardTexture._hasSubregion;
 
-  completeLoad();
-  return target;
+    if (billboardTexture.ready) {
+        target.dirty = true;
+        return;
+    }
+
+    const completeLoad = async () => {
+        const id = billboardTexture._id;
+        const atlas = billboardTexture._billboardCollection.textureAtlas;
+        await atlas._indexPromiseById.get(id);
+
+        // Any errors should have already been handled
+        if (target._id !== id) {
+            // Another load was initiated and resolved resolved before this one. This operation is cancelled.
+            return;
+        }
+
+        if (billboardTexture._hasSubregion) {
+            // Subregions must wait an additional frame to be ready
+            await Promise.resolve();
+        }
+
+        target._id = id;
+        target._loadState = billboardTexture._loadState;
+        target._loadError = billboardTexture._loadError;
+        target._index = billboardTexture._index;
+        target._width = billboardTexture._width;
+        target._height = billboardTexture._height;
+        target.dirty = true;
+    };
+
+    completeLoad();
+    return target;
 };
 
 export default BillboardTexture;

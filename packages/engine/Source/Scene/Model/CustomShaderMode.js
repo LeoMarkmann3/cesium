@@ -7,22 +7,22 @@
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 const CustomShaderMode = {
-  /**
-   * The custom shader will be used to modify the results of the material stage
-   * before lighting is applied.
-   *
-   * @type {string}
-   * @constant
-   */
-  MODIFY_MATERIAL: "MODIFY_MATERIAL",
-  /**
-   * The custom shader will be used instead of the material stage. This is a hint
-   * to optimize out the material processing code.
-   *
-   * @type {string}
-   * @constant
-   */
-  REPLACE_MATERIAL: "REPLACE_MATERIAL",
+    /**
+     * The custom shader will be used to modify the results of the material stage
+     * before lighting is applied.
+     *
+     * @type {string}
+     * @constant
+     */
+    MODIFY_MATERIAL: "MODIFY_MATERIAL",
+    /**
+     * The custom shader will be used instead of the material stage. This is a hint
+     * to optimize out the material processing code.
+     *
+     * @type {string}
+     * @constant
+     */
+    REPLACE_MATERIAL: "REPLACE_MATERIAL",
 };
 
 /**
@@ -34,7 +34,7 @@ const CustomShaderMode = {
  * @private
  */
 CustomShaderMode.getDefineName = function (customShaderMode) {
-  return `CUSTOM_SHADER_${customShaderMode}`;
+    return `CUSTOM_SHADER_${customShaderMode}`;
 };
 
 export default Object.freeze(CustomShaderMode);

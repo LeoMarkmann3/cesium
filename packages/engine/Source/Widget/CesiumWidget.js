@@ -35,102 +35,102 @@ import TimeDynamicPointCloud from "../Scene/TimeDynamicPointCloud.js";
 import VoxelPrimitive from "../Scene/VoxelPrimitive.js";
 
 function trackDataSourceClock(clock, dataSource) {
-  if (defined(dataSource)) {
-    const dataSourceClock = dataSource.clock;
-    if (defined(dataSourceClock)) {
-      dataSourceClock.getValue(clock);
+    if (defined(dataSource)) {
+        const dataSourceClock = dataSource.clock;
+        if (defined(dataSourceClock)) {
+            dataSourceClock.getValue(clock);
+        }
     }
-  }
 }
 
 function startRenderLoop(widget) {
-  widget._renderLoopRunning = true;
+    widget._renderLoopRunning = true;
 
-  let lastFrameTime = 0;
-  function render(frameTime) {
-    if (widget.isDestroyed()) {
-      return;
-    }
+    let lastFrameTime = 0;
+    function render(frameTime) {
+        if (widget.isDestroyed()) {
+            return;
+        }
 
-    if (widget._useDefaultRenderLoop) {
-      try {
-        const targetFrameRate = widget._targetFrameRate;
-        if (!defined(targetFrameRate)) {
-          widget.resize();
-          widget.render();
-          requestAnimationFrame(render);
+        if (widget._useDefaultRenderLoop) {
+            try {
+                const targetFrameRate = widget._targetFrameRate;
+                if (!defined(targetFrameRate)) {
+                    widget.resize();
+                    widget.render();
+                    requestAnimationFrame(render);
+                } else {
+                    const interval = 1000.0 / targetFrameRate;
+                    const delta = frameTime - lastFrameTime;
+
+                    if (delta > interval) {
+                        widget.resize();
+                        widget.render();
+                        lastFrameTime = frameTime - (delta % interval);
+                    }
+                    requestAnimationFrame(render);
+                }
+            } catch (error) {
+                widget._useDefaultRenderLoop = false;
+                widget._renderLoopRunning = false;
+                if (widget._showRenderLoopErrors) {
+                    const title =
+                        "An error occurred while rendering.  Rendering has stopped.";
+                    widget.showErrorPanel(title, undefined, error);
+                }
+            }
         } else {
-          const interval = 1000.0 / targetFrameRate;
-          const delta = frameTime - lastFrameTime;
-
-          if (delta > interval) {
-            widget.resize();
-            widget.render();
-            lastFrameTime = frameTime - (delta % interval);
-          }
-          requestAnimationFrame(render);
+            widget._renderLoopRunning = false;
         }
-      } catch (error) {
-        widget._useDefaultRenderLoop = false;
-        widget._renderLoopRunning = false;
-        if (widget._showRenderLoopErrors) {
-          const title =
-            "An error occurred while rendering.  Rendering has stopped.";
-          widget.showErrorPanel(title, undefined, error);
-        }
-      }
-    } else {
-      widget._renderLoopRunning = false;
     }
-  }
 
-  requestAnimationFrame(render);
+    requestAnimationFrame(render);
 }
 
 function configurePixelRatio(widget) {
-  let pixelRatio = widget._useBrowserRecommendedResolution
-    ? 1.0
-    : window.devicePixelRatio;
-  pixelRatio *= widget._resolutionScale;
-  if (defined(widget._scene)) {
-    widget._scene.pixelRatio = pixelRatio;
-  }
+    let pixelRatio = widget._useBrowserRecommendedResolution
+        ? 1.0
+        : window.devicePixelRatio;
+    pixelRatio *= widget._resolutionScale;
+    if (defined(widget._scene)) {
+        widget._scene.pixelRatio = pixelRatio;
+    }
 
-  return pixelRatio;
+    return pixelRatio;
 }
 
 function configureCanvasSize(widget) {
-  const canvas = widget._canvas;
-  let width = canvas.clientWidth;
-  let height = canvas.clientHeight;
-  const pixelRatio = configurePixelRatio(widget);
+    const canvas = widget._canvas;
+    let width = canvas.clientWidth;
+    let height = canvas.clientHeight;
+    const pixelRatio = configurePixelRatio(widget);
 
-  widget._canvasClientWidth = width;
-  widget._canvasClientHeight = height;
+    widget._canvasClientWidth = width;
+    widget._canvasClientHeight = height;
 
-  width *= pixelRatio;
-  height *= pixelRatio;
+    width *= pixelRatio;
+    height *= pixelRatio;
 
-  canvas.width = width;
-  canvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
 
-  widget._canRender = width !== 0 && height !== 0;
-  widget._lastDevicePixelRatio = window.devicePixelRatio;
+    widget._canRender = width !== 0 && height !== 0;
+    widget._lastDevicePixelRatio = window.devicePixelRatio;
 }
 
 function configureCameraFrustum(widget) {
-  const canvas = widget._canvas;
-  const width = canvas.width;
-  const height = canvas.height;
-  if (width !== 0 && height !== 0) {
-    const frustum = widget._scene.camera.frustum;
-    if (defined(frustum.aspectRatio)) {
-      frustum.aspectRatio = width / height;
-    } else {
-      frustum.top = frustum.right * (height / width);
-      frustum.bottom = -frustum.top;
+    const canvas = widget._canvas;
+    const width = canvas.width;
+    const height = canvas.height;
+    if (width !== 0 && height !== 0) {
+        const frustum = widget._scene.camera.frustum;
+        if (defined(frustum.aspectRatio)) {
+            frustum.aspectRatio = width / height;
+        } else {
+            frustum.top = frustum.right * (height / width);
+            frustum.bottom = -frustum.top;
+        }
     }
-  }
 }
 
 /**
@@ -204,697 +204,711 @@ function configureCameraFrustum(widget) {
  * });
  */
 function CesiumWidget(container, options) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(container)) {
-    throw new DeveloperError("container is required.");
-  }
-  //>>includeEnd('debug');
-
-  container = getElement(container);
-
-  options = options ?? Frozen.EMPTY_OBJECT;
-
-  //Configure the widget DOM elements
-  const element = document.createElement("div");
-  element.className = "cesium-widget";
-  container.appendChild(element);
-
-  const canvas = document.createElement("canvas");
-  const supportsImageRenderingPixelated =
-    FeatureDetection.supportsImageRenderingPixelated();
-  this._supportsImageRenderingPixelated = supportsImageRenderingPixelated;
-  if (supportsImageRenderingPixelated) {
-    canvas.style.imageRendering = FeatureDetection.imageRenderingValue();
-  }
-
-  canvas.oncontextmenu = function () {
-    return false;
-  };
-  canvas.onselectstart = function () {
-    return false;
-  };
-
-  // Interacting with a canvas does not automatically blur the previously focused element.
-  // This leads to unexpected interaction if the last element was an input field.
-  // For example, clicking the mouse wheel could lead to the value in  the field changing
-  // unexpectedly. The solution is to blur whatever has focus as soon as canvas interaction begins.
-  // Although in some cases the active element needs to stay active even after interacting with the canvas,
-  // for example when clicking on it only for getting the data of a clicked position or an entity.
-  // For this case, the `blurActiveElementOnCanvasFocus` can be passed with false to avoid blurring
-  // the active element after interacting with the canvas.
-  function blurActiveElement() {
-    if (canvas !== canvas.ownerDocument.activeElement) {
-      canvas.ownerDocument.activeElement.blur();
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(container)) {
+        throw new DeveloperError("container is required.");
     }
-  }
+    //>>includeEnd('debug');
 
-  const blurActiveElementOnCanvasFocus =
-    options.blurActiveElementOnCanvasFocus ?? true;
+    container = getElement(container);
 
-  if (blurActiveElementOnCanvasFocus) {
-    canvas.addEventListener("mousedown", blurActiveElement);
-    canvas.addEventListener("pointerdown", blurActiveElement);
-  }
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  element.appendChild(canvas);
+    //Configure the widget DOM elements
+    const element = document.createElement("div");
+    element.className = "cesium-widget";
+    container.appendChild(element);
 
-  const innerCreditContainer = document.createElement("div");
-  innerCreditContainer.className = "cesium-widget-credits";
-
-  const creditContainer = defined(options.creditContainer)
-    ? getElement(options.creditContainer)
-    : element;
-  creditContainer.appendChild(innerCreditContainer);
-
-  const creditViewport = defined(options.creditViewport)
-    ? getElement(options.creditViewport)
-    : element;
-
-  const showRenderLoopErrors = options.showRenderLoopErrors ?? true;
-
-  const useBrowserRecommendedResolution =
-    options.useBrowserRecommendedResolution ?? true;
-
-  this._element = element;
-  this._container = container;
-  this._canvas = canvas;
-  this._canvasClientWidth = 0;
-  this._canvasClientHeight = 0;
-  this._lastDevicePixelRatio = 0;
-  this._creditViewport = creditViewport;
-  this._creditContainer = creditContainer;
-  this._innerCreditContainer = innerCreditContainer;
-  this._canRender = false;
-  this._renderLoopRunning = false;
-  this._showRenderLoopErrors = showRenderLoopErrors;
-  this._resolutionScale = 1.0;
-  this._useBrowserRecommendedResolution = useBrowserRecommendedResolution;
-  this._forceResize = false;
-  this._entityView = undefined;
-  this._clockTrackedDataSource = undefined;
-  this._trackedEntity = undefined;
-  this._needTrackedEntityUpdate = false;
-  this._zoomIsFlight = false;
-  this._zoomTarget = undefined;
-  this._zoomPromise = undefined;
-  this._zoomOptions = undefined;
-  this._trackedEntityChanged = new Event();
-  this._allowDataSourcesToSuspendAnimation = true;
-
-  this._clock = defined(options.clock) ? options.clock : new Clock();
-
-  if (defined(options.shouldAnimate)) {
-    this._clock.shouldAnimate = options.shouldAnimate;
-  }
-
-  configureCanvasSize(this);
-
-  try {
-    const ellipsoid = options.ellipsoid ?? Ellipsoid.default;
-
-    const scene = new Scene({
-      canvas: canvas,
-      contextOptions: options.contextOptions,
-      creditContainer: innerCreditContainer,
-      creditViewport: creditViewport,
-      ellipsoid: ellipsoid,
-      mapProjection: options.mapProjection,
-      orderIndependentTranslucency: options.orderIndependentTranslucency,
-      scene3DOnly: options.scene3DOnly ?? false,
-      shadows: options.shadows,
-      mapMode2D: options.mapMode2D,
-      requestRenderMode: options.requestRenderMode,
-      maximumRenderTimeChange: options.maximumRenderTimeChange,
-      depthPlaneEllipsoidOffset: options.depthPlaneEllipsoidOffset,
-      msaaSamples: options.msaaSamples,
-    });
-    this._scene = scene;
-
-    scene.camera.constrainedAxis = Cartesian3.UNIT_Z;
-
-    configurePixelRatio(this);
-    configureCameraFrustum(this);
-
-    let globe = options.globe;
-    if (!defined(globe)) {
-      globe = new Globe(ellipsoid);
-    }
-    if (globe !== false) {
-      scene.globe = globe;
-      scene.globe.shadows = options.terrainShadows ?? ShadowMode.RECEIVE_ONLY;
+    const canvas = document.createElement("canvas");
+    const supportsImageRenderingPixelated =
+        FeatureDetection.supportsImageRenderingPixelated();
+    this._supportsImageRenderingPixelated = supportsImageRenderingPixelated;
+    if (supportsImageRenderingPixelated) {
+        canvas.style.imageRendering = FeatureDetection.imageRenderingValue();
     }
 
-    let skyBox = options.skyBox;
-    if (!defined(skyBox) && Ellipsoid.WGS84.equals(ellipsoid)) {
-      skyBox = SkyBox.createEarthSkyBox();
-    }
-    if (skyBox !== false) {
-      scene.skyBox = skyBox;
-      scene.sun = new Sun();
-
-      if (Ellipsoid.WGS84.equals(ellipsoid)) {
-        scene.moon = new Moon();
-      }
-    }
-
-    // Blue sky, and the glow around the Earth's limb.
-    let skyAtmosphere = options.skyAtmosphere;
-    if (!defined(skyAtmosphere) && Ellipsoid.WGS84.equals(ellipsoid)) {
-      skyAtmosphere = new SkyAtmosphere(ellipsoid);
-      skyAtmosphere.show = options.globe !== false && globe.show;
-    }
-    if (skyAtmosphere !== false) {
-      scene.skyAtmosphere = skyAtmosphere;
-    }
-
-    // Set the base imagery layer
-    let baseLayer = options.baseLayer;
-    if (options.globe !== false && baseLayer !== false) {
-      if (!defined(baseLayer)) {
-        baseLayer = ImageryLayer.fromWorldImagery();
-      }
-      scene.imageryLayers.add(baseLayer);
-    }
-
-    // Set the terrain provider if one is provided.
-    if (defined(options.terrainProvider) && options.globe !== false) {
-      scene.terrainProvider = options.terrainProvider;
-    }
-
-    if (defined(options.terrain) && options.globe !== false) {
-      //>>includeStart('debug', pragmas.debug);
-      if (defined(options.terrainProvider)) {
-        throw new DeveloperError(
-          "Specify either options.terrainProvider or options.terrain.",
-        );
-      }
-      //>>includeEnd('debug');
-
-      scene.setTerrain(options.terrain);
-    }
-
-    this._screenSpaceEventHandler = new ScreenSpaceEventHandler(canvas);
-
-    if (defined(options.sceneMode)) {
-      if (options.sceneMode === SceneMode.SCENE2D) {
-        this._scene.morphTo2D(0);
-      }
-      if (options.sceneMode === SceneMode.COLUMBUS_VIEW) {
-        this._scene.morphToColumbusView(0);
-      }
-    }
-
-    this._useDefaultRenderLoop = undefined;
-    this.useDefaultRenderLoop = options.useDefaultRenderLoop ?? true;
-
-    this._targetFrameRate = undefined;
-    this.targetFrameRate = options.targetFrameRate;
-
-    const that = this;
-    this._onRenderError = function (scene, error) {
-      that._useDefaultRenderLoop = false;
-      that._renderLoopRunning = false;
-      if (that._showRenderLoopErrors) {
-        const title =
-          "An error occurred while rendering.  Rendering has stopped.";
-        that.showErrorPanel(title, undefined, error);
-      }
+    canvas.oncontextmenu = function () {
+        return false;
     };
-    scene.renderError.addEventListener(this._onRenderError);
+    canvas.onselectstart = function () {
+        return false;
+    };
 
-    let dataSourceCollection = options.dataSources;
-    let destroyDataSourceCollection = false;
-    if (!defined(dataSourceCollection)) {
-      dataSourceCollection = new DataSourceCollection();
-      destroyDataSourceCollection = true;
+    // Interacting with a canvas does not automatically blur the previously focused element.
+    // This leads to unexpected interaction if the last element was an input field.
+    // For example, clicking the mouse wheel could lead to the value in  the field changing
+    // unexpectedly. The solution is to blur whatever has focus as soon as canvas interaction begins.
+    // Although in some cases the active element needs to stay active even after interacting with the canvas,
+    // for example when clicking on it only for getting the data of a clicked position or an entity.
+    // For this case, the `blurActiveElementOnCanvasFocus` can be passed with false to avoid blurring
+    // the active element after interacting with the canvas.
+    function blurActiveElement() {
+        if (canvas !== canvas.ownerDocument.activeElement) {
+            canvas.ownerDocument.activeElement.blur();
+        }
     }
 
-    const dataSourceDisplay = new DataSourceDisplay({
-      scene: scene,
-      dataSourceCollection: dataSourceCollection,
-    });
+    const blurActiveElementOnCanvasFocus =
+        options.blurActiveElementOnCanvasFocus ?? true;
 
-    const eventHelper = new EventHelper();
-    this._dataSourceChangedListeners = {};
-    this._automaticallyTrackDataSourceClocks =
-      options.automaticallyTrackDataSourceClocks ?? true;
-
-    this._dataSourceCollection = dataSourceCollection;
-    this._destroyDataSourceCollection = destroyDataSourceCollection;
-    this._dataSourceDisplay = dataSourceDisplay;
-    this._eventHelper = eventHelper;
-    this._canAnimateUpdateCallback = this._updateCanAnimate;
-
-    eventHelper.add(this._clock.onTick, CesiumWidget.prototype._onTick, this);
-    eventHelper.add(
-      scene.morphStart,
-      CesiumWidget.prototype._clearTrackedObject,
-      this,
-    );
-
-    //Listen to data source events in order to track clock changes.
-    eventHelper.add(
-      dataSourceCollection.dataSourceAdded,
-      CesiumWidget.prototype._onDataSourceAdded,
-      this,
-    );
-    eventHelper.add(
-      dataSourceCollection.dataSourceRemoved,
-      CesiumWidget.prototype._onDataSourceRemoved,
-      this,
-    );
-
-    eventHelper.add(scene.postRender, CesiumWidget.prototype._postRender, this);
-
-    // We need to subscribe to the data sources and collections so that we can clear the
-    // tracked object when it is removed from the scene.
-    // Subscribe to current data sources
-    const dataSourceLength = dataSourceCollection.length;
-    for (let i = 0; i < dataSourceLength; i++) {
-      this._dataSourceAdded(dataSourceCollection, dataSourceCollection.get(i));
+    if (blurActiveElementOnCanvasFocus) {
+        canvas.addEventListener("mousedown", blurActiveElement);
+        canvas.addEventListener("pointerdown", blurActiveElement);
     }
-    this._dataSourceAdded(undefined, dataSourceDisplay.defaultDataSource);
 
-    // Hook up events so that we can subscribe to future sources.
-    eventHelper.add(
-      dataSourceCollection.dataSourceAdded,
-      CesiumWidget.prototype._dataSourceAdded,
-      this,
-    );
-    eventHelper.add(
-      dataSourceCollection.dataSourceRemoved,
-      CesiumWidget.prototype._dataSourceRemoved,
-      this,
-    );
-  } catch (error) {
-    if (showRenderLoopErrors) {
-      const title = "Error constructing CesiumWidget.";
-      const message =
-        'Visit <a href="http://get.webgl.org">http://get.webgl.org</a> to verify that your web browser and hardware support WebGL.  Consider trying a different web browser or updating your video drivers.  Detailed error information is below:';
-      this.showErrorPanel(title, message, error);
+    element.appendChild(canvas);
+
+    const innerCreditContainer = document.createElement("div");
+    innerCreditContainer.className = "cesium-widget-credits";
+
+    const creditContainer = defined(options.creditContainer)
+        ? getElement(options.creditContainer)
+        : element;
+    creditContainer.appendChild(innerCreditContainer);
+
+    const creditViewport = defined(options.creditViewport)
+        ? getElement(options.creditViewport)
+        : element;
+
+    const showRenderLoopErrors = options.showRenderLoopErrors ?? true;
+
+    const useBrowserRecommendedResolution =
+        options.useBrowserRecommendedResolution ?? true;
+
+    this._element = element;
+    this._container = container;
+    this._canvas = canvas;
+    this._canvasClientWidth = 0;
+    this._canvasClientHeight = 0;
+    this._lastDevicePixelRatio = 0;
+    this._creditViewport = creditViewport;
+    this._creditContainer = creditContainer;
+    this._innerCreditContainer = innerCreditContainer;
+    this._canRender = false;
+    this._renderLoopRunning = false;
+    this._showRenderLoopErrors = showRenderLoopErrors;
+    this._resolutionScale = 1.0;
+    this._useBrowserRecommendedResolution = useBrowserRecommendedResolution;
+    this._forceResize = false;
+    this._entityView = undefined;
+    this._clockTrackedDataSource = undefined;
+    this._trackedEntity = undefined;
+    this._needTrackedEntityUpdate = false;
+    this._zoomIsFlight = false;
+    this._zoomTarget = undefined;
+    this._zoomPromise = undefined;
+    this._zoomOptions = undefined;
+    this._trackedEntityChanged = new Event();
+    this._allowDataSourcesToSuspendAnimation = true;
+
+    this._clock = defined(options.clock) ? options.clock : new Clock();
+
+    if (defined(options.shouldAnimate)) {
+        this._clock.shouldAnimate = options.shouldAnimate;
     }
-    throw error;
-  }
+
+    configureCanvasSize(this);
+
+    try {
+        const ellipsoid = options.ellipsoid ?? Ellipsoid.default;
+
+        const scene = new Scene({
+            canvas: canvas,
+            contextOptions: options.contextOptions,
+            creditContainer: innerCreditContainer,
+            creditViewport: creditViewport,
+            ellipsoid: ellipsoid,
+            mapProjection: options.mapProjection,
+            orderIndependentTranslucency: options.orderIndependentTranslucency,
+            scene3DOnly: options.scene3DOnly ?? false,
+            shadows: options.shadows,
+            mapMode2D: options.mapMode2D,
+            requestRenderMode: options.requestRenderMode,
+            maximumRenderTimeChange: options.maximumRenderTimeChange,
+            depthPlaneEllipsoidOffset: options.depthPlaneEllipsoidOffset,
+            msaaSamples: options.msaaSamples,
+        });
+        this._scene = scene;
+
+        scene.camera.constrainedAxis = Cartesian3.UNIT_Z;
+
+        configurePixelRatio(this);
+        configureCameraFrustum(this);
+
+        let globe = options.globe;
+        if (!defined(globe)) {
+            globe = new Globe(ellipsoid);
+        }
+        if (globe !== false) {
+            scene.globe = globe;
+            scene.globe.shadows =
+                options.terrainShadows ?? ShadowMode.RECEIVE_ONLY;
+        }
+
+        let skyBox = options.skyBox;
+        if (!defined(skyBox) && Ellipsoid.WGS84.equals(ellipsoid)) {
+            skyBox = SkyBox.createEarthSkyBox();
+        }
+        if (skyBox !== false) {
+            scene.skyBox = skyBox;
+            scene.sun = new Sun();
+
+            if (Ellipsoid.WGS84.equals(ellipsoid)) {
+                scene.moon = new Moon();
+            }
+        }
+
+        // Blue sky, and the glow around the Earth's limb.
+        let skyAtmosphere = options.skyAtmosphere;
+        if (!defined(skyAtmosphere) && Ellipsoid.WGS84.equals(ellipsoid)) {
+            skyAtmosphere = new SkyAtmosphere(ellipsoid);
+            skyAtmosphere.show = options.globe !== false && globe.show;
+        }
+        if (skyAtmosphere !== false) {
+            scene.skyAtmosphere = skyAtmosphere;
+        }
+
+        // Set the base imagery layer
+        let baseLayer = options.baseLayer;
+        if (options.globe !== false && baseLayer !== false) {
+            if (!defined(baseLayer)) {
+                baseLayer = ImageryLayer.fromWorldImagery();
+            }
+            scene.imageryLayers.add(baseLayer);
+        }
+
+        // Set the terrain provider if one is provided.
+        if (defined(options.terrainProvider) && options.globe !== false) {
+            scene.terrainProvider = options.terrainProvider;
+        }
+
+        if (defined(options.terrain) && options.globe !== false) {
+            //>>includeStart('debug', pragmas.debug);
+            if (defined(options.terrainProvider)) {
+                throw new DeveloperError(
+                    "Specify either options.terrainProvider or options.terrain.",
+                );
+            }
+            //>>includeEnd('debug');
+
+            scene.setTerrain(options.terrain);
+        }
+
+        this._screenSpaceEventHandler = new ScreenSpaceEventHandler(canvas);
+
+        if (defined(options.sceneMode)) {
+            if (options.sceneMode === SceneMode.SCENE2D) {
+                this._scene.morphTo2D(0);
+            }
+            if (options.sceneMode === SceneMode.COLUMBUS_VIEW) {
+                this._scene.morphToColumbusView(0);
+            }
+        }
+
+        this._useDefaultRenderLoop = undefined;
+        this.useDefaultRenderLoop = options.useDefaultRenderLoop ?? true;
+
+        this._targetFrameRate = undefined;
+        this.targetFrameRate = options.targetFrameRate;
+
+        const that = this;
+        this._onRenderError = function (scene, error) {
+            that._useDefaultRenderLoop = false;
+            that._renderLoopRunning = false;
+            if (that._showRenderLoopErrors) {
+                const title =
+                    "An error occurred while rendering.  Rendering has stopped.";
+                that.showErrorPanel(title, undefined, error);
+            }
+        };
+        scene.renderError.addEventListener(this._onRenderError);
+
+        let dataSourceCollection = options.dataSources;
+        let destroyDataSourceCollection = false;
+        if (!defined(dataSourceCollection)) {
+            dataSourceCollection = new DataSourceCollection();
+            destroyDataSourceCollection = true;
+        }
+
+        const dataSourceDisplay = new DataSourceDisplay({
+            scene: scene,
+            dataSourceCollection: dataSourceCollection,
+        });
+
+        const eventHelper = new EventHelper();
+        this._dataSourceChangedListeners = {};
+        this._automaticallyTrackDataSourceClocks =
+            options.automaticallyTrackDataSourceClocks ?? true;
+
+        this._dataSourceCollection = dataSourceCollection;
+        this._destroyDataSourceCollection = destroyDataSourceCollection;
+        this._dataSourceDisplay = dataSourceDisplay;
+        this._eventHelper = eventHelper;
+        this._canAnimateUpdateCallback = this._updateCanAnimate;
+
+        eventHelper.add(
+            this._clock.onTick,
+            CesiumWidget.prototype._onTick,
+            this,
+        );
+        eventHelper.add(
+            scene.morphStart,
+            CesiumWidget.prototype._clearTrackedObject,
+            this,
+        );
+
+        //Listen to data source events in order to track clock changes.
+        eventHelper.add(
+            dataSourceCollection.dataSourceAdded,
+            CesiumWidget.prototype._onDataSourceAdded,
+            this,
+        );
+        eventHelper.add(
+            dataSourceCollection.dataSourceRemoved,
+            CesiumWidget.prototype._onDataSourceRemoved,
+            this,
+        );
+
+        eventHelper.add(
+            scene.postRender,
+            CesiumWidget.prototype._postRender,
+            this,
+        );
+
+        // We need to subscribe to the data sources and collections so that we can clear the
+        // tracked object when it is removed from the scene.
+        // Subscribe to current data sources
+        const dataSourceLength = dataSourceCollection.length;
+        for (let i = 0; i < dataSourceLength; i++) {
+            this._dataSourceAdded(
+                dataSourceCollection,
+                dataSourceCollection.get(i),
+            );
+        }
+        this._dataSourceAdded(undefined, dataSourceDisplay.defaultDataSource);
+
+        // Hook up events so that we can subscribe to future sources.
+        eventHelper.add(
+            dataSourceCollection.dataSourceAdded,
+            CesiumWidget.prototype._dataSourceAdded,
+            this,
+        );
+        eventHelper.add(
+            dataSourceCollection.dataSourceRemoved,
+            CesiumWidget.prototype._dataSourceRemoved,
+            this,
+        );
+    } catch (error) {
+        if (showRenderLoopErrors) {
+            const title = "Error constructing CesiumWidget.";
+            const message =
+                'Visit <a href="http://get.webgl.org">http://get.webgl.org</a> to verify that your web browser and hardware support WebGL.  Consider trying a different web browser or updating your video drivers.  Detailed error information is below:';
+            this.showErrorPanel(title, message, error);
+        }
+        throw error;
+    }
 }
 
 Object.defineProperties(CesiumWidget.prototype, {
-  /**
-   * Gets the parent container.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {Element}
-   * @readonly
-   */
-  container: {
-    get: function () {
-      return this._container;
+    /**
+     * Gets the parent container.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {Element}
+     * @readonly
+     */
+    container: {
+        get: function () {
+            return this._container;
+        },
     },
-  },
 
-  /**
-   * Gets the canvas.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {HTMLCanvasElement}
-   * @readonly
-   */
-  canvas: {
-    get: function () {
-      return this._canvas;
+    /**
+     * Gets the canvas.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {HTMLCanvasElement}
+     * @readonly
+     */
+    canvas: {
+        get: function () {
+            return this._canvas;
+        },
     },
-  },
 
-  /**
-   * Gets the credit container.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {Element}
-   * @readonly
-   */
-  creditContainer: {
-    get: function () {
-      return this._creditContainer;
+    /**
+     * Gets the credit container.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {Element}
+     * @readonly
+     */
+    creditContainer: {
+        get: function () {
+            return this._creditContainer;
+        },
     },
-  },
 
-  /**
-   * Gets the credit viewport
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {Element}
-   * @readonly
-   */
-  creditViewport: {
-    get: function () {
-      return this._creditViewport;
+    /**
+     * Gets the credit viewport
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {Element}
+     * @readonly
+     */
+    creditViewport: {
+        get: function () {
+            return this._creditViewport;
+        },
     },
-  },
 
-  /**
-   * Gets the scene.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {Scene}
-   * @readonly
-   */
-  scene: {
-    get: function () {
-      return this._scene;
+    /**
+     * Gets the scene.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {Scene}
+     * @readonly
+     */
+    scene: {
+        get: function () {
+            return this._scene;
+        },
     },
-  },
 
-  /**
-   * Gets the collection of image layers that will be rendered on the globe.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {ImageryLayerCollection}
-   * @readonly
-   */
-  imageryLayers: {
-    get: function () {
-      return this._scene.imageryLayers;
+    /**
+     * Gets the collection of image layers that will be rendered on the globe.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {ImageryLayerCollection}
+     * @readonly
+     */
+    imageryLayers: {
+        get: function () {
+            return this._scene.imageryLayers;
+        },
     },
-  },
 
-  /**
-   * The terrain provider providing surface geometry for the globe.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {TerrainProvider}
-   */
-  terrainProvider: {
-    get: function () {
-      return this._scene.terrainProvider;
+    /**
+     * The terrain provider providing surface geometry for the globe.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {TerrainProvider}
+     */
+    terrainProvider: {
+        get: function () {
+            return this._scene.terrainProvider;
+        },
+        set: function (terrainProvider) {
+            this._scene.terrainProvider = terrainProvider;
+        },
     },
-    set: function (terrainProvider) {
-      this._scene.terrainProvider = terrainProvider;
-    },
-  },
 
-  /**
-   * Manages the list of credits to display on screen and in the lightbox.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {CreditDisplay}
-   */
-  creditDisplay: {
-    get: function () {
-      return this._scene.frameState.creditDisplay;
+    /**
+     * Manages the list of credits to display on screen and in the lightbox.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {CreditDisplay}
+     */
+    creditDisplay: {
+        get: function () {
+            return this._scene.frameState.creditDisplay;
+        },
     },
-  },
 
-  /**
-   * Gets the display used for {@link DataSource} visualization.
-   * @memberof CesiumWidget.prototype
-   * @type {DataSourceDisplay}
-   * @readonly
-   */
-  dataSourceDisplay: {
-    get: function () {
-      return this._dataSourceDisplay;
+    /**
+     * Gets the display used for {@link DataSource} visualization.
+     * @memberof CesiumWidget.prototype
+     * @type {DataSourceDisplay}
+     * @readonly
+     */
+    dataSourceDisplay: {
+        get: function () {
+            return this._dataSourceDisplay;
+        },
     },
-  },
 
-  /**
-   * Gets the collection of entities not tied to a particular data source.
-   * This is a shortcut to [dataSourceDisplay.defaultDataSource.entities]{@link CesiumWidget#dataSourceDisplay}.
-   * @memberof CesiumWidget.prototype
-   * @type {EntityCollection}
-   * @readonly
-   */
-  entities: {
-    get: function () {
-      return this._dataSourceDisplay.defaultDataSource.entities;
+    /**
+     * Gets the collection of entities not tied to a particular data source.
+     * This is a shortcut to [dataSourceDisplay.defaultDataSource.entities]{@link CesiumWidget#dataSourceDisplay}.
+     * @memberof CesiumWidget.prototype
+     * @type {EntityCollection}
+     * @readonly
+     */
+    entities: {
+        get: function () {
+            return this._dataSourceDisplay.defaultDataSource.entities;
+        },
     },
-  },
 
-  /**
-   * Gets the set of {@link DataSource} instances to be visualized.
-   * @memberof CesiumWidget.prototype
-   * @type {DataSourceCollection}
-   * @readonly
-   */
-  dataSources: {
-    get: function () {
-      return this._dataSourceCollection;
+    /**
+     * Gets the set of {@link DataSource} instances to be visualized.
+     * @memberof CesiumWidget.prototype
+     * @type {DataSourceCollection}
+     * @readonly
+     */
+    dataSources: {
+        get: function () {
+            return this._dataSourceCollection;
+        },
     },
-  },
 
-  /**
-   * Gets the camera.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {Camera}
-   * @readonly
-   */
-  camera: {
-    get: function () {
-      return this._scene.camera;
+    /**
+     * Gets the camera.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {Camera}
+     * @readonly
+     */
+    camera: {
+        get: function () {
+            return this._scene.camera;
+        },
     },
-  },
 
-  /**
-   * Gets the default ellipsoid for the scene.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {Ellipsoid}
-   * @readonly
-   */
-  ellipsoid: {
-    get: function () {
-      return this._scene.ellipsoid;
+    /**
+     * Gets the default ellipsoid for the scene.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {Ellipsoid}
+     * @readonly
+     */
+    ellipsoid: {
+        get: function () {
+            return this._scene.ellipsoid;
+        },
     },
-  },
 
-  /**
-   * Gets the clock.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {Clock}
-   * @readonly
-   */
-  clock: {
-    get: function () {
-      return this._clock;
+    /**
+     * Gets the clock.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {Clock}
+     * @readonly
+     */
+    clock: {
+        get: function () {
+            return this._clock;
+        },
     },
-  },
 
-  /**
-   * Gets the screen space event handler.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {ScreenSpaceEventHandler}
-   * @readonly
-   */
-  screenSpaceEventHandler: {
-    get: function () {
-      return this._screenSpaceEventHandler;
+    /**
+     * Gets the screen space event handler.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {ScreenSpaceEventHandler}
+     * @readonly
+     */
+    screenSpaceEventHandler: {
+        get: function () {
+            return this._screenSpaceEventHandler;
+        },
     },
-  },
 
-  /**
-   * Gets or sets the target frame rate of the widget when <code>useDefaultRenderLoop</code>
-   * is true. If undefined, the browser's requestAnimationFrame implementation
-   * determines the frame rate.  If defined, this value must be greater than 0.  A value higher
-   * than the underlying requestAnimationFrame implementation will have no effect.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {number}
-   */
-  targetFrameRate: {
-    get: function () {
-      return this._targetFrameRate;
+    /**
+     * Gets or sets the target frame rate of the widget when <code>useDefaultRenderLoop</code>
+     * is true. If undefined, the browser's requestAnimationFrame implementation
+     * determines the frame rate.  If defined, this value must be greater than 0.  A value higher
+     * than the underlying requestAnimationFrame implementation will have no effect.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {number}
+     */
+    targetFrameRate: {
+        get: function () {
+            return this._targetFrameRate;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            if (value <= 0) {
+                throw new DeveloperError(
+                    "targetFrameRate must be greater than 0, or undefined.",
+                );
+            }
+            //>>includeEnd('debug');
+            this._targetFrameRate = value;
+        },
     },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      if (value <= 0) {
-        throw new DeveloperError(
-          "targetFrameRate must be greater than 0, or undefined.",
-        );
-      }
-      //>>includeEnd('debug');
-      this._targetFrameRate = value;
-    },
-  },
 
-  /**
-   * Gets or sets whether or not this widget should control the render loop.
-   * If true the widget will use requestAnimationFrame to
-   * perform rendering and resizing of the widget, as well as drive the
-   * simulation clock. If set to false, you must manually call the
-   * <code>resize</code>, <code>render</code> methods as part of a custom
-   * render loop.  If an error occurs during rendering, {@link Scene}'s
-   * <code>renderError</code> event will be raised and this property
-   * will be set to false.  It must be set back to true to continue rendering
-   * after the error.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {boolean}
-   */
-  useDefaultRenderLoop: {
-    get: function () {
-      return this._useDefaultRenderLoop;
+    /**
+     * Gets or sets whether or not this widget should control the render loop.
+     * If true the widget will use requestAnimationFrame to
+     * perform rendering and resizing of the widget, as well as drive the
+     * simulation clock. If set to false, you must manually call the
+     * <code>resize</code>, <code>render</code> methods as part of a custom
+     * render loop.  If an error occurs during rendering, {@link Scene}'s
+     * <code>renderError</code> event will be raised and this property
+     * will be set to false.  It must be set back to true to continue rendering
+     * after the error.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {boolean}
+     */
+    useDefaultRenderLoop: {
+        get: function () {
+            return this._useDefaultRenderLoop;
+        },
+        set: function (value) {
+            if (this._useDefaultRenderLoop !== value) {
+                this._useDefaultRenderLoop = value;
+                if (value && !this._renderLoopRunning) {
+                    startRenderLoop(this);
+                }
+            }
+        },
     },
-    set: function (value) {
-      if (this._useDefaultRenderLoop !== value) {
-        this._useDefaultRenderLoop = value;
-        if (value && !this._renderLoopRunning) {
-          startRenderLoop(this);
-        }
-      }
-    },
-  },
 
-  /**
-   * Gets or sets a scaling factor for rendering resolution.  Values less than 1.0 can improve
-   * performance on less powerful devices while values greater than 1.0 will render at a higher
-   * resolution and then scale down, resulting in improved visual fidelity.
-   * For example, if the widget is laid out at a size of 640x480, setting this value to 0.5
-   * will cause the scene to be rendered at 320x240 and then scaled up while setting
-   * it to 2.0 will cause the scene to be rendered at 1280x960 and then scaled down.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {number}
-   * @default 1.0
-   */
-  resolutionScale: {
-    get: function () {
-      return this._resolutionScale;
+    /**
+     * Gets or sets a scaling factor for rendering resolution.  Values less than 1.0 can improve
+     * performance on less powerful devices while values greater than 1.0 will render at a higher
+     * resolution and then scale down, resulting in improved visual fidelity.
+     * For example, if the widget is laid out at a size of 640x480, setting this value to 0.5
+     * will cause the scene to be rendered at 320x240 and then scaled up while setting
+     * it to 2.0 will cause the scene to be rendered at 1280x960 and then scaled down.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {number}
+     * @default 1.0
+     */
+    resolutionScale: {
+        get: function () {
+            return this._resolutionScale;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            if (value <= 0) {
+                throw new DeveloperError(
+                    "resolutionScale must be greater than 0.",
+                );
+            }
+            //>>includeEnd('debug');
+            if (this._resolutionScale !== value) {
+                this._resolutionScale = value;
+                this._forceResize = true;
+            }
+        },
     },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      if (value <= 0) {
-        throw new DeveloperError("resolutionScale must be greater than 0.");
-      }
-      //>>includeEnd('debug');
-      if (this._resolutionScale !== value) {
-        this._resolutionScale = value;
-        this._forceResize = true;
-      }
+
+    /**
+     * Boolean flag indicating if the browser's recommended resolution is used.
+     * If true, the browser's device pixel ratio is ignored and 1.0 is used instead,
+     * effectively rendering based on CSS pixels instead of device pixels. This can improve
+     * performance on less powerful devices that have high pixel density. When false, rendering
+     * will be in device pixels. {@link CesiumWidget#resolutionScale} will still take effect whether
+     * this flag is true or false.
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {boolean}
+     * @default true
+     */
+    useBrowserRecommendedResolution: {
+        get: function () {
+            return this._useBrowserRecommendedResolution;
+        },
+        set: function (value) {
+            if (this._useBrowserRecommendedResolution !== value) {
+                this._useBrowserRecommendedResolution = value;
+                this._forceResize = true;
+            }
+        },
     },
-  },
 
-  /**
-   * Boolean flag indicating if the browser's recommended resolution is used.
-   * If true, the browser's device pixel ratio is ignored and 1.0 is used instead,
-   * effectively rendering based on CSS pixels instead of device pixels. This can improve
-   * performance on less powerful devices that have high pixel density. When false, rendering
-   * will be in device pixels. {@link CesiumWidget#resolutionScale} will still take effect whether
-   * this flag is true or false.
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {boolean}
-   * @default true
-   */
-  useBrowserRecommendedResolution: {
-    get: function () {
-      return this._useBrowserRecommendedResolution;
+    /**
+     * Gets or sets whether or not data sources can temporarily pause
+     * animation in order to avoid showing an incomplete picture to the user.
+     * For example, if asynchronous primitives are being processed in the
+     * background, the clock will not advance until the geometry is ready.
+     *
+     * @memberof CesiumWidget.prototype
+     *
+     * @type {boolean}
+     */
+    allowDataSourcesToSuspendAnimation: {
+        get: function () {
+            return this._allowDataSourcesToSuspendAnimation;
+        },
+        set: function (value) {
+            this._allowDataSourcesToSuspendAnimation = value;
+        },
     },
-    set: function (value) {
-      if (this._useBrowserRecommendedResolution !== value) {
-        this._useBrowserRecommendedResolution = value;
-        this._forceResize = true;
-      }
+
+    /**
+     * Gets or sets the Entity instance currently being tracked by the camera.
+     * @memberof CesiumWidget.prototype
+     * @type {Entity | undefined}
+     */
+    trackedEntity: {
+        get: function () {
+            return this._trackedEntity;
+        },
+        set: function (value) {
+            if (this._trackedEntity !== value) {
+                this._trackedEntity = value;
+
+                //Cancel any pending zoom
+                cancelZoom(this);
+
+                const scene = this.scene;
+                const sceneMode = scene.mode;
+
+                //Stop tracking
+                if (!defined(value) || !defined(value.position)) {
+                    this._needTrackedEntityUpdate = false;
+                    if (
+                        sceneMode === SceneMode.COLUMBUS_VIEW ||
+                        sceneMode === SceneMode.SCENE2D
+                    ) {
+                        scene.screenSpaceCameraController.enableTranslate = true;
+                    }
+
+                    if (
+                        sceneMode === SceneMode.COLUMBUS_VIEW ||
+                        sceneMode === SceneMode.SCENE3D
+                    ) {
+                        scene.screenSpaceCameraController.enableTilt = true;
+                    }
+
+                    this._entityView = undefined;
+                    this.camera.lookAtTransform(Matrix4.IDENTITY);
+                } else {
+                    //We can't start tracking immediately, so we set a flag and start tracking
+                    //when the bounding sphere is ready (most likely next frame).
+                    this._needTrackedEntityUpdate = true;
+                }
+
+                this._trackedEntityChanged.raiseEvent(value);
+                this.scene.requestRender();
+            }
+        },
     },
-  },
 
-  /**
-   * Gets or sets whether or not data sources can temporarily pause
-   * animation in order to avoid showing an incomplete picture to the user.
-   * For example, if asynchronous primitives are being processed in the
-   * background, the clock will not advance until the geometry is ready.
-   *
-   * @memberof CesiumWidget.prototype
-   *
-   * @type {boolean}
-   */
-  allowDataSourcesToSuspendAnimation: {
-    get: function () {
-      return this._allowDataSourcesToSuspendAnimation;
+    /**
+     * Gets the event that is raised when the tracked entity changes.
+     * @memberof CesiumWidget.prototype
+     * @type {Event}
+     * @readonly
+     */
+    trackedEntityChanged: {
+        get: function () {
+            return this._trackedEntityChanged;
+        },
     },
-    set: function (value) {
-      this._allowDataSourcesToSuspendAnimation = value;
+
+    /**
+     * Gets or sets the data source to track with the widget's clock.
+     * @memberof CesiumWidget.prototype
+     * @type {DataSource}
+     */
+    clockTrackedDataSource: {
+        get: function () {
+            return this._clockTrackedDataSource;
+        },
+        set: function (value) {
+            if (this._clockTrackedDataSource !== value) {
+                this._clockTrackedDataSource = value;
+                trackDataSourceClock(this.clock, value);
+            }
+        },
     },
-  },
-
-  /**
-   * Gets or sets the Entity instance currently being tracked by the camera.
-   * @memberof CesiumWidget.prototype
-   * @type {Entity | undefined}
-   */
-  trackedEntity: {
-    get: function () {
-      return this._trackedEntity;
-    },
-    set: function (value) {
-      if (this._trackedEntity !== value) {
-        this._trackedEntity = value;
-
-        //Cancel any pending zoom
-        cancelZoom(this);
-
-        const scene = this.scene;
-        const sceneMode = scene.mode;
-
-        //Stop tracking
-        if (!defined(value) || !defined(value.position)) {
-          this._needTrackedEntityUpdate = false;
-          if (
-            sceneMode === SceneMode.COLUMBUS_VIEW ||
-            sceneMode === SceneMode.SCENE2D
-          ) {
-            scene.screenSpaceCameraController.enableTranslate = true;
-          }
-
-          if (
-            sceneMode === SceneMode.COLUMBUS_VIEW ||
-            sceneMode === SceneMode.SCENE3D
-          ) {
-            scene.screenSpaceCameraController.enableTilt = true;
-          }
-
-          this._entityView = undefined;
-          this.camera.lookAtTransform(Matrix4.IDENTITY);
-        } else {
-          //We can't start tracking immediately, so we set a flag and start tracking
-          //when the bounding sphere is ready (most likely next frame).
-          this._needTrackedEntityUpdate = true;
-        }
-
-        this._trackedEntityChanged.raiseEvent(value);
-        this.scene.requestRender();
-      }
-    },
-  },
-
-  /**
-   * Gets the event that is raised when the tracked entity changes.
-   * @memberof CesiumWidget.prototype
-   * @type {Event}
-   * @readonly
-   */
-  trackedEntityChanged: {
-    get: function () {
-      return this._trackedEntityChanged;
-    },
-  },
-
-  /**
-   * Gets or sets the data source to track with the widget's clock.
-   * @memberof CesiumWidget.prototype
-   * @type {DataSource}
-   */
-  clockTrackedDataSource: {
-    get: function () {
-      return this._clockTrackedDataSource;
-    },
-    set: function (value) {
-      if (this._clockTrackedDataSource !== value) {
-        this._clockTrackedDataSource = value;
-        trackDataSourceClock(this.clock, value);
-      }
-    },
-  },
 });
 
 /**
@@ -908,109 +922,111 @@ Object.defineProperties(CesiumWidget.prototype, {
  * @param {string} [error] The error to be displayed on the error panel.  This string is formatted using {@link formatError} and then displayed as text.
  */
 CesiumWidget.prototype.showErrorPanel = function (title, message, error) {
-  const element = this._element;
-  const overlay = document.createElement("div");
-  overlay.className = "cesium-widget-errorPanel";
+    const element = this._element;
+    const overlay = document.createElement("div");
+    overlay.className = "cesium-widget-errorPanel";
 
-  const content = document.createElement("div");
-  content.className = "cesium-widget-errorPanel-content";
-  overlay.appendChild(content);
+    const content = document.createElement("div");
+    content.className = "cesium-widget-errorPanel-content";
+    overlay.appendChild(content);
 
-  const errorHeader = document.createElement("div");
-  errorHeader.className = "cesium-widget-errorPanel-header";
-  errorHeader.appendChild(document.createTextNode(title));
-  content.appendChild(errorHeader);
+    const errorHeader = document.createElement("div");
+    errorHeader.className = "cesium-widget-errorPanel-header";
+    errorHeader.appendChild(document.createTextNode(title));
+    content.appendChild(errorHeader);
 
-  const errorPanelScroller = document.createElement("div");
-  errorPanelScroller.className = "cesium-widget-errorPanel-scroll";
-  content.appendChild(errorPanelScroller);
-  function resizeCallback() {
-    errorPanelScroller.style.maxHeight = `${Math.max(
-      Math.round(element.clientHeight * 0.9 - 100),
-      30,
-    )}px`;
-  }
-  resizeCallback();
-  if (defined(window.addEventListener)) {
-    window.addEventListener("resize", resizeCallback, false);
-  }
+    const errorPanelScroller = document.createElement("div");
+    errorPanelScroller.className = "cesium-widget-errorPanel-scroll";
+    content.appendChild(errorPanelScroller);
+    function resizeCallback() {
+        errorPanelScroller.style.maxHeight = `${Math.max(
+            Math.round(element.clientHeight * 0.9 - 100),
+            30,
+        )}px`;
+    }
+    resizeCallback();
+    if (defined(window.addEventListener)) {
+        window.addEventListener("resize", resizeCallback, false);
+    }
 
-  const hasMessage = defined(message);
-  const hasError = defined(error);
+    const hasMessage = defined(message);
+    const hasError = defined(error);
 
-  if (hasMessage || hasError) {
-    const errorMessage = document.createElement("div");
-    errorMessage.className = "cesium-widget-errorPanel-message";
-    errorPanelScroller.appendChild(errorMessage);
+    if (hasMessage || hasError) {
+        const errorMessage = document.createElement("div");
+        errorMessage.className = "cesium-widget-errorPanel-message";
+        errorPanelScroller.appendChild(errorMessage);
 
-    if (hasError) {
-      let errorDetails = formatError(error);
-      if (!hasMessage) {
-        if (typeof error === "string") {
-          error = new Error(error);
+        if (hasError) {
+            let errorDetails = formatError(error);
+            if (!hasMessage) {
+                if (typeof error === "string") {
+                    error = new Error(error);
+                }
+
+                message = formatError({
+                    name: error.name,
+                    message: error.message,
+                });
+                errorDetails = error.stack;
+            }
+
+            //IE8 does not have a console object unless the dev tools are open.
+            if (typeof console !== "undefined") {
+                console.error(`${title}\n${message}\n${errorDetails}`);
+            }
+
+            const errorMessageDetails = document.createElement("div");
+            errorMessageDetails.className =
+                "cesium-widget-errorPanel-message-details collapsed";
+
+            const moreDetails = document.createElement("span");
+            moreDetails.className = "cesium-widget-errorPanel-more-details";
+            moreDetails.appendChild(document.createTextNode("See more..."));
+            errorMessageDetails.appendChild(moreDetails);
+
+            errorMessageDetails.onclick = function (e) {
+                errorMessageDetails.removeChild(moreDetails);
+                errorMessageDetails.appendChild(
+                    document.createTextNode(errorDetails),
+                );
+                errorMessageDetails.className =
+                    "cesium-widget-errorPanel-message-details";
+                content.className = "cesium-widget-errorPanel-content expanded";
+                errorMessageDetails.onclick = undefined;
+            };
+
+            errorPanelScroller.appendChild(errorMessageDetails);
         }
 
-        message = formatError({
-          name: error.name,
-          message: error.message,
-        });
-        errorDetails = error.stack;
-      }
-
-      //IE8 does not have a console object unless the dev tools are open.
-      if (typeof console !== "undefined") {
-        console.error(`${title}\n${message}\n${errorDetails}`);
-      }
-
-      const errorMessageDetails = document.createElement("div");
-      errorMessageDetails.className =
-        "cesium-widget-errorPanel-message-details collapsed";
-
-      const moreDetails = document.createElement("span");
-      moreDetails.className = "cesium-widget-errorPanel-more-details";
-      moreDetails.appendChild(document.createTextNode("See more..."));
-      errorMessageDetails.appendChild(moreDetails);
-
-      errorMessageDetails.onclick = function (e) {
-        errorMessageDetails.removeChild(moreDetails);
-        errorMessageDetails.appendChild(document.createTextNode(errorDetails));
-        errorMessageDetails.className =
-          "cesium-widget-errorPanel-message-details";
-        content.className = "cesium-widget-errorPanel-content expanded";
-        errorMessageDetails.onclick = undefined;
-      };
-
-      errorPanelScroller.appendChild(errorMessageDetails);
+        errorMessage.innerHTML = `<p>${message}</p>`;
     }
 
-    errorMessage.innerHTML = `<p>${message}</p>`;
-  }
+    const buttonPanel = document.createElement("div");
+    buttonPanel.className = "cesium-widget-errorPanel-buttonPanel";
+    content.appendChild(buttonPanel);
 
-  const buttonPanel = document.createElement("div");
-  buttonPanel.className = "cesium-widget-errorPanel-buttonPanel";
-  content.appendChild(buttonPanel);
+    const okButton = document.createElement("button");
+    okButton.setAttribute("type", "button");
+    okButton.className = "cesium-button";
+    okButton.appendChild(document.createTextNode("OK"));
+    okButton.onclick = function () {
+        if (defined(resizeCallback) && defined(window.removeEventListener)) {
+            window.removeEventListener("resize", resizeCallback, false);
+        }
+        element.removeChild(overlay);
+    };
 
-  const okButton = document.createElement("button");
-  okButton.setAttribute("type", "button");
-  okButton.className = "cesium-button";
-  okButton.appendChild(document.createTextNode("OK"));
-  okButton.onclick = function () {
-    if (defined(resizeCallback) && defined(window.removeEventListener)) {
-      window.removeEventListener("resize", resizeCallback, false);
-    }
-    element.removeChild(overlay);
-  };
+    buttonPanel.appendChild(okButton);
 
-  buttonPanel.appendChild(okButton);
-
-  element.appendChild(overlay);
+    element.appendChild(overlay);
 };
 
 /**
  * @returns {boolean} true if the object has been destroyed, false otherwise.
  */
 CesiumWidget.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -1018,30 +1034,33 @@ CesiumWidget.prototype.isDestroyed = function () {
  * removing the widget from layout.
  */
 CesiumWidget.prototype.destroy = function () {
-  // Unsubscribe from data sources
-  const dataSources = this.dataSources;
-  const dataSourceLength = dataSources.length;
-  for (let i = 0; i < dataSourceLength; i++) {
-    this._dataSourceRemoved(dataSources, dataSources.get(i));
-  }
-  this._dataSourceRemoved(undefined, this._dataSourceDisplay.defaultDataSource);
+    // Unsubscribe from data sources
+    const dataSources = this.dataSources;
+    const dataSourceLength = dataSources.length;
+    for (let i = 0; i < dataSourceLength; i++) {
+        this._dataSourceRemoved(dataSources, dataSources.get(i));
+    }
+    this._dataSourceRemoved(
+        undefined,
+        this._dataSourceDisplay.defaultDataSource,
+    );
 
-  this._dataSourceDisplay = this._dataSourceDisplay.destroy();
+    this._dataSourceDisplay = this._dataSourceDisplay.destroy();
 
-  if (defined(this._scene)) {
-    this._scene.renderError.removeEventListener(this._onRenderError);
-    this._scene = this._scene.destroy();
-  }
-  this._container.removeChild(this._element);
-  this._creditContainer.removeChild(this._innerCreditContainer);
+    if (defined(this._scene)) {
+        this._scene.renderError.removeEventListener(this._onRenderError);
+        this._scene = this._scene.destroy();
+    }
+    this._container.removeChild(this._element);
+    this._creditContainer.removeChild(this._innerCreditContainer);
 
-  this._eventHelper.removeAll();
+    this._eventHelper.removeAll();
 
-  if (this._destroyDataSourceCollection) {
-    this._dataSourceCollection = this._dataSourceCollection.destroy();
-  }
+    if (this._destroyDataSourceCollection) {
+        this._dataSourceCollection = this._dataSourceCollection.destroy();
+    }
 
-  destroyObject(this);
+    destroyObject(this);
 };
 
 /**
@@ -1050,21 +1069,21 @@ CesiumWidget.prototype.destroy = function () {
  * <code>useDefaultRenderLoop</code> is set to false.
  */
 CesiumWidget.prototype.resize = function () {
-  const canvas = this._canvas;
-  if (
-    !this._forceResize &&
-    this._canvasClientWidth === canvas.clientWidth &&
-    this._canvasClientHeight === canvas.clientHeight &&
-    this._lastDevicePixelRatio === window.devicePixelRatio
-  ) {
-    return;
-  }
-  this._forceResize = false;
+    const canvas = this._canvas;
+    if (
+        !this._forceResize &&
+        this._canvasClientWidth === canvas.clientWidth &&
+        this._canvasClientHeight === canvas.clientHeight &&
+        this._lastDevicePixelRatio === window.devicePixelRatio
+    ) {
+        return;
+    }
+    this._forceResize = false;
 
-  configureCanvasSize(this);
-  configureCameraFrustum(this);
+    configureCanvasSize(this);
+    configureCameraFrustum(this);
 
-  this._scene.requestRender();
+    this._scene.requestRender();
 };
 
 /**
@@ -1072,56 +1091,57 @@ CesiumWidget.prototype.resize = function () {
  * unless <code>useDefaultRenderLoop</code> is set to false;
  */
 CesiumWidget.prototype.render = function () {
-  if (this._canRender) {
-    this._scene.initializeFrame();
-    const currentTime = this._clock.tick();
-    this._scene.render(currentTime);
-  } else {
-    this._clock.tick();
-  }
+    if (this._canRender) {
+        this._scene.initializeFrame();
+        const currentTime = this._clock.tick();
+        this._scene.render(currentTime);
+    } else {
+        this._clock.tick();
+    }
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._dataSourceAdded = function (
-  dataSourceCollection,
-  dataSource,
+    dataSourceCollection,
+    dataSource,
 ) {
-  const entityCollection = dataSource.entities;
-  entityCollection.collectionChanged.addEventListener(
-    CesiumWidget.prototype._onEntityCollectionChanged,
-    this,
-  );
+    const entityCollection = dataSource.entities;
+    entityCollection.collectionChanged.addEventListener(
+        CesiumWidget.prototype._onEntityCollectionChanged,
+        this,
+    );
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._dataSourceRemoved = function (
-  dataSourceCollection,
-  dataSource,
+    dataSourceCollection,
+    dataSource,
 ) {
-  const entityCollection = dataSource.entities;
-  entityCollection.collectionChanged.removeEventListener(
-    CesiumWidget.prototype._onEntityCollectionChanged,
-    this,
-  );
+    const entityCollection = dataSource.entities;
+    entityCollection.collectionChanged.removeEventListener(
+        CesiumWidget.prototype._onEntityCollectionChanged,
+        this,
+    );
 
-  if (defined(this.trackedEntity)) {
-    if (
-      entityCollection.getById(this.trackedEntity.id) === this.trackedEntity
-    ) {
-      this.trackedEntity = undefined;
+    if (defined(this.trackedEntity)) {
+        if (
+            entityCollection.getById(this.trackedEntity.id) ===
+            this.trackedEntity
+        ) {
+            this.trackedEntity = undefined;
+        }
     }
-  }
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._updateCanAnimate = function (isUpdated) {
-  this._clock.canAnimate = isUpdated;
+    this._clock.canAnimate = isUpdated;
 };
 
 const boundingSphereScratch = new BoundingSphere();
@@ -1130,100 +1150,100 @@ const boundingSphereScratch = new BoundingSphere();
  * @private
  */
 CesiumWidget.prototype._onTick = function (clock) {
-  const time = clock.currentTime;
+    const time = clock.currentTime;
 
-  const isUpdated = this._dataSourceDisplay.update(time);
-  if (this._allowDataSourcesToSuspendAnimation) {
-    this._canAnimateUpdateCallback(isUpdated);
-  }
-
-  const entityView = this._entityView;
-  if (defined(entityView)) {
-    const trackedEntity = this._trackedEntity;
-    const trackedState = this._dataSourceDisplay.getBoundingSphere(
-      trackedEntity,
-      false,
-      entityView.boundingSphere ?? boundingSphereScratch,
-    );
-    if (trackedState === BoundingSphereState.DONE) {
-      entityView.update(time);
+    const isUpdated = this._dataSourceDisplay.update(time);
+    if (this._allowDataSourcesToSuspendAnimation) {
+        this._canAnimateUpdateCallback(isUpdated);
     }
-  }
+
+    const entityView = this._entityView;
+    if (defined(entityView)) {
+        const trackedEntity = this._trackedEntity;
+        const trackedState = this._dataSourceDisplay.getBoundingSphere(
+            trackedEntity,
+            false,
+            entityView.boundingSphere ?? boundingSphereScratch,
+        );
+        if (trackedState === BoundingSphereState.DONE) {
+            entityView.update(time);
+        }
+    }
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._onEntityCollectionChanged = function (
-  collection,
-  added,
-  removed,
+    collection,
+    added,
+    removed,
 ) {
-  const length = removed.length;
-  for (let i = 0; i < length; i++) {
-    const removedObject = removed[i];
-    if (this.trackedEntity === removedObject) {
-      this.trackedEntity = undefined;
+    const length = removed.length;
+    for (let i = 0; i < length; i++) {
+        const removedObject = removed[i];
+        if (this.trackedEntity === removedObject) {
+            this.trackedEntity = undefined;
+        }
     }
-  }
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._clearTrackedObject = function () {
-  this.trackedEntity = undefined;
+    this.trackedEntity = undefined;
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._onDataSourceChanged = function (dataSource) {
-  if (this.clockTrackedDataSource === dataSource) {
-    trackDataSourceClock(this.clock, dataSource);
-  }
+    if (this.clockTrackedDataSource === dataSource) {
+        trackDataSourceClock(this.clock, dataSource);
+    }
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._onDataSourceAdded = function (
-  dataSourceCollection,
-  dataSource,
+    dataSourceCollection,
+    dataSource,
 ) {
-  if (this._automaticallyTrackDataSourceClocks) {
-    this.clockTrackedDataSource = dataSource;
-  }
-  const id = dataSource.entities.id;
-  const removalFunc = this._eventHelper.add(
-    dataSource.changedEvent,
-    CesiumWidget.prototype._onDataSourceChanged,
-    this,
-  );
-  this._dataSourceChangedListeners[id] = removalFunc;
+    if (this._automaticallyTrackDataSourceClocks) {
+        this.clockTrackedDataSource = dataSource;
+    }
+    const id = dataSource.entities.id;
+    const removalFunc = this._eventHelper.add(
+        dataSource.changedEvent,
+        CesiumWidget.prototype._onDataSourceChanged,
+        this,
+    );
+    this._dataSourceChangedListeners[id] = removalFunc;
 };
 
 /**
  * @private
  */
 CesiumWidget.prototype._onDataSourceRemoved = function (
-  dataSourceCollection,
-  dataSource,
+    dataSourceCollection,
+    dataSource,
 ) {
-  const resetClock = this.clockTrackedDataSource === dataSource;
-  const id = dataSource.entities.id;
-  this._dataSourceChangedListeners[id]();
-  this._dataSourceChangedListeners[id] = undefined;
-  if (resetClock) {
-    const numDataSources = dataSourceCollection.length;
-    if (this._automaticallyTrackDataSourceClocks && numDataSources > 0) {
-      this.clockTrackedDataSource = dataSourceCollection.get(
-        numDataSources - 1,
-      );
-    } else {
-      this.clockTrackedDataSource = undefined;
+    const resetClock = this.clockTrackedDataSource === dataSource;
+    const id = dataSource.entities.id;
+    this._dataSourceChangedListeners[id]();
+    this._dataSourceChangedListeners[id] = undefined;
+    if (resetClock) {
+        const numDataSources = dataSourceCollection.length;
+        if (this._automaticallyTrackDataSourceClocks && numDataSources > 0) {
+            this.clockTrackedDataSource = dataSourceCollection.get(
+                numDataSources - 1,
+            );
+        } else {
+            this.clockTrackedDataSource = undefined;
+        }
     }
-  }
 };
 
 /**
@@ -1246,10 +1266,10 @@ CesiumWidget.prototype._onDataSourceRemoved = function (
  * @returns {Promise<boolean>} A Promise that resolves to true if the zoom was successful or false if the target is not currently visualized in the scene or the zoom was cancelled.
  */
 CesiumWidget.prototype.zoomTo = function (target, offset) {
-  const options = {
-    offset: offset,
-  };
-  return zoomToOrFly(this, target, options, false);
+    const options = {
+        offset: offset,
+    };
+    return zoomToOrFly(this, target, options, false);
 };
 
 /**
@@ -1275,332 +1295,340 @@ CesiumWidget.prototype.zoomTo = function (target, offset) {
  * @returns {Promise<boolean>} A Promise that resolves to true if the flight was successful or false if the target is not currently visualized in the scene or the flight was cancelled. //TODO: Cleanup entity mentions
  */
 CesiumWidget.prototype.flyTo = function (target, options) {
-  return zoomToOrFly(this, target, options, true);
+    return zoomToOrFly(this, target, options, true);
 };
 
 function zoomToOrFly(that, zoomTarget, options, isFlight) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(zoomTarget)) {
-    throw new DeveloperError("zoomTarget is required.");
-  }
-  //>>includeEnd('debug');
-
-  cancelZoom(that);
-
-  //We can't actually perform the zoom until all visualization is ready and
-  //bounding spheres have been computed.  Therefore we create and return
-  //a deferred which will be resolved as part of the post-render step in the
-  //frame that actually performs the zoom.
-  const zoomPromise = new Promise((resolve) => {
-    that._completeZoom = function (value) {
-      resolve(value);
-    };
-  });
-  that._zoomPromise = zoomPromise;
-  that._zoomIsFlight = isFlight;
-  that._zoomOptions = options;
-
-  Promise.resolve(zoomTarget).then(function (zoomTarget) {
-    //Only perform the zoom if it wasn't cancelled before the promise resolved.
-    if (that._zoomPromise !== zoomPromise) {
-      return;
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(zoomTarget)) {
+        throw new DeveloperError("zoomTarget is required.");
     }
+    //>>includeEnd('debug');
 
-    //If the zoom target is a rectangular imagery in an ImageLayer
-    if (zoomTarget instanceof ImageryLayer) {
-      let rectanglePromise;
+    cancelZoom(that);
 
-      if (defined(zoomTarget.imageryProvider)) {
-        rectanglePromise = Promise.resolve(zoomTarget.getImageryRectangle());
-      } else {
-        rectanglePromise = new Promise((resolve) => {
-          const removeListener = zoomTarget.readyEvent.addEventListener(() => {
-            removeListener();
-            resolve(zoomTarget.getImageryRectangle());
-          });
-        });
-      }
-      rectanglePromise
-        .then(function (rectangle) {
-          return computeFlyToLocationForRectangle(rectangle, that.scene);
-        })
-        .then(function (position) {
-          //Only perform the zoom if it wasn't cancelled before the promise was resolved
-          if (that._zoomPromise === zoomPromise) {
-            that._zoomTarget = position;
-          }
-        });
-      return;
-    }
+    //We can't actually perform the zoom until all visualization is ready and
+    //bounding spheres have been computed.  Therefore we create and return
+    //a deferred which will be resolved as part of the post-render step in the
+    //frame that actually performs the zoom.
+    const zoomPromise = new Promise((resolve) => {
+        that._completeZoom = function (value) {
+            resolve(value);
+        };
+    });
+    that._zoomPromise = zoomPromise;
+    that._zoomIsFlight = isFlight;
+    that._zoomOptions = options;
 
-    if (
-      zoomTarget instanceof Cesium3DTileset ||
-      zoomTarget instanceof TimeDynamicPointCloud ||
-      zoomTarget instanceof VoxelPrimitive
-    ) {
-      that._zoomTarget = zoomTarget;
-      return;
-    }
-
-    //If the zoom target is a data source, and it's in the middle of loading, wait for it to finish loading.
-    if (zoomTarget.isLoading && defined(zoomTarget.loadingEvent)) {
-      const removeEvent = zoomTarget.loadingEvent.addEventListener(function () {
-        removeEvent();
-
-        //Only perform the zoom if it wasn't cancelled before the data source finished.
-        if (that._zoomPromise === zoomPromise) {
-          that._zoomTarget = zoomTarget.entities.values.slice(0);
+    Promise.resolve(zoomTarget).then(function (zoomTarget) {
+        //Only perform the zoom if it wasn't cancelled before the promise resolved.
+        if (that._zoomPromise !== zoomPromise) {
+            return;
         }
-      });
-      return;
-    }
 
-    //Zoom target is already an array, just copy it and return.
-    if (Array.isArray(zoomTarget)) {
-      that._zoomTarget = zoomTarget.slice(0);
-      return;
-    }
+        //If the zoom target is a rectangular imagery in an ImageLayer
+        if (zoomTarget instanceof ImageryLayer) {
+            let rectanglePromise;
 
-    //If zoomTarget is an EntityCollection, this will retrieve the array
-    zoomTarget = zoomTarget.values ?? zoomTarget;
+            if (defined(zoomTarget.imageryProvider)) {
+                rectanglePromise = Promise.resolve(
+                    zoomTarget.getImageryRectangle(),
+                );
+            } else {
+                rectanglePromise = new Promise((resolve) => {
+                    const removeListener =
+                        zoomTarget.readyEvent.addEventListener(() => {
+                            removeListener();
+                            resolve(zoomTarget.getImageryRectangle());
+                        });
+                });
+            }
+            rectanglePromise
+                .then(function (rectangle) {
+                    return computeFlyToLocationForRectangle(
+                        rectangle,
+                        that.scene,
+                    );
+                })
+                .then(function (position) {
+                    //Only perform the zoom if it wasn't cancelled before the promise was resolved
+                    if (that._zoomPromise === zoomPromise) {
+                        that._zoomTarget = position;
+                    }
+                });
+            return;
+        }
 
-    //If zoomTarget is a DataSource, this will retrieve the array.
-    if (defined(zoomTarget.entities)) {
-      zoomTarget = zoomTarget.entities.values;
-    }
+        if (
+            zoomTarget instanceof Cesium3DTileset ||
+            zoomTarget instanceof TimeDynamicPointCloud ||
+            zoomTarget instanceof VoxelPrimitive
+        ) {
+            that._zoomTarget = zoomTarget;
+            return;
+        }
 
-    //Zoom target is already an array, just copy it and return.
-    if (Array.isArray(zoomTarget)) {
-      that._zoomTarget = zoomTarget.slice(0);
-    } else {
-      //Single entity
-      that._zoomTarget = [zoomTarget];
-    }
-  });
+        //If the zoom target is a data source, and it's in the middle of loading, wait for it to finish loading.
+        if (zoomTarget.isLoading && defined(zoomTarget.loadingEvent)) {
+            const removeEvent = zoomTarget.loadingEvent.addEventListener(
+                function () {
+                    removeEvent();
 
-  that.scene.requestRender();
-  return zoomPromise;
+                    //Only perform the zoom if it wasn't cancelled before the data source finished.
+                    if (that._zoomPromise === zoomPromise) {
+                        that._zoomTarget = zoomTarget.entities.values.slice(0);
+                    }
+                },
+            );
+            return;
+        }
+
+        //Zoom target is already an array, just copy it and return.
+        if (Array.isArray(zoomTarget)) {
+            that._zoomTarget = zoomTarget.slice(0);
+            return;
+        }
+
+        //If zoomTarget is an EntityCollection, this will retrieve the array
+        zoomTarget = zoomTarget.values ?? zoomTarget;
+
+        //If zoomTarget is a DataSource, this will retrieve the array.
+        if (defined(zoomTarget.entities)) {
+            zoomTarget = zoomTarget.entities.values;
+        }
+
+        //Zoom target is already an array, just copy it and return.
+        if (Array.isArray(zoomTarget)) {
+            that._zoomTarget = zoomTarget.slice(0);
+        } else {
+            //Single entity
+            that._zoomTarget = [zoomTarget];
+        }
+    });
+
+    that.scene.requestRender();
+    return zoomPromise;
 }
 
 function clearZoom(widget) {
-  widget._zoomPromise = undefined;
-  widget._zoomTarget = undefined;
-  widget._zoomOptions = undefined;
+    widget._zoomPromise = undefined;
+    widget._zoomTarget = undefined;
+    widget._zoomOptions = undefined;
 }
 
 function cancelZoom(widget) {
-  const zoomPromise = widget._zoomPromise;
-  if (defined(zoomPromise)) {
-    clearZoom(widget);
-    widget._completeZoom(false);
-  }
+    const zoomPromise = widget._zoomPromise;
+    if (defined(zoomPromise)) {
+        clearZoom(widget);
+        widget._completeZoom(false);
+    }
 }
 
 /**
  * @private
  */
 CesiumWidget.prototype._postRender = function () {
-  updateZoomTarget(this);
-  updateTrackedEntity(this);
+    updateZoomTarget(this);
+    updateTrackedEntity(this);
 };
 
 const zoomTargetBoundingSphereScratch = new BoundingSphere();
 
 function updateZoomTarget(widget) {
-  const target = widget._zoomTarget;
-  if (!defined(target) || widget.scene.mode === SceneMode.MORPHING) {
-    return;
-  }
-
-  const scene = widget.scene;
-  const camera = scene.camera;
-  const zoomOptions = widget._zoomOptions ?? {};
-  let options;
-  function zoomToBoundingSphere(boundingSphere) {
-    // If offset was originally undefined then give it base value instead of empty object
-    if (!defined(zoomOptions.offset)) {
-      zoomOptions.offset = new HeadingPitchRange(
-        0.0,
-        -0.5,
-        boundingSphere.radius,
-      );
+    const target = widget._zoomTarget;
+    if (!defined(target) || widget.scene.mode === SceneMode.MORPHING) {
+        return;
     }
 
-    options = {
-      offset: zoomOptions.offset,
-      duration: zoomOptions.duration,
-      maximumHeight: zoomOptions.maximumHeight,
-      complete: function () {
-        widget._completeZoom(true);
-      },
-      cancel: function () {
-        widget._completeZoom(false);
-      },
-    };
+    const scene = widget.scene;
+    const camera = scene.camera;
+    const zoomOptions = widget._zoomOptions ?? {};
+    let options;
+    function zoomToBoundingSphere(boundingSphere) {
+        // If offset was originally undefined then give it base value instead of empty object
+        if (!defined(zoomOptions.offset)) {
+            zoomOptions.offset = new HeadingPitchRange(
+                0.0,
+                -0.5,
+                boundingSphere.radius,
+            );
+        }
 
-    if (widget._zoomIsFlight) {
-      camera.flyToBoundingSphere(target.boundingSphere, options);
+        options = {
+            offset: zoomOptions.offset,
+            duration: zoomOptions.duration,
+            maximumHeight: zoomOptions.maximumHeight,
+            complete: function () {
+                widget._completeZoom(true);
+            },
+            cancel: function () {
+                widget._completeZoom(false);
+            },
+        };
+
+        if (widget._zoomIsFlight) {
+            camera.flyToBoundingSphere(target.boundingSphere, options);
+        } else {
+            camera.viewBoundingSphere(boundingSphere, zoomOptions.offset);
+            camera.lookAtTransform(Matrix4.IDENTITY);
+
+            // Finish the promise
+            widget._completeZoom(true);
+        }
+
+        clearZoom(widget);
+    }
+
+    if (target instanceof TimeDynamicPointCloud) {
+        if (defined(target.boundingSphere)) {
+            zoomToBoundingSphere(target.boundingSphere);
+            return;
+        }
+
+        // Otherwise, the first "frame" needs to have been rendered
+        const removeEventListener = target.frameChanged.addEventListener(
+            function (timeDynamicPointCloud) {
+                zoomToBoundingSphere(timeDynamicPointCloud.boundingSphere);
+                removeEventListener();
+            },
+        );
+        return;
+    }
+
+    if (target instanceof Cesium3DTileset || target instanceof VoxelPrimitive) {
+        zoomToBoundingSphere(target.boundingSphere);
+        return;
+    }
+
+    // If zoomTarget was an ImageryLayer
+    if (target instanceof Cartographic) {
+        options = {
+            destination: scene.ellipsoid.cartographicToCartesian(target),
+            duration: zoomOptions.duration,
+            maximumHeight: zoomOptions.maximumHeight,
+            complete: function () {
+                widget._completeZoom(true);
+            },
+            cancel: function () {
+                widget._completeZoom(false);
+            },
+        };
+
+        if (widget._zoomIsFlight) {
+            camera.flyTo(options);
+        } else {
+            camera.setView(options);
+            widget._completeZoom(true);
+        }
+        clearZoom(widget);
+        return;
+    }
+
+    const entities = target;
+
+    const boundingSpheres = [];
+    for (let i = 0, len = entities.length; i < len; i++) {
+        const state = widget._dataSourceDisplay.getBoundingSphere(
+            entities[i],
+            false,
+            zoomTargetBoundingSphereScratch,
+        );
+
+        if (state === BoundingSphereState.PENDING) {
+            return;
+        } else if (state !== BoundingSphereState.FAILED) {
+            boundingSpheres.push(
+                BoundingSphere.clone(zoomTargetBoundingSphereScratch),
+            );
+        }
+    }
+
+    if (boundingSpheres.length === 0) {
+        cancelZoom(widget);
+        return;
+    }
+
+    // Stop tracking the current entity.
+    widget.trackedEntity = undefined;
+
+    const boundingSphere = BoundingSphere.fromBoundingSpheres(boundingSpheres);
+
+    if (!widget._zoomIsFlight) {
+        camera.viewBoundingSphere(boundingSphere, zoomOptions.offset);
+        camera.lookAtTransform(Matrix4.IDENTITY);
+        clearZoom(widget);
+        widget._completeZoom(true);
     } else {
-      camera.viewBoundingSphere(boundingSphere, zoomOptions.offset);
-      camera.lookAtTransform(Matrix4.IDENTITY);
-
-      // Finish the promise
-      widget._completeZoom(true);
+        clearZoom(widget);
+        camera.flyToBoundingSphere(boundingSphere, {
+            duration: zoomOptions.duration,
+            maximumHeight: zoomOptions.maximumHeight,
+            complete: function () {
+                widget._completeZoom(true);
+            },
+            cancel: function () {
+                widget._completeZoom(false);
+            },
+            offset: zoomOptions.offset,
+        });
     }
-
-    clearZoom(widget);
-  }
-
-  if (target instanceof TimeDynamicPointCloud) {
-    if (defined(target.boundingSphere)) {
-      zoomToBoundingSphere(target.boundingSphere);
-      return;
-    }
-
-    // Otherwise, the first "frame" needs to have been rendered
-    const removeEventListener = target.frameChanged.addEventListener(
-      function (timeDynamicPointCloud) {
-        zoomToBoundingSphere(timeDynamicPointCloud.boundingSphere);
-        removeEventListener();
-      },
-    );
-    return;
-  }
-
-  if (target instanceof Cesium3DTileset || target instanceof VoxelPrimitive) {
-    zoomToBoundingSphere(target.boundingSphere);
-    return;
-  }
-
-  // If zoomTarget was an ImageryLayer
-  if (target instanceof Cartographic) {
-    options = {
-      destination: scene.ellipsoid.cartographicToCartesian(target),
-      duration: zoomOptions.duration,
-      maximumHeight: zoomOptions.maximumHeight,
-      complete: function () {
-        widget._completeZoom(true);
-      },
-      cancel: function () {
-        widget._completeZoom(false);
-      },
-    };
-
-    if (widget._zoomIsFlight) {
-      camera.flyTo(options);
-    } else {
-      camera.setView(options);
-      widget._completeZoom(true);
-    }
-    clearZoom(widget);
-    return;
-  }
-
-  const entities = target;
-
-  const boundingSpheres = [];
-  for (let i = 0, len = entities.length; i < len; i++) {
-    const state = widget._dataSourceDisplay.getBoundingSphere(
-      entities[i],
-      false,
-      zoomTargetBoundingSphereScratch,
-    );
-
-    if (state === BoundingSphereState.PENDING) {
-      return;
-    } else if (state !== BoundingSphereState.FAILED) {
-      boundingSpheres.push(
-        BoundingSphere.clone(zoomTargetBoundingSphereScratch),
-      );
-    }
-  }
-
-  if (boundingSpheres.length === 0) {
-    cancelZoom(widget);
-    return;
-  }
-
-  // Stop tracking the current entity.
-  widget.trackedEntity = undefined;
-
-  const boundingSphere = BoundingSphere.fromBoundingSpheres(boundingSpheres);
-
-  if (!widget._zoomIsFlight) {
-    camera.viewBoundingSphere(boundingSphere, zoomOptions.offset);
-    camera.lookAtTransform(Matrix4.IDENTITY);
-    clearZoom(widget);
-    widget._completeZoom(true);
-  } else {
-    clearZoom(widget);
-    camera.flyToBoundingSphere(boundingSphere, {
-      duration: zoomOptions.duration,
-      maximumHeight: zoomOptions.maximumHeight,
-      complete: function () {
-        widget._completeZoom(true);
-      },
-      cancel: function () {
-        widget._completeZoom(false);
-      },
-      offset: zoomOptions.offset,
-    });
-  }
 }
 
 const trackedEntityBoundingSphereScratch = new BoundingSphere();
 
 function updateTrackedEntity(widget) {
-  if (!widget._needTrackedEntityUpdate) {
-    return;
-  }
+    if (!widget._needTrackedEntityUpdate) {
+        return;
+    }
 
-  const trackedEntity = widget._trackedEntity;
-  const currentTime = widget.clock.currentTime;
+    const trackedEntity = widget._trackedEntity;
+    const currentTime = widget.clock.currentTime;
 
-  //Verify we have a current position at this time. This is only triggered if a position
-  //has become undefined after trackedEntity is set but before the boundingSphere has been
-  //computed. In this case, we will track the entity once it comes back into existence.
-  const currentPosition = Property.getValueOrUndefined(
-    trackedEntity.position,
-    currentTime,
-  );
+    //Verify we have a current position at this time. This is only triggered if a position
+    //has become undefined after trackedEntity is set but before the boundingSphere has been
+    //computed. In this case, we will track the entity once it comes back into existence.
+    const currentPosition = Property.getValueOrUndefined(
+        trackedEntity.position,
+        currentTime,
+    );
 
-  if (!defined(currentPosition)) {
-    return;
-  }
+    if (!defined(currentPosition)) {
+        return;
+    }
 
-  const scene = widget.scene;
+    const scene = widget.scene;
 
-  const state = widget._dataSourceDisplay.getBoundingSphere(
-    trackedEntity,
-    false,
-    trackedEntityBoundingSphereScratch,
-  );
-  if (state === BoundingSphereState.PENDING) {
-    return;
-  }
+    const state = widget._dataSourceDisplay.getBoundingSphere(
+        trackedEntity,
+        false,
+        trackedEntityBoundingSphereScratch,
+    );
+    if (state === BoundingSphereState.PENDING) {
+        return;
+    }
 
-  const sceneMode = scene.mode;
-  if (
-    sceneMode === SceneMode.COLUMBUS_VIEW ||
-    sceneMode === SceneMode.SCENE2D
-  ) {
-    scene.screenSpaceCameraController.enableTranslate = false;
-  }
+    const sceneMode = scene.mode;
+    if (
+        sceneMode === SceneMode.COLUMBUS_VIEW ||
+        sceneMode === SceneMode.SCENE2D
+    ) {
+        scene.screenSpaceCameraController.enableTranslate = false;
+    }
 
-  if (
-    sceneMode === SceneMode.COLUMBUS_VIEW ||
-    sceneMode === SceneMode.SCENE3D
-  ) {
-    scene.screenSpaceCameraController.enableTilt = false;
-  }
+    if (
+        sceneMode === SceneMode.COLUMBUS_VIEW ||
+        sceneMode === SceneMode.SCENE3D
+    ) {
+        scene.screenSpaceCameraController.enableTilt = false;
+    }
 
-  const bs =
-    state !== BoundingSphereState.FAILED
-      ? trackedEntityBoundingSphereScratch
-      : undefined;
-  widget._entityView = new EntityView(trackedEntity, scene, scene.ellipsoid);
-  widget._entityView.update(currentTime, bs);
-  widget._needTrackedEntityUpdate = false;
+    const bs =
+        state !== BoundingSphereState.FAILED
+            ? trackedEntityBoundingSphereScratch
+            : undefined;
+    widget._entityView = new EntityView(trackedEntity, scene, scene.ellipsoid);
+    widget._entityView.update(currentTime, bs);
+    widget._needTrackedEntityUpdate = false;
 }
 
 export default CesiumWidget;

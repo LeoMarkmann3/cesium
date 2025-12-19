@@ -18,11 +18,11 @@ import ResourceLoader from "../ResourceLoader.js";
 import VertexAttributeSemantic from "../VertexAttributeSemantic.js";
 
 const B3dmLoaderState = {
-  UNLOADED: 0,
-  LOADING: 1,
-  PROCESSING: 2,
-  READY: 3,
-  FAILED: 4,
+    UNLOADED: 0,
+    LOADING: 1,
+    PROCESSING: 2,
+    READY: 3,
+    FAILED: 4,
 };
 
 const FeatureIdAttribute = ModelComponents.FeatureIdAttribute;
@@ -56,113 +56,113 @@ const FeatureIdAttribute = ModelComponents.FeatureIdAttribute;
  * @param {boolean} [options.loadForClassification=false] If <code>true</code> and if the model has feature IDs, load the feature IDs and indices as typed arrays. This is useful for batching features for classification.
  * */
 function B3dmLoader(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const b3dmResource = options.b3dmResource;
-  let baseResource = options.baseResource;
-  const arrayBuffer = options.arrayBuffer;
-  const byteOffset = options.byteOffset ?? 0;
-  const releaseGltfJson = options.releaseGltfJson ?? false;
-  const asynchronous = options.asynchronous ?? true;
-  const incrementallyLoadTextures = options.incrementallyLoadTextures ?? true;
-  const upAxis = options.upAxis ?? Axis.Y;
-  const forwardAxis = options.forwardAxis ?? Axis.X;
-  const loadAttributesAsTypedArray =
-    options.loadAttributesAsTypedArray ?? false;
-  const loadAttributesFor2D = options.loadAttributesFor2D ?? false;
-  const enablePick = options.enablePick ?? false;
-  const loadIndicesForWireframe = options.loadIndicesForWireframe ?? false;
-  const loadPrimitiveOutline = options.loadPrimitiveOutline ?? true;
-  const loadForClassification = options.loadForClassification ?? false;
+    const b3dmResource = options.b3dmResource;
+    let baseResource = options.baseResource;
+    const arrayBuffer = options.arrayBuffer;
+    const byteOffset = options.byteOffset ?? 0;
+    const releaseGltfJson = options.releaseGltfJson ?? false;
+    const asynchronous = options.asynchronous ?? true;
+    const incrementallyLoadTextures = options.incrementallyLoadTextures ?? true;
+    const upAxis = options.upAxis ?? Axis.Y;
+    const forwardAxis = options.forwardAxis ?? Axis.X;
+    const loadAttributesAsTypedArray =
+        options.loadAttributesAsTypedArray ?? false;
+    const loadAttributesFor2D = options.loadAttributesFor2D ?? false;
+    const enablePick = options.enablePick ?? false;
+    const loadIndicesForWireframe = options.loadIndicesForWireframe ?? false;
+    const loadPrimitiveOutline = options.loadPrimitiveOutline ?? true;
+    const loadForClassification = options.loadForClassification ?? false;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.b3dmResource", b3dmResource);
-  Check.typeOf.object("options.arrayBuffer", arrayBuffer);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.b3dmResource", b3dmResource);
+    Check.typeOf.object("options.arrayBuffer", arrayBuffer);
+    //>>includeEnd('debug');
 
-  baseResource = defined(baseResource) ? baseResource : b3dmResource.clone();
+    baseResource = defined(baseResource) ? baseResource : b3dmResource.clone();
 
-  this._b3dmResource = b3dmResource;
-  this._baseResource = baseResource;
-  this._arrayBuffer = arrayBuffer;
-  this._byteOffset = byteOffset;
-  this._releaseGltfJson = releaseGltfJson;
-  this._asynchronous = asynchronous;
-  this._incrementallyLoadTextures = incrementallyLoadTextures;
-  this._upAxis = upAxis;
-  this._forwardAxis = forwardAxis;
-  this._loadAttributesAsTypedArray = loadAttributesAsTypedArray;
-  this._loadAttributesFor2D = loadAttributesFor2D;
-  this._enablePick = enablePick;
-  this._loadIndicesForWireframe = loadIndicesForWireframe;
-  this._loadPrimitiveOutline = loadPrimitiveOutline;
-  this._loadForClassification = loadForClassification;
+    this._b3dmResource = b3dmResource;
+    this._baseResource = baseResource;
+    this._arrayBuffer = arrayBuffer;
+    this._byteOffset = byteOffset;
+    this._releaseGltfJson = releaseGltfJson;
+    this._asynchronous = asynchronous;
+    this._incrementallyLoadTextures = incrementallyLoadTextures;
+    this._upAxis = upAxis;
+    this._forwardAxis = forwardAxis;
+    this._loadAttributesAsTypedArray = loadAttributesAsTypedArray;
+    this._loadAttributesFor2D = loadAttributesFor2D;
+    this._enablePick = enablePick;
+    this._loadIndicesForWireframe = loadIndicesForWireframe;
+    this._loadPrimitiveOutline = loadPrimitiveOutline;
+    this._loadForClassification = loadForClassification;
 
-  this._state = B3dmLoaderState.UNLOADED;
+    this._state = B3dmLoaderState.UNLOADED;
 
-  this._promise = undefined;
+    this._promise = undefined;
 
-  this._gltfLoader = undefined;
+    this._gltfLoader = undefined;
 
-  // Loaded results.
-  this._batchLength = 0;
-  this._propertyTable = undefined;
+    // Loaded results.
+    this._batchLength = 0;
+    this._propertyTable = undefined;
 
-  // The batch table object contains a json and a binary component access using keys of the same name.
-  this._batchTable = undefined;
-  this._components = undefined;
-  this._transform = Matrix4.IDENTITY;
+    // The batch table object contains a json and a binary component access using keys of the same name.
+    this._batchTable = undefined;
+    this._components = undefined;
+    this._transform = Matrix4.IDENTITY;
 }
 
 if (defined(Object.create)) {
-  B3dmLoader.prototype = Object.create(ResourceLoader.prototype);
-  B3dmLoader.prototype.constructor = B3dmLoader;
+    B3dmLoader.prototype = Object.create(ResourceLoader.prototype);
+    B3dmLoader.prototype.constructor = B3dmLoader;
 }
 
 Object.defineProperties(B3dmLoader.prototype, {
-  /**
-   * true if textures are loaded, useful when incrementallyLoadTextures is true
-   *
-   * @memberof B3dmLoader.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @private
-   */
-  texturesLoaded: {
-    get: function () {
-      return this._gltfLoader?.texturesLoaded;
+    /**
+     * true if textures are loaded, useful when incrementallyLoadTextures is true
+     *
+     * @memberof B3dmLoader.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @private
+     */
+    texturesLoaded: {
+        get: function () {
+            return this._gltfLoader?.texturesLoaded;
+        },
     },
-  },
-  /**
-   * The cache key of the resource
-   *
-   * @memberof B3dmLoader.prototype
-   *
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  cacheKey: {
-    get: function () {
-      return undefined;
+    /**
+     * The cache key of the resource
+     *
+     * @memberof B3dmLoader.prototype
+     *
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    cacheKey: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  /**
-   * The loaded components.
-   *
-   * @memberof B3dmLoader.prototype
-   *
-   * @type {ModelComponents.Components}
-   * @readonly
-   * @private
-   */
-  components: {
-    get: function () {
-      return this._components;
+    /**
+     * The loaded components.
+     *
+     * @memberof B3dmLoader.prototype
+     *
+     * @type {ModelComponents.Components}
+     * @readonly
+     * @private
+     */
+    components: {
+        get: function () {
+            return this._components;
+        },
     },
-  },
 });
 
 /**
@@ -171,198 +171,200 @@ Object.defineProperties(B3dmLoader.prototype, {
  * @private
  */
 B3dmLoader.prototype.load = function () {
-  if (defined(this._promise)) {
-    return this._promise;
-  }
+    if (defined(this._promise)) {
+        return this._promise;
+    }
 
-  const b3dm = B3dmParser.parse(this._arrayBuffer, this._byteOffset);
+    const b3dm = B3dmParser.parse(this._arrayBuffer, this._byteOffset);
 
-  let batchLength = b3dm.batchLength;
-  const featureTableJson = b3dm.featureTableJson;
-  const featureTableBinary = b3dm.featureTableBinary;
-  const batchTableJson = b3dm.batchTableJson;
-  const batchTableBinary = b3dm.batchTableBinary;
+    let batchLength = b3dm.batchLength;
+    const featureTableJson = b3dm.featureTableJson;
+    const featureTableBinary = b3dm.featureTableBinary;
+    const batchTableJson = b3dm.batchTableJson;
+    const batchTableBinary = b3dm.batchTableBinary;
 
-  const featureTable = new Cesium3DTileFeatureTable(
-    featureTableJson,
-    featureTableBinary,
-  );
-  batchLength = featureTable.getGlobalProperty("BATCH_LENGTH");
-  // Set batch length.
-  this._batchLength = batchLength;
-  // Set the RTC Center transform, if present.
-  const rtcCenter = featureTable.getGlobalProperty(
-    "RTC_CENTER",
-    ComponentDatatype.FLOAT,
-    3,
-  );
-  if (defined(rtcCenter)) {
-    this._transform = Matrix4.fromTranslation(Cartesian3.fromArray(rtcCenter));
-  }
+    const featureTable = new Cesium3DTileFeatureTable(
+        featureTableJson,
+        featureTableBinary,
+    );
+    batchLength = featureTable.getGlobalProperty("BATCH_LENGTH");
+    // Set batch length.
+    this._batchLength = batchLength;
+    // Set the RTC Center transform, if present.
+    const rtcCenter = featureTable.getGlobalProperty(
+        "RTC_CENTER",
+        ComponentDatatype.FLOAT,
+        3,
+    );
+    if (defined(rtcCenter)) {
+        this._transform = Matrix4.fromTranslation(
+            Cartesian3.fromArray(rtcCenter),
+        );
+    }
 
-  this._batchTable = {
-    json: batchTableJson,
-    binary: batchTableBinary,
-  };
+    this._batchTable = {
+        json: batchTableJson,
+        binary: batchTableBinary,
+    };
 
-  const gltfLoader = new GltfLoader({
-    typedArray: b3dm.gltf,
-    upAxis: this._upAxis,
-    forwardAxis: this._forwardAxis,
-    gltfResource: this._b3dmResource,
-    baseResource: this._baseResource,
-    releaseGltfJson: this._releaseGltfJson,
-    incrementallyLoadTextures: this._incrementallyLoadTextures,
-    loadAttributesAsTypedArray: this._loadAttributesAsTypedArray,
-    loadAttributesFor2D: this._loadAttributesFor2D,
-    enablePick: this._enablePick,
-    loadIndicesForWireframe: this._loadIndicesForWireframe,
-    loadPrimitiveOutline: this._loadPrimitiveOutline,
-    loadForClassification: this._loadForClassification,
-    renameBatchIdSemantic: true,
-  });
-
-  this._gltfLoader = gltfLoader;
-  this._state = B3dmLoaderState.LOADING;
-
-  const that = this;
-  this._promise = gltfLoader
-    .load()
-    .then(function () {
-      if (that.isDestroyed()) {
-        return;
-      }
-
-      that._state = B3dmLoaderState.PROCESSING;
-      return that;
-    })
-    .catch(function (error) {
-      if (that.isDestroyed()) {
-        return;
-      }
-
-      return handleError(that, error);
+    const gltfLoader = new GltfLoader({
+        typedArray: b3dm.gltf,
+        upAxis: this._upAxis,
+        forwardAxis: this._forwardAxis,
+        gltfResource: this._b3dmResource,
+        baseResource: this._baseResource,
+        releaseGltfJson: this._releaseGltfJson,
+        incrementallyLoadTextures: this._incrementallyLoadTextures,
+        loadAttributesAsTypedArray: this._loadAttributesAsTypedArray,
+        loadAttributesFor2D: this._loadAttributesFor2D,
+        enablePick: this._enablePick,
+        loadIndicesForWireframe: this._loadIndicesForWireframe,
+        loadPrimitiveOutline: this._loadPrimitiveOutline,
+        loadForClassification: this._loadForClassification,
+        renameBatchIdSemantic: true,
     });
 
-  return this._promise;
+    this._gltfLoader = gltfLoader;
+    this._state = B3dmLoaderState.LOADING;
+
+    const that = this;
+    this._promise = gltfLoader
+        .load()
+        .then(function () {
+            if (that.isDestroyed()) {
+                return;
+            }
+
+            that._state = B3dmLoaderState.PROCESSING;
+            return that;
+        })
+        .catch(function (error) {
+            if (that.isDestroyed()) {
+                return;
+            }
+
+            return handleError(that, error);
+        });
+
+    return this._promise;
 };
 
 function handleError(b3dmLoader, error) {
-  b3dmLoader.unload();
-  b3dmLoader._state = B3dmLoaderState.FAILED;
-  const errorMessage = "Failed to load b3dm";
-  error = b3dmLoader.getError(errorMessage, error);
-  return Promise.reject(error);
+    b3dmLoader.unload();
+    b3dmLoader._state = B3dmLoaderState.FAILED;
+    const errorMessage = "Failed to load b3dm";
+    error = b3dmLoader.getError(errorMessage, error);
+    return Promise.reject(error);
 }
 
 B3dmLoader.prototype.process = function (frameState) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("frameState", frameState);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("frameState", frameState);
+    //>>includeEnd('debug');
 
-  if (this._state === B3dmLoaderState.READY) {
+    if (this._state === B3dmLoaderState.READY) {
+        return true;
+    }
+
+    if (this._state !== B3dmLoaderState.PROCESSING) {
+        return false;
+    }
+
+    const ready = this._gltfLoader.process(frameState);
+    if (!ready) {
+        return false;
+    }
+
+    const components = this._gltfLoader.components;
+
+    // Combine the RTC_CENTER transform from the b3dm and the CESIUM_RTC
+    // transform from the glTF. In practice usually only one or the
+    // other is supplied. If they don't exist the transforms will
+    // be identity matrices.
+    components.transform = Matrix4.multiplyTransformation(
+        this._transform,
+        components.transform,
+        components.transform,
+    );
+    createStructuralMetadata(this, components);
+    this._components = components;
+
+    // Now that we have the parsed components, we can release the array buffer
+    this._arrayBuffer = undefined;
+
+    this._state = B3dmLoaderState.READY;
     return true;
-  }
-
-  if (this._state !== B3dmLoaderState.PROCESSING) {
-    return false;
-  }
-
-  const ready = this._gltfLoader.process(frameState);
-  if (!ready) {
-    return false;
-  }
-
-  const components = this._gltfLoader.components;
-
-  // Combine the RTC_CENTER transform from the b3dm and the CESIUM_RTC
-  // transform from the glTF. In practice usually only one or the
-  // other is supplied. If they don't exist the transforms will
-  // be identity matrices.
-  components.transform = Matrix4.multiplyTransformation(
-    this._transform,
-    components.transform,
-    components.transform,
-  );
-  createStructuralMetadata(this, components);
-  this._components = components;
-
-  // Now that we have the parsed components, we can release the array buffer
-  this._arrayBuffer = undefined;
-
-  this._state = B3dmLoaderState.READY;
-  return true;
 };
 
 function createStructuralMetadata(loader, components) {
-  const batchTable = loader._batchTable;
-  const batchLength = loader._batchLength;
+    const batchTable = loader._batchTable;
+    const batchLength = loader._batchLength;
 
-  if (batchLength === 0) {
-    return;
-  }
+    if (batchLength === 0) {
+        return;
+    }
 
-  let structuralMetadata;
-  if (defined(batchTable.json)) {
-    // Add the structural metadata from the batch table to the model components.
-    structuralMetadata = parseBatchTable({
-      count: batchLength,
-      batchTable: batchTable.json,
-      binaryBody: batchTable.binary,
-    });
-  } else {
-    // If batch table is not defined, create a property table without any properties.
-    const emptyPropertyTable = new PropertyTable({
-      name: MetadataClass.BATCH_TABLE_CLASS_NAME,
-      count: batchLength,
-    });
-    structuralMetadata = new StructuralMetadata({
-      schema: {},
-      propertyTables: [emptyPropertyTable],
-    });
-  }
+    let structuralMetadata;
+    if (defined(batchTable.json)) {
+        // Add the structural metadata from the batch table to the model components.
+        structuralMetadata = parseBatchTable({
+            count: batchLength,
+            batchTable: batchTable.json,
+            binaryBody: batchTable.binary,
+        });
+    } else {
+        // If batch table is not defined, create a property table without any properties.
+        const emptyPropertyTable = new PropertyTable({
+            name: MetadataClass.BATCH_TABLE_CLASS_NAME,
+            count: batchLength,
+        });
+        structuralMetadata = new StructuralMetadata({
+            schema: {},
+            propertyTables: [emptyPropertyTable],
+        });
+    }
 
-  // Add the feature ID attribute to the primitives.
-  const nodes = components.scene.nodes;
-  const length = nodes.length;
-  for (let i = 0; i < length; i++) {
-    processNode(nodes[i]);
-  }
-  components.structuralMetadata = structuralMetadata;
+    // Add the feature ID attribute to the primitives.
+    const nodes = components.scene.nodes;
+    const length = nodes.length;
+    for (let i = 0; i < length; i++) {
+        processNode(nodes[i]);
+    }
+    components.structuralMetadata = structuralMetadata;
 }
 
 // Recursive function to add the feature ID attribute to all primitives that have a feature ID vertex attribute.
 function processNode(node) {
-  const childrenLength = node.children.length;
-  for (let i = 0; i < childrenLength; i++) {
-    processNode(node.children[i]);
-  }
-
-  const primitivesLength = node.primitives.length;
-  for (let i = 0; i < primitivesLength; i++) {
-    const primitive = node.primitives[i];
-    const featureIdVertexAttribute = ModelUtility.getAttributeBySemantic(
-      primitive,
-      VertexAttributeSemantic.FEATURE_ID,
-    );
-    if (defined(featureIdVertexAttribute)) {
-      featureIdVertexAttribute.setIndex = 0;
-      const featureIdAttribute = new FeatureIdAttribute();
-      featureIdAttribute.propertyTableId = 0;
-      featureIdAttribute.setIndex = 0;
-      featureIdAttribute.positionalLabel = "featureId_0";
-      primitive.featureIds.push(featureIdAttribute);
+    const childrenLength = node.children.length;
+    for (let i = 0; i < childrenLength; i++) {
+        processNode(node.children[i]);
     }
-  }
+
+    const primitivesLength = node.primitives.length;
+    for (let i = 0; i < primitivesLength; i++) {
+        const primitive = node.primitives[i];
+        const featureIdVertexAttribute = ModelUtility.getAttributeBySemantic(
+            primitive,
+            VertexAttributeSemantic.FEATURE_ID,
+        );
+        if (defined(featureIdVertexAttribute)) {
+            featureIdVertexAttribute.setIndex = 0;
+            const featureIdAttribute = new FeatureIdAttribute();
+            featureIdAttribute.propertyTableId = 0;
+            featureIdAttribute.setIndex = 0;
+            featureIdAttribute.positionalLabel = "featureId_0";
+            primitive.featureIds.push(featureIdAttribute);
+        }
+    }
 }
 
 B3dmLoader.prototype.unload = function () {
-  if (defined(this._gltfLoader) && !this._gltfLoader.isDestroyed()) {
-    this._gltfLoader.unload();
-  }
+    if (defined(this._gltfLoader) && !this._gltfLoader.isDestroyed()) {
+        this._gltfLoader.unload();
+    }
 
-  this._components = undefined;
-  this._arrayBuffer = undefined;
+    this._components = undefined;
+    this._arrayBuffer = undefined;
 };
 
 export default B3dmLoader;

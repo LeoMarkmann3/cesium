@@ -26,62 +26,62 @@ import TimeConstants from "./TimeConstants.js";
 const Transforms = {};
 
 const vectorProductLocalFrame = {
-  up: {
-    south: "east",
-    north: "west",
-    west: "south",
-    east: "north",
-  },
-  down: {
-    south: "west",
-    north: "east",
-    west: "north",
-    east: "south",
-  },
-  south: {
-    up: "west",
-    down: "east",
-    west: "down",
-    east: "up",
-  },
-  north: {
-    up: "east",
-    down: "west",
-    west: "up",
-    east: "down",
-  },
-  west: {
-    up: "north",
-    down: "south",
-    north: "down",
-    south: "up",
-  },
-  east: {
-    up: "south",
-    down: "north",
-    north: "up",
-    south: "down",
-  },
+    up: {
+        south: "east",
+        north: "west",
+        west: "south",
+        east: "north",
+    },
+    down: {
+        south: "west",
+        north: "east",
+        west: "north",
+        east: "south",
+    },
+    south: {
+        up: "west",
+        down: "east",
+        west: "down",
+        east: "up",
+    },
+    north: {
+        up: "east",
+        down: "west",
+        west: "up",
+        east: "down",
+    },
+    west: {
+        up: "north",
+        down: "south",
+        north: "down",
+        south: "up",
+    },
+    east: {
+        up: "south",
+        down: "north",
+        north: "up",
+        south: "down",
+    },
 };
 
 const degeneratePositionLocalFrame = {
-  north: [-1, 0, 0],
-  east: [0, 1, 0],
-  up: [0, 0, 1],
-  south: [1, 0, 0],
-  west: [0, -1, 0],
-  down: [0, 0, -1],
+    north: [-1, 0, 0],
+    east: [0, 1, 0],
+    up: [0, 0, 1],
+    south: [1, 0, 0],
+    west: [0, -1, 0],
+    down: [0, 0, -1],
 };
 
 const localFrameToFixedFrameCache = {};
 
 const scratchCalculateCartesian = {
-  east: new Cartesian3(),
-  north: new Cartesian3(),
-  up: new Cartesian3(),
-  west: new Cartesian3(),
-  south: new Cartesian3(),
-  down: new Cartesian3(),
+    east: new Cartesian3(),
+    north: new Cartesian3(),
+    up: new Cartesian3(),
+    west: new Cartesian3(),
+    south: new Cartesian3(),
+    down: new Cartesian3(),
 };
 let scratchFirstCartesian = new Cartesian3();
 let scratchSecondCartesian = new Cartesian3();
@@ -97,159 +97,166 @@ let scratchThirdCartesian = new Cartesian3();
  * 4x4 transformation matrix from a reference frame, with first axis and second axis compliant with the parameters,
  */
 Transforms.localFrameToFixedFrameGenerator = function (firstAxis, secondAxis) {
-  if (
-    !vectorProductLocalFrame.hasOwnProperty(firstAxis) ||
-    !vectorProductLocalFrame[firstAxis].hasOwnProperty(secondAxis)
-  ) {
-    throw new DeveloperError(
-      "firstAxis and secondAxis must be east, north, up, west, south or down.",
-    );
-  }
-  const thirdAxis = vectorProductLocalFrame[firstAxis][secondAxis];
+    if (
+        !vectorProductLocalFrame.hasOwnProperty(firstAxis) ||
+        !vectorProductLocalFrame[firstAxis].hasOwnProperty(secondAxis)
+    ) {
+        throw new DeveloperError(
+            "firstAxis and secondAxis must be east, north, up, west, south or down.",
+        );
+    }
+    const thirdAxis = vectorProductLocalFrame[firstAxis][secondAxis];
 
-  /**
-   * Computes a 4x4 transformation matrix from a reference frame
-   * centered at the provided origin to the provided ellipsoid's fixed reference frame.
-   * @callback Transforms.LocalFrameToFixedFrame
-   * @param {Cartesian3} origin The center point of the local reference frame.
-   * @param {Ellipsoid} [ellipsoid=Ellipsoid.default] The ellipsoid whose fixed frame is used in the transformation.
-   * @param {Matrix4} [result] The object onto which to store the result.
-   * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
-   */
-  let resultat;
-  const hashAxis = firstAxis + secondAxis;
-  if (defined(localFrameToFixedFrameCache[hashAxis])) {
-    resultat = localFrameToFixedFrameCache[hashAxis];
-  } else {
-    resultat = function (origin, ellipsoid, result) {
-      //>>includeStart('debug', pragmas.debug);
-      if (!defined(origin)) {
-        throw new DeveloperError("origin is required.");
-      }
-      if (isNaN(origin.x) || isNaN(origin.y) || isNaN(origin.z)) {
-        throw new DeveloperError("origin has a NaN component");
-      }
-      //>>includeEnd('debug');
-      if (!defined(result)) {
-        result = new Matrix4();
-      }
-      if (
-        Cartesian3.equalsEpsilon(origin, Cartesian3.ZERO, CesiumMath.EPSILON14)
-      ) {
-        // If x, y, and z are zero, use the degenerate local frame, which is a special case
-        Cartesian3.unpack(
-          degeneratePositionLocalFrame[firstAxis],
-          0,
-          scratchFirstCartesian,
-        );
-        Cartesian3.unpack(
-          degeneratePositionLocalFrame[secondAxis],
-          0,
-          scratchSecondCartesian,
-        );
-        Cartesian3.unpack(
-          degeneratePositionLocalFrame[thirdAxis],
-          0,
-          scratchThirdCartesian,
-        );
-      } else if (
-        CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
-        CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)
-      ) {
-        // If x and y are zero, assume origin is at a pole, which is a special case.
-        const sign = CesiumMath.sign(origin.z);
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
+     * @callback Transforms.LocalFrameToFixedFrame
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.default] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     */
+    let resultat;
+    const hashAxis = firstAxis + secondAxis;
+    if (defined(localFrameToFixedFrameCache[hashAxis])) {
+        resultat = localFrameToFixedFrameCache[hashAxis];
+    } else {
+        resultat = function (origin, ellipsoid, result) {
+            //>>includeStart('debug', pragmas.debug);
+            if (!defined(origin)) {
+                throw new DeveloperError("origin is required.");
+            }
+            if (isNaN(origin.x) || isNaN(origin.y) || isNaN(origin.z)) {
+                throw new DeveloperError("origin has a NaN component");
+            }
+            //>>includeEnd('debug');
+            if (!defined(result)) {
+                result = new Matrix4();
+            }
+            if (
+                Cartesian3.equalsEpsilon(
+                    origin,
+                    Cartesian3.ZERO,
+                    CesiumMath.EPSILON14,
+                )
+            ) {
+                // If x, y, and z are zero, use the degenerate local frame, which is a special case
+                Cartesian3.unpack(
+                    degeneratePositionLocalFrame[firstAxis],
+                    0,
+                    scratchFirstCartesian,
+                );
+                Cartesian3.unpack(
+                    degeneratePositionLocalFrame[secondAxis],
+                    0,
+                    scratchSecondCartesian,
+                );
+                Cartesian3.unpack(
+                    degeneratePositionLocalFrame[thirdAxis],
+                    0,
+                    scratchThirdCartesian,
+                );
+            } else if (
+                CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
+                CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)
+            ) {
+                // If x and y are zero, assume origin is at a pole, which is a special case.
+                const sign = CesiumMath.sign(origin.z);
 
-        Cartesian3.unpack(
-          degeneratePositionLocalFrame[firstAxis],
-          0,
-          scratchFirstCartesian,
-        );
-        if (firstAxis !== "east" && firstAxis !== "west") {
-          Cartesian3.multiplyByScalar(
-            scratchFirstCartesian,
-            sign,
-            scratchFirstCartesian,
-          );
-        }
+                Cartesian3.unpack(
+                    degeneratePositionLocalFrame[firstAxis],
+                    0,
+                    scratchFirstCartesian,
+                );
+                if (firstAxis !== "east" && firstAxis !== "west") {
+                    Cartesian3.multiplyByScalar(
+                        scratchFirstCartesian,
+                        sign,
+                        scratchFirstCartesian,
+                    );
+                }
 
-        Cartesian3.unpack(
-          degeneratePositionLocalFrame[secondAxis],
-          0,
-          scratchSecondCartesian,
-        );
-        if (secondAxis !== "east" && secondAxis !== "west") {
-          Cartesian3.multiplyByScalar(
-            scratchSecondCartesian,
-            sign,
-            scratchSecondCartesian,
-          );
-        }
+                Cartesian3.unpack(
+                    degeneratePositionLocalFrame[secondAxis],
+                    0,
+                    scratchSecondCartesian,
+                );
+                if (secondAxis !== "east" && secondAxis !== "west") {
+                    Cartesian3.multiplyByScalar(
+                        scratchSecondCartesian,
+                        sign,
+                        scratchSecondCartesian,
+                    );
+                }
 
-        Cartesian3.unpack(
-          degeneratePositionLocalFrame[thirdAxis],
-          0,
-          scratchThirdCartesian,
-        );
-        if (thirdAxis !== "east" && thirdAxis !== "west") {
-          Cartesian3.multiplyByScalar(
-            scratchThirdCartesian,
-            sign,
-            scratchThirdCartesian,
-          );
-        }
-      } else {
-        ellipsoid = ellipsoid ?? Ellipsoid.default;
-        ellipsoid.geodeticSurfaceNormal(origin, scratchCalculateCartesian.up);
+                Cartesian3.unpack(
+                    degeneratePositionLocalFrame[thirdAxis],
+                    0,
+                    scratchThirdCartesian,
+                );
+                if (thirdAxis !== "east" && thirdAxis !== "west") {
+                    Cartesian3.multiplyByScalar(
+                        scratchThirdCartesian,
+                        sign,
+                        scratchThirdCartesian,
+                    );
+                }
+            } else {
+                ellipsoid = ellipsoid ?? Ellipsoid.default;
+                ellipsoid.geodeticSurfaceNormal(
+                    origin,
+                    scratchCalculateCartesian.up,
+                );
 
-        const up = scratchCalculateCartesian.up;
-        const east = scratchCalculateCartesian.east;
-        east.x = -origin.y;
-        east.y = origin.x;
-        east.z = 0.0;
-        Cartesian3.normalize(east, scratchCalculateCartesian.east);
-        Cartesian3.cross(up, east, scratchCalculateCartesian.north);
+                const up = scratchCalculateCartesian.up;
+                const east = scratchCalculateCartesian.east;
+                east.x = -origin.y;
+                east.y = origin.x;
+                east.z = 0.0;
+                Cartesian3.normalize(east, scratchCalculateCartesian.east);
+                Cartesian3.cross(up, east, scratchCalculateCartesian.north);
 
-        Cartesian3.multiplyByScalar(
-          scratchCalculateCartesian.up,
-          -1,
-          scratchCalculateCartesian.down,
-        );
-        Cartesian3.multiplyByScalar(
-          scratchCalculateCartesian.east,
-          -1,
-          scratchCalculateCartesian.west,
-        );
-        Cartesian3.multiplyByScalar(
-          scratchCalculateCartesian.north,
-          -1,
-          scratchCalculateCartesian.south,
-        );
+                Cartesian3.multiplyByScalar(
+                    scratchCalculateCartesian.up,
+                    -1,
+                    scratchCalculateCartesian.down,
+                );
+                Cartesian3.multiplyByScalar(
+                    scratchCalculateCartesian.east,
+                    -1,
+                    scratchCalculateCartesian.west,
+                );
+                Cartesian3.multiplyByScalar(
+                    scratchCalculateCartesian.north,
+                    -1,
+                    scratchCalculateCartesian.south,
+                );
 
-        scratchFirstCartesian = scratchCalculateCartesian[firstAxis];
-        scratchSecondCartesian = scratchCalculateCartesian[secondAxis];
-        scratchThirdCartesian = scratchCalculateCartesian[thirdAxis];
-      }
-      result[0] = scratchFirstCartesian.x;
-      result[1] = scratchFirstCartesian.y;
-      result[2] = scratchFirstCartesian.z;
-      result[3] = 0.0;
-      result[4] = scratchSecondCartesian.x;
-      result[5] = scratchSecondCartesian.y;
-      result[6] = scratchSecondCartesian.z;
-      result[7] = 0.0;
-      result[8] = scratchThirdCartesian.x;
-      result[9] = scratchThirdCartesian.y;
-      result[10] = scratchThirdCartesian.z;
-      result[11] = 0.0;
-      result[12] = origin.x;
-      result[13] = origin.y;
-      result[14] = origin.z;
-      result[15] = 1.0;
-      return result;
-    };
-    localFrameToFixedFrameCache[hashAxis] = resultat;
-  }
-  return resultat;
+                scratchFirstCartesian = scratchCalculateCartesian[firstAxis];
+                scratchSecondCartesian = scratchCalculateCartesian[secondAxis];
+                scratchThirdCartesian = scratchCalculateCartesian[thirdAxis];
+            }
+            result[0] = scratchFirstCartesian.x;
+            result[1] = scratchFirstCartesian.y;
+            result[2] = scratchFirstCartesian.z;
+            result[3] = 0.0;
+            result[4] = scratchSecondCartesian.x;
+            result[5] = scratchSecondCartesian.y;
+            result[6] = scratchSecondCartesian.z;
+            result[7] = 0.0;
+            result[8] = scratchThirdCartesian.x;
+            result[9] = scratchThirdCartesian.y;
+            result[10] = scratchThirdCartesian.z;
+            result[11] = 0.0;
+            result[12] = origin.x;
+            result[13] = origin.y;
+            result[14] = origin.z;
+            result[15] = 1.0;
+            return result;
+        };
+        localFrameToFixedFrameCache[hashAxis] = resultat;
+    }
+    return resultat;
 };
 
 /**
@@ -274,8 +281,8 @@ Transforms.localFrameToFixedFrameGenerator = function (firstAxis, secondAxis) {
  * const transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
  */
 Transforms.eastNorthUpToFixedFrame = Transforms.localFrameToFixedFrameGenerator(
-  "east",
-  "north",
+    "east",
+    "north",
 );
 
 /**
@@ -300,7 +307,7 @@ Transforms.eastNorthUpToFixedFrame = Transforms.localFrameToFixedFrameGenerator(
  * const transform = Cesium.Transforms.northEastDownToFixedFrame(center);
  */
 Transforms.northEastDownToFixedFrame =
-  Transforms.localFrameToFixedFrameGenerator("north", "east");
+    Transforms.localFrameToFixedFrameGenerator("north", "east");
 
 /**
  * Computes a 4x4 transformation matrix from a reference frame with an north-up-east axes
@@ -324,8 +331,8 @@ Transforms.northEastDownToFixedFrame =
  * const transform = Cesium.Transforms.northUpEastToFixedFrame(center);
  */
 Transforms.northUpEastToFixedFrame = Transforms.localFrameToFixedFrameGenerator(
-  "north",
-  "up",
+    "north",
+    "up",
 );
 
 /**
@@ -350,8 +357,8 @@ Transforms.northUpEastToFixedFrame = Transforms.localFrameToFixedFrameGenerator(
  * const transform = Cesium.Transforms.northWestUpToFixedFrame(center);
  */
 Transforms.northWestUpToFixedFrame = Transforms.localFrameToFixedFrameGenerator(
-  "north",
-  "west",
+    "north",
+    "west",
 );
 
 const scratchHPRQuaternion = new Quaternion();
@@ -382,30 +389,30 @@ const scratchHPRMatrix4 = new Matrix4();
  * const transform = Cesium.Transforms.headingPitchRollToFixedFrame(center, hpr);
  */
 Transforms.headingPitchRollToFixedFrame = function (
-  origin,
-  headingPitchRoll,
-  ellipsoid,
-  fixedFrameTransform,
-  result,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("HeadingPitchRoll", headingPitchRoll);
-  //>>includeEnd('debug');
-
-  fixedFrameTransform =
-    fixedFrameTransform ?? Transforms.eastNorthUpToFixedFrame;
-  const hprQuaternion = Quaternion.fromHeadingPitchRoll(
+    origin,
     headingPitchRoll,
-    scratchHPRQuaternion,
-  );
-  const hprMatrix = Matrix4.fromTranslationQuaternionRotationScale(
-    Cartesian3.ZERO,
-    hprQuaternion,
-    scratchScale,
-    scratchHPRMatrix4,
-  );
-  result = fixedFrameTransform(origin, ellipsoid, result);
-  return Matrix4.multiply(result, hprMatrix, result);
+    ellipsoid,
+    fixedFrameTransform,
+    result,
+) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("HeadingPitchRoll", headingPitchRoll);
+    //>>includeEnd('debug');
+
+    fixedFrameTransform =
+        fixedFrameTransform ?? Transforms.eastNorthUpToFixedFrame;
+    const hprQuaternion = Quaternion.fromHeadingPitchRoll(
+        headingPitchRoll,
+        scratchHPRQuaternion,
+    );
+    const hprMatrix = Matrix4.fromTranslationQuaternionRotationScale(
+        Cartesian3.ZERO,
+        hprQuaternion,
+        scratchScale,
+        scratchHPRMatrix4,
+    );
+    result = fixedFrameTransform(origin, ellipsoid, result);
+    return Matrix4.multiply(result, hprMatrix, result);
 };
 
 const scratchENUMatrix4 = new Matrix4();
@@ -435,25 +442,25 @@ const scratchHPRMatrix3 = new Matrix3();
  * const quaternion = Cesium.Transforms.headingPitchRollQuaternion(center, hpr);
  */
 Transforms.headingPitchRollQuaternion = function (
-  origin,
-  headingPitchRoll,
-  ellipsoid,
-  fixedFrameTransform,
-  result,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("HeadingPitchRoll", headingPitchRoll);
-  //>>includeEnd('debug');
-
-  const transform = Transforms.headingPitchRollToFixedFrame(
     origin,
     headingPitchRoll,
     ellipsoid,
     fixedFrameTransform,
-    scratchENUMatrix4,
-  );
-  const rotation = Matrix4.getMatrix3(transform, scratchHPRMatrix3);
-  return Quaternion.fromRotationMatrix(rotation, result);
+    result,
+) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("HeadingPitchRoll", headingPitchRoll);
+    //>>includeEnd('debug');
+
+    const transform = Transforms.headingPitchRollToFixedFrame(
+        origin,
+        headingPitchRoll,
+        ellipsoid,
+        fixedFrameTransform,
+        scratchENUMatrix4,
+    );
+    const rotation = Matrix4.getMatrix3(transform, scratchHPRMatrix3);
+    return Quaternion.fromRotationMatrix(rotation, result);
 };
 
 const noScale = new Cartesian3(1.0, 1.0, 1.0);
@@ -475,51 +482,55 @@ const hprQuaternionScratch = new Quaternion();
  * @returns {HeadingPitchRoll} The modified result parameter or a new HeadingPitchRoll instance if none was provided.
  */
 Transforms.fixedFrameToHeadingPitchRoll = function (
-  transform,
-  ellipsoid,
-  fixedFrameTransform,
-  result,
+    transform,
+    ellipsoid,
+    fixedFrameTransform,
+    result,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("transform", transform);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("transform", transform);
+    //>>includeEnd('debug');
 
-  ellipsoid = ellipsoid ?? Ellipsoid.default;
-  fixedFrameTransform =
-    fixedFrameTransform ?? Transforms.eastNorthUpToFixedFrame;
-  if (!defined(result)) {
-    result = new HeadingPitchRoll();
-  }
+    ellipsoid = ellipsoid ?? Ellipsoid.default;
+    fixedFrameTransform =
+        fixedFrameTransform ?? Transforms.eastNorthUpToFixedFrame;
+    if (!defined(result)) {
+        result = new HeadingPitchRoll();
+    }
 
-  const center = Matrix4.getTranslation(transform, hprCenterScratch);
-  if (Cartesian3.equals(center, Cartesian3.ZERO)) {
-    result.heading = 0;
-    result.pitch = 0;
-    result.roll = 0;
-    return result;
-  }
-  let toFixedFrame = Matrix4.inverseTransformation(
-    fixedFrameTransform(center, ellipsoid, ffScratch),
-    ffScratch,
-  );
-  let transformCopy = Matrix4.setScale(transform, noScale, hprTransformScratch);
-  transformCopy = Matrix4.setTranslation(
-    transformCopy,
-    Cartesian3.ZERO,
-    transformCopy,
-  );
+    const center = Matrix4.getTranslation(transform, hprCenterScratch);
+    if (Cartesian3.equals(center, Cartesian3.ZERO)) {
+        result.heading = 0;
+        result.pitch = 0;
+        result.roll = 0;
+        return result;
+    }
+    let toFixedFrame = Matrix4.inverseTransformation(
+        fixedFrameTransform(center, ellipsoid, ffScratch),
+        ffScratch,
+    );
+    let transformCopy = Matrix4.setScale(
+        transform,
+        noScale,
+        hprTransformScratch,
+    );
+    transformCopy = Matrix4.setTranslation(
+        transformCopy,
+        Cartesian3.ZERO,
+        transformCopy,
+    );
 
-  toFixedFrame = Matrix4.multiply(toFixedFrame, transformCopy, toFixedFrame);
-  let quaternionRotation = Quaternion.fromRotationMatrix(
-    Matrix4.getMatrix3(toFixedFrame, hprRotationScratch),
-    hprQuaternionScratch,
-  );
-  quaternionRotation = Quaternion.normalize(
-    quaternionRotation,
-    quaternionRotation,
-  );
+    toFixedFrame = Matrix4.multiply(toFixedFrame, transformCopy, toFixedFrame);
+    let quaternionRotation = Quaternion.fromRotationMatrix(
+        Matrix4.getMatrix3(toFixedFrame, hprRotationScratch),
+        hprQuaternionScratch,
+    );
+    quaternionRotation = Quaternion.normalize(
+        quaternionRotation,
+        quaternionRotation,
+    );
 
-  return HeadingPitchRoll.fromQuaternion(quaternionRotation, result);
+    return HeadingPitchRoll.fromQuaternion(quaternionRotation, result);
 };
 
 const gmstConstant0 = 6 * 3600 + 41 * 60 + 50.54841;
@@ -552,12 +563,15 @@ let dateInUtc = new JulianDate();
  * @see Transforms.computeIcrfToMoonFixedMatrix
  */
 Transforms.computeIcrfToCentralBodyFixedMatrix = function (date, result) {
-  let transformMatrix = Transforms.computeIcrfToFixedMatrix(date, result);
-  if (!defined(transformMatrix)) {
-    transformMatrix = Transforms.computeTemeToPseudoFixedMatrix(date, result);
-  }
+    let transformMatrix = Transforms.computeIcrfToFixedMatrix(date, result);
+    if (!defined(transformMatrix)) {
+        transformMatrix = Transforms.computeTemeToPseudoFixedMatrix(
+            date,
+            result,
+        );
+    }
 
-  return transformMatrix;
+    return transformMatrix;
 };
 
 /**
@@ -580,67 +594,67 @@ Transforms.computeIcrfToCentralBodyFixedMatrix = function (date, result) {
  * });
  */
 Transforms.computeTemeToPseudoFixedMatrix = function (date, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(date)) {
-    throw new DeveloperError("date is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(date)) {
+        throw new DeveloperError("date is required.");
+    }
+    //>>includeEnd('debug');
 
-  // GMST is actually computed using UT1.  We're using UTC as an approximation of UT1.
-  // We do not want to use the function like convertTaiToUtc in JulianDate because
-  // we explicitly do not want to fail when inside the leap second.
+    // GMST is actually computed using UT1.  We're using UTC as an approximation of UT1.
+    // We do not want to use the function like convertTaiToUtc in JulianDate because
+    // we explicitly do not want to fail when inside the leap second.
 
-  dateInUtc = JulianDate.addSeconds(
-    date,
-    -JulianDate.computeTaiMinusUtc(date),
-    dateInUtc,
-  );
-  const utcDayNumber = dateInUtc.dayNumber;
-  const utcSecondsIntoDay = dateInUtc.secondsOfDay;
-
-  let t;
-  const diffDays = utcDayNumber - 2451545;
-  if (utcSecondsIntoDay >= 43200.0) {
-    t = (diffDays + 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
-  } else {
-    t = (diffDays - 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
-  }
-
-  const gmst0 =
-    gmstConstant0 +
-    t * (gmstConstant1 + t * (gmstConstant2 + t * gmstConstant3));
-  const angle = (gmst0 * twoPiOverSecondsInDay) % CesiumMath.TWO_PI;
-  const ratio = wgs84WRPrecessing + rateCoef * (utcDayNumber - 2451545.5);
-  const secondsSinceMidnight =
-    (utcSecondsIntoDay + TimeConstants.SECONDS_PER_DAY * 0.5) %
-    TimeConstants.SECONDS_PER_DAY;
-  const gha = angle + ratio * secondsSinceMidnight;
-  const cosGha = Math.cos(gha);
-  const sinGha = Math.sin(gha);
-
-  if (!defined(result)) {
-    return new Matrix3(
-      cosGha,
-      sinGha,
-      0.0,
-      -sinGha,
-      cosGha,
-      0.0,
-      0.0,
-      0.0,
-      1.0,
+    dateInUtc = JulianDate.addSeconds(
+        date,
+        -JulianDate.computeTaiMinusUtc(date),
+        dateInUtc,
     );
-  }
-  result[0] = cosGha;
-  result[1] = -sinGha;
-  result[2] = 0.0;
-  result[3] = sinGha;
-  result[4] = cosGha;
-  result[5] = 0.0;
-  result[6] = 0.0;
-  result[7] = 0.0;
-  result[8] = 1.0;
-  return result;
+    const utcDayNumber = dateInUtc.dayNumber;
+    const utcSecondsIntoDay = dateInUtc.secondsOfDay;
+
+    let t;
+    const diffDays = utcDayNumber - 2451545;
+    if (utcSecondsIntoDay >= 43200.0) {
+        t = (diffDays + 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
+    } else {
+        t = (diffDays - 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
+    }
+
+    const gmst0 =
+        gmstConstant0 +
+        t * (gmstConstant1 + t * (gmstConstant2 + t * gmstConstant3));
+    const angle = (gmst0 * twoPiOverSecondsInDay) % CesiumMath.TWO_PI;
+    const ratio = wgs84WRPrecessing + rateCoef * (utcDayNumber - 2451545.5);
+    const secondsSinceMidnight =
+        (utcSecondsIntoDay + TimeConstants.SECONDS_PER_DAY * 0.5) %
+        TimeConstants.SECONDS_PER_DAY;
+    const gha = angle + ratio * secondsSinceMidnight;
+    const cosGha = Math.cos(gha);
+    const sinGha = Math.sin(gha);
+
+    if (!defined(result)) {
+        return new Matrix3(
+            cosGha,
+            sinGha,
+            0.0,
+            -sinGha,
+            cosGha,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+    }
+    result[0] = cosGha;
+    result[1] = -sinGha;
+    result[2] = 0.0;
+    result[3] = sinGha;
+    result[4] = cosGha;
+    result[5] = 0.0;
+    result[6] = 0.0;
+    result[7] = 0.0;
+    result[8] = 1.0;
+    return result;
 };
 
 /**
@@ -691,17 +705,17 @@ const j2000ttDays = 2451545.0;
  * @see Transforms.computeFixedToIcrfMatrix
  */
 Transforms.preloadIcrfFixed = function (timeInterval) {
-  const startDayTT = timeInterval.start.dayNumber;
-  const startSecondTT = timeInterval.start.secondsOfDay + ttMinusTai;
-  const stopDayTT = timeInterval.stop.dayNumber;
-  const stopSecondTT = timeInterval.stop.secondsOfDay + ttMinusTai;
+    const startDayTT = timeInterval.start.dayNumber;
+    const startSecondTT = timeInterval.start.secondsOfDay + ttMinusTai;
+    const stopDayTT = timeInterval.stop.dayNumber;
+    const stopSecondTT = timeInterval.stop.secondsOfDay + ttMinusTai;
 
-  return Transforms.iau2006XysData.preload(
-    startDayTT,
-    startSecondTT,
-    stopDayTT,
-    stopSecondTT,
-  );
+    return Transforms.iau2006XysData.preload(
+        startDayTT,
+        startSecondTT,
+        stopDayTT,
+        stopSecondTT,
+    );
 };
 
 /**
@@ -731,21 +745,21 @@ Transforms.preloadIcrfFixed = function (timeInterval) {
  * @see Transforms.preloadIcrfFixed
  */
 Transforms.computeIcrfToFixedMatrix = function (date, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(date)) {
-    throw new DeveloperError("date is required.");
-  }
-  //>>includeEnd('debug');
-  if (!defined(result)) {
-    result = new Matrix3();
-  }
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(date)) {
+        throw new DeveloperError("date is required.");
+    }
+    //>>includeEnd('debug');
+    if (!defined(result)) {
+        result = new Matrix3();
+    }
 
-  const fixedToIcrfMtx = Transforms.computeFixedToIcrfMatrix(date, result);
-  if (!defined(fixedToIcrfMtx)) {
-    return undefined;
-  }
+    const fixedToIcrfMtx = Transforms.computeFixedToIcrfMatrix(date, result);
+    if (!defined(fixedToIcrfMtx)) {
+        return undefined;
+    }
 
-  return Matrix3.transpose(fixedToIcrfMtx, result);
+    return Matrix3.transpose(fixedToIcrfMtx, result);
 };
 
 const TdtMinusTai = 32.184;
@@ -775,51 +789,53 @@ const dateScratch = new JulianDate();
  * }
  */
 Transforms.computeMoonFixedToIcrfMatrix = function (date, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(date)) {
-    throw new DeveloperError("date is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(date)) {
+        throw new DeveloperError("date is required.");
+    }
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    result = new Matrix3();
-  }
+    if (!defined(result)) {
+        result = new Matrix3();
+    }
 
-  // Converts TAI to TT
-  const secondsTT = JulianDate.addSeconds(date, TdtMinusTai, dateScratch);
+    // Converts TAI to TT
+    const secondsTT = JulianDate.addSeconds(date, TdtMinusTai, dateScratch);
 
-  // Converts TT to TDB, interval in days since the standard epoch
-  const d = JulianDate.totalDays(secondsTT) - J2000d;
+    // Converts TT to TDB, interval in days since the standard epoch
+    const d = JulianDate.totalDays(secondsTT) - J2000d;
 
-  // Compute the approximate rotation, using https://articles.adsabs.harvard.edu//full/1980CeMec..22..205D/0000209.000.html
-  const e1 = CesiumMath.toRadians(12.112) - CesiumMath.toRadians(0.052992) * d;
-  const e2 = CesiumMath.toRadians(24.224) - CesiumMath.toRadians(0.105984) * d;
-  const e3 = CesiumMath.toRadians(227.645) + CesiumMath.toRadians(13.012) * d;
-  const e4 =
-    CesiumMath.toRadians(261.105) + CesiumMath.toRadians(13.340716) * d;
-  const e5 = CesiumMath.toRadians(358.0) + CesiumMath.toRadians(0.9856) * d;
+    // Compute the approximate rotation, using https://articles.adsabs.harvard.edu//full/1980CeMec..22..205D/0000209.000.html
+    const e1 =
+        CesiumMath.toRadians(12.112) - CesiumMath.toRadians(0.052992) * d;
+    const e2 =
+        CesiumMath.toRadians(24.224) - CesiumMath.toRadians(0.105984) * d;
+    const e3 = CesiumMath.toRadians(227.645) + CesiumMath.toRadians(13.012) * d;
+    const e4 =
+        CesiumMath.toRadians(261.105) + CesiumMath.toRadians(13.340716) * d;
+    const e5 = CesiumMath.toRadians(358.0) + CesiumMath.toRadians(0.9856) * d;
 
-  scratchHpr.pitch =
-    CesiumMath.toRadians(270.0 - 90) -
-    CesiumMath.toRadians(3.878) * Math.sin(e1) -
-    CesiumMath.toRadians(0.12) * Math.sin(e2) +
-    CesiumMath.toRadians(0.07) * Math.sin(e3) -
-    CesiumMath.toRadians(0.017) * Math.sin(e4);
-  scratchHpr.roll =
-    CesiumMath.toRadians(66.53 - 90) +
-    CesiumMath.toRadians(1.543) * Math.cos(e1) +
-    CesiumMath.toRadians(0.24) * Math.cos(e2) -
-    CesiumMath.toRadians(0.028) * Math.cos(e3) +
-    CesiumMath.toRadians(0.007) * Math.cos(e4);
-  scratchHpr.heading =
-    CesiumMath.toRadians(244.375 - 90) +
-    CesiumMath.toRadians(13.17635831) * d +
-    CesiumMath.toRadians(3.558) * Math.sin(e1) +
-    CesiumMath.toRadians(0.121) * Math.sin(e2) -
-    CesiumMath.toRadians(0.064) * Math.sin(e3) +
-    CesiumMath.toRadians(0.016) * Math.sin(e4) +
-    CesiumMath.toRadians(0.025) * Math.sin(e5);
-  return Matrix3.fromHeadingPitchRoll(scratchHpr, scratchRotationMatrix);
+    scratchHpr.pitch =
+        CesiumMath.toRadians(270.0 - 90) -
+        CesiumMath.toRadians(3.878) * Math.sin(e1) -
+        CesiumMath.toRadians(0.12) * Math.sin(e2) +
+        CesiumMath.toRadians(0.07) * Math.sin(e3) -
+        CesiumMath.toRadians(0.017) * Math.sin(e4);
+    scratchHpr.roll =
+        CesiumMath.toRadians(66.53 - 90) +
+        CesiumMath.toRadians(1.543) * Math.cos(e1) +
+        CesiumMath.toRadians(0.24) * Math.cos(e2) -
+        CesiumMath.toRadians(0.028) * Math.cos(e3) +
+        CesiumMath.toRadians(0.007) * Math.cos(e4);
+    scratchHpr.heading =
+        CesiumMath.toRadians(244.375 - 90) +
+        CesiumMath.toRadians(13.17635831) * d +
+        CesiumMath.toRadians(3.558) * Math.sin(e1) +
+        CesiumMath.toRadians(0.121) * Math.sin(e2) -
+        CesiumMath.toRadians(0.064) * Math.sin(e3) +
+        CesiumMath.toRadians(0.016) * Math.sin(e4) +
+        CesiumMath.toRadians(0.025) * Math.sin(e5);
+    return Matrix3.fromHeadingPitchRoll(scratchHpr, scratchRotationMatrix);
 };
 
 /**
@@ -837,31 +853,34 @@ Transforms.computeMoonFixedToIcrfMatrix = function (date, result) {
  * Cesium.Transforms.computeIcrfToCentralBodyFixedMatrix = Cesium.Transforms.computeIcrfToMoonFixedMatrix;
  */
 Transforms.computeIcrfToMoonFixedMatrix = function (date, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(date)) {
-    throw new DeveloperError("date is required.");
-  }
-  //>>includeEnd('debug');
-  if (!defined(result)) {
-    result = new Matrix3();
-  }
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(date)) {
+        throw new DeveloperError("date is required.");
+    }
+    //>>includeEnd('debug');
+    if (!defined(result)) {
+        result = new Matrix3();
+    }
 
-  const fixedToIcrfMtx = Transforms.computeMoonFixedToIcrfMatrix(date, result);
-  if (!defined(fixedToIcrfMtx)) {
-    return undefined;
-  }
+    const fixedToIcrfMtx = Transforms.computeMoonFixedToIcrfMatrix(
+        date,
+        result,
+    );
+    if (!defined(fixedToIcrfMtx)) {
+        return undefined;
+    }
 
-  return Matrix3.transpose(fixedToIcrfMtx, result);
+    return Matrix3.transpose(fixedToIcrfMtx, result);
 };
 
 const xysScratch = new Iau2006XysSample(0.0, 0.0, 0.0);
 const eopScratch = new EarthOrientationParametersSample(
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
 );
 const rotation1Scratch = new Matrix3();
 const rotation2Scratch = new Matrix3();
@@ -892,115 +911,117 @@ const rotation2Scratch = new Matrix3();
  * @see Transforms.preloadIcrfFixed
  */
 Transforms.computeFixedToIcrfMatrix = function (date, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(date)) {
-    throw new DeveloperError("date is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(date)) {
+        throw new DeveloperError("date is required.");
+    }
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    result = new Matrix3();
-  }
+    if (!defined(result)) {
+        result = new Matrix3();
+    }
 
-  // Compute pole wander
-  const eop = Transforms.earthOrientationParameters.compute(date, eopScratch);
-  if (!defined(eop)) {
-    return undefined;
-  }
+    // Compute pole wander
+    const eop = Transforms.earthOrientationParameters.compute(date, eopScratch);
+    if (!defined(eop)) {
+        return undefined;
+    }
 
-  // There is no external conversion to Terrestrial Time (TT).
-  // So use International Atomic Time (TAI) and convert using offsets.
-  // Here we are assuming that dayTT and secondTT are positive
-  const dayTT = date.dayNumber;
-  // It's possible here that secondTT could roll over 86400
-  // This does not seem to affect the precision (unit tests check for this)
-  const secondTT = date.secondsOfDay + ttMinusTai;
+    // There is no external conversion to Terrestrial Time (TT).
+    // So use International Atomic Time (TAI) and convert using offsets.
+    // Here we are assuming that dayTT and secondTT are positive
+    const dayTT = date.dayNumber;
+    // It's possible here that secondTT could roll over 86400
+    // This does not seem to affect the precision (unit tests check for this)
+    const secondTT = date.secondsOfDay + ttMinusTai;
 
-  const xys = Transforms.iau2006XysData.computeXysRadians(
-    dayTT,
-    secondTT,
-    xysScratch,
-  );
-  if (!defined(xys)) {
-    return undefined;
-  }
+    const xys = Transforms.iau2006XysData.computeXysRadians(
+        dayTT,
+        secondTT,
+        xysScratch,
+    );
+    if (!defined(xys)) {
+        return undefined;
+    }
 
-  const x = xys.x + eop.xPoleOffset;
-  const y = xys.y + eop.yPoleOffset;
+    const x = xys.x + eop.xPoleOffset;
+    const y = xys.y + eop.yPoleOffset;
 
-  // Compute XYS rotation
-  const a = 1.0 / (1.0 + Math.sqrt(1.0 - x * x - y * y));
+    // Compute XYS rotation
+    const a = 1.0 / (1.0 + Math.sqrt(1.0 - x * x - y * y));
 
-  const rotation1 = rotation1Scratch;
-  rotation1[0] = 1.0 - a * x * x;
-  rotation1[3] = -a * x * y;
-  rotation1[6] = x;
-  rotation1[1] = -a * x * y;
-  rotation1[4] = 1 - a * y * y;
-  rotation1[7] = y;
-  rotation1[2] = -x;
-  rotation1[5] = -y;
-  rotation1[8] = 1 - a * (x * x + y * y);
+    const rotation1 = rotation1Scratch;
+    rotation1[0] = 1.0 - a * x * x;
+    rotation1[3] = -a * x * y;
+    rotation1[6] = x;
+    rotation1[1] = -a * x * y;
+    rotation1[4] = 1 - a * y * y;
+    rotation1[7] = y;
+    rotation1[2] = -x;
+    rotation1[5] = -y;
+    rotation1[8] = 1 - a * (x * x + y * y);
 
-  const rotation2 = Matrix3.fromRotationZ(-xys.s, rotation2Scratch);
-  const matrixQ = Matrix3.multiply(rotation1, rotation2, rotation1Scratch);
+    const rotation2 = Matrix3.fromRotationZ(-xys.s, rotation2Scratch);
+    const matrixQ = Matrix3.multiply(rotation1, rotation2, rotation1Scratch);
 
-  // Similar to TT conversions above
-  // It's possible here that secondTT could roll over 86400
-  // This does not seem to affect the precision (unit tests check for this)
-  const dateUt1day = date.dayNumber;
-  const dateUt1sec =
-    date.secondsOfDay - JulianDate.computeTaiMinusUtc(date) + eop.ut1MinusUtc;
+    // Similar to TT conversions above
+    // It's possible here that secondTT could roll over 86400
+    // This does not seem to affect the precision (unit tests check for this)
+    const dateUt1day = date.dayNumber;
+    const dateUt1sec =
+        date.secondsOfDay -
+        JulianDate.computeTaiMinusUtc(date) +
+        eop.ut1MinusUtc;
 
-  // Compute Earth rotation angle
-  // The IERS standard for era is
-  //    era = 0.7790572732640 + 1.00273781191135448 * Tu
-  // where
-  //    Tu = JulianDateInUt1 - 2451545.0
-  // However, you get much more precision if you make the following simplification
-  //    era = a + (1 + b) * (JulianDayNumber + FractionOfDay - 2451545)
-  //    era = a + (JulianDayNumber - 2451545) + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
-  //    era = a + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
-  // since (JulianDayNumber - 2451545) represents an integer number of revolutions which will be discarded anyway.
-  const daysSinceJ2000 = dateUt1day - 2451545;
-  const fractionOfDay = dateUt1sec / TimeConstants.SECONDS_PER_DAY;
-  let era =
-    0.779057273264 +
-    fractionOfDay +
-    0.00273781191135448 * (daysSinceJ2000 + fractionOfDay);
-  era = (era % 1.0) * CesiumMath.TWO_PI;
+    // Compute Earth rotation angle
+    // The IERS standard for era is
+    //    era = 0.7790572732640 + 1.00273781191135448 * Tu
+    // where
+    //    Tu = JulianDateInUt1 - 2451545.0
+    // However, you get much more precision if you make the following simplification
+    //    era = a + (1 + b) * (JulianDayNumber + FractionOfDay - 2451545)
+    //    era = a + (JulianDayNumber - 2451545) + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
+    //    era = a + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
+    // since (JulianDayNumber - 2451545) represents an integer number of revolutions which will be discarded anyway.
+    const daysSinceJ2000 = dateUt1day - 2451545;
+    const fractionOfDay = dateUt1sec / TimeConstants.SECONDS_PER_DAY;
+    let era =
+        0.779057273264 +
+        fractionOfDay +
+        0.00273781191135448 * (daysSinceJ2000 + fractionOfDay);
+    era = (era % 1.0) * CesiumMath.TWO_PI;
 
-  const earthRotation = Matrix3.fromRotationZ(era, rotation2Scratch);
+    const earthRotation = Matrix3.fromRotationZ(era, rotation2Scratch);
 
-  // pseudoFixed to ICRF
-  const pfToIcrf = Matrix3.multiply(matrixQ, earthRotation, rotation1Scratch);
+    // pseudoFixed to ICRF
+    const pfToIcrf = Matrix3.multiply(matrixQ, earthRotation, rotation1Scratch);
 
-  // Compute pole wander matrix
-  const cosxp = Math.cos(eop.xPoleWander);
-  const cosyp = Math.cos(eop.yPoleWander);
-  const sinxp = Math.sin(eop.xPoleWander);
-  const sinyp = Math.sin(eop.yPoleWander);
+    // Compute pole wander matrix
+    const cosxp = Math.cos(eop.xPoleWander);
+    const cosyp = Math.cos(eop.yPoleWander);
+    const sinxp = Math.sin(eop.xPoleWander);
+    const sinyp = Math.sin(eop.yPoleWander);
 
-  let ttt = dayTT - j2000ttDays + secondTT / TimeConstants.SECONDS_PER_DAY;
-  ttt /= 36525.0;
+    let ttt = dayTT - j2000ttDays + secondTT / TimeConstants.SECONDS_PER_DAY;
+    ttt /= 36525.0;
 
-  // approximate sp value in rad
-  const sp = (-47.0e-6 * ttt * CesiumMath.RADIANS_PER_DEGREE) / 3600.0;
-  const cossp = Math.cos(sp);
-  const sinsp = Math.sin(sp);
+    // approximate sp value in rad
+    const sp = (-47.0e-6 * ttt * CesiumMath.RADIANS_PER_DEGREE) / 3600.0;
+    const cossp = Math.cos(sp);
+    const sinsp = Math.sin(sp);
 
-  const fToPfMtx = rotation2Scratch;
-  fToPfMtx[0] = cosxp * cossp;
-  fToPfMtx[1] = cosxp * sinsp;
-  fToPfMtx[2] = sinxp;
-  fToPfMtx[3] = -cosyp * sinsp + sinyp * sinxp * cossp;
-  fToPfMtx[4] = cosyp * cossp + sinyp * sinxp * sinsp;
-  fToPfMtx[5] = -sinyp * cosxp;
-  fToPfMtx[6] = -sinyp * sinsp - cosyp * sinxp * cossp;
-  fToPfMtx[7] = sinyp * cossp - cosyp * sinxp * sinsp;
-  fToPfMtx[8] = cosyp * cosxp;
+    const fToPfMtx = rotation2Scratch;
+    fToPfMtx[0] = cosxp * cossp;
+    fToPfMtx[1] = cosxp * sinsp;
+    fToPfMtx[2] = sinxp;
+    fToPfMtx[3] = -cosyp * sinsp + sinyp * sinxp * cossp;
+    fToPfMtx[4] = cosyp * cossp + sinyp * sinxp * sinsp;
+    fToPfMtx[5] = -sinyp * cosxp;
+    fToPfMtx[6] = -sinyp * sinsp - cosyp * sinxp * cossp;
+    fToPfMtx[7] = sinyp * cossp - cosyp * sinxp * sinsp;
+    fToPfMtx[8] = cosyp * cosxp;
 
-  return Matrix3.multiply(pfToIcrf, fToPfMtx, result);
+    return Matrix3.multiply(pfToIcrf, fToPfMtx, result);
 };
 
 const pointToWindowCoordinatesTemp = new Cartesian4();
@@ -1015,58 +1036,58 @@ const pointToWindowCoordinatesTemp = new Cartesian4();
  * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
  */
 Transforms.pointToWindowCoordinates = function (
-  modelViewProjectionMatrix,
-  viewportTransformation,
-  point,
-  result,
-) {
-  result = Transforms.pointToGLWindowCoordinates(
     modelViewProjectionMatrix,
     viewportTransformation,
     point,
     result,
-  );
-  result.y = 2.0 * viewportTransformation[5] - result.y;
-  return result;
+) {
+    result = Transforms.pointToGLWindowCoordinates(
+        modelViewProjectionMatrix,
+        viewportTransformation,
+        point,
+        result,
+    );
+    result.y = 2.0 * viewportTransformation[5] - result.y;
+    return result;
 };
 
 /**
  * @private
  */
 Transforms.pointToGLWindowCoordinates = function (
-  modelViewProjectionMatrix,
-  viewportTransformation,
-  point,
-  result,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(modelViewProjectionMatrix)) {
-    throw new DeveloperError("modelViewProjectionMatrix is required.");
-  }
-
-  if (!defined(viewportTransformation)) {
-    throw new DeveloperError("viewportTransformation is required.");
-  }
-
-  if (!defined(point)) {
-    throw new DeveloperError("point is required.");
-  }
-  //>>includeEnd('debug');
-
-  if (!defined(result)) {
-    result = new Cartesian2();
-  }
-
-  const tmp = pointToWindowCoordinatesTemp;
-
-  Matrix4.multiplyByVector(
     modelViewProjectionMatrix,
-    Cartesian4.fromElements(point.x, point.y, point.z, 1, tmp),
-    tmp,
-  );
-  Cartesian4.multiplyByScalar(tmp, 1.0 / tmp.w, tmp);
-  Matrix4.multiplyByVector(viewportTransformation, tmp, tmp);
-  return Cartesian2.fromCartesian4(tmp, result);
+    viewportTransformation,
+    point,
+    result,
+) {
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(modelViewProjectionMatrix)) {
+        throw new DeveloperError("modelViewProjectionMatrix is required.");
+    }
+
+    if (!defined(viewportTransformation)) {
+        throw new DeveloperError("viewportTransformation is required.");
+    }
+
+    if (!defined(point)) {
+        throw new DeveloperError("point is required.");
+    }
+    //>>includeEnd('debug');
+
+    if (!defined(result)) {
+        result = new Cartesian2();
+    }
+
+    const tmp = pointToWindowCoordinatesTemp;
+
+    Matrix4.multiplyByVector(
+        modelViewProjectionMatrix,
+        Cartesian4.fromElements(point.x, point.y, point.z, 1, tmp),
+        tmp,
+    );
+    Cartesian4.multiplyByScalar(tmp, 1.0 / tmp.w, tmp);
+    Matrix4.multiplyByVector(viewportTransformation, tmp, tmp);
+    return Cartesian2.fromCartesian4(tmp, result);
 };
 
 const normalScratch = new Cartesian3();
@@ -1083,52 +1104,52 @@ const upScratch = new Cartesian3();
  * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if none was provided.
  */
 Transforms.rotationMatrixFromPositionVelocity = function (
-  position,
-  velocity,
-  ellipsoid,
-  result,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(position)) {
-    throw new DeveloperError("position is required.");
-  }
-
-  if (!defined(velocity)) {
-    throw new DeveloperError("velocity is required.");
-  }
-  //>>includeEnd('debug');
-
-  const normal = (ellipsoid ?? Ellipsoid.default).geodeticSurfaceNormal(
     position,
-    normalScratch,
-  );
-  let right = Cartesian3.cross(velocity, normal, rightScratch);
+    velocity,
+    ellipsoid,
+    result,
+) {
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(position)) {
+        throw new DeveloperError("position is required.");
+    }
 
-  if (Cartesian3.equalsEpsilon(right, Cartesian3.ZERO, CesiumMath.EPSILON6)) {
-    right = Cartesian3.clone(Cartesian3.UNIT_X, right);
-  }
+    if (!defined(velocity)) {
+        throw new DeveloperError("velocity is required.");
+    }
+    //>>includeEnd('debug');
 
-  const up = Cartesian3.cross(right, velocity, upScratch);
-  Cartesian3.normalize(up, up);
-  Cartesian3.cross(velocity, up, right);
-  Cartesian3.negate(right, right);
-  Cartesian3.normalize(right, right);
+    const normal = (ellipsoid ?? Ellipsoid.default).geodeticSurfaceNormal(
+        position,
+        normalScratch,
+    );
+    let right = Cartesian3.cross(velocity, normal, rightScratch);
 
-  if (!defined(result)) {
-    result = new Matrix3();
-  }
+    if (Cartesian3.equalsEpsilon(right, Cartesian3.ZERO, CesiumMath.EPSILON6)) {
+        right = Cartesian3.clone(Cartesian3.UNIT_X, right);
+    }
 
-  result[0] = velocity.x;
-  result[1] = velocity.y;
-  result[2] = velocity.z;
-  result[3] = right.x;
-  result[4] = right.y;
-  result[5] = right.z;
-  result[6] = up.x;
-  result[7] = up.y;
-  result[8] = up.z;
+    const up = Cartesian3.cross(right, velocity, upScratch);
+    Cartesian3.normalize(up, up);
+    Cartesian3.cross(velocity, up, right);
+    Cartesian3.negate(right, right);
+    Cartesian3.normalize(right, right);
 
-  return result;
+    if (!defined(result)) {
+        result = new Matrix3();
+    }
+
+    result[0] = velocity.x;
+    result[1] = velocity.y;
+    result[2] = velocity.z;
+    result[3] = right.x;
+    result[4] = right.y;
+    result[5] = right.z;
+    result[6] = up.x;
+    result[7] = up.y;
+    result[8] = up.z;
+
+    return result;
 };
 
 /**
@@ -1139,24 +1160,24 @@ Transforms.rotationMatrixFromPositionVelocity = function (
  * @private
  */
 Transforms.SWIZZLE_3D_TO_2D_MATRIX = Object.freeze(
-  new Matrix4(
-    0.0,
-    0.0,
-    1.0,
-    0.0,
-    1.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    1.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    1.0,
-  ),
+    new Matrix4(
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+    ),
 );
 
 const scratchCartographic = new Cartographic();
@@ -1170,108 +1191,108 @@ const scratchToENU = new Matrix4();
  * @private
  */
 Transforms.basisTo2D = function (projection, matrix, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(projection)) {
-    throw new DeveloperError("projection is required.");
-  }
-  if (!defined(matrix)) {
-    throw new DeveloperError("matrix is required.");
-  }
-  if (!defined(result)) {
-    throw new DeveloperError("result is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(projection)) {
+        throw new DeveloperError("projection is required.");
+    }
+    if (!defined(matrix)) {
+        throw new DeveloperError("matrix is required.");
+    }
+    if (!defined(result)) {
+        throw new DeveloperError("result is required.");
+    }
+    //>>includeEnd('debug');
 
-  const rtcCenter = Matrix4.getTranslation(matrix, scratchCenter);
-  const ellipsoid = projection.ellipsoid;
+    const rtcCenter = Matrix4.getTranslation(matrix, scratchCenter);
+    const ellipsoid = projection.ellipsoid;
 
-  let projectedPosition;
-  if (Cartesian3.equals(rtcCenter, Cartesian3.ZERO)) {
-    projectedPosition = Cartesian3.clone(
-      Cartesian3.ZERO,
-      scratchCartesian3Projection,
+    let projectedPosition;
+    if (Cartesian3.equals(rtcCenter, Cartesian3.ZERO)) {
+        projectedPosition = Cartesian3.clone(
+            Cartesian3.ZERO,
+            scratchCartesian3Projection,
+        );
+    } else {
+        // Get the 2D Center
+        const cartographic = ellipsoid.cartesianToCartographic(
+            rtcCenter,
+            scratchCartographic,
+        );
+
+        projectedPosition = projection.project(
+            cartographic,
+            scratchCartesian3Projection,
+        );
+        Cartesian3.fromElements(
+            projectedPosition.z,
+            projectedPosition.x,
+            projectedPosition.y,
+            projectedPosition,
+        );
+    }
+
+    // Assuming the instance are positioned on the ellipsoid, invert the ellipsoidal transform to get the local transform and then convert to 2D
+    const fromENU = Transforms.eastNorthUpToFixedFrame(
+        rtcCenter,
+        ellipsoid,
+        scratchFromENU,
     );
-  } else {
-    // Get the 2D Center
-    const cartographic = ellipsoid.cartesianToCartographic(
-      rtcCenter,
-      scratchCartographic,
-    );
+    const toENU = Matrix4.inverseTransformation(fromENU, scratchToENU);
+    const rotation = Matrix4.getMatrix3(matrix, scratchRotation);
+    const local = Matrix4.multiplyByMatrix3(toENU, rotation, result);
+    Matrix4.multiply(Transforms.SWIZZLE_3D_TO_2D_MATRIX, local, result); // Swap x, y, z for 2D
+    Matrix4.setTranslation(result, projectedPosition, result); // Use the projected center
 
-    projectedPosition = projection.project(
-      cartographic,
-      scratchCartesian3Projection,
-    );
-    Cartesian3.fromElements(
-      projectedPosition.z,
-      projectedPosition.x,
-      projectedPosition.y,
-      projectedPosition,
-    );
-  }
-
-  // Assuming the instance are positioned on the ellipsoid, invert the ellipsoidal transform to get the local transform and then convert to 2D
-  const fromENU = Transforms.eastNorthUpToFixedFrame(
-    rtcCenter,
-    ellipsoid,
-    scratchFromENU,
-  );
-  const toENU = Matrix4.inverseTransformation(fromENU, scratchToENU);
-  const rotation = Matrix4.getMatrix3(matrix, scratchRotation);
-  const local = Matrix4.multiplyByMatrix3(toENU, rotation, result);
-  Matrix4.multiply(Transforms.SWIZZLE_3D_TO_2D_MATRIX, local, result); // Swap x, y, z for 2D
-  Matrix4.setTranslation(result, projectedPosition, result); // Use the projected center
-
-  return result;
+    return result;
 };
 
 /**
  * @private
  */
 Transforms.ellipsoidTo2DModelMatrix = function (projection, center, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(projection)) {
-    throw new DeveloperError("projection is required.");
-  }
-  if (!defined(center)) {
-    throw new DeveloperError("center is required.");
-  }
-  if (!defined(result)) {
-    throw new DeveloperError("result is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(projection)) {
+        throw new DeveloperError("projection is required.");
+    }
+    if (!defined(center)) {
+        throw new DeveloperError("center is required.");
+    }
+    if (!defined(result)) {
+        throw new DeveloperError("result is required.");
+    }
+    //>>includeEnd('debug');
 
-  const ellipsoid = projection.ellipsoid;
+    const ellipsoid = projection.ellipsoid;
 
-  const fromENU = Transforms.eastNorthUpToFixedFrame(
-    center,
-    ellipsoid,
-    scratchFromENU,
-  );
-  const toENU = Matrix4.inverseTransformation(fromENU, scratchToENU);
+    const fromENU = Transforms.eastNorthUpToFixedFrame(
+        center,
+        ellipsoid,
+        scratchFromENU,
+    );
+    const toENU = Matrix4.inverseTransformation(fromENU, scratchToENU);
 
-  const cartographic = ellipsoid.cartesianToCartographic(
-    center,
-    scratchCartographic,
-  );
-  const projectedPosition = projection.project(
-    cartographic,
-    scratchCartesian3Projection,
-  );
-  Cartesian3.fromElements(
-    projectedPosition.z,
-    projectedPosition.x,
-    projectedPosition.y,
-    projectedPosition,
-  );
+    const cartographic = ellipsoid.cartesianToCartographic(
+        center,
+        scratchCartographic,
+    );
+    const projectedPosition = projection.project(
+        cartographic,
+        scratchCartesian3Projection,
+    );
+    Cartesian3.fromElements(
+        projectedPosition.z,
+        projectedPosition.x,
+        projectedPosition.y,
+        projectedPosition,
+    );
 
-  const translation = Matrix4.fromTranslation(
-    projectedPosition,
-    scratchFromENU,
-  );
-  Matrix4.multiply(Transforms.SWIZZLE_3D_TO_2D_MATRIX, toENU, result);
-  Matrix4.multiply(translation, result, result);
+    const translation = Matrix4.fromTranslation(
+        projectedPosition,
+        scratchFromENU,
+    );
+    Matrix4.multiply(Transforms.SWIZZLE_3D_TO_2D_MATRIX, toENU, result);
+    Matrix4.multiply(translation, result, result);
 
-  return result;
+    return result;
 };
 export default Transforms;

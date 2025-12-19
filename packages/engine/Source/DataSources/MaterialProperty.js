@@ -21,33 +21,33 @@ import Material from "../Scene/Material.js";
  * @see StripeMaterialProperty
  */
 function MaterialProperty() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 Object.defineProperties(MaterialProperty.prototype, {
-  /**
-   * Gets a value indicating if this property is constant.  A property is considered
-   * constant if getValue always returns the same result for the current definition.
-   * @memberof MaterialProperty.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   */
-  isConstant: {
-    get: DeveloperError.throwInstantiationError,
-  },
-  /**
-   * Gets the event that is raised whenever the definition of this property changes.
-   * The definition is considered to have changed if a call to getValue would return
-   * a different result for the same time.
-   * @memberof MaterialProperty.prototype
-   *
-   * @type {Event}
-   * @readonly
-   */
-  definitionChanged: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets a value indicating if this property is constant.  A property is considered
+     * constant if getValue always returns the same result for the current definition.
+     * @memberof MaterialProperty.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     */
+    isConstant: {
+        get: DeveloperError.throwInstantiationError,
+    },
+    /**
+     * Gets the event that is raised whenever the definition of this property changes.
+     * The definition is considered to have changed if a call to getValue would return
+     * a different result for the same time.
+     * @memberof MaterialProperty.prototype
+     *
+     * @type {Event}
+     * @readonly
+     */
+    definitionChanged: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 /**
@@ -85,27 +85,27 @@ const timeScratch = new JulianDate();
  * @private
  */
 MaterialProperty.getValue = function (time, materialProperty, material) {
-  let type;
-  if (!defined(time)) {
-    time = JulianDate.now(timeScratch);
-  }
-
-  if (defined(materialProperty)) {
-    type = materialProperty.getType(time);
-    if (defined(type)) {
-      if (!defined(material) || material.type !== type) {
-        material = Material.fromType(type);
-      }
-      materialProperty.getValue(time, material.uniforms);
-      return material;
+    let type;
+    if (!defined(time)) {
+        time = JulianDate.now(timeScratch);
     }
-  }
 
-  if (!defined(material) || material.type !== Material.ColorType) {
-    material = Material.fromType(Material.ColorType);
-  }
-  Color.clone(Color.WHITE, material.uniforms.color);
+    if (defined(materialProperty)) {
+        type = materialProperty.getType(time);
+        if (defined(type)) {
+            if (!defined(material) || material.type !== type) {
+                material = Material.fromType(type);
+            }
+            materialProperty.getValue(time, material.uniforms);
+            return material;
+        }
+    }
 
-  return material;
+    if (!defined(material) || material.type !== Material.ColorType) {
+        material = Material.fromType(Material.ColorType);
+    }
+    Color.clone(Color.WHITE, material.uniforms.color);
+
+    return material;
 };
 export default MaterialProperty;

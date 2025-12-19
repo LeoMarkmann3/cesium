@@ -70,26 +70,26 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @param {ArcGisMapServerImageryProvider.ConstructorOptions} options An object describing initialization options
  */
 function ImageryProviderBuilder(options) {
-  this.useTiles = options.usePreCachedTilesIfAvailable ?? true;
+    this.useTiles = options.usePreCachedTilesIfAvailable ?? true;
 
-  const ellipsoid = options.ellipsoid;
-  this.tilingScheme =
-    options.tilingScheme ??
-    new GeographicTilingScheme({ ellipsoid: ellipsoid });
-  this.rectangle = options.rectangle ?? this.tilingScheme.rectangle;
-  this.ellipsoid = ellipsoid;
+    const ellipsoid = options.ellipsoid;
+    this.tilingScheme =
+        options.tilingScheme ??
+        new GeographicTilingScheme({ ellipsoid: ellipsoid });
+    this.rectangle = options.rectangle ?? this.tilingScheme.rectangle;
+    this.ellipsoid = ellipsoid;
 
-  let credit = options.credit;
-  if (typeof credit === "string") {
-    credit = new Credit(credit);
-  }
-  this.credit = credit;
-  this.tileCredits = undefined;
-  this.tileDiscardPolicy = options.tileDiscardPolicy;
+    let credit = options.credit;
+    if (typeof credit === "string") {
+        credit = new Credit(credit);
+    }
+    this.credit = credit;
+    this.tileCredits = undefined;
+    this.tileDiscardPolicy = options.tileDiscardPolicy;
 
-  this.tileWidth = options.tileWidth ?? 256;
-  this.tileHeight = options.tileHeight ?? 256;
-  this.maximumLevel = options.maximumLevel;
+    this.tileWidth = options.tileWidth ?? 256;
+    this.tileHeight = options.tileHeight ?? 256;
+    this.maximumLevel = options.maximumLevel;
 }
 
 /**
@@ -100,156 +100,162 @@ function ImageryProviderBuilder(options) {
  * @param {ArcGisMapServerImageryProvider} provider
  */
 ImageryProviderBuilder.prototype.build = function (provider) {
-  provider._useTiles = this.useTiles;
-  provider._tilingScheme = this.tilingScheme;
-  provider._rectangle = this.rectangle;
-  provider._credit = this.credit;
-  provider._tileCredits = this.tileCredits;
-  provider._tileDiscardPolicy = this.tileDiscardPolicy;
-  provider._tileWidth = this.tileWidth;
-  provider._tileHeight = this.tileHeight;
-  provider._maximumLevel = this.maximumLevel;
+    provider._useTiles = this.useTiles;
+    provider._tilingScheme = this.tilingScheme;
+    provider._rectangle = this.rectangle;
+    provider._credit = this.credit;
+    provider._tileCredits = this.tileCredits;
+    provider._tileDiscardPolicy = this.tileDiscardPolicy;
+    provider._tileWidth = this.tileWidth;
+    provider._tileHeight = this.tileHeight;
+    provider._maximumLevel = this.maximumLevel;
 
-  // Install the default tile discard policy if none has been supplied.
-  if (this.useTiles && !defined(this.tileDiscardPolicy)) {
-    provider._tileDiscardPolicy = new DiscardMissingTileImagePolicy({
-      missingImageUrl: buildImageResource(provider, 0, 0, this.maximumLevel)
-        .url,
-      pixelsToCheck: [
-        new Cartesian2(0, 0),
-        new Cartesian2(200, 20),
-        new Cartesian2(20, 200),
-        new Cartesian2(80, 110),
-        new Cartesian2(160, 130),
-      ],
-      disableCheckIfAllPixelsAreTransparent: true,
-    });
-  }
+    // Install the default tile discard policy if none has been supplied.
+    if (this.useTiles && !defined(this.tileDiscardPolicy)) {
+        provider._tileDiscardPolicy = new DiscardMissingTileImagePolicy({
+            missingImageUrl: buildImageResource(
+                provider,
+                0,
+                0,
+                this.maximumLevel,
+            ).url,
+            pixelsToCheck: [
+                new Cartesian2(0, 0),
+                new Cartesian2(200, 20),
+                new Cartesian2(20, 200),
+                new Cartesian2(80, 110),
+                new Cartesian2(160, 130),
+            ],
+            disableCheckIfAllPixelsAreTransparent: true,
+        });
+    }
 };
 
 function metadataSuccess(data, imageryProviderBuilder) {
-  const tileInfo = data.tileInfo;
-  if (!defined(tileInfo)) {
-    imageryProviderBuilder.useTiles = false;
-  } else {
-    imageryProviderBuilder.tileWidth = tileInfo.rows;
-    imageryProviderBuilder.tileHeight = tileInfo.cols;
-
-    if (
-      tileInfo.spatialReference.wkid === 102100 ||
-      tileInfo.spatialReference.wkid === 102113
-    ) {
-      imageryProviderBuilder.tilingScheme = new WebMercatorTilingScheme({
-        ellipsoid: imageryProviderBuilder.ellipsoid,
-      });
-    } else if (data.tileInfo.spatialReference.wkid === 4326) {
-      imageryProviderBuilder.tilingScheme = new GeographicTilingScheme({
-        ellipsoid: imageryProviderBuilder.ellipsoid,
-      });
+    const tileInfo = data.tileInfo;
+    if (!defined(tileInfo)) {
+        imageryProviderBuilder.useTiles = false;
     } else {
-      const message = `Tile spatial reference WKID ${data.tileInfo.spatialReference.wkid} is not supported.`;
-      throw new RuntimeError(message);
-    }
-    imageryProviderBuilder.maximumLevel = data.tileInfo.lods.length - 1;
+        imageryProviderBuilder.tileWidth = tileInfo.rows;
+        imageryProviderBuilder.tileHeight = tileInfo.cols;
 
-    if (defined(data.fullExtent)) {
-      if (
-        defined(data.fullExtent.spatialReference) &&
-        defined(data.fullExtent.spatialReference.wkid)
-      ) {
         if (
-          data.fullExtent.spatialReference.wkid === 102100 ||
-          data.fullExtent.spatialReference.wkid === 102113
+            tileInfo.spatialReference.wkid === 102100 ||
+            tileInfo.spatialReference.wkid === 102113
         ) {
-          const projection = new WebMercatorProjection();
-          const extent = data.fullExtent;
-          const sw = projection.unproject(
-            new Cartesian3(
-              Math.max(
-                extent.xmin,
-                -imageryProviderBuilder.tilingScheme.ellipsoid.maximumRadius *
-                  Math.PI,
-              ),
-              Math.max(
-                extent.ymin,
-                -imageryProviderBuilder.tilingScheme.ellipsoid.maximumRadius *
-                  Math.PI,
-              ),
-              0.0,
-            ),
-          );
-          const ne = projection.unproject(
-            new Cartesian3(
-              Math.min(
-                extent.xmax,
-                imageryProviderBuilder.tilingScheme.ellipsoid.maximumRadius *
-                  Math.PI,
-              ),
-              Math.min(
-                extent.ymax,
-                imageryProviderBuilder.tilingScheme.ellipsoid.maximumRadius *
-                  Math.PI,
-              ),
-              0.0,
-            ),
-          );
-          imageryProviderBuilder.rectangle = new Rectangle(
-            sw.longitude,
-            sw.latitude,
-            ne.longitude,
-            ne.latitude,
-          );
-        } else if (data.fullExtent.spatialReference.wkid === 4326) {
-          imageryProviderBuilder.rectangle = Rectangle.fromDegrees(
-            data.fullExtent.xmin,
-            data.fullExtent.ymin,
-            data.fullExtent.xmax,
-            data.fullExtent.ymax,
-          );
+            imageryProviderBuilder.tilingScheme = new WebMercatorTilingScheme({
+                ellipsoid: imageryProviderBuilder.ellipsoid,
+            });
+        } else if (data.tileInfo.spatialReference.wkid === 4326) {
+            imageryProviderBuilder.tilingScheme = new GeographicTilingScheme({
+                ellipsoid: imageryProviderBuilder.ellipsoid,
+            });
         } else {
-          const extentMessage = `fullExtent.spatialReference WKID ${data.fullExtent.spatialReference.wkid} is not supported.`;
-          throw new RuntimeError(extentMessage);
+            const message = `Tile spatial reference WKID ${data.tileInfo.spatialReference.wkid} is not supported.`;
+            throw new RuntimeError(message);
         }
-      }
-    } else {
-      imageryProviderBuilder.rectangle =
-        imageryProviderBuilder.tilingScheme.rectangle;
+        imageryProviderBuilder.maximumLevel = data.tileInfo.lods.length - 1;
+
+        if (defined(data.fullExtent)) {
+            if (
+                defined(data.fullExtent.spatialReference) &&
+                defined(data.fullExtent.spatialReference.wkid)
+            ) {
+                if (
+                    data.fullExtent.spatialReference.wkid === 102100 ||
+                    data.fullExtent.spatialReference.wkid === 102113
+                ) {
+                    const projection = new WebMercatorProjection();
+                    const extent = data.fullExtent;
+                    const sw = projection.unproject(
+                        new Cartesian3(
+                            Math.max(
+                                extent.xmin,
+                                -imageryProviderBuilder.tilingScheme.ellipsoid
+                                    .maximumRadius * Math.PI,
+                            ),
+                            Math.max(
+                                extent.ymin,
+                                -imageryProviderBuilder.tilingScheme.ellipsoid
+                                    .maximumRadius * Math.PI,
+                            ),
+                            0.0,
+                        ),
+                    );
+                    const ne = projection.unproject(
+                        new Cartesian3(
+                            Math.min(
+                                extent.xmax,
+                                imageryProviderBuilder.tilingScheme.ellipsoid
+                                    .maximumRadius * Math.PI,
+                            ),
+                            Math.min(
+                                extent.ymax,
+                                imageryProviderBuilder.tilingScheme.ellipsoid
+                                    .maximumRadius * Math.PI,
+                            ),
+                            0.0,
+                        ),
+                    );
+                    imageryProviderBuilder.rectangle = new Rectangle(
+                        sw.longitude,
+                        sw.latitude,
+                        ne.longitude,
+                        ne.latitude,
+                    );
+                } else if (data.fullExtent.spatialReference.wkid === 4326) {
+                    imageryProviderBuilder.rectangle = Rectangle.fromDegrees(
+                        data.fullExtent.xmin,
+                        data.fullExtent.ymin,
+                        data.fullExtent.xmax,
+                        data.fullExtent.ymax,
+                    );
+                } else {
+                    const extentMessage = `fullExtent.spatialReference WKID ${data.fullExtent.spatialReference.wkid} is not supported.`;
+                    throw new RuntimeError(extentMessage);
+                }
+            }
+        } else {
+            imageryProviderBuilder.rectangle =
+                imageryProviderBuilder.tilingScheme.rectangle;
+        }
+
+        imageryProviderBuilder.useTiles = true;
     }
 
-    imageryProviderBuilder.useTiles = true;
-  }
-
-  if (defined(data.copyrightText) && data.copyrightText.length > 0) {
-    if (defined(imageryProviderBuilder.credit)) {
-      imageryProviderBuilder.tileCredits = [new Credit(data.copyrightText)];
-    } else {
-      imageryProviderBuilder.credit = new Credit(data.copyrightText);
+    if (defined(data.copyrightText) && data.copyrightText.length > 0) {
+        if (defined(imageryProviderBuilder.credit)) {
+            imageryProviderBuilder.tileCredits = [
+                new Credit(data.copyrightText),
+            ];
+        } else {
+            imageryProviderBuilder.credit = new Credit(data.copyrightText);
+        }
     }
-  }
 }
 
 function metadataFailure(resource, error) {
-  let message = `An error occurred while accessing ${resource.url}`;
-  if (defined(error) && defined(error.message)) {
-    message += `: ${error.message}`;
-  }
+    let message = `An error occurred while accessing ${resource.url}`;
+    if (defined(error) && defined(error.message)) {
+        message += `: ${error.message}`;
+    }
 
-  throw new RuntimeError(message);
+    throw new RuntimeError(message);
 }
 
 async function requestMetadata(resource, imageryProviderBuilder) {
-  const jsonResource = resource.getDerivedResource({
-    queryParameters: {
-      f: "json",
-    },
-  });
+    const jsonResource = resource.getDerivedResource({
+        queryParameters: {
+            f: "json",
+        },
+    });
 
-  try {
-    const data = await jsonResource.fetchJson();
-    metadataSuccess(data, imageryProviderBuilder);
-  } catch (error) {
-    metadataFailure(resource, error);
-  }
+    try {
+        const data = await jsonResource.fetchJson();
+        metadataSuccess(data, imageryProviderBuilder);
+    } catch (error) {
+        metadataFailure(resource, error);
+    }
 }
 
 /**
@@ -299,48 +305,48 @@ async function requestMetadata(resource, imageryProviderBuilder) {
 
  */
 function ArcGisMapServerImageryProvider(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._defaultAlpha = undefined;
-  this._defaultNightAlpha = undefined;
-  this._defaultDayAlpha = undefined;
-  this._defaultBrightness = undefined;
-  this._defaultContrast = undefined;
-  this._defaultHue = undefined;
-  this._defaultSaturation = undefined;
-  this._defaultGamma = undefined;
-  this._defaultMinificationFilter = undefined;
-  this._defaultMagnificationFilter = undefined;
+    this._defaultAlpha = undefined;
+    this._defaultNightAlpha = undefined;
+    this._defaultDayAlpha = undefined;
+    this._defaultBrightness = undefined;
+    this._defaultContrast = undefined;
+    this._defaultHue = undefined;
+    this._defaultSaturation = undefined;
+    this._defaultGamma = undefined;
+    this._defaultMinificationFilter = undefined;
+    this._defaultMagnificationFilter = undefined;
 
-  this._tileDiscardPolicy = options.tileDiscardPolicy;
-  this._tileWidth = options.tileWidth ?? 256;
-  this._tileHeight = options.tileHeight ?? 256;
-  this._maximumLevel = options.maximumLevel;
-  this._tilingScheme =
-    options.tilingScheme ??
-    new GeographicTilingScheme({ ellipsoid: options.ellipsoid });
-  this._useTiles = options.usePreCachedTilesIfAvailable ?? true;
-  this._rectangle = options.rectangle ?? this._tilingScheme.rectangle;
-  this._layers = options.layers;
-  this._credit = options.credit;
-  this._tileCredits = undefined;
+    this._tileDiscardPolicy = options.tileDiscardPolicy;
+    this._tileWidth = options.tileWidth ?? 256;
+    this._tileHeight = options.tileHeight ?? 256;
+    this._maximumLevel = options.maximumLevel;
+    this._tilingScheme =
+        options.tilingScheme ??
+        new GeographicTilingScheme({ ellipsoid: options.ellipsoid });
+    this._useTiles = options.usePreCachedTilesIfAvailable ?? true;
+    this._rectangle = options.rectangle ?? this._tilingScheme.rectangle;
+    this._layers = options.layers;
+    this._credit = options.credit;
+    this._tileCredits = undefined;
 
-  let credit = options.credit;
-  if (typeof credit === "string") {
-    credit = new Credit(credit);
-  }
+    let credit = options.credit;
+    if (typeof credit === "string") {
+        credit = new Credit(credit);
+    }
 
-  /**
-   * Gets or sets a value indicating whether feature picking is enabled.  If true, {@link ArcGisMapServerImageryProvider#pickFeatures} will
-   * invoke the "identify" operation on the ArcGIS server and return the features included in the response.  If false,
-   * {@link ArcGisMapServerImageryProvider#pickFeatures} will immediately return undefined (indicating no pickable features)
-   * without communicating with the server.
-   * @type {boolean}
-   * @default true
-   */
-  this.enablePickFeatures = options.enablePickFeatures ?? true;
+    /**
+     * Gets or sets a value indicating whether feature picking is enabled.  If true, {@link ArcGisMapServerImageryProvider#pickFeatures} will
+     * invoke the "identify" operation on the ArcGIS server and return the features included in the response.  If false,
+     * {@link ArcGisMapServerImageryProvider#pickFeatures} will immediately return undefined (indicating no pickable features)
+     * without communicating with the server.
+     * @type {boolean}
+     * @default true
+     */
+    this.enablePickFeatures = options.enablePickFeatures ?? true;
 
-  this._errorEvent = new Event();
+    this._errorEvent = new Event();
 }
 
 /**
@@ -371,310 +377,314 @@ function ArcGisMapServerImageryProvider(options) {
  */
 
 ArcGisMapServerImageryProvider.fromBasemapType = async function (
-  style,
-  options,
+    style,
+    options,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("style", style);
-  //>>includeEnd('debug');
-
-  options = options ?? Frozen.EMPTY_OBJECT;
-  let accessToken;
-  let server;
-  let warningCredit;
-  switch (style) {
-    case ArcGisBaseMapType.SATELLITE:
-      {
-        accessToken = options.token ?? ArcGisMapService.defaultAccessToken;
-        server = Resource.createIfNeeded(
-          ArcGisMapService.defaultWorldImageryServer,
-        );
-        server.appendForwardSlash();
-        const defaultTokenCredit =
-          ArcGisMapService.getDefaultTokenCredit(accessToken);
-        if (defined(defaultTokenCredit)) {
-          warningCredit = Credit.clone(defaultTokenCredit);
-        }
-      }
-      break;
-    case ArcGisBaseMapType.OCEANS:
-      {
-        accessToken = options.token ?? ArcGisMapService.defaultAccessToken;
-        server = Resource.createIfNeeded(
-          ArcGisMapService.defaultWorldOceanServer,
-        );
-        server.appendForwardSlash();
-        const defaultTokenCredit =
-          ArcGisMapService.getDefaultTokenCredit(accessToken);
-        if (defined(defaultTokenCredit)) {
-          warningCredit = Credit.clone(defaultTokenCredit);
-        }
-      }
-      break;
-    case ArcGisBaseMapType.HILLSHADE:
-      {
-        accessToken = options.token ?? ArcGisMapService.defaultAccessToken;
-        server = Resource.createIfNeeded(
-          ArcGisMapService.defaultWorldHillshadeServer,
-        );
-        server.appendForwardSlash();
-        const defaultTokenCredit =
-          ArcGisMapService.getDefaultTokenCredit(accessToken);
-        if (defined(defaultTokenCredit)) {
-          warningCredit = Credit.clone(defaultTokenCredit);
-        }
-      }
-      break;
-    default:
-      //>>includeStart('debug', pragmas.debug);
-      throw new DeveloperError(`Unsupported basemap type: ${style}`);
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("style", style);
     //>>includeEnd('debug');
-  }
 
-  return ArcGisMapServerImageryProvider.fromUrl(server, {
-    ...options,
-    token: accessToken,
-    credit: warningCredit,
-    usePreCachedTilesIfAvailable: true, // ArcGIS Base Map Service Layers only support Tiled views
-  });
+    options = options ?? Frozen.EMPTY_OBJECT;
+    let accessToken;
+    let server;
+    let warningCredit;
+    switch (style) {
+        case ArcGisBaseMapType.SATELLITE:
+            {
+                accessToken =
+                    options.token ?? ArcGisMapService.defaultAccessToken;
+                server = Resource.createIfNeeded(
+                    ArcGisMapService.defaultWorldImageryServer,
+                );
+                server.appendForwardSlash();
+                const defaultTokenCredit =
+                    ArcGisMapService.getDefaultTokenCredit(accessToken);
+                if (defined(defaultTokenCredit)) {
+                    warningCredit = Credit.clone(defaultTokenCredit);
+                }
+            }
+            break;
+        case ArcGisBaseMapType.OCEANS:
+            {
+                accessToken =
+                    options.token ?? ArcGisMapService.defaultAccessToken;
+                server = Resource.createIfNeeded(
+                    ArcGisMapService.defaultWorldOceanServer,
+                );
+                server.appendForwardSlash();
+                const defaultTokenCredit =
+                    ArcGisMapService.getDefaultTokenCredit(accessToken);
+                if (defined(defaultTokenCredit)) {
+                    warningCredit = Credit.clone(defaultTokenCredit);
+                }
+            }
+            break;
+        case ArcGisBaseMapType.HILLSHADE:
+            {
+                accessToken =
+                    options.token ?? ArcGisMapService.defaultAccessToken;
+                server = Resource.createIfNeeded(
+                    ArcGisMapService.defaultWorldHillshadeServer,
+                );
+                server.appendForwardSlash();
+                const defaultTokenCredit =
+                    ArcGisMapService.getDefaultTokenCredit(accessToken);
+                if (defined(defaultTokenCredit)) {
+                    warningCredit = Credit.clone(defaultTokenCredit);
+                }
+            }
+            break;
+        default:
+            //>>includeStart('debug', pragmas.debug);
+            throw new DeveloperError(`Unsupported basemap type: ${style}`);
+        //>>includeEnd('debug');
+    }
+
+    return ArcGisMapServerImageryProvider.fromUrl(server, {
+        ...options,
+        token: accessToken,
+        credit: warningCredit,
+        usePreCachedTilesIfAvailable: true, // ArcGIS Base Map Service Layers only support Tiled views
+    });
 };
 
 function buildImageResource(imageryProvider, x, y, level, request) {
-  let resource;
-  if (imageryProvider._useTiles) {
-    resource = imageryProvider._resource.getDerivedResource({
-      url: `tile/${level}/${y}/${x}`,
-      request: request,
-    });
-  } else {
-    const nativeRectangle =
-      imageryProvider._tilingScheme.tileXYToNativeRectangle(x, y, level);
-    const bbox = `${nativeRectangle.west},${nativeRectangle.south},${nativeRectangle.east},${nativeRectangle.north}`;
-
-    const query = {
-      bbox: bbox,
-      size: `${imageryProvider._tileWidth},${imageryProvider._tileHeight}`,
-      format: "png32",
-      transparent: true,
-      f: "image",
-    };
-
-    if (
-      imageryProvider._tilingScheme.projection instanceof GeographicProjection
-    ) {
-      query.bboxSR = 4326;
-      query.imageSR = 4326;
+    let resource;
+    if (imageryProvider._useTiles) {
+        resource = imageryProvider._resource.getDerivedResource({
+            url: `tile/${level}/${y}/${x}`,
+            request: request,
+        });
     } else {
-      query.bboxSR = 3857;
-      query.imageSR = 3857;
-    }
-    if (imageryProvider.layers) {
-      query.layers = `show:${imageryProvider.layers}`;
-    }
+        const nativeRectangle =
+            imageryProvider._tilingScheme.tileXYToNativeRectangle(x, y, level);
+        const bbox = `${nativeRectangle.west},${nativeRectangle.south},${nativeRectangle.east},${nativeRectangle.north}`;
 
-    resource = imageryProvider._resource.getDerivedResource({
-      url: "export",
-      request: request,
-      queryParameters: query,
-    });
-  }
-  return resource;
+        const query = {
+            bbox: bbox,
+            size: `${imageryProvider._tileWidth},${imageryProvider._tileHeight}`,
+            format: "png32",
+            transparent: true,
+            f: "image",
+        };
+
+        if (
+            imageryProvider._tilingScheme.projection instanceof
+            GeographicProjection
+        ) {
+            query.bboxSR = 4326;
+            query.imageSR = 4326;
+        } else {
+            query.bboxSR = 3857;
+            query.imageSR = 3857;
+        }
+        if (imageryProvider.layers) {
+            query.layers = `show:${imageryProvider.layers}`;
+        }
+
+        resource = imageryProvider._resource.getDerivedResource({
+            url: "export",
+            request: request,
+            queryParameters: query,
+        });
+    }
+    return resource;
 }
 
 Object.defineProperties(ArcGisMapServerImageryProvider.prototype, {
-  /**
-   * Gets the URL of the ArcGIS MapServer.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {string}
-   * @readonly
-   */
-  url: {
-    get: function () {
-      return this._resource._url;
+    /**
+     * Gets the URL of the ArcGIS MapServer.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {string}
+     * @readonly
+     */
+    url: {
+        get: function () {
+            return this._resource._url;
+        },
     },
-  },
 
-  /**
-   * Gets the ArcGIS token used to authenticate with the ArcGis MapServer service.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {string}
-   * @readonly
-   */
-  token: {
-    get: function () {
-      return this._resource.queryParameters.token;
+    /**
+     * Gets the ArcGIS token used to authenticate with the ArcGis MapServer service.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {string}
+     * @readonly
+     */
+    token: {
+        get: function () {
+            return this._resource.queryParameters.token;
+        },
     },
-  },
 
-  /**
-   * Gets the proxy used by this provider.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {Proxy}
-   * @readonly
-   */
-  proxy: {
-    get: function () {
-      return this._resource.proxy;
+    /**
+     * Gets the proxy used by this provider.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {Proxy}
+     * @readonly
+     */
+    proxy: {
+        get: function () {
+            return this._resource.proxy;
+        },
     },
-  },
 
-  /**
-   * Gets the width of each tile, in pixels.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  tileWidth: {
-    get: function () {
-      return this._tileWidth;
+    /**
+     * Gets the width of each tile, in pixels.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    tileWidth: {
+        get: function () {
+            return this._tileWidth;
+        },
     },
-  },
 
-  /**
-   * Gets the height of each tile, in pixels.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  tileHeight: {
-    get: function () {
-      return this._tileHeight;
+    /**
+     * Gets the height of each tile, in pixels.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    tileHeight: {
+        get: function () {
+            return this._tileHeight;
+        },
     },
-  },
 
-  /**
-   * Gets the maximum level-of-detail that can be requested.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {number|undefined}
-   * @readonly
-   */
-  maximumLevel: {
-    get: function () {
-      return this._maximumLevel;
+    /**
+     * Gets the maximum level-of-detail that can be requested.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {number|undefined}
+     * @readonly
+     */
+    maximumLevel: {
+        get: function () {
+            return this._maximumLevel;
+        },
     },
-  },
 
-  /**
-   * Gets the minimum level-of-detail that can be requested.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  minimumLevel: {
-    get: function () {
-      return 0;
+    /**
+     * Gets the minimum level-of-detail that can be requested.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    minimumLevel: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  /**
-   * Gets the tiling scheme used by this provider.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {TilingScheme}
-   * @readonly
-   */
-  tilingScheme: {
-    get: function () {
-      return this._tilingScheme;
+    /**
+     * Gets the tiling scheme used by this provider.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {TilingScheme}
+     * @readonly
+     */
+    tilingScheme: {
+        get: function () {
+            return this._tilingScheme;
+        },
     },
-  },
 
-  /**
-   * Gets the rectangle, in radians, of the imagery provided by this instance.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {Rectangle}
-   * @readonly
-   */
-  rectangle: {
-    get: function () {
-      return this._rectangle;
+    /**
+     * Gets the rectangle, in radians, of the imagery provided by this instance.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {Rectangle}
+     * @readonly
+     */
+    rectangle: {
+        get: function () {
+            return this._rectangle;
+        },
     },
-  },
 
-  /**
-   * Gets the tile discard policy.  If not undefined, the discard policy is responsible
-   * for filtering out "missing" tiles via its shouldDiscardImage function.  If this function
-   * returns undefined, no tiles are filtered.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {TileDiscardPolicy}
-   * @readonly
-   */
-  tileDiscardPolicy: {
-    get: function () {
-      return this._tileDiscardPolicy;
+    /**
+     * Gets the tile discard policy.  If not undefined, the discard policy is responsible
+     * for filtering out "missing" tiles via its shouldDiscardImage function.  If this function
+     * returns undefined, no tiles are filtered.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {TileDiscardPolicy}
+     * @readonly
+     */
+    tileDiscardPolicy: {
+        get: function () {
+            return this._tileDiscardPolicy;
+        },
     },
-  },
 
-  /**
-   * Gets an event that is raised when the imagery provider encounters an asynchronous error.  By subscribing
-   * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
-   * are passed an instance of {@link TileProviderError}.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {Event}
-   * @readonly
-   */
-  errorEvent: {
-    get: function () {
-      return this._errorEvent;
+    /**
+     * Gets an event that is raised when the imagery provider encounters an asynchronous error.  By subscribing
+     * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
+     * are passed an instance of {@link TileProviderError}.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {Event}
+     * @readonly
+     */
+    errorEvent: {
+        get: function () {
+            return this._errorEvent;
+        },
     },
-  },
 
-  /**
-   * Gets the credit to display when this imagery provider is active.  Typically this is used to credit
-   * the source of the imagery.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   * @type {Credit}
-   * @readonly
-   */
-  credit: {
-    get: function () {
-      return this._credit;
+    /**
+     * Gets the credit to display when this imagery provider is active.  Typically this is used to credit
+     * the source of the imagery.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     * @type {Credit}
+     * @readonly
+     */
+    credit: {
+        get: function () {
+            return this._credit;
+        },
     },
-  },
 
-  /**
-   * Gets a value indicating whether this imagery provider is using pre-cached tiles from the
-   * ArcGIS MapServer.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @default true
-   */
-  usingPrecachedTiles: {
-    get: function () {
-      return this._useTiles;
+    /**
+     * Gets a value indicating whether this imagery provider is using pre-cached tiles from the
+     * ArcGIS MapServer.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @default true
+     */
+    usingPrecachedTiles: {
+        get: function () {
+            return this._useTiles;
+        },
     },
-  },
 
-  /**
-   * Gets a value indicating whether or not the images provided by this imagery provider
-   * include an alpha channel.  If this property is false, an alpha channel, if present, will
-   * be ignored.  If this property is true, any images without an alpha channel will be treated
-   * as if their alpha is 1.0 everywhere.  When this property is false, memory usage
-   * and texture upload time are reduced.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @default true
-   */
-  hasAlphaChannel: {
-    get: function () {
-      return true;
+    /**
+     * Gets a value indicating whether or not the images provided by this imagery provider
+     * include an alpha channel.  If this property is false, an alpha channel, if present, will
+     * be ignored.  If this property is true, any images without an alpha channel will be treated
+     * as if their alpha is 1.0 everywhere.  When this property is false, memory usage
+     * and texture upload time are reduced.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @default true
+     */
+    hasAlphaChannel: {
+        get: function () {
+            return true;
+        },
     },
-  },
 
-  /**
-   * Gets the comma-separated list of layer IDs to show.
-   * @memberof ArcGisMapServerImageryProvider.prototype
-   *
-   * @type {string}
-   */
-  layers: {
-    get: function () {
-      return this._layers;
+    /**
+     * Gets the comma-separated list of layer IDs to show.
+     * @memberof ArcGisMapServerImageryProvider.prototype
+     *
+     * @type {string}
+     */
+    layers: {
+        get: function () {
+            return this._layers;
+        },
     },
-  },
 });
 
 /**
@@ -694,31 +704,31 @@ Object.defineProperties(ArcGisMapServerImageryProvider.prototype, {
  * @exception {RuntimeError} metadata fullExtent.spatialReference specifies an unknown WKID
  */
 ArcGisMapServerImageryProvider.fromUrl = async function (url, options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("url", url);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("url", url);
+    //>>includeEnd('debug');
 
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const resource = Resource.createIfNeeded(url);
-  resource.appendForwardSlash();
+    const resource = Resource.createIfNeeded(url);
+    resource.appendForwardSlash();
 
-  if (defined(options.token)) {
-    resource.setQueryParameters({
-      token: options.token,
-    });
-  }
+    if (defined(options.token)) {
+        resource.setQueryParameters({
+            token: options.token,
+        });
+    }
 
-  const provider = new ArcGisMapServerImageryProvider(options);
-  provider._resource = resource;
-  const imageryProviderBuilder = new ImageryProviderBuilder(options);
-  const useTiles = options.usePreCachedTilesIfAvailable ?? true;
-  if (useTiles) {
-    await requestMetadata(resource, imageryProviderBuilder);
-  }
+    const provider = new ArcGisMapServerImageryProvider(options);
+    provider._resource = resource;
+    const imageryProviderBuilder = new ImageryProviderBuilder(options);
+    const useTiles = options.usePreCachedTilesIfAvailable ?? true;
+    if (useTiles) {
+        await requestMetadata(resource, imageryProviderBuilder);
+    }
 
-  imageryProviderBuilder.build(provider);
-  return provider;
+    imageryProviderBuilder.build(provider);
+    return provider;
 };
 
 /**
@@ -730,11 +740,11 @@ ArcGisMapServerImageryProvider.fromUrl = async function (url, options) {
  * @returns {Credit[]} The credits to be displayed when the tile is displayed.
  */
 ArcGisMapServerImageryProvider.prototype.getTileCredits = function (
-  x,
-  y,
-  level,
+    x,
+    y,
+    level,
 ) {
-  return this._tileCredits;
+    return this._tileCredits;
 };
 
 /**
@@ -748,15 +758,15 @@ ArcGisMapServerImageryProvider.prototype.getTileCredits = function (
  *          undefined if there are too many active requests to the server, and the request should be retried later.
  */
 ArcGisMapServerImageryProvider.prototype.requestImage = function (
-  x,
-  y,
-  level,
-  request,
+    x,
+    y,
+    level,
+    request,
 ) {
-  return ImageryProvider.loadImage(
-    this,
-    buildImageResource(this, x, y, level, request),
-  );
+    return ImageryProvider.loadImage(
+        this,
+        buildImageResource(this, x, y, level, request),
+    );
 };
 
 /**
@@ -774,102 +784,109 @@ ArcGisMapServerImageryProvider.prototype.requestImage = function (
      *                   instances.  The array may be empty if no features are found at the given location.
      */
 ArcGisMapServerImageryProvider.prototype.pickFeatures = function (
-  x,
-  y,
-  level,
-  longitude,
-  latitude,
+    x,
+    y,
+    level,
+    longitude,
+    latitude,
 ) {
-  if (!this.enablePickFeatures) {
-    return undefined;
-  }
-
-  const rectangle = this._tilingScheme.tileXYToNativeRectangle(x, y, level);
-
-  let horizontal;
-  let vertical;
-  let sr;
-  if (this._tilingScheme.projection instanceof GeographicProjection) {
-    horizontal = CesiumMath.toDegrees(longitude);
-    vertical = CesiumMath.toDegrees(latitude);
-    sr = "4326";
-  } else {
-    const projected = this._tilingScheme.projection.project(
-      new Cartographic(longitude, latitude, 0.0),
-    );
-    horizontal = projected.x;
-    vertical = projected.y;
-    sr = "3857";
-  }
-
-  let layers = "visible";
-  if (defined(this._layers)) {
-    layers += `:${this._layers}`;
-  }
-
-  const query = {
-    f: "json",
-    tolerance: 2,
-    geometryType: "esriGeometryPoint",
-    geometry: `${horizontal},${vertical}`,
-    mapExtent: `${rectangle.west},${rectangle.south},${rectangle.east},${rectangle.north}`,
-    imageDisplay: `${this._tileWidth},${this._tileHeight},96`,
-    sr: sr,
-    layers: layers,
-  };
-
-  const resource = this._resource.getDerivedResource({
-    url: "identify",
-    queryParameters: query,
-  });
-
-  return resource.fetchJson().then(function (json) {
-    const result = [];
-
-    const features = json.results;
-    if (!defined(features)) {
-      return result;
+    if (!this.enablePickFeatures) {
+        return undefined;
     }
 
-    for (let i = 0; i < features.length; ++i) {
-      const feature = features[i];
+    const rectangle = this._tilingScheme.tileXYToNativeRectangle(x, y, level);
 
-      const featureInfo = new ImageryLayerFeatureInfo();
-      featureInfo.data = feature;
-      featureInfo.name = feature.value;
-      featureInfo.properties = feature.attributes;
-      featureInfo.configureDescriptionFromProperties(feature.attributes);
+    let horizontal;
+    let vertical;
+    let sr;
+    if (this._tilingScheme.projection instanceof GeographicProjection) {
+        horizontal = CesiumMath.toDegrees(longitude);
+        vertical = CesiumMath.toDegrees(latitude);
+        sr = "4326";
+    } else {
+        const projected = this._tilingScheme.projection.project(
+            new Cartographic(longitude, latitude, 0.0),
+        );
+        horizontal = projected.x;
+        vertical = projected.y;
+        sr = "3857";
+    }
 
-      // If this is a point feature, use the coordinates of the point.
-      if (feature.geometryType === "esriGeometryPoint" && feature.geometry) {
-        const wkid =
-          feature.geometry.spatialReference &&
-          feature.geometry.spatialReference.wkid
-            ? feature.geometry.spatialReference.wkid
-            : 4326;
-        if (wkid === 4326 || wkid === 4283) {
-          featureInfo.position = Cartographic.fromDegrees(
-            feature.geometry.x,
-            feature.geometry.y,
-            feature.geometry.z,
-          );
-        } else if (wkid === 102100 || wkid === 900913 || wkid === 3857) {
-          const projection = new WebMercatorProjection();
-          featureInfo.position = projection.unproject(
-            new Cartesian3(
-              feature.geometry.x,
-              feature.geometry.y,
-              feature.geometry.z,
-            ),
-          );
+    let layers = "visible";
+    if (defined(this._layers)) {
+        layers += `:${this._layers}`;
+    }
+
+    const query = {
+        f: "json",
+        tolerance: 2,
+        geometryType: "esriGeometryPoint",
+        geometry: `${horizontal},${vertical}`,
+        mapExtent: `${rectangle.west},${rectangle.south},${rectangle.east},${rectangle.north}`,
+        imageDisplay: `${this._tileWidth},${this._tileHeight},96`,
+        sr: sr,
+        layers: layers,
+    };
+
+    const resource = this._resource.getDerivedResource({
+        url: "identify",
+        queryParameters: query,
+    });
+
+    return resource.fetchJson().then(function (json) {
+        const result = [];
+
+        const features = json.results;
+        if (!defined(features)) {
+            return result;
         }
-      }
 
-      result.push(featureInfo);
-    }
+        for (let i = 0; i < features.length; ++i) {
+            const feature = features[i];
 
-    return result;
-  });
+            const featureInfo = new ImageryLayerFeatureInfo();
+            featureInfo.data = feature;
+            featureInfo.name = feature.value;
+            featureInfo.properties = feature.attributes;
+            featureInfo.configureDescriptionFromProperties(feature.attributes);
+
+            // If this is a point feature, use the coordinates of the point.
+            if (
+                feature.geometryType === "esriGeometryPoint" &&
+                feature.geometry
+            ) {
+                const wkid =
+                    feature.geometry.spatialReference &&
+                    feature.geometry.spatialReference.wkid
+                        ? feature.geometry.spatialReference.wkid
+                        : 4326;
+                if (wkid === 4326 || wkid === 4283) {
+                    featureInfo.position = Cartographic.fromDegrees(
+                        feature.geometry.x,
+                        feature.geometry.y,
+                        feature.geometry.z,
+                    );
+                } else if (
+                    wkid === 102100 ||
+                    wkid === 900913 ||
+                    wkid === 3857
+                ) {
+                    const projection = new WebMercatorProjection();
+                    featureInfo.position = projection.unproject(
+                        new Cartesian3(
+                            feature.geometry.x,
+                            feature.geometry.y,
+                            feature.geometry.z,
+                        ),
+                    );
+                }
+            }
+
+            result.push(featureInfo);
+        }
+
+        return result;
+    });
 };
 ArcGisMapServerImageryProvider._metadataCache = {};
 export default ArcGisMapServerImageryProvider;

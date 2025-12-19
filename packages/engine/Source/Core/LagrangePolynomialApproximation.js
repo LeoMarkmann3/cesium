@@ -6,7 +6,7 @@ import defined from "./defined.js";
  * @namespace LagrangePolynomialApproximation
  */
 const LagrangePolynomialApproximation = {
-  type: "Lagrange",
+    type: "Lagrange",
 };
 
 /**
@@ -16,7 +16,7 @@ const LagrangePolynomialApproximation = {
  * @returns {number} The number of required data points needed for the desired degree of interpolation.
  */
 LagrangePolynomialApproximation.getRequiredDataPoints = function (degree) {
-  return Math.max(degree + 1.0, 2);
+    return Math.max(degree + 1.0, 2);
 };
 
 /**
@@ -33,39 +33,39 @@ LagrangePolynomialApproximation.getRequiredDataPoints = function (degree) {
  * @returns {number[]} The array of interpolated values, or the result parameter if one was provided.
  */
 LagrangePolynomialApproximation.interpolateOrderZero = function (
-  x,
-  xTable,
-  yTable,
-  yStride,
-  result,
+    x,
+    xTable,
+    yTable,
+    yStride,
+    result,
 ) {
-  if (!defined(result)) {
-    result = new Array(yStride);
-  }
-
-  let i;
-  let j;
-  const length = xTable.length;
-
-  for (i = 0; i < yStride; i++) {
-    result[i] = 0;
-  }
-
-  for (i = 0; i < length; i++) {
-    let coefficient = 1;
-
-    for (j = 0; j < length; j++) {
-      if (j !== i) {
-        const diffX = xTable[i] - xTable[j];
-        coefficient *= (x - xTable[j]) / diffX;
-      }
+    if (!defined(result)) {
+        result = new Array(yStride);
     }
 
-    for (j = 0; j < yStride; j++) {
-      result[j] += coefficient * yTable[i * yStride + j];
-    }
-  }
+    let i;
+    let j;
+    const length = xTable.length;
 
-  return result;
+    for (i = 0; i < yStride; i++) {
+        result[i] = 0;
+    }
+
+    for (i = 0; i < length; i++) {
+        let coefficient = 1;
+
+        for (j = 0; j < length; j++) {
+            if (j !== i) {
+                const diffX = xTable[i] - xTable[j];
+                coefficient *= (x - xTable[j]) / diffX;
+            }
+        }
+
+        for (j = 0; j < yStride; j++) {
+            result[j] += coefficient * yTable[i * yStride + j];
+        }
+    }
+
+    return result;
 };
 export default LagrangePolynomialApproximation;

@@ -19,7 +19,7 @@ import EdgeDetectionStageFS from "../../Shaders/Model/EdgeDetectionStageFS.js";
  * @private
  */
 const EdgeDetectionPipelineStage = {
-  name: "EdgeDetectionPipelineStage",
+    name: "EdgeDetectionPipelineStage",
 };
 
 /**
@@ -34,9 +34,9 @@ const EdgeDetectionPipelineStage = {
  * @private
  */
 EdgeDetectionPipelineStage.process = function (renderResources) {
-  const shaderBuilder = renderResources.shaderBuilder;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addFragmentLines([EdgeDetectionStageFS]);
+    shaderBuilder.addFragmentLines([EdgeDetectionStageFS]);
 };
 
 export default EdgeDetectionPipelineStage;

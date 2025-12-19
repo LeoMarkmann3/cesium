@@ -35,98 +35,98 @@ const scratchCartesian2 = new Cartesian2();
  * }
  */
 async function sampleTerrainMostDetailed(
-  terrainProvider,
-  positions,
-  rejectOnTileFail,
+    terrainProvider,
+    positions,
+    rejectOnTileFail,
 ) {
-  if (!defined(rejectOnTileFail)) {
-    rejectOnTileFail = false;
-  }
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(terrainProvider)) {
-    throw new DeveloperError("terrainProvider is required.");
-  }
-  if (!defined(positions)) {
-    throw new DeveloperError("positions is required.");
-  }
-  //>>includeEnd('debug');
-
-  const byLevel = [];
-  const maxLevels = [];
-
-  const availability = terrainProvider.availability;
-
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(availability)) {
-    throw new DeveloperError(
-      "sampleTerrainMostDetailed requires a terrain provider that has tile availability.",
-    );
-  }
-  //>>includeEnd('debug');
-
-  const promises = [];
-  for (let i = 0; i < positions.length; ++i) {
-    const position = positions[i];
-    const maxLevel = availability.computeMaximumLevelAtPosition(position);
-    maxLevels[i] = maxLevel;
-    if (maxLevel === 0) {
-      // This is a special case where we have a parent terrain and we are requesting
-      // heights from an area that isn't covered by the top level terrain at all.
-      // This will essentially trigger the loading of the parent terrains root tile
-      terrainProvider.tilingScheme.positionToTileXY(
-        position,
-        1,
-        scratchCartesian2,
-      );
-      const promise = terrainProvider.loadTileDataAvailability(
-        scratchCartesian2.x,
-        scratchCartesian2.y,
-        1,
-      );
-      if (defined(promise)) {
-        promises.push(promise);
-      }
+    if (!defined(rejectOnTileFail)) {
+        rejectOnTileFail = false;
     }
-
-    let atLevel = byLevel[maxLevel];
-    if (!defined(atLevel)) {
-      byLevel[maxLevel] = atLevel = [];
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(terrainProvider)) {
+        throw new DeveloperError("terrainProvider is required.");
     }
-    atLevel.push(position);
-  }
+    if (!defined(positions)) {
+        throw new DeveloperError("positions is required.");
+    }
+    //>>includeEnd('debug');
 
-  await Promise.all(promises);
-  await Promise.all(
-    byLevel.map(function (positionsAtLevel, index) {
-      if (defined(positionsAtLevel)) {
-        return sampleTerrain(
-          terrainProvider,
-          index,
-          positionsAtLevel,
-          rejectOnTileFail,
+    const byLevel = [];
+    const maxLevels = [];
+
+    const availability = terrainProvider.availability;
+
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(availability)) {
+        throw new DeveloperError(
+            "sampleTerrainMostDetailed requires a terrain provider that has tile availability.",
         );
-      }
-    }),
-  );
-  const changedPositions = [];
-  for (let i = 0; i < positions.length; ++i) {
-    const position = positions[i];
-    const maxLevel = availability.computeMaximumLevelAtPosition(position);
-
-    if (maxLevel !== maxLevels[i]) {
-      // Now that we loaded the max availability, a higher level has become available
-      changedPositions.push(position);
     }
-  }
+    //>>includeEnd('debug');
 
-  if (changedPositions.length > 0) {
-    await sampleTerrainMostDetailed(
-      terrainProvider,
-      changedPositions,
-      rejectOnTileFail,
+    const promises = [];
+    for (let i = 0; i < positions.length; ++i) {
+        const position = positions[i];
+        const maxLevel = availability.computeMaximumLevelAtPosition(position);
+        maxLevels[i] = maxLevel;
+        if (maxLevel === 0) {
+            // This is a special case where we have a parent terrain and we are requesting
+            // heights from an area that isn't covered by the top level terrain at all.
+            // This will essentially trigger the loading of the parent terrains root tile
+            terrainProvider.tilingScheme.positionToTileXY(
+                position,
+                1,
+                scratchCartesian2,
+            );
+            const promise = terrainProvider.loadTileDataAvailability(
+                scratchCartesian2.x,
+                scratchCartesian2.y,
+                1,
+            );
+            if (defined(promise)) {
+                promises.push(promise);
+            }
+        }
+
+        let atLevel = byLevel[maxLevel];
+        if (!defined(atLevel)) {
+            byLevel[maxLevel] = atLevel = [];
+        }
+        atLevel.push(position);
+    }
+
+    await Promise.all(promises);
+    await Promise.all(
+        byLevel.map(function (positionsAtLevel, index) {
+            if (defined(positionsAtLevel)) {
+                return sampleTerrain(
+                    terrainProvider,
+                    index,
+                    positionsAtLevel,
+                    rejectOnTileFail,
+                );
+            }
+        }),
     );
-  }
+    const changedPositions = [];
+    for (let i = 0; i < positions.length; ++i) {
+        const position = positions[i];
+        const maxLevel = availability.computeMaximumLevelAtPosition(position);
 
-  return positions;
+        if (maxLevel !== maxLevels[i]) {
+            // Now that we loaded the max availability, a higher level has become available
+            changedPositions.push(position);
+        }
+    }
+
+    if (changedPositions.length > 0) {
+        await sampleTerrainMostDetailed(
+            terrainProvider,
+            changedPositions,
+            rejectOnTileFail,
+        );
+    }
+
+    return positions;
 }
 export default sampleTerrainMostDetailed;

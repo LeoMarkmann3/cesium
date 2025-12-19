@@ -14,40 +14,40 @@ import DeveloperError from "./DeveloperError.js";
  * @see GeographicTilingScheme
  */
 function TilingScheme(options) {
-  //>>includeStart('debug', pragmas.debug);
-  throw new DeveloperError(
-    "This type should not be instantiated directly.  Instead, use WebMercatorTilingScheme or GeographicTilingScheme.",
-  );
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    throw new DeveloperError(
+        "This type should not be instantiated directly.  Instead, use WebMercatorTilingScheme or GeographicTilingScheme.",
+    );
+    //>>includeEnd('debug');
 }
 
 Object.defineProperties(TilingScheme.prototype, {
-  /**
-   * Gets the ellipsoid that is tiled by the tiling scheme.
-   * @memberof TilingScheme.prototype
-   * @type {Ellipsoid}
-   */
-  ellipsoid: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the ellipsoid that is tiled by the tiling scheme.
+     * @memberof TilingScheme.prototype
+     * @type {Ellipsoid}
+     */
+    ellipsoid: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the rectangle, in radians, covered by this tiling scheme.
-   * @memberof TilingScheme.prototype
-   * @type {Rectangle}
-   */
-  rectangle: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the rectangle, in radians, covered by this tiling scheme.
+     * @memberof TilingScheme.prototype
+     * @type {Rectangle}
+     */
+    rectangle: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the map projection used by the tiling scheme.
-   * @memberof TilingScheme.prototype
-   * @type {MapProjection}
-   */
-  projection: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the map projection used by the tiling scheme.
+     * @memberof TilingScheme.prototype
+     * @type {MapProjection}
+     */
+    projection: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 /**
@@ -58,7 +58,7 @@ Object.defineProperties(TilingScheme.prototype, {
  * @returns {number} The number of tiles in the X direction at the given level.
  */
 TilingScheme.prototype.getNumberOfXTilesAtLevel =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Gets the total number of tiles in the Y direction at a specified level-of-detail.
@@ -68,7 +68,7 @@ TilingScheme.prototype.getNumberOfXTilesAtLevel =
  * @returns {number} The number of tiles in the Y direction at the given level.
  */
 TilingScheme.prototype.getNumberOfYTilesAtLevel =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Transforms a rectangle specified in geodetic radians to the native coordinate system
@@ -82,7 +82,7 @@ TilingScheme.prototype.getNumberOfYTilesAtLevel =
  *          is undefined.
  */
 TilingScheme.prototype.rectangleToNativeRectangle =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Converts tile x, y coordinates and level to a rectangle expressed in the native coordinates
@@ -98,7 +98,7 @@ TilingScheme.prototype.rectangleToNativeRectangle =
  *          if 'result' is undefined.
  */
 TilingScheme.prototype.tileXYToNativeRectangle =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Converts tile x, y coordinates and level to a cartographic rectangle in radians.
@@ -113,7 +113,7 @@ TilingScheme.prototype.tileXYToNativeRectangle =
  *          if 'result' is undefined.
  */
 TilingScheme.prototype.tileXYToRectangle =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Calculates the tile x, y coordinates of the tile containing
@@ -128,5 +128,5 @@ TilingScheme.prototype.tileXYToRectangle =
  *          if 'result' is undefined.
  */
 TilingScheme.prototype.positionToTileXY =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 export default TilingScheme;

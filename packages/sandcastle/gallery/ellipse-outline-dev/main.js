@@ -8,17 +8,19 @@ const scene = viewer.scene;
 
 // Create the ellipse outline geometry.
 let ellipseOutlineGeometry = new Cesium.EllipseOutlineGeometry({
-  center: Cesium.Cartesian3.fromDegrees(-100.0, 40.0),
-  semiMinorAxis: 200000.0,
-  semiMajorAxis: 300000.0,
+    center: Cesium.Cartesian3.fromDegrees(-100.0, 40.0),
+    semiMinorAxis: 200000.0,
+    semiMajorAxis: 300000.0,
 });
 // Create a geometry instance using the ellipse geometry
 // created above.
 const ellipseOutlineInstance = new Cesium.GeometryInstance({
-  geometry: ellipseOutlineGeometry,
-  attributes: {
-    color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.WHITE),
-  },
+    geometry: ellipseOutlineGeometry,
+    attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+            Cesium.Color.WHITE,
+        ),
+    },
 });
 
 // Example 3: Draw the outline of an extruded ellipse.
@@ -29,31 +31,36 @@ const ellipseOutlineInstance = new Cesium.GeometryInstance({
 // the number of lines connecting the top and bottom of the
 // ellipse.
 ellipseOutlineGeometry = new Cesium.EllipseOutlineGeometry({
-  center: Cesium.Cartesian3.fromDegrees(-95.0, 35.0),
-  semiMinorAxis: 200000.0,
-  semiMajorAxis: 300000.0,
-  extrudedHeight: 150000.0,
-  rotation: Cesium.Math.toRadians(45),
-  numberOfVerticalLines: 10,
+    center: Cesium.Cartesian3.fromDegrees(-95.0, 35.0),
+    semiMinorAxis: 200000.0,
+    semiMajorAxis: 300000.0,
+    extrudedHeight: 150000.0,
+    rotation: Cesium.Math.toRadians(45),
+    numberOfVerticalLines: 10,
 });
 // Create a geometry instance using the ellipse geometry
 // created above.
 const extrudedEllipseOutlineInstance = new Cesium.GeometryInstance({
-  geometry: ellipseOutlineGeometry,
-  attributes: {
-    color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.WHITE),
-  },
+    geometry: ellipseOutlineGeometry,
+    attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+            Cesium.Color.WHITE,
+        ),
+    },
 });
 
 // Add both ellipse outline instances to primitives.
 scene.primitives.add(
-  new Cesium.Primitive({
-    geometryInstances: [ellipseOutlineInstance, extrudedEllipseOutlineInstance],
-    appearance: new Cesium.PerInstanceColorAppearance({
-      flat: true,
-      renderState: {
-        lineWidth: Math.min(2.0, scene.maximumAliasedLineWidth),
-      },
+    new Cesium.Primitive({
+        geometryInstances: [
+            ellipseOutlineInstance,
+            extrudedEllipseOutlineInstance,
+        ],
+        appearance: new Cesium.PerInstanceColorAppearance({
+            flat: true,
+            renderState: {
+                lineWidth: Math.min(2.0, scene.maximumAliasedLineWidth),
+            },
+        }),
     }),
-  }),
 );

@@ -12,21 +12,21 @@ import DeveloperError from "./DeveloperError.js";
  * @see WebMercatorProjection
  */
 function MapProjection() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 Object.defineProperties(MapProjection.prototype, {
-  /**
-   * Gets the {@link Ellipsoid}.
-   *
-   * @memberof MapProjection.prototype
-   *
-   * @type {Ellipsoid}
-   * @readonly
-   */
-  ellipsoid: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the {@link Ellipsoid}.
+     *
+     * @memberof MapProjection.prototype
+     *
+     * @type {Ellipsoid}
+     * @readonly
+     */
+    ellipsoid: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 /**

@@ -18,25 +18,25 @@ import Ellipsoid from "./Ellipsoid.js";
  * @see WebMercatorProjection
  */
 function GeographicProjection(ellipsoid) {
-  this._ellipsoid = ellipsoid ?? Ellipsoid.default;
-  this._semimajorAxis = this._ellipsoid.maximumRadius;
-  this._oneOverSemimajorAxis = 1.0 / this._semimajorAxis;
+    this._ellipsoid = ellipsoid ?? Ellipsoid.default;
+    this._semimajorAxis = this._ellipsoid.maximumRadius;
+    this._oneOverSemimajorAxis = 1.0 / this._semimajorAxis;
 }
 
 Object.defineProperties(GeographicProjection.prototype, {
-  /**
-   * Gets the {@link Ellipsoid}.
-   *
-   * @memberof GeographicProjection.prototype
-   *
-   * @type {Ellipsoid}
-   * @readonly
-   */
-  ellipsoid: {
-    get: function () {
-      return this._ellipsoid;
+    /**
+     * Gets the {@link Ellipsoid}.
+     *
+     * @memberof GeographicProjection.prototype
+     *
+     * @type {Ellipsoid}
+     * @readonly
+     */
+    ellipsoid: {
+        get: function () {
+            return this._ellipsoid;
+        },
     },
-  },
 });
 
 /**
@@ -52,20 +52,20 @@ Object.defineProperties(GeographicProjection.prototype, {
  *          created and returned.
  */
 GeographicProjection.prototype.project = function (cartographic, result) {
-  // Actually this is the special case of equidistant cylindrical called the plate carree
-  const semimajorAxis = this._semimajorAxis;
-  const x = cartographic.longitude * semimajorAxis;
-  const y = cartographic.latitude * semimajorAxis;
-  const z = cartographic.height;
+    // Actually this is the special case of equidistant cylindrical called the plate carree
+    const semimajorAxis = this._semimajorAxis;
+    const x = cartographic.longitude * semimajorAxis;
+    const y = cartographic.latitude * semimajorAxis;
+    const z = cartographic.height;
 
-  if (!defined(result)) {
-    return new Cartesian3(x, y, z);
-  }
+    if (!defined(result)) {
+        return new Cartesian3(x, y, z);
+    }
 
-  result.x = x;
-  result.y = y;
-  result.z = z;
-  return result;
+    result.x = x;
+    result.y = y;
+    result.z = z;
+    return result;
 };
 
 /**
@@ -81,25 +81,25 @@ GeographicProjection.prototype.project = function (cartographic, result) {
  *          created and returned.
  */
 GeographicProjection.prototype.unproject = function (cartesian, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(cartesian)) {
-    throw new DeveloperError("cartesian is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(cartesian)) {
+        throw new DeveloperError("cartesian is required");
+    }
+    //>>includeEnd('debug');
 
-  const oneOverEarthSemimajorAxis = this._oneOverSemimajorAxis;
-  const longitude = cartesian.x * oneOverEarthSemimajorAxis;
-  const latitude = cartesian.y * oneOverEarthSemimajorAxis;
-  const height = cartesian.z;
+    const oneOverEarthSemimajorAxis = this._oneOverSemimajorAxis;
+    const longitude = cartesian.x * oneOverEarthSemimajorAxis;
+    const latitude = cartesian.y * oneOverEarthSemimajorAxis;
+    const height = cartesian.z;
 
-  if (!defined(result)) {
-    return new Cartographic(longitude, latitude, height);
-  }
+    if (!defined(result)) {
+        return new Cartographic(longitude, latitude, height);
+    }
 
-  result.longitude = longitude;
-  result.latitude = latitude;
-  result.height = height;
-  return result;
+    result.longitude = longitude;
+    result.latitude = latitude;
+    result.height = height;
+    return result;
 };
 
 export default GeographicProjection;

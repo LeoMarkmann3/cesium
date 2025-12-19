@@ -7,38 +7,38 @@ import defined from "../Core/defined.js";
  * @constructor
  */
 function ImageryLayerFeatureInfo() {
-  /**
-   * Gets or sets the name of the feature.
-   * @type {string|undefined}
-   */
-  this.name = undefined;
+    /**
+     * Gets or sets the name of the feature.
+     * @type {string|undefined}
+     */
+    this.name = undefined;
 
-  /**
-   * Gets or sets an HTML description of the feature.  The HTML is not trusted and should
-   * be sanitized before display to the user.
-   * @type {string|undefined}
-   */
-  this.description = undefined;
+    /**
+     * Gets or sets an HTML description of the feature.  The HTML is not trusted and should
+     * be sanitized before display to the user.
+     * @type {string|undefined}
+     */
+    this.description = undefined;
 
-  /**
-   * Gets or sets the position of the feature, or undefined if the position is not known.
-   *
-   * @type {Cartographic|undefined}
-   */
-  this.position = undefined;
+    /**
+     * Gets or sets the position of the feature, or undefined if the position is not known.
+     *
+     * @type {Cartographic|undefined}
+     */
+    this.position = undefined;
 
-  /**
-   * Gets or sets the raw data describing the feature.  The raw data may be in any
-   * number of formats, such as GeoJSON, KML, etc.
-   * @type {object|undefined}
-   */
-  this.data = undefined;
+    /**
+     * Gets or sets the raw data describing the feature.  The raw data may be in any
+     * number of formats, such as GeoJSON, KML, etc.
+     * @type {object|undefined}
+     */
+    this.data = undefined;
 
-  /**
-   * Gets or sets the image layer of the feature.
-   * @type {object|undefined}
-   */
-  this.imageryLayer = undefined;
+    /**
+     * Gets or sets the image layer of the feature.
+     * @type {object|undefined}
+     */
+    this.imageryLayer = undefined;
 }
 
 /**
@@ -50,34 +50,34 @@ function ImageryLayerFeatureInfo() {
  * @param {object} properties An object literal containing the properties of the feature.
  */
 ImageryLayerFeatureInfo.prototype.configureNameFromProperties = function (
-  properties,
+    properties,
 ) {
-  let namePropertyPrecedence = 10;
-  let nameProperty;
+    let namePropertyPrecedence = 10;
+    let nameProperty;
 
-  for (const key in properties) {
-    if (properties.hasOwnProperty(key) && properties[key]) {
-      const lowerKey = key.toLowerCase();
+    for (const key in properties) {
+        if (properties.hasOwnProperty(key) && properties[key]) {
+            const lowerKey = key.toLowerCase();
 
-      if (namePropertyPrecedence > 1 && lowerKey === "name") {
-        namePropertyPrecedence = 1;
-        nameProperty = key;
-      } else if (namePropertyPrecedence > 2 && lowerKey === "title") {
-        namePropertyPrecedence = 2;
-        nameProperty = key;
-      } else if (namePropertyPrecedence > 3 && /name/i.test(key)) {
-        namePropertyPrecedence = 3;
-        nameProperty = key;
-      } else if (namePropertyPrecedence > 4 && /title/i.test(key)) {
-        namePropertyPrecedence = 4;
-        nameProperty = key;
-      }
+            if (namePropertyPrecedence > 1 && lowerKey === "name") {
+                namePropertyPrecedence = 1;
+                nameProperty = key;
+            } else if (namePropertyPrecedence > 2 && lowerKey === "title") {
+                namePropertyPrecedence = 2;
+                nameProperty = key;
+            } else if (namePropertyPrecedence > 3 && /name/i.test(key)) {
+                namePropertyPrecedence = 3;
+                nameProperty = key;
+            } else if (namePropertyPrecedence > 4 && /title/i.test(key)) {
+                namePropertyPrecedence = 4;
+                nameProperty = key;
+            }
+        }
     }
-  }
 
-  if (defined(nameProperty)) {
-    this.name = properties[nameProperty];
-  }
+    if (defined(nameProperty)) {
+        this.name = properties[nameProperty];
+    }
 };
 
 /**
@@ -86,26 +86,26 @@ ImageryLayerFeatureInfo.prototype.configureNameFromProperties = function (
  * @param {object} properties An object literal containing the properties of the feature.
  */
 ImageryLayerFeatureInfo.prototype.configureDescriptionFromProperties =
-  function (properties) {
-    function describe(properties) {
-      let html = '<table class="cesium-infoBox-defaultTable">';
-      for (const key in properties) {
-        if (properties.hasOwnProperty(key)) {
-          const value = properties[key];
-          if (defined(value)) {
-            if (typeof value === "object") {
-              html += `<tr><td>${key}</td><td>${describe(value)}</td></tr>`;
-            } else {
-              html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+    function (properties) {
+        function describe(properties) {
+            let html = '<table class="cesium-infoBox-defaultTable">';
+            for (const key in properties) {
+                if (properties.hasOwnProperty(key)) {
+                    const value = properties[key];
+                    if (defined(value)) {
+                        if (typeof value === "object") {
+                            html += `<tr><td>${key}</td><td>${describe(value)}</td></tr>`;
+                        } else {
+                            html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                        }
+                    }
+                }
             }
-          }
+            html += "</table>";
+
+            return html;
         }
-      }
-      html += "</table>";
 
-      return html;
-    }
-
-    this.description = describe(properties);
-  };
+        this.description = describe(properties);
+    };
 export default ImageryLayerFeatureInfo;

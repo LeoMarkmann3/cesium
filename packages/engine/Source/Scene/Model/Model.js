@@ -22,7 +22,7 @@ import DynamicEnvironmentMapManager from "../DynamicEnvironmentMapManager.js";
 import ColorBlendMode from "../ColorBlendMode.js";
 import GltfLoader from "../GltfLoader.js";
 import HeightReference, {
-  isHeightReferenceRelative,
+    isHeightReferenceRelative,
 } from "../HeightReference.js";
 import ImageBasedLighting from "../ImageBasedLighting.js";
 import PointCloudShading from "../PointCloudShading.js";
@@ -178,33 +178,33 @@ import ModelImagery from "./ModelImagery.js";
  * @demo {@link https://sandcastle.cesium.com/index.html?src=3D%20Models.html|Cesium Sandcastle Models Demo}
  */
 function Model(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.loader", options.loader);
-  Check.typeOf.object("options.resource", options.resource);
-  //>>includeEnd('debug');
+    options = options ?? Frozen.EMPTY_OBJECT;
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.loader", options.loader);
+    Check.typeOf.object("options.resource", options.resource);
+    //>>includeEnd('debug');
 
-  /**
-   * The loader used to load resources for this model.
-   *
-   * @type {ResourceLoader}
-   * @private
-   */
-  this._loader = options.loader;
-  this._resource = options.resource;
+    /**
+     * The loader used to load resources for this model.
+     *
+     * @type {ResourceLoader}
+     * @private
+     */
+    this._loader = options.loader;
+    this._resource = options.resource;
 
-  /**
-   * Type of this model, to distinguish individual glTF files from 3D Tiles
-   * internally.
-   *
-   * @type {ModelType}
-   * @readonly
-   *
-   * @private
-   */
-  this.type = options.type ?? ModelType.GLTF;
+    /**
+     * Type of this model, to distinguish individual glTF files from 3D Tiles
+     * internally.
+     *
+     * @type {ModelType}
+     * @readonly
+     *
+     * @private
+     */
+    this.type = options.type ?? ModelType.GLTF;
 
-  /**
+    /**
    * The 4x4 transformation matrix that transforms the model from model to world coordinates.
    * When this is the identity matrix, the model is drawn in world coordinates, i.e., Earth's Cartesian WGS84 coordinates.
    * Local reference frames can be used by providing a different transformation matrix, like that returned
@@ -218,363 +218,370 @@ function Model(options) {
    * const origin = Cesium.Cartesian3.fromDegrees(-95.0, 40.0, 200000.0);
    * m.modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
    */
-  this.modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
-  this._modelMatrix = Matrix4.clone(this.modelMatrix);
-  this._scale = options.scale ?? 1.0;
+    this.modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
+    this._modelMatrix = Matrix4.clone(this.modelMatrix);
+    this._scale = options.scale ?? 1.0;
 
-  this._minimumPixelSize = options.minimumPixelSize ?? 0.0;
+    this._minimumPixelSize = options.minimumPixelSize ?? 0.0;
 
-  this._maximumScale = options.maximumScale;
+    this._maximumScale = options.maximumScale;
 
-  /**
-   * The scale value after being clamped by the maximum scale parameter.
-   * Used to adjust bounding spheres without repeated calculation.
-   *
-   * @type {number}
-   * @private
-   */
-  this._clampedScale = defined(this._maximumScale)
-    ? Math.min(this._scale, this._maximumScale)
-    : this._scale;
+    /**
+     * The scale value after being clamped by the maximum scale parameter.
+     * Used to adjust bounding spheres without repeated calculation.
+     *
+     * @type {number}
+     * @private
+     */
+    this._clampedScale = defined(this._maximumScale)
+        ? Math.min(this._scale, this._maximumScale)
+        : this._scale;
 
-  this._computedScale = this._clampedScale;
+    this._computedScale = this._clampedScale;
 
-  /**
-   * Whether or not the ModelSceneGraph should call updateModelMatrix.
-   * This will be true if any of the model matrix, scale, minimum pixel size, or maximum scale are dirty.
-   *
-   * @type {number}
-   * @private
-   */
-  this._updateModelMatrix = false;
+    /**
+     * Whether or not the ModelSceneGraph should call updateModelMatrix.
+     * This will be true if any of the model matrix, scale, minimum pixel size, or maximum scale are dirty.
+     *
+     * @type {number}
+     * @private
+     */
+    this._updateModelMatrix = false;
 
-  /**
-   * If defined, this matrix is used to transform miscellaneous properties like
-   * clipping planes and image-based lighting instead of the modelMatrix. This is
-   * so that when models are part of a tileset, these properties get transformed
-   * relative to a common reference (such as the root).
-   *
-   * @type {Matrix4}
-   * @private
-   */
-  this.referenceMatrix = undefined;
-  this._iblReferenceFrameMatrix = Matrix3.clone(Matrix3.IDENTITY); // Derived from reference matrix and the current view matrix
+    /**
+     * If defined, this matrix is used to transform miscellaneous properties like
+     * clipping planes and image-based lighting instead of the modelMatrix. This is
+     * so that when models are part of a tileset, these properties get transformed
+     * relative to a common reference (such as the root).
+     *
+     * @type {Matrix4}
+     * @private
+     */
+    this.referenceMatrix = undefined;
+    this._iblReferenceFrameMatrix = Matrix3.clone(Matrix3.IDENTITY); // Derived from reference matrix and the current view matrix
 
-  this._resourcesLoaded = false;
-  this._drawCommandsBuilt = false;
+    this._resourcesLoaded = false;
+    this._drawCommandsBuilt = false;
 
-  this._ready = false;
-  this._customShader = options.customShader;
-  this._content = options.content;
+    this._ready = false;
+    this._customShader = options.customShader;
+    this._content = options.content;
 
-  this._texturesLoaded = false;
-  this._defaultTexture = undefined;
+    this._texturesLoaded = false;
+    this._defaultTexture = undefined;
 
-  this._activeAnimations = new ModelAnimationCollection(this);
-  this._clampAnimations = options.clampAnimations ?? true;
+    this._activeAnimations = new ModelAnimationCollection(this);
+    this._clampAnimations = options.clampAnimations ?? true;
 
-  // This flag is true when the Cesium API, not a glTF animation, changes
-  // the transform of a node in the model.
-  this._userAnimationDirty = false;
+    // This flag is true when the Cesium API, not a glTF animation, changes
+    // the transform of a node in the model.
+    this._userAnimationDirty = false;
 
-  this._id = options.id;
-  this._idDirty = false;
+    this._id = options.id;
+    this._idDirty = false;
 
-  this._color = Color.clone(options.color);
-  this._colorBlendMode = options.colorBlendMode ?? ColorBlendMode.HIGHLIGHT;
-  this._colorBlendAmount = options.colorBlendAmount ?? 0.5;
+    this._color = Color.clone(options.color);
+    this._colorBlendMode = options.colorBlendMode ?? ColorBlendMode.HIGHLIGHT;
+    this._colorBlendAmount = options.colorBlendAmount ?? 0.5;
 
-  const silhouetteColor = options.silhouetteColor ?? Color.RED;
-  this._silhouetteColor = Color.clone(silhouetteColor);
-  this._silhouetteSize = options.silhouetteSize ?? 0.0;
-  this._silhouetteDirty = false;
+    const silhouetteColor = options.silhouetteColor ?? Color.RED;
+    this._silhouetteColor = Color.clone(silhouetteColor);
+    this._silhouetteSize = options.silhouetteSize ?? 0.0;
+    this._silhouetteDirty = false;
 
-  // If silhouettes are used for the model, this will be set to the number
-  // of the stencil buffer used for rendering the silhouette. This is set
-  // by ModelSilhouettePipelineStage, not by Model itself.
-  this._silhouetteId = undefined;
+    // If silhouettes are used for the model, this will be set to the number
+    // of the stencil buffer used for rendering the silhouette. This is set
+    // by ModelSilhouettePipelineStage, not by Model itself.
+    this._silhouetteId = undefined;
 
-  this._cull = options.cull ?? true;
-  this._opaquePass = options.opaquePass ?? Pass.OPAQUE;
-  this._allowPicking = options.allowPicking ?? true;
-  this._show = options.show ?? true;
+    this._cull = options.cull ?? true;
+    this._opaquePass = options.opaquePass ?? Pass.OPAQUE;
+    this._allowPicking = options.allowPicking ?? true;
+    this._show = options.show ?? true;
 
-  this._style = undefined;
-  this._styleDirty = false;
-  this._styleCommandsNeeded = undefined;
+    this._style = undefined;
+    this._styleDirty = false;
+    this._styleCommandsNeeded = undefined;
 
-  let featureIdLabel = options.featureIdLabel ?? "featureId_0";
-  if (typeof featureIdLabel === "number") {
-    featureIdLabel = `featureId_${featureIdLabel}`;
-  }
-  this._featureIdLabel = featureIdLabel;
+    let featureIdLabel = options.featureIdLabel ?? "featureId_0";
+    if (typeof featureIdLabel === "number") {
+        featureIdLabel = `featureId_${featureIdLabel}`;
+    }
+    this._featureIdLabel = featureIdLabel;
 
-  let instanceFeatureIdLabel =
-    options.instanceFeatureIdLabel ?? "instanceFeatureId_0";
-  if (typeof instanceFeatureIdLabel === "number") {
-    instanceFeatureIdLabel = `instanceFeatureId_${instanceFeatureIdLabel}`;
-  }
-  this._instanceFeatureIdLabel = instanceFeatureIdLabel;
+    let instanceFeatureIdLabel =
+        options.instanceFeatureIdLabel ?? "instanceFeatureId_0";
+    if (typeof instanceFeatureIdLabel === "number") {
+        instanceFeatureIdLabel = `instanceFeatureId_${instanceFeatureIdLabel}`;
+    }
+    this._instanceFeatureIdLabel = instanceFeatureIdLabel;
 
-  this._featureTables = [];
-  this._featureTableId = undefined;
-  this._featureTableIdDirty = true;
+    this._featureTables = [];
+    this._featureTableId = undefined;
+    this._featureTableIdDirty = true;
 
-  // Keeps track of resources that need to be destroyed when the draw commands are reset.
-  this._pipelineResources = [];
+    // Keeps track of resources that need to be destroyed when the draw commands are reset.
+    this._pipelineResources = [];
 
-  // Keeps track of resources that need to be destroyed when the Model is destroyed.
-  this._modelResources = [];
+    // Keeps track of resources that need to be destroyed when the Model is destroyed.
+    this._modelResources = [];
 
-  // Keeps track of the pick IDs for this model. These are stored and destroyed in the
-  // pipeline resources array; the purpose of this array is to separate them from other
-  // resources and update their ID objects when necessary.
-  this._pickIds = [];
+    // Keeps track of the pick IDs for this model. These are stored and destroyed in the
+    // pipeline resources array; the purpose of this array is to separate them from other
+    // resources and update their ID objects when necessary.
+    this._pickIds = [];
 
-  // The model's bounding sphere and its initial radius are computed
-  // in ModelSceneGraph.
-  this._boundingSphere = new BoundingSphere();
-  this._initialRadius = undefined;
+    // The model's bounding sphere and its initial radius are computed
+    // in ModelSceneGraph.
+    this._boundingSphere = new BoundingSphere();
+    this._initialRadius = undefined;
 
-  this._heightReference = options.heightReference ?? HeightReference.NONE;
-  this._heightDirty = this._heightReference !== HeightReference.NONE;
-  this._removeUpdateHeightCallback = undefined;
+    this._heightReference = options.heightReference ?? HeightReference.NONE;
+    this._heightDirty = this._heightReference !== HeightReference.NONE;
+    this._removeUpdateHeightCallback = undefined;
 
-  this._enableVerticalExaggeration = options.enableVerticalExaggeration ?? true;
-  this._hasVerticalExaggeration = false;
+    this._enableVerticalExaggeration =
+        options.enableVerticalExaggeration ?? true;
+    this._hasVerticalExaggeration = false;
 
-  this._clampedModelMatrix = undefined; // For use with height reference
+    this._clampedModelMatrix = undefined; // For use with height reference
 
-  const scene = options.scene;
-  if (defined(scene) && defined(scene.terrainProviderChanged)) {
-    this._terrainProviderChangedCallback =
-      scene.terrainProviderChanged.addEventListener(() => {
-        this._heightDirty = true;
-      });
-  }
-  this._scene = scene;
+    const scene = options.scene;
+    if (defined(scene) && defined(scene.terrainProviderChanged)) {
+        this._terrainProviderChangedCallback =
+            scene.terrainProviderChanged.addEventListener(() => {
+                this._heightDirty = true;
+            });
+    }
+    this._scene = scene;
 
-  this._distanceDisplayCondition = options.distanceDisplayCondition;
+    this._distanceDisplayCondition = options.distanceDisplayCondition;
 
-  const pointCloudShading = new PointCloudShading(options.pointCloudShading);
-  this._pointCloudShading = pointCloudShading;
-  this._attenuation = pointCloudShading.attenuation;
-  this._pointCloudBackFaceCulling = pointCloudShading.backFaceCulling;
+    const pointCloudShading = new PointCloudShading(options.pointCloudShading);
+    this._pointCloudShading = pointCloudShading;
+    this._attenuation = pointCloudShading.attenuation;
+    this._pointCloudBackFaceCulling = pointCloudShading.backFaceCulling;
 
-  // If the given clipping planes don't have an owner, make this model its owner.
-  // Otherwise, the clipping planes are passed down from a tileset.
-  const clippingPlanes = options.clippingPlanes;
-  if (defined(clippingPlanes) && clippingPlanes.owner === undefined) {
-    ClippingPlaneCollection.setOwner(clippingPlanes, this, "_clippingPlanes");
-  } else {
-    this._clippingPlanes = clippingPlanes;
-  }
-  this._clippingPlanesState = 0; // If this value changes, the shaders need to be regenerated.
-  this._clippingPlanesMatrix = Matrix4.clone(Matrix4.IDENTITY); // Derived from reference matrix and the current view matrix
+    // If the given clipping planes don't have an owner, make this model its owner.
+    // Otherwise, the clipping planes are passed down from a tileset.
+    const clippingPlanes = options.clippingPlanes;
+    if (defined(clippingPlanes) && clippingPlanes.owner === undefined) {
+        ClippingPlaneCollection.setOwner(
+            clippingPlanes,
+            this,
+            "_clippingPlanes",
+        );
+    } else {
+        this._clippingPlanes = clippingPlanes;
+    }
+    this._clippingPlanesState = 0; // If this value changes, the shaders need to be regenerated.
+    this._clippingPlanesMatrix = Matrix4.clone(Matrix4.IDENTITY); // Derived from reference matrix and the current view matrix
 
-  // If the given clipping polygons don't have an owner, make this model its owner.
-  // Otherwise, the clipping polygons are passed down from a tileset.
-  const clippingPolygons = options.clippingPolygons;
-  if (defined(clippingPolygons) && clippingPolygons.owner === undefined) {
-    ClippingPolygonCollection.setOwner(
-      clippingPolygons,
-      this,
-      "_clippingPolygons",
+    // If the given clipping polygons don't have an owner, make this model its owner.
+    // Otherwise, the clipping polygons are passed down from a tileset.
+    const clippingPolygons = options.clippingPolygons;
+    if (defined(clippingPolygons) && clippingPolygons.owner === undefined) {
+        ClippingPolygonCollection.setOwner(
+            clippingPolygons,
+            this,
+            "_clippingPolygons",
+        );
+    } else {
+        this._clippingPolygons = clippingPolygons;
+    }
+    this._clippingPolygonsState = 0; // If this value changes, the shaders need to be regenerated.
+
+    this._modelImagery = new ModelImagery(this);
+
+    this._lightColor = Cartesian3.clone(options.lightColor);
+
+    this._imageBasedLighting = defined(options.imageBasedLighting)
+        ? options.imageBasedLighting
+        : new ImageBasedLighting();
+    this._shouldDestroyImageBasedLighting = !defined(
+        options.imageBasedLighting,
     );
-  } else {
-    this._clippingPolygons = clippingPolygons;
-  }
-  this._clippingPolygonsState = 0; // If this value changes, the shaders need to be regenerated.
 
-  this._modelImagery = new ModelImagery(this);
-
-  this._lightColor = Cartesian3.clone(options.lightColor);
-
-  this._imageBasedLighting = defined(options.imageBasedLighting)
-    ? options.imageBasedLighting
-    : new ImageBasedLighting();
-  this._shouldDestroyImageBasedLighting = !defined(options.imageBasedLighting);
-
-  this._environmentMapManager = undefined;
-  const environmentMapManager = new DynamicEnvironmentMapManager(
-    options.environmentMapOptions,
-  );
-  DynamicEnvironmentMapManager.setOwner(
-    environmentMapManager,
-    this,
-    "_environmentMapManager",
-  );
-
-  this._backFaceCulling = options.backFaceCulling ?? true;
-  this._backFaceCullingDirty = false;
-
-  this._shadows = options.shadows ?? ShadowMode.ENABLED;
-  this._shadowsDirty = false;
-
-  this._debugShowBoundingVolumeDirty = false;
-  this._debugShowBoundingVolume = options.debugShowBoundingVolume ?? false;
-
-  this._enableDebugWireframe = options.enableDebugWireframe ?? false;
-  this._enableShowOutline = options.enableShowOutline ?? true;
-  this._debugWireframe = options.debugWireframe ?? false;
-
-  // Warning for improper setup of debug wireframe
-  if (
-    this._debugWireframe === true &&
-    this._enableDebugWireframe === false &&
-    this.type === ModelType.GLTF
-  ) {
-    oneTimeWarning(
-      "model-debug-wireframe-ignored",
-      "enableDebugWireframe must be set to true in Model.fromGltf, otherwise debugWireframe will be ignored.",
+    this._environmentMapManager = undefined;
+    const environmentMapManager = new DynamicEnvironmentMapManager(
+        options.environmentMapOptions,
     );
-  }
+    DynamicEnvironmentMapManager.setOwner(
+        environmentMapManager,
+        this,
+        "_environmentMapManager",
+    );
 
-  // Credit specified by the user.
-  let credit = options.credit;
-  if (typeof credit === "string") {
-    credit = new Credit(credit);
-  }
+    this._backFaceCulling = options.backFaceCulling ?? true;
+    this._backFaceCullingDirty = false;
 
-  this._credits = [];
-  this._credit = credit;
+    this._shadows = options.shadows ?? ShadowMode.ENABLED;
+    this._shadowsDirty = false;
 
-  // Credits to be added from the Resource (if it is an IonResource)
-  this._resourceCredits = [];
+    this._debugShowBoundingVolumeDirty = false;
+    this._debugShowBoundingVolume = options.debugShowBoundingVolume ?? false;
 
-  // Credits parsed from the glTF by GltfLoader.
-  this._gltfCredits = [];
+    this._enableDebugWireframe = options.enableDebugWireframe ?? false;
+    this._enableShowOutline = options.enableShowOutline ?? true;
+    this._debugWireframe = options.debugWireframe ?? false;
 
-  this._showCreditsOnScreen = options.showCreditsOnScreen ?? false;
-  this._showCreditsOnScreenDirty = true;
+    // Warning for improper setup of debug wireframe
+    if (
+        this._debugWireframe === true &&
+        this._enableDebugWireframe === false &&
+        this.type === ModelType.GLTF
+    ) {
+        oneTimeWarning(
+            "model-debug-wireframe-ignored",
+            "enableDebugWireframe must be set to true in Model.fromGltf, otherwise debugWireframe will be ignored.",
+        );
+    }
 
-  this._splitDirection = options.splitDirection ?? SplitDirection.NONE;
+    // Credit specified by the user.
+    let credit = options.credit;
+    if (typeof credit === "string") {
+        credit = new Credit(credit);
+    }
 
-  this._enableShowOutline = options.enableShowOutline ?? true;
+    this._credits = [];
+    this._credit = credit;
 
-  /**
-   * Whether to display the outline for models using the
-   * {@link https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Vendor/CESIUM_primitive_outline|CESIUM_primitive_outline} extension.
-   * When true, outlines are displayed. When false, outlines are not displayed.
-   *
-   * @type {boolean}
-   *
-   * @default true
-   */
-  this.showOutline = options.showOutline ?? true;
+    // Credits to be added from the Resource (if it is an IonResource)
+    this._resourceCredits = [];
 
-  /**
-   * The color to use when rendering outlines.
-   *
-   * @type {Color}
-   *
-   * @default Color.BLACK
-   */
-  this.outlineColor = options.outlineColor ?? Color.BLACK;
+    // Credits parsed from the glTF by GltfLoader.
+    this._gltfCredits = [];
 
-  this._classificationType = options.classificationType;
+    this._showCreditsOnScreen = options.showCreditsOnScreen ?? false;
+    this._showCreditsOnScreenDirty = true;
 
-  this._statistics = new ModelStatistics();
+    this._splitDirection = options.splitDirection ?? SplitDirection.NONE;
 
-  this._sceneMode = undefined;
-  this._projectTo2D = options.projectTo2D ?? false;
-  this._enablePick = options.enablePick ?? false;
+    this._enableShowOutline = options.enableShowOutline ?? true;
 
-  this._fogRenderable = undefined;
+    /**
+     * Whether to display the outline for models using the
+     * {@link https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Vendor/CESIUM_primitive_outline|CESIUM_primitive_outline} extension.
+     * When true, outlines are displayed. When false, outlines are not displayed.
+     *
+     * @type {boolean}
+     *
+     * @default true
+     */
+    this.showOutline = options.showOutline ?? true;
 
-  this._skipLevelOfDetail = false;
-  this._ignoreCommands = options.ignoreCommands ?? false;
+    /**
+     * The color to use when rendering outlines.
+     *
+     * @type {Color}
+     *
+     * @default Color.BLACK
+     */
+    this.outlineColor = options.outlineColor ?? Color.BLACK;
 
-  this._errorEvent = new Event();
-  this._readyEvent = new Event();
-  this._texturesReadyEvent = new Event();
+    this._classificationType = options.classificationType;
 
-  this._sceneGraph = undefined;
-  this._nodesByName = {}; // Stores the nodes by their names in the glTF.
+    this._statistics = new ModelStatistics();
 
-  /**
-   * Used for picking primitives that wrap a model.
-   *
-   * @private
-   */
-  this.pickObject = options.pickObject;
+    this._sceneMode = undefined;
+    this._projectTo2D = options.projectTo2D ?? false;
+    this._enablePick = options.enablePick ?? false;
+
+    this._fogRenderable = undefined;
+
+    this._skipLevelOfDetail = false;
+    this._ignoreCommands = options.ignoreCommands ?? false;
+
+    this._errorEvent = new Event();
+    this._readyEvent = new Event();
+    this._texturesReadyEvent = new Event();
+
+    this._sceneGraph = undefined;
+    this._nodesByName = {}; // Stores the nodes by their names in the glTF.
+
+    /**
+     * Used for picking primitives that wrap a model.
+     *
+     * @private
+     */
+    this.pickObject = options.pickObject;
 }
 
 function handleError(model, error) {
-  if (model._errorEvent.numberOfListeners > 0) {
-    model._errorEvent.raiseEvent(error);
-    return;
-  }
+    if (model._errorEvent.numberOfListeners > 0) {
+        model._errorEvent.raiseEvent(error);
+        return;
+    }
 
-  console.log(error);
+    console.log(error);
 }
 
 function createModelFeatureTables(model, structuralMetadata) {
-  const featureTables = model._featureTables;
+    const featureTables = model._featureTables;
 
-  const propertyTables = structuralMetadata.propertyTables;
-  const length = propertyTables.length;
-  for (let i = 0; i < length; i++) {
-    const propertyTable = propertyTables[i];
-    const modelFeatureTable = new ModelFeatureTable({
-      model: model,
-      propertyTable: propertyTable,
-    });
+    const propertyTables = structuralMetadata.propertyTables;
+    const length = propertyTables.length;
+    for (let i = 0; i < length; i++) {
+        const propertyTable = propertyTables[i];
+        const modelFeatureTable = new ModelFeatureTable({
+            model: model,
+            propertyTable: propertyTable,
+        });
 
-    featureTables.push(modelFeatureTable);
-  }
+        featureTables.push(modelFeatureTable);
+    }
 
-  return featureTables;
+    return featureTables;
 }
 
 function selectFeatureTableId(components, model) {
-  const featureIdLabel = model._featureIdLabel;
-  const instanceFeatureIdLabel = model._instanceFeatureIdLabel;
+    const featureIdLabel = model._featureIdLabel;
+    const instanceFeatureIdLabel = model._instanceFeatureIdLabel;
 
-  let i, j;
-  let featureIdAttribute;
+    let i, j;
+    let featureIdAttribute;
 
-  let node;
-  // Scan the nodes till we find one with instances, get the feature table ID
-  // if the feature ID attribute of the user-selected index is present.
-  for (i = 0; i < components.nodes.length; i++) {
-    node = components.nodes[i];
-    if (defined(node.instances)) {
-      featureIdAttribute = ModelUtility.getFeatureIdsByLabel(
-        node.instances.featureIds,
-        instanceFeatureIdLabel,
-      );
-      if (
-        defined(featureIdAttribute) &&
-        defined(featureIdAttribute.propertyTableId)
-      ) {
-        return featureIdAttribute.propertyTableId;
-      }
+    let node;
+    // Scan the nodes till we find one with instances, get the feature table ID
+    // if the feature ID attribute of the user-selected index is present.
+    for (i = 0; i < components.nodes.length; i++) {
+        node = components.nodes[i];
+        if (defined(node.instances)) {
+            featureIdAttribute = ModelUtility.getFeatureIdsByLabel(
+                node.instances.featureIds,
+                instanceFeatureIdLabel,
+            );
+            if (
+                defined(featureIdAttribute) &&
+                defined(featureIdAttribute.propertyTableId)
+            ) {
+                return featureIdAttribute.propertyTableId;
+            }
+        }
     }
-  }
 
-  // Scan the primitives till we find one with textures or attributes, get the feature table ID
-  // if the feature ID attribute/texture of the user-selected index is present.
-  for (i = 0; i < components.nodes.length; i++) {
-    node = components.nodes[i];
-    for (j = 0; j < node.primitives.length; j++) {
-      const primitive = node.primitives[j];
-      const featureIds = ModelUtility.getFeatureIdsByLabel(
-        primitive.featureIds,
-        featureIdLabel,
-      );
+    // Scan the primitives till we find one with textures or attributes, get the feature table ID
+    // if the feature ID attribute/texture of the user-selected index is present.
+    for (i = 0; i < components.nodes.length; i++) {
+        node = components.nodes[i];
+        for (j = 0; j < node.primitives.length; j++) {
+            const primitive = node.primitives[j];
+            const featureIds = ModelUtility.getFeatureIdsByLabel(
+                primitive.featureIds,
+                featureIdLabel,
+            );
 
-      if (defined(featureIds)) {
-        return featureIds.propertyTableId;
-      }
+            if (defined(featureIds)) {
+                return featureIds.propertyTableId;
+            }
+        }
     }
-  }
 
-  // If there's only one feature table, then select it by default. This is
-  // to ensure backwards compatibility with the older handling of b3dm models.
-  if (model._featureTables.length === 1) {
-    return 0;
-  }
+    // If there's only one feature table, then select it by default. This is
+    // to ensure backwards compatibility with the older handling of b3dm models.
+    if (model._featureTables.length === 1) {
+        return 0;
+    }
 }
 
 /**
@@ -584,1023 +591,1035 @@ function selectFeatureTableId(components, model) {
  *  @private
  */
 function isColorAlphaDirty(currentColor, previousColor) {
-  if (!defined(currentColor) && !defined(previousColor)) {
-    return false;
-  }
+    if (!defined(currentColor) && !defined(previousColor)) {
+        return false;
+    }
 
-  if (defined(currentColor) !== defined(previousColor)) {
-    return true;
-  }
+    if (defined(currentColor) !== defined(previousColor)) {
+        return true;
+    }
 
-  const currentAlpha = currentColor.alpha;
-  const previousAlpha = previousColor.alpha;
-  return (
-    Math.floor(currentAlpha) !== Math.floor(previousAlpha) ||
-    Math.ceil(currentAlpha) !== Math.ceil(previousAlpha)
-  );
+    const currentAlpha = currentColor.alpha;
+    const previousAlpha = previousColor.alpha;
+    return (
+        Math.floor(currentAlpha) !== Math.floor(previousAlpha) ||
+        Math.ceil(currentAlpha) !== Math.ceil(previousAlpha)
+    );
 }
 
 Object.defineProperties(Model.prototype, {
-  /**
-   * When <code>true</code>, this model is ready to render, i.e., the external binary, image,
-   * and shader files were downloaded and the WebGL resources were created.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @default false
-   */
-  ready: {
-    get: function () {
-      return this._ready;
-    },
-  },
-
-  /**
-   * Gets an event that is raised when the model encounters an asynchronous rendering error.  By subscribing
-   * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
-   * are passed an instance of {@link ModelError}.
-   * @memberof Model.prototype
-   * @type {Event}
-   * @readonly
-   */
-  errorEvent: {
-    get: function () {
-      return this._errorEvent;
-    },
-  },
-
-  /**
-   * Gets an event that is raised when the model is loaded and ready for rendering, i.e. when the external resources
-   * have been downloaded and the WebGL resources are created. Event listeners
-   * are passed an instance of the {@link Model}.
-   *
-   * <p>
-   * If {@link Model.incrementallyLoadTextures} is true, this event will be raised before all textures are loaded and ready for rendering. Subscribe to {@link Model.texturesReadyEvent} to be notified when the textures are ready.
-   * </p>
-   *
-   * @memberof Model.prototype
-   * @type {Event}
-   * @readonly
-   */
-  readyEvent: {
-    get: function () {
-      return this._readyEvent;
-    },
-  },
-
-  /**
-   * Returns true if textures are loaded separately from the other glTF resources.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @private
-   */
-  incrementallyLoadTextures: {
-    get: function () {
-      return this._loader.incrementallyLoadTextures ?? false;
-    },
-  },
-
-  /**
-   * Gets an event that, if {@link Model.incrementallyLoadTextures} is true, is raised when the model textures are loaded and ready for rendering, i.e. when the external resources
-   * have been downloaded and the WebGL resources are created. Event listeners
-   * are passed an instance of the {@link Model}.
-   *
-   * @memberof Model.prototype
-   * @type {Event}
-   * @readonly
-   */
-  texturesReadyEvent: {
-    get: function () {
-      return this._texturesReadyEvent;
-    },
-  },
-
-  /**
-   * @private
-   */
-  loader: {
-    get: function () {
-      return this._loader;
-    },
-  },
-
-  /**
-   * Get the estimated memory usage statistics for this model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {ModelStatistics}
-   * @readonly
-   *
-   * @private
-   */
-  statistics: {
-    get: function () {
-      return this._statistics;
-    },
-  },
-
-  /**
-   * The currently playing glTF animations.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {ModelAnimationCollection}
-   * @readonly
-   */
-  activeAnimations: {
-    get: function () {
-      return this._activeAnimations;
-    },
-  },
-
-  /**
-   * Determines if the model's animations should hold a pose over frames where no keyframes are specified.
-   *
-   * @memberof Model.prototype
-   * @type {boolean}
-   *
-   * @default true
-   */
-  clampAnimations: {
-    get: function () {
-      return this._clampAnimations;
-    },
-    set: function (value) {
-      this._clampAnimations = value;
-    },
-  },
-
-  /**
-   * Whether or not to cull the model using frustum/horizon culling. If the model is part of a 3D Tiles tileset, this property
-   * will always be false, since the 3D Tiles culling system is used.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @private
-   */
-  cull: {
-    get: function () {
-      return this._cull;
-    },
-  },
-
-  /**
-   * The pass to use in the {@link DrawCommand} for the opaque portions of the model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Pass}
-   * @readonly
-   *
-   * @private
-   */
-  opaquePass: {
-    get: function () {
-      return this._opaquePass;
-    },
-  },
-
-  /**
-   * Point cloud shading settings for controlling point cloud attenuation
-   * and lighting. For 3D Tiles, this is inherited from the
-   * {@link Cesium3DTileset}.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {PointCloudShading}
-   */
-  pointCloudShading: {
-    get: function () {
-      return this._pointCloudShading;
-    },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      Check.defined("pointCloudShading", value);
-      //>>includeEnd('debug');
-      if (value !== this._pointCloudShading) {
-        this.resetDrawCommands();
-      }
-      this._pointCloudShading = value;
-    },
-  },
-
-  /**
-   * The model's custom shader, if it exists. Using custom shaders with a {@link Cesium3DTileStyle}
-   * may lead to undefined behavior.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {CustomShader}
-   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
-   */
-  customShader: {
-    get: function () {
-      return this._customShader;
-    },
-    set: function (value) {
-      if (value !== this._customShader) {
-        this.resetDrawCommands();
-      }
-      this._customShader = value;
-    },
-  },
-
-  /**
-   * The scene graph of this model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {ModelSceneGraph}
-   * @private
-   */
-  sceneGraph: {
-    get: function () {
-      return this._sceneGraph;
-    },
-  },
-
-  /**
-   * The tile content this model belongs to, if it is loaded as part of a {@link Cesium3DTileset}.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Cesium3DTileContent}
-   * @readonly
-   *
-   * @private
-   */
-  content: {
-    get: function () {
-      return this._content;
-    },
-  },
-
-  /**
-   * The height reference of the model, which determines how the model is drawn
-   * relative to terrain.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {HeightReference}
-   * @default {HeightReference.NONE}
-   *
-   */
-  heightReference: {
-    get: function () {
-      return this._heightReference;
-    },
-    set: function (value) {
-      if (value !== this._heightReference) {
-        this._heightDirty = true;
-      }
-      this._heightReference = value;
-    },
-  },
-
-  /**
-   * Gets or sets the distance display condition, which specifies at what distance
-   * from the camera this model will be displayed.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {DistanceDisplayCondition}
-   *
-   * @default undefined
-   *
-   */
-  distanceDisplayCondition: {
-    get: function () {
-      return this._distanceDisplayCondition;
-    },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      if (defined(value) && value.far <= value.near) {
-        throw new DeveloperError("far must be greater than near");
-      }
-      //>>includeEnd('debug');
-      this._distanceDisplayCondition = DistanceDisplayCondition.clone(
-        value,
-        this._distanceDisplayCondition,
-      );
-    },
-  },
-
-  /**
-   * The structural metadata from the EXT_structural_metadata extension
-   *
-   * @memberof Model.prototype
-   *
-   * @type {StructuralMetadata}
-   * @readonly
-   *
-   * @private
-   */
-  structuralMetadata: {
-    get: function () {
-      return this._sceneGraph.components.structuralMetadata;
-    },
-  },
-
-  /**
-   * The ID for the feature table to use for picking and styling in this model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {number}
-   *
-   * @private
-   */
-  featureTableId: {
-    get: function () {
-      return this._featureTableId;
-    },
-    set: function (value) {
-      this._featureTableId = value;
-    },
-  },
-
-  /**
-   * The feature tables for this model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Array}
-   * @readonly
-   *
-   * @private
-   */
-  featureTables: {
-    get: function () {
-      return this._featureTables;
-    },
-    set: function (value) {
-      this._featureTables = value;
-    },
-  },
-
-  /**
-   * A user-defined object that is returned when the model is picked.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {object}
-   *
-   * @default undefined
-   *
-   * @see Scene#pick
-   */
-  id: {
-    get: function () {
-      return this._id;
-    },
-    set: function (value) {
-      if (value !== this._id) {
-        this._idDirty = true;
-      }
-
-      this._id = value;
-    },
-  },
-
-  /**
-   * When <code>true</code>, each primitive is pickable with {@link Scene#pick}.  When <code>false</code>, GPU memory is saved.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @private
-   */
-  allowPicking: {
-    get: function () {
-      return this._allowPicking;
-    },
-  },
-
-  /**
-   * The style to apply to the features in the model. Cannot be applied if a {@link CustomShader} is also applied.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Cesium3DTileStyle}
-   */
-  style: {
-    get: function () {
-      return this._style;
-    },
-    set: function (value) {
-      this._style = value;
-      this._styleDirty = true;
-    },
-  },
-
-  /**
-   * The color to blend with the model's rendered color.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Color}
-   *
-   * @default undefined
-   */
-  color: {
-    get: function () {
-      return this._color;
-    },
-    set: function (value) {
-      if (isColorAlphaDirty(value, this._color)) {
-        this.resetDrawCommands();
-      }
-      this._color = Color.clone(value, this._color);
-    },
-  },
-
-  /**
-   * Defines how the color blends with the model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Cesium3DTileColorBlendMode|ColorBlendMode}
-   *
-   * @default ColorBlendMode.HIGHLIGHT
-   */
-  colorBlendMode: {
-    get: function () {
-      return this._colorBlendMode;
-    },
-    set: function (value) {
-      this._colorBlendMode = value;
-    },
-  },
-
-  /**
-   * Value used to determine the color strength when the <code>colorBlendMode</code> is <code>MIX</code>. A value of 0.0 results in the model's rendered color while a value of 1.0 results in a solid color, with any value in-between resulting in a mix of the two.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {number}
-   *
-   * @default 0.5
-   */
-  colorBlendAmount: {
-    get: function () {
-      return this._colorBlendAmount;
-    },
-    set: function (value) {
-      this._colorBlendAmount = value;
-    },
-  },
-
-  /**
-   * The silhouette color.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Color}
-   *
-   * @default Color.RED
-   */
-  silhouetteColor: {
-    get: function () {
-      return this._silhouetteColor;
-    },
-    set: function (value) {
-      if (!Color.equals(value, this._silhouetteColor)) {
-        const alphaDirty = isColorAlphaDirty(value, this._silhouetteColor);
-        this._silhouetteDirty = this._silhouetteDirty || alphaDirty;
-      }
-
-      this._silhouetteColor = Color.clone(value, this._silhouetteColor);
-    },
-  },
-
-  /**
-   * The size of the silhouette in pixels.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {number}
-   *
-   * @default 0.0
-   */
-  silhouetteSize: {
-    get: function () {
-      return this._silhouetteSize;
-    },
-    set: function (value) {
-      if (value !== this._silhouetteSize) {
-        const currentSize = this._silhouetteSize;
-        const sizeDirty =
-          (value > 0.0 && currentSize === 0.0) ||
-          (value === 0.0 && currentSize > 0.0);
-        this._silhouetteDirty = this._silhouetteDirty || sizeDirty;
-
-        // Back-face culling needs to be updated in case the silhouette size
-        // is greater than zero.
-        this._backFaceCullingDirty = this._backFaceCullingDirty || sizeDirty;
-      }
-
-      this._silhouetteSize = value;
-    },
-  },
-
-  /**
-   * Gets the model's bounding sphere in world space. This does not take into account
-   * glTF animations, skins, or morph targets. It also does not account for
-   * {@link Model#minimumPixelSize}.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {BoundingSphere}
-   * @readonly
-   */
-  boundingSphere: {
-    get: function () {
-      //>>includeStart('debug', pragmas.debug);
-      if (!this._ready) {
-        throw new DeveloperError(
-          "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
-        );
-      }
-      //>>includeEnd('debug');
-
-      const modelMatrix = defined(this._clampedModelMatrix)
-        ? this._clampedModelMatrix
-        : this.modelMatrix;
-      updateBoundingSphere(this, modelMatrix);
-
-      return this._boundingSphere;
-    },
-  },
-
-  /**
-   * This property is for debugging only; it is not for production use nor is it optimized.
-   * <p>
-   * Draws the bounding sphere for each draw command in the model.
-   * </p>
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  debugShowBoundingVolume: {
-    get: function () {
-      return this._debugShowBoundingVolume;
-    },
-    set: function (value) {
-      if (this._debugShowBoundingVolume !== value) {
-        this._debugShowBoundingVolumeDirty = true;
-      }
-      this._debugShowBoundingVolume = value;
-    },
-  },
-
-  /**
-   * This property is for debugging only; it is not for production use nor is it optimized.
-   * <p>
-   * Draws the model in wireframe.
-   * </p>
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  debugWireframe: {
-    get: function () {
-      return this._debugWireframe;
-    },
-    set: function (value) {
-      if (this._debugWireframe !== value) {
-        this.resetDrawCommands();
-      }
-      this._debugWireframe = value;
-
-      // Warning for improper setup of debug wireframe
-      if (
-        this._debugWireframe === true &&
-        this._enableDebugWireframe === false &&
-        this.type === ModelType.GLTF
-      ) {
-        oneTimeWarning(
-          "model-debug-wireframe-ignored",
-          "enableDebugWireframe must be set to true in Model.fromGltfAsync, otherwise debugWireframe will be ignored.",
-        );
-      }
-    },
-  },
-
-  /**
-   * Whether or not to render the model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   *
-   * @default true
-   */
-  show: {
-    get: function () {
-      return this._show;
-    },
-    set: function (value) {
-      this._show = value;
-    },
-  },
-
-  /**
-   * Label of the feature ID set to use for picking and styling.
-   * <p>
-   * For EXT_mesh_features, this is the feature ID's label property, or
-   * "featureId_N" (where N is the index in the featureIds array) when not
-   * specified. EXT_feature_metadata did not have a label field, so such
-   * feature ID sets are always labeled "featureId_N" where N is the index in
-   * the list of all feature Ids, where feature ID attributes are listed before
-   * feature ID textures.
-   * </p>
-   * <p>
-   * If featureIdLabel is set to an integer N, it is converted to
-   * the string "featureId_N" automatically. If both per-primitive and
-   * per-instance feature IDs are present, the instance feature IDs take
-   * priority.
-   * </p>
-   *
-   * @memberof Model.prototype
-   *
-   * @type {string}
-   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
-   */
-  featureIdLabel: {
-    get: function () {
-      return this._featureIdLabel;
-    },
-    set: function (value) {
-      // indices get converted into featureId_N
-      if (typeof value === "number") {
-        value = `featureId_${value}`;
-      }
-
-      //>>includeStart('debug', pragmas.debug);
-      Check.typeOf.string("value", value);
-      //>>includeEnd('debug');
-
-      if (value !== this._featureIdLabel) {
-        this._featureTableIdDirty = true;
-      }
-
-      this._featureIdLabel = value;
-    },
-  },
-
-  /**
-   * Label of the instance feature ID set used for picking and styling.
-   * <p>
-   * If instanceFeatureIdLabel is set to an integer N, it is converted to
-   * the string "instanceFeatureId_N" automatically.
-   * If both per-primitive and per-instance feature IDs are present, the
-   * instance feature IDs take priority.
-   * </p>
-   *
-   * @memberof Model.prototype
-   *
-   * @type {string}
-   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
-   */
-  instanceFeatureIdLabel: {
-    get: function () {
-      return this._instanceFeatureIdLabel;
-    },
-    set: function (value) {
-      // indices get converted into instanceFeatureId_N
-      if (typeof value === "number") {
-        value = `instanceFeatureId_${value}`;
-      }
-
-      //>>includeStart('debug', pragmas.debug);
-      Check.typeOf.string("value", value);
-      //>>includeEnd('debug');
-
-      if (value !== this._instanceFeatureIdLabel) {
-        this._featureTableIdDirty = true;
-      }
-
-      this._instanceFeatureIdLabel = value;
-    },
-  },
-
-  /**
-   * The {@link ClippingPlaneCollection} used to selectively disable rendering the model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {ClippingPlaneCollection}
-   */
-  clippingPlanes: {
-    get: function () {
-      return this._clippingPlanes;
-    },
-    set: function (value) {
-      if (value !== this._clippingPlanes) {
-        // Handle destroying old clipping planes, new clipping planes ownership
-        ClippingPlaneCollection.setOwner(value, this, "_clippingPlanes");
-        this.resetDrawCommands();
-      }
-    },
-  },
-
-  /**
-   * The {@link ClippingPolygonCollection} used to selectively disable rendering the model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {ClippingPolygonCollection}
-   */
-  clippingPolygons: {
-    get: function () {
-      return this._clippingPolygons;
-    },
-    set: function (value) {
-      if (value !== this._clippingPolygons) {
-        // Handle destroying old clipping polygons, new clipping polygons ownership
-        ClippingPolygonCollection.setOwner(value, this, "_clippingPolygons");
-        this.resetDrawCommands();
-      }
-    },
-  },
-
-  /**
-   * If <code>true</code>, the model is exaggerated along the ellipsoid normal when {@link Scene.verticalExaggeration} is set to a value other than <code>1.0</code>.
-   *
-   * @memberof Model.prototype
-   * @type {boolean}
-   * @default true
-   *
-   * @example
-   * // Exaggerate terrain by a factor of 2, but prevent model exaggeration
-   * scene.verticalExaggeration = 2.0;
-   * model.enableVerticalExaggeration = false;
-   */
-  enableVerticalExaggeration: {
-    get: function () {
-      return this._enableVerticalExaggeration;
-    },
-    set: function (value) {
-      if (value !== this._enableVerticalExaggeration) {
-        this.resetDrawCommands();
-      }
-      this._enableVerticalExaggeration = value;
-    },
-  },
-
-  /**
-   * If <code>true</code>, the model is vertically exaggerated along the ellipsoid normal.
-   *
-   * @memberof Model.prototype
-   * @type {boolean}
-   * @default true
-   * @readonly
-   * @private
-   */
-  hasVerticalExaggeration: {
-    get: function () {
-      return this._hasVerticalExaggeration;
-    },
-  },
-
-  /**
-   * If this model is part of a <code>Model3DTileContent</code> of a tileset,
-   * then this will return the <code>ImageryLayerCollection</code>
-   * of that tileset. Otherwise, <code>undefined</code> is returned.
-   *
-   * @memberof Model.prototype
-   * @type {ImageryLayerCollection|undefined}
-   * @readonly
-   * @private
-   */
-  imageryLayers: {
-    get: function () {
-      if (defined(this._content)) {
-        const tileset = this._content.tileset;
-        if (defined(tileset)) {
-          return tileset.imageryLayers;
-        }
-      }
-      return undefined;
-    },
-  },
-
-  /**
-   * The directional light color when shading the model. When <code>undefined</code> the scene's light color is used instead.
-   * <p>
-   * Disabling additional light sources by setting
-   * <code>model.imageBasedLighting.imageBasedLightingFactor = new Cartesian2(0.0, 0.0)</code>
-   * will make the model much darker. Here, increasing the intensity of the light source will make the model brighter.
-   * </p>
-   * @memberof Model.prototype
-   *
-   * @type {Cartesian3}
-   *
-   * @default undefined
-   */
-  lightColor: {
-    get: function () {
-      return this._lightColor;
-    },
-    set: function (value) {
-      if (defined(value) !== defined(this._lightColor)) {
-        this.resetDrawCommands();
-      }
-
-      this._lightColor = Cartesian3.clone(value, this._lightColor);
-    },
-  },
-
-  /**
-   * The properties for managing image-based lighting on this model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {ImageBasedLighting}
-   */
-  imageBasedLighting: {
-    get: function () {
-      return this._imageBasedLighting;
-    },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      Check.typeOf.object("imageBasedLighting", value);
-      //>>includeEnd('debug');
-
-      if (value !== this._imageBasedLighting) {
-        if (
-          this._shouldDestroyImageBasedLighting &&
-          !this._imageBasedLighting.isDestroyed()
-        ) {
-          this._imageBasedLighting.destroy();
-        }
-        this._imageBasedLighting = value;
-        this._shouldDestroyImageBasedLighting = false;
-        this.resetDrawCommands();
-      }
-    },
-  },
-
-  /**
-   * The properties for managing dynamic environment maps on this model. Affects lighting.
-   * @memberof Model.prototype
-   * @readonly
-   *
-   * @example
-   * // Change the ground color used for a model's environment map to a forest green
-   * const environmentMapManager = model.environmentMapManager;
-   * environmentMapManager.groundColor = Cesium.Color.fromCssColorString("#203b34");
-   *
-   * @type {DynamicEnvironmentMapManager}
-   */
-  environmentMapManager: {
-    get: function () {
-      return this._environmentMapManager;
-    },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      Check.typeOf.object("environmentMapManager", value);
-      //>>includeEnd('debug');
-
-      if (value !== this.environmentMapManager) {
-        DynamicEnvironmentMapManager.setOwner(
-          value,
-          this,
-          "_environmentMapManager",
-        );
-        this.resetDrawCommands();
-      }
-    },
-  },
-
-  /**
-   * Whether to cull back-facing geometry. When true, back face culling is
-   * determined by the material's doubleSided property; when false, back face
-   * culling is disabled. Back faces are not culled if {@link Model#color}
-   * is translucent or {@link Model#silhouetteSize} is greater than 0.0.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   *
-   * @default true
-   */
-  backFaceCulling: {
-    get: function () {
-      return this._backFaceCulling;
-    },
-    set: function (value) {
-      if (value !== this._backFaceCulling) {
-        this._backFaceCullingDirty = true;
-      }
-
-      this._backFaceCulling = value;
-    },
-  },
-
-  /**
-   * A uniform scale applied to this model before the {@link Model#modelMatrix}.
-   * Values greater than <code>1.0</code> increase the size of the model; values
-   * less than <code>1.0</code> decrease.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {number}
-   *
-   * @default 1.0
-   */
-  scale: {
-    get: function () {
-      return this._scale;
-    },
-    set: function (value) {
-      if (value !== this._scale) {
-        this._updateModelMatrix = true;
-      }
-      this._scale = value;
-    },
-  },
-
-  /**
-   * The true scale of the model after being affected by the model's scale,
-   * minimum pixel size, and maximum scale parameters.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {number}
-   * @readonly
-   *
-   * @private
-   */
-  computedScale: {
-    get: function () {
-      return this._computedScale;
-    },
-  },
-
-  /**
-   * The approximate minimum pixel size of the model regardless of zoom.
-   * This can be used to ensure that a model is visible even when the viewer
-   * zooms out.  When <code>0.0</code>, no minimum size is enforced.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {number}
-   *
-   * @default 0.0
-   */
-  minimumPixelSize: {
-    get: function () {
-      return this._minimumPixelSize;
-    },
-    set: function (value) {
-      if (value !== this._minimumPixelSize) {
-        this._updateModelMatrix = true;
-      }
-      this._minimumPixelSize = value;
-    },
-  },
-
-  /**
-   * The maximum scale size for a model. This can be used to give
-   * an upper limit to the {@link Model#minimumPixelSize}, ensuring that the model
-   * is never an unreasonable scale.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {number}
-   */
-  maximumScale: {
-    get: function () {
-      return this._maximumScale;
-    },
-    set: function (value) {
-      if (value !== this._maximumScale) {
-        this._updateModelMatrix = true;
-      }
-      this._maximumScale = value;
-    },
-  },
-
-  /**
+    /**
+     * When <code>true</code>, this model is ready to render, i.e., the external binary, image,
+     * and shader files were downloaded and the WebGL resources were created.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @default false
+     */
+    ready: {
+        get: function () {
+            return this._ready;
+        },
+    },
+
+    /**
+     * Gets an event that is raised when the model encounters an asynchronous rendering error.  By subscribing
+     * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
+     * are passed an instance of {@link ModelError}.
+     * @memberof Model.prototype
+     * @type {Event}
+     * @readonly
+     */
+    errorEvent: {
+        get: function () {
+            return this._errorEvent;
+        },
+    },
+
+    /**
+     * Gets an event that is raised when the model is loaded and ready for rendering, i.e. when the external resources
+     * have been downloaded and the WebGL resources are created. Event listeners
+     * are passed an instance of the {@link Model}.
+     *
+     * <p>
+     * If {@link Model.incrementallyLoadTextures} is true, this event will be raised before all textures are loaded and ready for rendering. Subscribe to {@link Model.texturesReadyEvent} to be notified when the textures are ready.
+     * </p>
+     *
+     * @memberof Model.prototype
+     * @type {Event}
+     * @readonly
+     */
+    readyEvent: {
+        get: function () {
+            return this._readyEvent;
+        },
+    },
+
+    /**
+     * Returns true if textures are loaded separately from the other glTF resources.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @private
+     */
+    incrementallyLoadTextures: {
+        get: function () {
+            return this._loader.incrementallyLoadTextures ?? false;
+        },
+    },
+
+    /**
+     * Gets an event that, if {@link Model.incrementallyLoadTextures} is true, is raised when the model textures are loaded and ready for rendering, i.e. when the external resources
+     * have been downloaded and the WebGL resources are created. Event listeners
+     * are passed an instance of the {@link Model}.
+     *
+     * @memberof Model.prototype
+     * @type {Event}
+     * @readonly
+     */
+    texturesReadyEvent: {
+        get: function () {
+            return this._texturesReadyEvent;
+        },
+    },
+
+    /**
+     * @private
+     */
+    loader: {
+        get: function () {
+            return this._loader;
+        },
+    },
+
+    /**
+     * Get the estimated memory usage statistics for this model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {ModelStatistics}
+     * @readonly
+     *
+     * @private
+     */
+    statistics: {
+        get: function () {
+            return this._statistics;
+        },
+    },
+
+    /**
+     * The currently playing glTF animations.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {ModelAnimationCollection}
+     * @readonly
+     */
+    activeAnimations: {
+        get: function () {
+            return this._activeAnimations;
+        },
+    },
+
+    /**
+     * Determines if the model's animations should hold a pose over frames where no keyframes are specified.
+     *
+     * @memberof Model.prototype
+     * @type {boolean}
+     *
+     * @default true
+     */
+    clampAnimations: {
+        get: function () {
+            return this._clampAnimations;
+        },
+        set: function (value) {
+            this._clampAnimations = value;
+        },
+    },
+
+    /**
+     * Whether or not to cull the model using frustum/horizon culling. If the model is part of a 3D Tiles tileset, this property
+     * will always be false, since the 3D Tiles culling system is used.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @private
+     */
+    cull: {
+        get: function () {
+            return this._cull;
+        },
+    },
+
+    /**
+     * The pass to use in the {@link DrawCommand} for the opaque portions of the model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Pass}
+     * @readonly
+     *
+     * @private
+     */
+    opaquePass: {
+        get: function () {
+            return this._opaquePass;
+        },
+    },
+
+    /**
+     * Point cloud shading settings for controlling point cloud attenuation
+     * and lighting. For 3D Tiles, this is inherited from the
+     * {@link Cesium3DTileset}.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {PointCloudShading}
+     */
+    pointCloudShading: {
+        get: function () {
+            return this._pointCloudShading;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            Check.defined("pointCloudShading", value);
+            //>>includeEnd('debug');
+            if (value !== this._pointCloudShading) {
+                this.resetDrawCommands();
+            }
+            this._pointCloudShading = value;
+        },
+    },
+
+    /**
+     * The model's custom shader, if it exists. Using custom shaders with a {@link Cesium3DTileStyle}
+     * may lead to undefined behavior.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {CustomShader}
+     * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+     */
+    customShader: {
+        get: function () {
+            return this._customShader;
+        },
+        set: function (value) {
+            if (value !== this._customShader) {
+                this.resetDrawCommands();
+            }
+            this._customShader = value;
+        },
+    },
+
+    /**
+     * The scene graph of this model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {ModelSceneGraph}
+     * @private
+     */
+    sceneGraph: {
+        get: function () {
+            return this._sceneGraph;
+        },
+    },
+
+    /**
+     * The tile content this model belongs to, if it is loaded as part of a {@link Cesium3DTileset}.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Cesium3DTileContent}
+     * @readonly
+     *
+     * @private
+     */
+    content: {
+        get: function () {
+            return this._content;
+        },
+    },
+
+    /**
+     * The height reference of the model, which determines how the model is drawn
+     * relative to terrain.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {HeightReference}
+     * @default {HeightReference.NONE}
+     *
+     */
+    heightReference: {
+        get: function () {
+            return this._heightReference;
+        },
+        set: function (value) {
+            if (value !== this._heightReference) {
+                this._heightDirty = true;
+            }
+            this._heightReference = value;
+        },
+    },
+
+    /**
+     * Gets or sets the distance display condition, which specifies at what distance
+     * from the camera this model will be displayed.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {DistanceDisplayCondition}
+     *
+     * @default undefined
+     *
+     */
+    distanceDisplayCondition: {
+        get: function () {
+            return this._distanceDisplayCondition;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            if (defined(value) && value.far <= value.near) {
+                throw new DeveloperError("far must be greater than near");
+            }
+            //>>includeEnd('debug');
+            this._distanceDisplayCondition = DistanceDisplayCondition.clone(
+                value,
+                this._distanceDisplayCondition,
+            );
+        },
+    },
+
+    /**
+     * The structural metadata from the EXT_structural_metadata extension
+     *
+     * @memberof Model.prototype
+     *
+     * @type {StructuralMetadata}
+     * @readonly
+     *
+     * @private
+     */
+    structuralMetadata: {
+        get: function () {
+            return this._sceneGraph.components.structuralMetadata;
+        },
+    },
+
+    /**
+     * The ID for the feature table to use for picking and styling in this model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {number}
+     *
+     * @private
+     */
+    featureTableId: {
+        get: function () {
+            return this._featureTableId;
+        },
+        set: function (value) {
+            this._featureTableId = value;
+        },
+    },
+
+    /**
+     * The feature tables for this model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Array}
+     * @readonly
+     *
+     * @private
+     */
+    featureTables: {
+        get: function () {
+            return this._featureTables;
+        },
+        set: function (value) {
+            this._featureTables = value;
+        },
+    },
+
+    /**
+     * A user-defined object that is returned when the model is picked.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {object}
+     *
+     * @default undefined
+     *
+     * @see Scene#pick
+     */
+    id: {
+        get: function () {
+            return this._id;
+        },
+        set: function (value) {
+            if (value !== this._id) {
+                this._idDirty = true;
+            }
+
+            this._id = value;
+        },
+    },
+
+    /**
+     * When <code>true</code>, each primitive is pickable with {@link Scene#pick}.  When <code>false</code>, GPU memory is saved.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @private
+     */
+    allowPicking: {
+        get: function () {
+            return this._allowPicking;
+        },
+    },
+
+    /**
+     * The style to apply to the features in the model. Cannot be applied if a {@link CustomShader} is also applied.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Cesium3DTileStyle}
+     */
+    style: {
+        get: function () {
+            return this._style;
+        },
+        set: function (value) {
+            this._style = value;
+            this._styleDirty = true;
+        },
+    },
+
+    /**
+     * The color to blend with the model's rendered color.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Color}
+     *
+     * @default undefined
+     */
+    color: {
+        get: function () {
+            return this._color;
+        },
+        set: function (value) {
+            if (isColorAlphaDirty(value, this._color)) {
+                this.resetDrawCommands();
+            }
+            this._color = Color.clone(value, this._color);
+        },
+    },
+
+    /**
+     * Defines how the color blends with the model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Cesium3DTileColorBlendMode|ColorBlendMode}
+     *
+     * @default ColorBlendMode.HIGHLIGHT
+     */
+    colorBlendMode: {
+        get: function () {
+            return this._colorBlendMode;
+        },
+        set: function (value) {
+            this._colorBlendMode = value;
+        },
+    },
+
+    /**
+     * Value used to determine the color strength when the <code>colorBlendMode</code> is <code>MIX</code>. A value of 0.0 results in the model's rendered color while a value of 1.0 results in a solid color, with any value in-between resulting in a mix of the two.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {number}
+     *
+     * @default 0.5
+     */
+    colorBlendAmount: {
+        get: function () {
+            return this._colorBlendAmount;
+        },
+        set: function (value) {
+            this._colorBlendAmount = value;
+        },
+    },
+
+    /**
+     * The silhouette color.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Color}
+     *
+     * @default Color.RED
+     */
+    silhouetteColor: {
+        get: function () {
+            return this._silhouetteColor;
+        },
+        set: function (value) {
+            if (!Color.equals(value, this._silhouetteColor)) {
+                const alphaDirty = isColorAlphaDirty(
+                    value,
+                    this._silhouetteColor,
+                );
+                this._silhouetteDirty = this._silhouetteDirty || alphaDirty;
+            }
+
+            this._silhouetteColor = Color.clone(value, this._silhouetteColor);
+        },
+    },
+
+    /**
+     * The size of the silhouette in pixels.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {number}
+     *
+     * @default 0.0
+     */
+    silhouetteSize: {
+        get: function () {
+            return this._silhouetteSize;
+        },
+        set: function (value) {
+            if (value !== this._silhouetteSize) {
+                const currentSize = this._silhouetteSize;
+                const sizeDirty =
+                    (value > 0.0 && currentSize === 0.0) ||
+                    (value === 0.0 && currentSize > 0.0);
+                this._silhouetteDirty = this._silhouetteDirty || sizeDirty;
+
+                // Back-face culling needs to be updated in case the silhouette size
+                // is greater than zero.
+                this._backFaceCullingDirty =
+                    this._backFaceCullingDirty || sizeDirty;
+            }
+
+            this._silhouetteSize = value;
+        },
+    },
+
+    /**
+     * Gets the model's bounding sphere in world space. This does not take into account
+     * glTF animations, skins, or morph targets. It also does not account for
+     * {@link Model#minimumPixelSize}.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {BoundingSphere}
+     * @readonly
+     */
+    boundingSphere: {
+        get: function () {
+            //>>includeStart('debug', pragmas.debug);
+            if (!this._ready) {
+                throw new DeveloperError(
+                    "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
+                );
+            }
+            //>>includeEnd('debug');
+
+            const modelMatrix = defined(this._clampedModelMatrix)
+                ? this._clampedModelMatrix
+                : this.modelMatrix;
+            updateBoundingSphere(this, modelMatrix);
+
+            return this._boundingSphere;
+        },
+    },
+
+    /**
+     * This property is for debugging only; it is not for production use nor is it optimized.
+     * <p>
+     * Draws the bounding sphere for each draw command in the model.
+     * </p>
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    debugShowBoundingVolume: {
+        get: function () {
+            return this._debugShowBoundingVolume;
+        },
+        set: function (value) {
+            if (this._debugShowBoundingVolume !== value) {
+                this._debugShowBoundingVolumeDirty = true;
+            }
+            this._debugShowBoundingVolume = value;
+        },
+    },
+
+    /**
+     * This property is for debugging only; it is not for production use nor is it optimized.
+     * <p>
+     * Draws the model in wireframe.
+     * </p>
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    debugWireframe: {
+        get: function () {
+            return this._debugWireframe;
+        },
+        set: function (value) {
+            if (this._debugWireframe !== value) {
+                this.resetDrawCommands();
+            }
+            this._debugWireframe = value;
+
+            // Warning for improper setup of debug wireframe
+            if (
+                this._debugWireframe === true &&
+                this._enableDebugWireframe === false &&
+                this.type === ModelType.GLTF
+            ) {
+                oneTimeWarning(
+                    "model-debug-wireframe-ignored",
+                    "enableDebugWireframe must be set to true in Model.fromGltfAsync, otherwise debugWireframe will be ignored.",
+                );
+            }
+        },
+    },
+
+    /**
+     * Whether or not to render the model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     *
+     * @default true
+     */
+    show: {
+        get: function () {
+            return this._show;
+        },
+        set: function (value) {
+            this._show = value;
+        },
+    },
+
+    /**
+     * Label of the feature ID set to use for picking and styling.
+     * <p>
+     * For EXT_mesh_features, this is the feature ID's label property, or
+     * "featureId_N" (where N is the index in the featureIds array) when not
+     * specified. EXT_feature_metadata did not have a label field, so such
+     * feature ID sets are always labeled "featureId_N" where N is the index in
+     * the list of all feature Ids, where feature ID attributes are listed before
+     * feature ID textures.
+     * </p>
+     * <p>
+     * If featureIdLabel is set to an integer N, it is converted to
+     * the string "featureId_N" automatically. If both per-primitive and
+     * per-instance feature IDs are present, the instance feature IDs take
+     * priority.
+     * </p>
+     *
+     * @memberof Model.prototype
+     *
+     * @type {string}
+     * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+     */
+    featureIdLabel: {
+        get: function () {
+            return this._featureIdLabel;
+        },
+        set: function (value) {
+            // indices get converted into featureId_N
+            if (typeof value === "number") {
+                value = `featureId_${value}`;
+            }
+
+            //>>includeStart('debug', pragmas.debug);
+            Check.typeOf.string("value", value);
+            //>>includeEnd('debug');
+
+            if (value !== this._featureIdLabel) {
+                this._featureTableIdDirty = true;
+            }
+
+            this._featureIdLabel = value;
+        },
+    },
+
+    /**
+     * Label of the instance feature ID set used for picking and styling.
+     * <p>
+     * If instanceFeatureIdLabel is set to an integer N, it is converted to
+     * the string "instanceFeatureId_N" automatically.
+     * If both per-primitive and per-instance feature IDs are present, the
+     * instance feature IDs take priority.
+     * </p>
+     *
+     * @memberof Model.prototype
+     *
+     * @type {string}
+     * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+     */
+    instanceFeatureIdLabel: {
+        get: function () {
+            return this._instanceFeatureIdLabel;
+        },
+        set: function (value) {
+            // indices get converted into instanceFeatureId_N
+            if (typeof value === "number") {
+                value = `instanceFeatureId_${value}`;
+            }
+
+            //>>includeStart('debug', pragmas.debug);
+            Check.typeOf.string("value", value);
+            //>>includeEnd('debug');
+
+            if (value !== this._instanceFeatureIdLabel) {
+                this._featureTableIdDirty = true;
+            }
+
+            this._instanceFeatureIdLabel = value;
+        },
+    },
+
+    /**
+     * The {@link ClippingPlaneCollection} used to selectively disable rendering the model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {ClippingPlaneCollection}
+     */
+    clippingPlanes: {
+        get: function () {
+            return this._clippingPlanes;
+        },
+        set: function (value) {
+            if (value !== this._clippingPlanes) {
+                // Handle destroying old clipping planes, new clipping planes ownership
+                ClippingPlaneCollection.setOwner(
+                    value,
+                    this,
+                    "_clippingPlanes",
+                );
+                this.resetDrawCommands();
+            }
+        },
+    },
+
+    /**
+     * The {@link ClippingPolygonCollection} used to selectively disable rendering the model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {ClippingPolygonCollection}
+     */
+    clippingPolygons: {
+        get: function () {
+            return this._clippingPolygons;
+        },
+        set: function (value) {
+            if (value !== this._clippingPolygons) {
+                // Handle destroying old clipping polygons, new clipping polygons ownership
+                ClippingPolygonCollection.setOwner(
+                    value,
+                    this,
+                    "_clippingPolygons",
+                );
+                this.resetDrawCommands();
+            }
+        },
+    },
+
+    /**
+     * If <code>true</code>, the model is exaggerated along the ellipsoid normal when {@link Scene.verticalExaggeration} is set to a value other than <code>1.0</code>.
+     *
+     * @memberof Model.prototype
+     * @type {boolean}
+     * @default true
+     *
+     * @example
+     * // Exaggerate terrain by a factor of 2, but prevent model exaggeration
+     * scene.verticalExaggeration = 2.0;
+     * model.enableVerticalExaggeration = false;
+     */
+    enableVerticalExaggeration: {
+        get: function () {
+            return this._enableVerticalExaggeration;
+        },
+        set: function (value) {
+            if (value !== this._enableVerticalExaggeration) {
+                this.resetDrawCommands();
+            }
+            this._enableVerticalExaggeration = value;
+        },
+    },
+
+    /**
+     * If <code>true</code>, the model is vertically exaggerated along the ellipsoid normal.
+     *
+     * @memberof Model.prototype
+     * @type {boolean}
+     * @default true
+     * @readonly
+     * @private
+     */
+    hasVerticalExaggeration: {
+        get: function () {
+            return this._hasVerticalExaggeration;
+        },
+    },
+
+    /**
+     * If this model is part of a <code>Model3DTileContent</code> of a tileset,
+     * then this will return the <code>ImageryLayerCollection</code>
+     * of that tileset. Otherwise, <code>undefined</code> is returned.
+     *
+     * @memberof Model.prototype
+     * @type {ImageryLayerCollection|undefined}
+     * @readonly
+     * @private
+     */
+    imageryLayers: {
+        get: function () {
+            if (defined(this._content)) {
+                const tileset = this._content.tileset;
+                if (defined(tileset)) {
+                    return tileset.imageryLayers;
+                }
+            }
+            return undefined;
+        },
+    },
+
+    /**
+     * The directional light color when shading the model. When <code>undefined</code> the scene's light color is used instead.
+     * <p>
+     * Disabling additional light sources by setting
+     * <code>model.imageBasedLighting.imageBasedLightingFactor = new Cartesian2(0.0, 0.0)</code>
+     * will make the model much darker. Here, increasing the intensity of the light source will make the model brighter.
+     * </p>
+     * @memberof Model.prototype
+     *
+     * @type {Cartesian3}
+     *
+     * @default undefined
+     */
+    lightColor: {
+        get: function () {
+            return this._lightColor;
+        },
+        set: function (value) {
+            if (defined(value) !== defined(this._lightColor)) {
+                this.resetDrawCommands();
+            }
+
+            this._lightColor = Cartesian3.clone(value, this._lightColor);
+        },
+    },
+
+    /**
+     * The properties for managing image-based lighting on this model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {ImageBasedLighting}
+     */
+    imageBasedLighting: {
+        get: function () {
+            return this._imageBasedLighting;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            Check.typeOf.object("imageBasedLighting", value);
+            //>>includeEnd('debug');
+
+            if (value !== this._imageBasedLighting) {
+                if (
+                    this._shouldDestroyImageBasedLighting &&
+                    !this._imageBasedLighting.isDestroyed()
+                ) {
+                    this._imageBasedLighting.destroy();
+                }
+                this._imageBasedLighting = value;
+                this._shouldDestroyImageBasedLighting = false;
+                this.resetDrawCommands();
+            }
+        },
+    },
+
+    /**
+     * The properties for managing dynamic environment maps on this model. Affects lighting.
+     * @memberof Model.prototype
+     * @readonly
+     *
+     * @example
+     * // Change the ground color used for a model's environment map to a forest green
+     * const environmentMapManager = model.environmentMapManager;
+     * environmentMapManager.groundColor = Cesium.Color.fromCssColorString("#203b34");
+     *
+     * @type {DynamicEnvironmentMapManager}
+     */
+    environmentMapManager: {
+        get: function () {
+            return this._environmentMapManager;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            Check.typeOf.object("environmentMapManager", value);
+            //>>includeEnd('debug');
+
+            if (value !== this.environmentMapManager) {
+                DynamicEnvironmentMapManager.setOwner(
+                    value,
+                    this,
+                    "_environmentMapManager",
+                );
+                this.resetDrawCommands();
+            }
+        },
+    },
+
+    /**
+     * Whether to cull back-facing geometry. When true, back face culling is
+     * determined by the material's doubleSided property; when false, back face
+     * culling is disabled. Back faces are not culled if {@link Model#color}
+     * is translucent or {@link Model#silhouetteSize} is greater than 0.0.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     *
+     * @default true
+     */
+    backFaceCulling: {
+        get: function () {
+            return this._backFaceCulling;
+        },
+        set: function (value) {
+            if (value !== this._backFaceCulling) {
+                this._backFaceCullingDirty = true;
+            }
+
+            this._backFaceCulling = value;
+        },
+    },
+
+    /**
+     * A uniform scale applied to this model before the {@link Model#modelMatrix}.
+     * Values greater than <code>1.0</code> increase the size of the model; values
+     * less than <code>1.0</code> decrease.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {number}
+     *
+     * @default 1.0
+     */
+    scale: {
+        get: function () {
+            return this._scale;
+        },
+        set: function (value) {
+            if (value !== this._scale) {
+                this._updateModelMatrix = true;
+            }
+            this._scale = value;
+        },
+    },
+
+    /**
+     * The true scale of the model after being affected by the model's scale,
+     * minimum pixel size, and maximum scale parameters.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {number}
+     * @readonly
+     *
+     * @private
+     */
+    computedScale: {
+        get: function () {
+            return this._computedScale;
+        },
+    },
+
+    /**
+     * The approximate minimum pixel size of the model regardless of zoom.
+     * This can be used to ensure that a model is visible even when the viewer
+     * zooms out.  When <code>0.0</code>, no minimum size is enforced.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {number}
+     *
+     * @default 0.0
+     */
+    minimumPixelSize: {
+        get: function () {
+            return this._minimumPixelSize;
+        },
+        set: function (value) {
+            if (value !== this._minimumPixelSize) {
+                this._updateModelMatrix = true;
+            }
+            this._minimumPixelSize = value;
+        },
+    },
+
+    /**
+     * The maximum scale size for a model. This can be used to give
+     * an upper limit to the {@link Model#minimumPixelSize}, ensuring that the model
+     * is never an unreasonable scale.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {number}
+     */
+    maximumScale: {
+        get: function () {
+            return this._maximumScale;
+        },
+        set: function (value) {
+            if (value !== this._maximumScale) {
+                this._updateModelMatrix = true;
+            }
+            this._maximumScale = value;
+        },
+    },
+
+    /**
    * Determines whether the model casts or receives shadows from light sources.
 
    * @memberof Model.prototype
@@ -1609,144 +1628,144 @@ Object.defineProperties(Model.prototype, {
    *
    * @default ShadowMode.ENABLED
    */
-  shadows: {
-    get: function () {
-      return this._shadows;
-    },
-    set: function (value) {
-      if (value !== this._shadows) {
-        this._shadowsDirty = true;
-      }
+    shadows: {
+        get: function () {
+            return this._shadows;
+        },
+        set: function (value) {
+            if (value !== this._shadows) {
+                this._shadowsDirty = true;
+            }
 
-      this._shadows = value;
+            this._shadows = value;
+        },
     },
-  },
 
-  /**
-   * Gets the credit that will be displayed for the model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {Credit}
-   * @readonly
-   */
-  credit: {
-    get: function () {
-      return this._credit;
+    /**
+     * Gets the credit that will be displayed for the model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {Credit}
+     * @readonly
+     */
+    credit: {
+        get: function () {
+            return this._credit;
+        },
     },
-  },
 
-  /**
-   * Gets or sets whether the credits of the model will be displayed
-   * on the screen.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  showCreditsOnScreen: {
-    get: function () {
-      return this._showCreditsOnScreen;
-    },
-    set: function (value) {
-      if (this._showCreditsOnScreen !== value) {
-        this._showCreditsOnScreenDirty = true;
-      }
+    /**
+     * Gets or sets whether the credits of the model will be displayed
+     * on the screen.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    showCreditsOnScreen: {
+        get: function () {
+            return this._showCreditsOnScreen;
+        },
+        set: function (value) {
+            if (this._showCreditsOnScreen !== value) {
+                this._showCreditsOnScreenDirty = true;
+            }
 
-      this._showCreditsOnScreen = value;
+            this._showCreditsOnScreen = value;
+        },
     },
-  },
 
-  /**
-   * The {@link SplitDirection} to apply to this model.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {SplitDirection}
-   *
-   * @default {@link SplitDirection.NONE}
-   */
-  splitDirection: {
-    get: function () {
-      return this._splitDirection;
+    /**
+     * The {@link SplitDirection} to apply to this model.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {SplitDirection}
+     *
+     * @default {@link SplitDirection.NONE}
+     */
+    splitDirection: {
+        get: function () {
+            return this._splitDirection;
+        },
+        set: function (value) {
+            if (this._splitDirection !== value) {
+                this.resetDrawCommands();
+            }
+            this._splitDirection = value;
+        },
     },
-    set: function (value) {
-      if (this._splitDirection !== value) {
-        this.resetDrawCommands();
-      }
-      this._splitDirection = value;
-    },
-  },
 
-  /**
-   * Gets the model's classification type. This determines whether terrain,
-   * 3D Tiles, or both will be classified by this model.
-   * <p>
-   * Additionally, there are a few requirements/limitations:
-   * <ul>
-   *     <li>The glTF cannot contain morph targets, skins, or animations.</li>
-   *     <li>The glTF cannot contain the <code>EXT_mesh_gpu_instancing</code> extension.</li>
-   *     <li>Only meshes with TRIANGLES can be used to classify other assets.</li>
-   *     <li>The meshes must be watertight.</li>
-   *     <li>The POSITION attribute is required.</li>
-   *     <li>If feature IDs and an index buffer are both present, all indices with the same feature id must occupy contiguous sections of the index buffer.</li>
-   *     <li>If feature IDs are present without an index buffer, all positions with the same feature id must occupy contiguous sections of the position buffer.</li>
-   * </ul>
-   * </p>
-   * <p>
-   * The 3D Tiles or terrain receiving the classification must be opaque.
-   * </p>
-   *
-   * @memberof Model.prototype
-   *
-   * @type {ClassificationType}
-   * @default undefined
-   *
-   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
-   * @readonly
-   */
-  classificationType: {
-    get: function () {
-      return this._classificationType;
+    /**
+     * Gets the model's classification type. This determines whether terrain,
+     * 3D Tiles, or both will be classified by this model.
+     * <p>
+     * Additionally, there are a few requirements/limitations:
+     * <ul>
+     *     <li>The glTF cannot contain morph targets, skins, or animations.</li>
+     *     <li>The glTF cannot contain the <code>EXT_mesh_gpu_instancing</code> extension.</li>
+     *     <li>Only meshes with TRIANGLES can be used to classify other assets.</li>
+     *     <li>The meshes must be watertight.</li>
+     *     <li>The POSITION attribute is required.</li>
+     *     <li>If feature IDs and an index buffer are both present, all indices with the same feature id must occupy contiguous sections of the index buffer.</li>
+     *     <li>If feature IDs are present without an index buffer, all positions with the same feature id must occupy contiguous sections of the position buffer.</li>
+     * </ul>
+     * </p>
+     * <p>
+     * The 3D Tiles or terrain receiving the classification must be opaque.
+     * </p>
+     *
+     * @memberof Model.prototype
+     *
+     * @type {ClassificationType}
+     * @default undefined
+     *
+     * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+     * @readonly
+     */
+    classificationType: {
+        get: function () {
+            return this._classificationType;
+        },
     },
-  },
 
-  /**
-   * Reference to the pick IDs. This is only used internally, e.g. for
-   * per-feature post-processing in {@link PostProcessStage}.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {PickId[]}
-   * @readonly
-   *
-   * @private
-   */
-  pickIds: {
-    get: function () {
-      return this._pickIds;
+    /**
+     * Reference to the pick IDs. This is only used internally, e.g. for
+     * per-feature post-processing in {@link PostProcessStage}.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {PickId[]}
+     * @readonly
+     *
+     * @private
+     */
+    pickIds: {
+        get: function () {
+            return this._pickIds;
+        },
     },
-  },
 
-  /**
-   * The {@link StyleCommandsNeeded} for the style currently applied to
-   * the features in the model. This is used internally by the {@link ModelDrawCommand}
-   * when determining which commands to submit in an update.
-   *
-   * @memberof Model.prototype
-   *
-   * @type {StyleCommandsNeeded}
-   * @readonly
-   *
-   * @private
-   */
-  styleCommandsNeeded: {
-    get: function () {
-      return this._styleCommandsNeeded;
+    /**
+     * The {@link StyleCommandsNeeded} for the style currently applied to
+     * the features in the model. This is used internally by the {@link ModelDrawCommand}
+     * when determining which commands to submit in an update.
+     *
+     * @memberof Model.prototype
+     *
+     * @type {StyleCommandsNeeded}
+     * @readonly
+     *
+     * @private
+     */
+    styleCommandsNeeded: {
+        get: function () {
+            return this._styleCommandsNeeded;
+        },
     },
-  },
 });
 
 /**
@@ -1764,16 +1783,16 @@ Object.defineProperties(Model.prototype, {
  * node.matrix = Cesium.Matrix4.fromScale(new Cesium.Cartesian3(5.0, 1.0, 1.0), node.matrix);
  */
 Model.prototype.getNode = function (name) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!this._ready) {
-    throw new DeveloperError(
-      "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
-    );
-  }
-  Check.typeOf.string("name", name);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!this._ready) {
+        throw new DeveloperError(
+            "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
+        );
+    }
+    Check.typeOf.string("name", name);
+    //>>includeEnd('debug');
 
-  return this._nodesByName[name];
+    return this._nodesByName[name];
 };
 
 /**
@@ -1793,16 +1812,16 @@ Model.prototype.getNode = function (name) {
  * model.setArticulationStage("SampleArticulation MoveX", 50.0);
  */
 Model.prototype.setArticulationStage = function (articulationStageKey, value) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("value", value);
-  if (!this._ready) {
-    throw new DeveloperError(
-      "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("value", value);
+    if (!this._ready) {
+        throw new DeveloperError(
+            "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  this._sceneGraph.setArticulationStage(articulationStageKey, value);
+    this._sceneGraph.setArticulationStage(articulationStageKey, value);
 };
 
 /**
@@ -1813,15 +1832,15 @@ Model.prototype.setArticulationStage = function (articulationStageKey, value) {
  * @exception {DeveloperError} The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.
  */
 Model.prototype.applyArticulations = function () {
-  //>>includeStart('debug', pragmas.debug);
-  if (!this._ready) {
-    throw new DeveloperError(
-      "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!this._ready) {
+        throw new DeveloperError(
+            "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  this._sceneGraph.applyArticulations();
+    this._sceneGraph.applyArticulations();
 };
 
 /**
@@ -1839,16 +1858,16 @@ Model.prototype.applyArticulations = function () {
  * @experimental This feature is not final and is subject to change without Cesium's standard deprecation policy.
  */
 Model.prototype.getExtension = function (extensionName) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("extensionName", extensionName);
-  if (!this._ready) {
-    throw new DeveloperError(
-      "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
-    );
-  }
-  //>>includeEnd('debug');
-  const components = this._loader.components;
-  return components.extensions[extensionName];
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("extensionName", extensionName);
+    if (!this._ready) {
+        throw new DeveloperError(
+            "The model is not loaded. Use Model.readyEvent or wait for Model.ready to be true.",
+        );
+    }
+    //>>includeEnd('debug');
+    const components = this._loader.components;
+    return components.extensions[extensionName];
 };
 
 /**
@@ -1856,7 +1875,7 @@ Model.prototype.getExtension = function (extensionName) {
  * to re-evaluate the style in the next frame the model is visible.
  */
 Model.prototype.makeStyleDirty = function () {
-  this._styleDirty = true;
+    this._styleDirty = true;
 };
 
 /**
@@ -1865,7 +1884,7 @@ Model.prototype.makeStyleDirty = function () {
  * @private
  */
 Model.prototype.resetDrawCommands = function () {
-  this._drawCommandsBuilt = false;
+    this._drawCommandsBuilt = false;
 };
 
 const scratchIBLReferenceFrameMatrix4 = new Matrix4();
@@ -1883,531 +1902,545 @@ const scratchClippingPlanesMatrix = new Matrix4();
  * @exception {RuntimeError} Failed to load external reference.
  */
 Model.prototype.update = function (frameState) {
-  let finishedProcessing = false;
-  try {
-    // Keep processing the model every frame until the main resources
-    // (buffer views) and textures (which may be loaded asynchronously)
-    // are processed.
-    finishedProcessing = processLoader(this, frameState);
-  } catch (error) {
-    if (
-      !this._loader.incrementallyLoadTextures &&
-      error.name === "TextureError"
-    ) {
-      handleError(this, error);
-    } else {
-      const runtimeError = ModelUtility.getError(
-        "model",
-        this._resource,
-        error,
-      );
-      handleError(this, runtimeError);
+    let finishedProcessing = false;
+    try {
+        // Keep processing the model every frame until the main resources
+        // (buffer views) and textures (which may be loaded asynchronously)
+        // are processed.
+        finishedProcessing = processLoader(this, frameState);
+    } catch (error) {
+        if (
+            !this._loader.incrementallyLoadTextures &&
+            error.name === "TextureError"
+        ) {
+            handleError(this, error);
+        } else {
+            const runtimeError = ModelUtility.getError(
+                "model",
+                this._resource,
+                error,
+            );
+            handleError(this, runtimeError);
+        }
     }
-  }
 
-  // A custom shader may have to load texture uniforms.
-  updateCustomShader(this, frameState);
+    // A custom shader may have to load texture uniforms.
+    updateCustomShader(this, frameState);
 
-  // Environment maps, specular maps, and spherical harmonics may need to be updated or regenerated
-  updateEnvironmentMap(this, frameState);
+    // Environment maps, specular maps, and spherical harmonics may need to be updated or regenerated
+    updateEnvironmentMap(this, frameState);
 
-  // The image-based lighting may have to load texture uniforms
-  // for specular maps.
-  updateImageBasedLighting(this, frameState);
+    // The image-based lighting may have to load texture uniforms
+    // for specular maps.
+    updateImageBasedLighting(this, frameState);
 
-  if (!this._resourcesLoaded && finishedProcessing) {
-    this._resourcesLoaded = true;
+    if (!this._resourcesLoaded && finishedProcessing) {
+        this._resourcesLoaded = true;
 
-    const components = this._loader.components;
-    if (!defined(components)) {
-      if (this._loader.isUnloaded()) {
+        const components = this._loader.components;
+        if (!defined(components)) {
+            if (this._loader.isUnloaded()) {
+                return;
+            }
+
+            const error = ModelUtility.getError(
+                "model",
+                this._resource,
+                new RuntimeError("Failed to load model."),
+            );
+            handleError(error);
+            this._rejectLoad = this._rejectLoad && this._rejectLoad(error);
+        }
+
+        const structuralMetadata = components.structuralMetadata;
+        if (
+            defined(structuralMetadata) &&
+            structuralMetadata.propertyTableCount > 0
+        ) {
+            createModelFeatureTables(this, structuralMetadata);
+        }
+
+        const sceneGraph = new ModelSceneGraph({
+            model: this,
+            modelComponents: components,
+        });
+
+        this._sceneGraph = sceneGraph;
+        this._gltfCredits = sceneGraph.components.asset.credits;
+    }
+
+    // Short-circuit if the model resources aren't ready or the scene
+    // is currently morphing.
+    if (!this._resourcesLoaded || frameState.mode === SceneMode.MORPHING) {
         return;
-      }
-
-      const error = ModelUtility.getError(
-        "model",
-        this._resource,
-        new RuntimeError("Failed to load model."),
-      );
-      handleError(error);
-      this._rejectLoad = this._rejectLoad && this._rejectLoad(error);
     }
 
-    const structuralMetadata = components.structuralMetadata;
+    const modelImagery = this._modelImagery;
+    modelImagery.update(frameState);
+    if (!modelImagery.ready) {
+        // If the imagery loading should not happen asynchronously,
+        // then do not let the model count as 'ready' until the
+        // modelImagery is 'ready'
+        const asynchronouslyLoadImagery =
+            this._content?.tileset?._asynchronouslyLoadImagery ?? false;
+        if (!asynchronouslyLoadImagery) {
+            return;
+        }
+    }
+
+    updateFeatureTableId(this);
+    updateStyle(this);
+    updateFeatureTables(this, frameState);
+    updatePointCloudShading(this);
+    updateSilhouette(this, frameState);
+    updateSkipLevelOfDetail(this, frameState);
+    updateClippingPlanes(this, frameState);
+    updateClippingPolygons(this, frameState);
+    updateSceneMode(this, frameState);
+    updateFog(this, frameState);
+    updateVerticalExaggeration(this, frameState);
+
+    this._defaultTexture = frameState.context.defaultTexture;
+
+    buildDrawCommands(this, frameState);
+    updateModelMatrix(this, frameState);
+
+    // Many features (e.g. image-based lighting, clipping planes) depend on the model
+    // matrix being updated for the current height reference, so update it first.
+    updateClamping(this);
+
+    updateBoundingSphereAndScale(this, frameState);
+    updateReferenceMatrices(this, frameState);
+
+    // This check occurs after the bounding sphere has been updated so that
+    // zooming to the bounding sphere can account for any modifications
+    // from the clamp-to-ground setting.
+    if (!this._ready) {
+        // Set the model as ready after the first frame render since the user might set up events subscribed to
+        // the post render event, and the model may not be ready for those past the first frame.
+        frameState.afterRender.push(() => {
+            this._ready = true;
+            this._readyEvent.raiseEvent(this);
+        });
+
+        // Don't render until the next frame after the ready event has been raised.
+        return;
+    }
+
     if (
-      defined(structuralMetadata) &&
-      structuralMetadata.propertyTableCount > 0
+        this._loader.incrementallyLoadTextures &&
+        !this._texturesLoaded &&
+        this._loader.texturesLoaded
     ) {
-      createModelFeatureTables(this, structuralMetadata);
+        // Re-run the pipeline so texture memory statistics are re-computed
+        this.resetDrawCommands();
+
+        this._texturesLoaded = true;
+        this._texturesReadyEvent.raiseEvent(this);
     }
 
-    const sceneGraph = new ModelSceneGraph({
-      model: this,
-      modelComponents: components,
-    });
+    updatePickIds(this);
 
-    this._sceneGraph = sceneGraph;
-    this._gltfCredits = sceneGraph.components.asset.credits;
-  }
-
-  // Short-circuit if the model resources aren't ready or the scene
-  // is currently morphing.
-  if (!this._resourcesLoaded || frameState.mode === SceneMode.MORPHING) {
-    return;
-  }
-
-  const modelImagery = this._modelImagery;
-  modelImagery.update(frameState);
-  if (!modelImagery.ready) {
-    // If the imagery loading should not happen asynchronously,
-    // then do not let the model count as 'ready' until the
-    // modelImagery is 'ready'
-    const asynchronouslyLoadImagery =
-      this._content?.tileset?._asynchronouslyLoadImagery ?? false;
-    if (!asynchronouslyLoadImagery) {
-      return;
-    }
-  }
-
-  updateFeatureTableId(this);
-  updateStyle(this);
-  updateFeatureTables(this, frameState);
-  updatePointCloudShading(this);
-  updateSilhouette(this, frameState);
-  updateSkipLevelOfDetail(this, frameState);
-  updateClippingPlanes(this, frameState);
-  updateClippingPolygons(this, frameState);
-  updateSceneMode(this, frameState);
-  updateFog(this, frameState);
-  updateVerticalExaggeration(this, frameState);
-
-  this._defaultTexture = frameState.context.defaultTexture;
-
-  buildDrawCommands(this, frameState);
-  updateModelMatrix(this, frameState);
-
-  // Many features (e.g. image-based lighting, clipping planes) depend on the model
-  // matrix being updated for the current height reference, so update it first.
-  updateClamping(this);
-
-  updateBoundingSphereAndScale(this, frameState);
-  updateReferenceMatrices(this, frameState);
-
-  // This check occurs after the bounding sphere has been updated so that
-  // zooming to the bounding sphere can account for any modifications
-  // from the clamp-to-ground setting.
-  if (!this._ready) {
-    // Set the model as ready after the first frame render since the user might set up events subscribed to
-    // the post render event, and the model may not be ready for those past the first frame.
-    frameState.afterRender.push(() => {
-      this._ready = true;
-      this._readyEvent.raiseEvent(this);
-    });
-
-    // Don't render until the next frame after the ready event has been raised.
-    return;
-  }
-
-  if (
-    this._loader.incrementallyLoadTextures &&
-    !this._texturesLoaded &&
-    this._loader.texturesLoaded
-  ) {
-    // Re-run the pipeline so texture memory statistics are re-computed
-    this.resetDrawCommands();
-
-    this._texturesLoaded = true;
-    this._texturesReadyEvent.raiseEvent(this);
-  }
-
-  updatePickIds(this);
-
-  // Update the scene graph and draw commands for any changes in model's properties
-  // (e.g. model matrix, back-face culling)
-  updateSceneGraph(this, frameState);
-  updateShowCreditsOnScreen(this);
-  submitDrawCommands(this, frameState);
+    // Update the scene graph and draw commands for any changes in model's properties
+    // (e.g. model matrix, back-face culling)
+    updateSceneGraph(this, frameState);
+    updateShowCreditsOnScreen(this);
+    submitDrawCommands(this, frameState);
 };
 
 function processLoader(model, frameState) {
-  if (
-    !model._resourcesLoaded ||
-    (model._loader.incrementallyLoadTextures && !model._texturesLoaded)
-  ) {
-    // Ensures frames continue to render in requestRender mode while resources are processing
-    frameState.afterRender.push(() => true);
-    return model._loader.process(frameState);
-  }
+    if (
+        !model._resourcesLoaded ||
+        (model._loader.incrementallyLoadTextures && !model._texturesLoaded)
+    ) {
+        // Ensures frames continue to render in requestRender mode while resources are processing
+        frameState.afterRender.push(() => true);
+        return model._loader.process(frameState);
+    }
 
-  return true;
+    return true;
 }
 
 function updateCustomShader(model, frameState) {
-  if (defined(model._customShader)) {
-    model._customShader.update(frameState);
-  }
+    if (defined(model._customShader)) {
+        model._customShader.update(frameState);
+    }
 }
 
 function updateEnvironmentMap(model, frameState) {
-  const environmentMapManager = model._environmentMapManager;
-  const picking = frameState.passes.pick || frameState.passes.pickVoxel;
-  if (model._ready && environmentMapManager.owner === model && !picking) {
-    environmentMapManager.position = model._boundingSphere.center;
-    environmentMapManager.shouldUpdate =
-      !defined(model._imageBasedLighting.sphericalHarmonicCoefficients) ||
-      !defined(model._imageBasedLighting.specularEnvironmentMaps);
+    const environmentMapManager = model._environmentMapManager;
+    const picking = frameState.passes.pick || frameState.passes.pickVoxel;
+    if (model._ready && environmentMapManager.owner === model && !picking) {
+        environmentMapManager.position = model._boundingSphere.center;
+        environmentMapManager.shouldUpdate =
+            !defined(model._imageBasedLighting.sphericalHarmonicCoefficients) ||
+            !defined(model._imageBasedLighting.specularEnvironmentMaps);
 
-    environmentMapManager.update(frameState);
+        environmentMapManager.update(frameState);
 
-    if (environmentMapManager.shouldRegenerateShaders) {
-      model.resetDrawCommands();
+        if (environmentMapManager.shouldRegenerateShaders) {
+            model.resetDrawCommands();
+        }
     }
-  }
 }
 
 function updateImageBasedLighting(model, frameState) {
-  model._imageBasedLighting.update(frameState);
-  if (model._imageBasedLighting.shouldRegenerateShaders) {
-    model.resetDrawCommands();
-  }
+    model._imageBasedLighting.update(frameState);
+    if (model._imageBasedLighting.shouldRegenerateShaders) {
+        model.resetDrawCommands();
+    }
 }
 
 function updateFeatureTableId(model) {
-  if (!model._featureTableIdDirty) {
-    return;
-  }
-  model._featureTableIdDirty = false;
+    if (!model._featureTableIdDirty) {
+        return;
+    }
+    model._featureTableIdDirty = false;
 
-  const components = model._sceneGraph.components;
-  const structuralMetadata = components.structuralMetadata;
+    const components = model._sceneGraph.components;
+    const structuralMetadata = components.structuralMetadata;
 
-  if (
-    defined(structuralMetadata) &&
-    structuralMetadata.propertyTableCount > 0
-  ) {
-    model.featureTableId = selectFeatureTableId(components, model);
+    if (
+        defined(structuralMetadata) &&
+        structuralMetadata.propertyTableCount > 0
+    ) {
+        model.featureTableId = selectFeatureTableId(components, model);
 
-    // Mark the style dirty to re-apply it and reflect the new feature ID table.
-    model._styleDirty = true;
+        // Mark the style dirty to re-apply it and reflect the new feature ID table.
+        model._styleDirty = true;
 
-    // Trigger a rebuild of the draw commands.
-    model.resetDrawCommands();
-  }
+        // Trigger a rebuild of the draw commands.
+        model.resetDrawCommands();
+    }
 }
 
 function updateStyle(model) {
-  if (model._styleDirty) {
-    model.applyStyle(model._style);
-    model._styleDirty = false;
-  }
+    if (model._styleDirty) {
+        model.applyStyle(model._style);
+        model._styleDirty = false;
+    }
 }
 
 function updateFeatureTables(model, frameState) {
-  const featureTables = model._featureTables;
-  const length = featureTables.length;
+    const featureTables = model._featureTables;
+    const length = featureTables.length;
 
-  let styleCommandsNeededDirty = false;
-  for (let i = 0; i < length; i++) {
-    featureTables[i].update(frameState);
-    // Check if the types of style commands needed have changed and trigger a reset of the draw commands
-    // to ensure that translucent and opaque features are handled in the correct passes.
-    if (featureTables[i].styleCommandsNeededDirty) {
-      styleCommandsNeededDirty = true;
+    let styleCommandsNeededDirty = false;
+    for (let i = 0; i < length; i++) {
+        featureTables[i].update(frameState);
+        // Check if the types of style commands needed have changed and trigger a reset of the draw commands
+        // to ensure that translucent and opaque features are handled in the correct passes.
+        if (featureTables[i].styleCommandsNeededDirty) {
+            styleCommandsNeededDirty = true;
+        }
     }
-  }
 
-  if (styleCommandsNeededDirty) {
-    updateStyleCommandsNeeded(model);
-  }
+    if (styleCommandsNeededDirty) {
+        updateStyleCommandsNeeded(model);
+    }
 }
 
 function updateStyleCommandsNeeded(model) {
-  const featureTable = model.featureTables[model.featureTableId];
-  model._styleCommandsNeeded = StyleCommandsNeeded.getStyleCommandsNeeded(
-    featureTable.featuresLength,
-    featureTable.batchTexture.translucentFeaturesLength,
-  );
+    const featureTable = model.featureTables[model.featureTableId];
+    model._styleCommandsNeeded = StyleCommandsNeeded.getStyleCommandsNeeded(
+        featureTable.featuresLength,
+        featureTable.batchTexture.translucentFeaturesLength,
+    );
 }
 
 function updatePointCloudShading(model) {
-  const pointCloudShading = model.pointCloudShading;
+    const pointCloudShading = model.pointCloudShading;
 
-  // Check if the shader needs to be updated for point cloud attenuation
-  // settings.
-  if (pointCloudShading.attenuation !== model._attenuation) {
-    model.resetDrawCommands();
-    model._attenuation = pointCloudShading.attenuation;
-  }
+    // Check if the shader needs to be updated for point cloud attenuation
+    // settings.
+    if (pointCloudShading.attenuation !== model._attenuation) {
+        model.resetDrawCommands();
+        model._attenuation = pointCloudShading.attenuation;
+    }
 
-  if (pointCloudShading.backFaceCulling !== model._pointCloudBackFaceCulling) {
-    model.resetDrawCommands();
-    model._pointCloudBackFaceCulling = pointCloudShading.backFaceCulling;
-  }
+    if (
+        pointCloudShading.backFaceCulling !== model._pointCloudBackFaceCulling
+    ) {
+        model.resetDrawCommands();
+        model._pointCloudBackFaceCulling = pointCloudShading.backFaceCulling;
+    }
 }
 
 function updateSilhouette(model, frameState) {
-  if (model._silhouetteDirty) {
-    // Only rebuild draw commands if silhouettes are supported in the first place.
-    if (supportsSilhouettes(frameState)) {
-      model.resetDrawCommands();
-    }
+    if (model._silhouetteDirty) {
+        // Only rebuild draw commands if silhouettes are supported in the first place.
+        if (supportsSilhouettes(frameState)) {
+            model.resetDrawCommands();
+        }
 
-    model._silhouetteDirty = false;
-  }
+        model._silhouetteDirty = false;
+    }
 }
 
 function updateSkipLevelOfDetail(model, frameState) {
-  const skipLevelOfDetail = model.hasSkipLevelOfDetail(frameState);
-  if (skipLevelOfDetail !== model._skipLevelOfDetail) {
-    model.resetDrawCommands();
-    model._skipLevelOfDetail = skipLevelOfDetail;
-  }
+    const skipLevelOfDetail = model.hasSkipLevelOfDetail(frameState);
+    if (skipLevelOfDetail !== model._skipLevelOfDetail) {
+        model.resetDrawCommands();
+        model._skipLevelOfDetail = skipLevelOfDetail;
+    }
 }
 
 function updateClippingPlanes(model, frameState) {
-  // Update the clipping planes collection / state for this model to detect any changes.
-  let currentClippingPlanesState = 0;
-  if (model.isClippingEnabled()) {
-    if (model._clippingPlanes.owner === model) {
-      model._clippingPlanes.update(frameState);
+    // Update the clipping planes collection / state for this model to detect any changes.
+    let currentClippingPlanesState = 0;
+    if (model.isClippingEnabled()) {
+        if (model._clippingPlanes.owner === model) {
+            model._clippingPlanes.update(frameState);
+        }
+        currentClippingPlanesState = model._clippingPlanes.clippingPlanesState;
     }
-    currentClippingPlanesState = model._clippingPlanes.clippingPlanesState;
-  }
 
-  if (currentClippingPlanesState !== model._clippingPlanesState) {
-    model.resetDrawCommands();
-    model._clippingPlanesState = currentClippingPlanesState;
-  }
+    if (currentClippingPlanesState !== model._clippingPlanesState) {
+        model.resetDrawCommands();
+        model._clippingPlanesState = currentClippingPlanesState;
+    }
 }
 
 function updateClippingPolygons(model, frameState) {
-  // Update the clipping polygon collection / state for this model to detect any changes.
-  let currentClippingPolygonsState = 0;
-  if (model.isClippingPolygonsEnabled()) {
-    if (model._clippingPolygons.owner === model) {
-      model._clippingPolygons.update(frameState);
-      model._clippingPolygons.queueCommands(frameState);
+    // Update the clipping polygon collection / state for this model to detect any changes.
+    let currentClippingPolygonsState = 0;
+    if (model.isClippingPolygonsEnabled()) {
+        if (model._clippingPolygons.owner === model) {
+            model._clippingPolygons.update(frameState);
+            model._clippingPolygons.queueCommands(frameState);
+        }
+        currentClippingPolygonsState =
+            model._clippingPolygons.clippingPolygonsState;
     }
-    currentClippingPolygonsState =
-      model._clippingPolygons.clippingPolygonsState;
-  }
 
-  if (currentClippingPolygonsState !== model._clippingPolygonsState) {
-    model.resetDrawCommands();
-    model._clippingPolygonsState = currentClippingPolygonsState;
-  }
+    if (currentClippingPolygonsState !== model._clippingPolygonsState) {
+        model.resetDrawCommands();
+        model._clippingPolygonsState = currentClippingPolygonsState;
+    }
 }
 
 function updateSceneMode(model, frameState) {
-  if (frameState.mode !== model._sceneMode) {
-    if (model._projectTo2D) {
-      model.resetDrawCommands();
-    } else {
-      model._updateModelMatrix = true;
+    if (frameState.mode !== model._sceneMode) {
+        if (model._projectTo2D) {
+            model.resetDrawCommands();
+        } else {
+            model._updateModelMatrix = true;
+        }
+        model._sceneMode = frameState.mode;
     }
-    model._sceneMode = frameState.mode;
-  }
 }
 
 function updateFog(model, frameState) {
-  const fogRenderable = frameState.fog.enabled && frameState.fog.renderable;
-  if (fogRenderable !== model._fogRenderable) {
-    model.resetDrawCommands();
-    model._fogRenderable = fogRenderable;
-  }
+    const fogRenderable = frameState.fog.enabled && frameState.fog.renderable;
+    if (fogRenderable !== model._fogRenderable) {
+        model.resetDrawCommands();
+        model._fogRenderable = fogRenderable;
+    }
 }
 
 function updateVerticalExaggeration(model, frameState) {
-  if (model.enableVerticalExaggeration) {
-    const verticalExaggerationNeeded = frameState.verticalExaggeration !== 1.0;
-    if (model.hasVerticalExaggeration !== verticalExaggerationNeeded) {
-      model.resetDrawCommands();
-      model._hasVerticalExaggeration = verticalExaggerationNeeded;
+    if (model.enableVerticalExaggeration) {
+        const verticalExaggerationNeeded =
+            frameState.verticalExaggeration !== 1.0;
+        if (model.hasVerticalExaggeration !== verticalExaggerationNeeded) {
+            model.resetDrawCommands();
+            model._hasVerticalExaggeration = verticalExaggerationNeeded;
+        }
+    } else if (model.hasVerticalExaggeration) {
+        model.resetDrawCommands(); //if verticalExaggeration was on, reset.
+        model._hasVerticalExaggeration = false;
     }
-  } else if (model.hasVerticalExaggeration) {
-    model.resetDrawCommands(); //if verticalExaggeration was on, reset.
-    model._hasVerticalExaggeration = false;
-  }
 }
 
 function buildDrawCommands(model, frameState) {
-  if (!model._drawCommandsBuilt) {
-    model.destroyPipelineResources();
-    model._sceneGraph.buildDrawCommands(frameState);
-    model._drawCommandsBuilt = true;
-  }
+    if (!model._drawCommandsBuilt) {
+        model.destroyPipelineResources();
+        model._sceneGraph.buildDrawCommands(frameState);
+        model._drawCommandsBuilt = true;
+    }
 }
 
 function updateModelMatrix(model, frameState) {
-  // This is done without a dirty flag so that the model matrix can be updated in-place
-  // without needing to use a setter.
-  if (!Matrix4.equals(model.modelMatrix, model._modelMatrix)) {
-    //>>includeStart('debug', pragmas.debug);
-    if (frameState.mode !== SceneMode.SCENE3D && model._projectTo2D) {
-      throw new DeveloperError(
-        "Model.modelMatrix cannot be changed in 2D or Columbus View if projectTo2D is true.",
-      );
+    // This is done without a dirty flag so that the model matrix can be updated in-place
+    // without needing to use a setter.
+    if (!Matrix4.equals(model.modelMatrix, model._modelMatrix)) {
+        //>>includeStart('debug', pragmas.debug);
+        if (frameState.mode !== SceneMode.SCENE3D && model._projectTo2D) {
+            throw new DeveloperError(
+                "Model.modelMatrix cannot be changed in 2D or Columbus View if projectTo2D is true.",
+            );
+        }
+        //>>includeEnd('debug');
+        model._updateModelMatrix = true;
+        model._modelMatrix = Matrix4.clone(
+            model.modelMatrix,
+            model._modelMatrix,
+        );
     }
-    //>>includeEnd('debug');
-    model._updateModelMatrix = true;
-    model._modelMatrix = Matrix4.clone(model.modelMatrix, model._modelMatrix);
-  }
 }
 
 const scratchPosition = new Cartesian3();
 const scratchCartographic = new Cartographic();
 
 function updateClamping(model) {
-  if (
-    !model._updateModelMatrix &&
-    !model._heightDirty &&
-    model._minimumPixelSize === 0.0
-  ) {
-    return;
-  }
-
-  if (defined(model._removeUpdateHeightCallback)) {
-    model._removeUpdateHeightCallback();
-    model._removeUpdateHeightCallback = undefined;
-  }
-
-  const scene = model._scene;
-  if (!defined(scene) || model.heightReference === HeightReference.NONE) {
-    //>>includeStart('debug', pragmas.debug);
-    if (model.heightReference !== HeightReference.NONE) {
-      throw new DeveloperError(
-        "Height reference is not supported without a scene.",
-      );
+    if (
+        !model._updateModelMatrix &&
+        !model._heightDirty &&
+        model._minimumPixelSize === 0.0
+    ) {
+        return;
     }
-    //>>includeEnd('debug');
-    model._clampedModelMatrix = undefined;
-    return;
-  }
 
-  const ellipsoid = scene.ellipsoid ?? Ellipsoid.default;
+    if (defined(model._removeUpdateHeightCallback)) {
+        model._removeUpdateHeightCallback();
+        model._removeUpdateHeightCallback = undefined;
+    }
 
-  // Compute cartographic position so we don't recompute every update
-  const modelMatrix = model.modelMatrix;
-  scratchPosition.x = modelMatrix[12];
-  scratchPosition.y = modelMatrix[13];
-  scratchPosition.z = modelMatrix[14];
-  const cartoPosition = ellipsoid.cartesianToCartographic(scratchPosition);
+    const scene = model._scene;
+    if (!defined(scene) || model.heightReference === HeightReference.NONE) {
+        //>>includeStart('debug', pragmas.debug);
+        if (model.heightReference !== HeightReference.NONE) {
+            throw new DeveloperError(
+                "Height reference is not supported without a scene.",
+            );
+        }
+        //>>includeEnd('debug');
+        model._clampedModelMatrix = undefined;
+        return;
+    }
 
-  if (!defined(model._clampedModelMatrix)) {
-    model._clampedModelMatrix = Matrix4.clone(modelMatrix, new Matrix4());
-  }
+    const ellipsoid = scene.ellipsoid ?? Ellipsoid.default;
 
-  // Install callback to handle updating of terrain tiles
-  model._removeUpdateHeightCallback = scene.updateHeight(
-    cartoPosition,
-    getUpdateHeightCallback(model, ellipsoid, cartoPosition),
-    model.heightReference,
-  );
+    // Compute cartographic position so we don't recompute every update
+    const modelMatrix = model.modelMatrix;
+    scratchPosition.x = modelMatrix[12];
+    scratchPosition.y = modelMatrix[13];
+    scratchPosition.z = modelMatrix[14];
+    const cartoPosition = ellipsoid.cartesianToCartographic(scratchPosition);
 
-  // Set the correct height now
-  const height = scene.getHeight(cartoPosition, model.heightReference);
-  if (defined(height)) {
-    // Get callback with cartoPosition being the non-clamped position
-    const callback = getUpdateHeightCallback(model, ellipsoid, cartoPosition);
+    if (!defined(model._clampedModelMatrix)) {
+        model._clampedModelMatrix = Matrix4.clone(modelMatrix, new Matrix4());
+    }
 
-    // Compute the clamped cartesian and call updateHeight callback
-    Cartographic.clone(cartoPosition, scratchCartographic);
-    scratchCartographic.height = height;
-    callback(scratchCartographic);
-  }
+    // Install callback to handle updating of terrain tiles
+    model._removeUpdateHeightCallback = scene.updateHeight(
+        cartoPosition,
+        getUpdateHeightCallback(model, ellipsoid, cartoPosition),
+        model.heightReference,
+    );
 
-  model._heightDirty = false;
-  model._updateModelMatrix = true;
+    // Set the correct height now
+    const height = scene.getHeight(cartoPosition, model.heightReference);
+    if (defined(height)) {
+        // Get callback with cartoPosition being the non-clamped position
+        const callback = getUpdateHeightCallback(
+            model,
+            ellipsoid,
+            cartoPosition,
+        );
+
+        // Compute the clamped cartesian and call updateHeight callback
+        Cartographic.clone(cartoPosition, scratchCartographic);
+        scratchCartographic.height = height;
+        callback(scratchCartographic);
+    }
+
+    model._heightDirty = false;
+    model._updateModelMatrix = true;
 }
 
 function updateBoundingSphereAndScale(model, frameState) {
-  if (!model._updateModelMatrix && model._minimumPixelSize === 0.0) {
-    return;
-  }
+    if (!model._updateModelMatrix && model._minimumPixelSize === 0.0) {
+        return;
+    }
 
-  const modelMatrix = defined(model._clampedModelMatrix)
-    ? model._clampedModelMatrix
-    : model.modelMatrix;
+    const modelMatrix = defined(model._clampedModelMatrix)
+        ? model._clampedModelMatrix
+        : model.modelMatrix;
 
-  updateBoundingSphere(model, modelMatrix);
-  updateComputedScale(model, modelMatrix, frameState);
+    updateBoundingSphere(model, modelMatrix);
+    updateComputedScale(model, modelMatrix, frameState);
 }
 
 function updateBoundingSphere(model, modelMatrix) {
-  model._clampedScale = defined(model._maximumScale)
-    ? Math.min(model._scale, model._maximumScale)
-    : model._scale;
+    model._clampedScale = defined(model._maximumScale)
+        ? Math.min(model._scale, model._maximumScale)
+        : model._scale;
 
-  model._boundingSphere.center = Cartesian3.multiplyByScalar(
-    model._sceneGraph.boundingSphere.center,
-    model._clampedScale,
-    model._boundingSphere.center,
-  );
-  model._boundingSphere.radius = model._initialRadius * model._clampedScale;
+    model._boundingSphere.center = Cartesian3.multiplyByScalar(
+        model._sceneGraph.boundingSphere.center,
+        model._clampedScale,
+        model._boundingSphere.center,
+    );
+    model._boundingSphere.radius = model._initialRadius * model._clampedScale;
 
-  model._boundingSphere = BoundingSphere.transform(
-    model._boundingSphere,
-    modelMatrix,
-    model._boundingSphere,
-  );
+    model._boundingSphere = BoundingSphere.transform(
+        model._boundingSphere,
+        modelMatrix,
+        model._boundingSphere,
+    );
 }
 
 function updateComputedScale(model, modelMatrix, frameState) {
-  let scale = model.scale;
+    let scale = model.scale;
 
-  if (model.minimumPixelSize !== 0.0 && !model._projectTo2D) {
-    // Compute size of bounding sphere in pixels
-    const context = frameState.context;
-    const maxPixelSize = Math.max(
-      context.drawingBufferWidth,
-      context.drawingBufferHeight,
-    );
+    if (model.minimumPixelSize !== 0.0 && !model._projectTo2D) {
+        // Compute size of bounding sphere in pixels
+        const context = frameState.context;
+        const maxPixelSize = Math.max(
+            context.drawingBufferWidth,
+            context.drawingBufferHeight,
+        );
 
-    Matrix4.getTranslation(modelMatrix, scratchPosition);
+        Matrix4.getTranslation(modelMatrix, scratchPosition);
 
-    if (model._sceneMode !== SceneMode.SCENE3D) {
-      SceneTransforms.computeActualEllipsoidPosition(
-        frameState,
-        scratchPosition,
-        scratchPosition,
-      );
+        if (model._sceneMode !== SceneMode.SCENE3D) {
+            SceneTransforms.computeActualEllipsoidPosition(
+                frameState,
+                scratchPosition,
+                scratchPosition,
+            );
+        }
+
+        const radius = model._boundingSphere.radius;
+        const metersPerPixel = scaleInPixels(
+            scratchPosition,
+            radius,
+            frameState,
+        );
+
+        // metersPerPixel is always > 0.0
+        const pixelsPerMeter = 1.0 / metersPerPixel;
+        const diameterInPixels = Math.min(
+            pixelsPerMeter * (2.0 * radius),
+            maxPixelSize,
+        );
+
+        // Maintain model's minimum pixel size
+        if (diameterInPixels < model.minimumPixelSize) {
+            scale =
+                (model.minimumPixelSize * metersPerPixel) /
+                (2.0 * model._initialRadius);
+        }
     }
 
-    const radius = model._boundingSphere.radius;
-    const metersPerPixel = scaleInPixels(scratchPosition, radius, frameState);
-
-    // metersPerPixel is always > 0.0
-    const pixelsPerMeter = 1.0 / metersPerPixel;
-    const diameterInPixels = Math.min(
-      pixelsPerMeter * (2.0 * radius),
-      maxPixelSize,
-    );
-
-    // Maintain model's minimum pixel size
-    if (diameterInPixels < model.minimumPixelSize) {
-      scale =
-        (model.minimumPixelSize * metersPerPixel) /
-        (2.0 * model._initialRadius);
-    }
-  }
-
-  model._computedScale = defined(model.maximumScale)
-    ? Math.min(model.maximumScale, scale)
-    : scale;
+    model._computedScale = defined(model.maximumScale)
+        ? Math.min(model.maximumScale, scale)
+        : scale;
 }
 
 function updatePickIds(model) {
-  if (!model._idDirty) {
-    return;
-  }
-  model._idDirty = false;
+    if (!model._idDirty) {
+        return;
+    }
+    model._idDirty = false;
 
-  const id = model._id;
-  const pickIds = model._pickIds;
-  const length = pickIds.length;
-  for (let i = 0; i < length; ++i) {
-    pickIds[i].object.id = id;
-  }
+    const id = model._id;
+    const pickIds = model._pickIds;
+    const length = pickIds.length;
+    for (let i = 0; i < length; ++i) {
+        pickIds[i].object.id = id;
+    }
 }
 
 // Matrix3 is a row-major constructor.
@@ -2415,235 +2448,236 @@ function updatePickIds(model) {
 const yUpToZUp = new Matrix3(1, 0, 0, 0, 0, 1, 0, -1, 0);
 
 function updateReferenceMatrices(model, frameState) {
-  const modelMatrix = defined(model._clampedModelMatrix)
-    ? model._clampedModelMatrix
-    : model.modelMatrix;
-  const referenceMatrix = model.referenceMatrix ?? modelMatrix;
-  const context = frameState.context;
+    const modelMatrix = defined(model._clampedModelMatrix)
+        ? model._clampedModelMatrix
+        : model.modelMatrix;
+    const referenceMatrix = model.referenceMatrix ?? modelMatrix;
+    const context = frameState.context;
 
-  let iblReferenceFrameMatrix3 = scratchIBLReferenceFrameMatrix3;
-  let iblReferenceFrameMatrix4 = scratchIBLReferenceFrameMatrix4;
+    let iblReferenceFrameMatrix3 = scratchIBLReferenceFrameMatrix3;
+    let iblReferenceFrameMatrix4 = scratchIBLReferenceFrameMatrix4;
 
-  iblReferenceFrameMatrix4 = Matrix4.multiply(
-    context.uniformState.view3D,
-    referenceMatrix,
-    iblReferenceFrameMatrix4,
-  );
-  iblReferenceFrameMatrix3 = Matrix4.getRotation(
-    iblReferenceFrameMatrix4,
-    iblReferenceFrameMatrix3,
-  );
-  iblReferenceFrameMatrix3 = Matrix3.transpose(
-    iblReferenceFrameMatrix3,
-    iblReferenceFrameMatrix3,
-  );
-  model._iblReferenceFrameMatrix = Matrix3.multiply(
-    yUpToZUp,
-    iblReferenceFrameMatrix3,
-    model._iblReferenceFrameMatrix,
-  );
+    iblReferenceFrameMatrix4 = Matrix4.multiply(
+        context.uniformState.view3D,
+        referenceMatrix,
+        iblReferenceFrameMatrix4,
+    );
+    iblReferenceFrameMatrix3 = Matrix4.getRotation(
+        iblReferenceFrameMatrix4,
+        iblReferenceFrameMatrix3,
+    );
+    iblReferenceFrameMatrix3 = Matrix3.transpose(
+        iblReferenceFrameMatrix3,
+        iblReferenceFrameMatrix3,
+    );
+    model._iblReferenceFrameMatrix = Matrix3.multiply(
+        yUpToZUp,
+        iblReferenceFrameMatrix3,
+        model._iblReferenceFrameMatrix,
+    );
 
-  if (model.isClippingEnabled()) {
-    let clippingPlanesMatrix = scratchClippingPlanesMatrix;
-    clippingPlanesMatrix = Matrix4.multiply(
-      context.uniformState.view3D,
-      referenceMatrix,
-      clippingPlanesMatrix,
-    );
-    clippingPlanesMatrix = Matrix4.multiply(
-      clippingPlanesMatrix,
-      model._clippingPlanes.modelMatrix,
-      clippingPlanesMatrix,
-    );
-    model._clippingPlanesMatrix = Matrix4.inverseTranspose(
-      clippingPlanesMatrix,
-      model._clippingPlanesMatrix,
-    );
-  }
+    if (model.isClippingEnabled()) {
+        let clippingPlanesMatrix = scratchClippingPlanesMatrix;
+        clippingPlanesMatrix = Matrix4.multiply(
+            context.uniformState.view3D,
+            referenceMatrix,
+            clippingPlanesMatrix,
+        );
+        clippingPlanesMatrix = Matrix4.multiply(
+            clippingPlanesMatrix,
+            model._clippingPlanes.modelMatrix,
+            clippingPlanesMatrix,
+        );
+        model._clippingPlanesMatrix = Matrix4.inverseTranspose(
+            clippingPlanesMatrix,
+            model._clippingPlanesMatrix,
+        );
+    }
 }
 
 function updateSceneGraph(model, frameState) {
-  const sceneGraph = model._sceneGraph;
-  if (model._updateModelMatrix || model._minimumPixelSize !== 0.0) {
-    const modelMatrix = defined(model._clampedModelMatrix)
-      ? model._clampedModelMatrix
-      : model.modelMatrix;
-    sceneGraph.updateModelMatrix(modelMatrix, frameState);
-    model._updateModelMatrix = false;
-  }
+    const sceneGraph = model._sceneGraph;
+    if (model._updateModelMatrix || model._minimumPixelSize !== 0.0) {
+        const modelMatrix = defined(model._clampedModelMatrix)
+            ? model._clampedModelMatrix
+            : model.modelMatrix;
+        sceneGraph.updateModelMatrix(modelMatrix, frameState);
+        model._updateModelMatrix = false;
+    }
 
-  if (model._backFaceCullingDirty) {
-    sceneGraph.updateBackFaceCulling(model._backFaceCulling);
-    model._backFaceCullingDirty = false;
-  }
+    if (model._backFaceCullingDirty) {
+        sceneGraph.updateBackFaceCulling(model._backFaceCulling);
+        model._backFaceCullingDirty = false;
+    }
 
-  if (model._shadowsDirty) {
-    sceneGraph.updateShadows(model._shadows);
-    model._shadowsDirty = false;
-  }
+    if (model._shadowsDirty) {
+        sceneGraph.updateShadows(model._shadows);
+        model._shadowsDirty = false;
+    }
 
-  if (model._debugShowBoundingVolumeDirty) {
-    sceneGraph.updateShowBoundingVolume(model._debugShowBoundingVolume);
-    model._debugShowBoundingVolumeDirty = false;
-  }
+    if (model._debugShowBoundingVolumeDirty) {
+        sceneGraph.updateShowBoundingVolume(model._debugShowBoundingVolume);
+        model._debugShowBoundingVolumeDirty = false;
+    }
 
-  let updateForAnimations = false;
-  // Animations are disabled for classification models.
-  if (!defined(model.classificationType)) {
-    updateForAnimations =
-      model._userAnimationDirty || model._activeAnimations.update(frameState);
-  }
-  sceneGraph.update(frameState, updateForAnimations);
-  model._userAnimationDirty = false;
+    let updateForAnimations = false;
+    // Animations are disabled for classification models.
+    if (!defined(model.classificationType)) {
+        updateForAnimations =
+            model._userAnimationDirty ||
+            model._activeAnimations.update(frameState);
+    }
+    sceneGraph.update(frameState, updateForAnimations);
+    model._userAnimationDirty = false;
 }
 
 function updateShowCreditsOnScreen(model) {
-  if (!model._showCreditsOnScreenDirty) {
-    return;
-  }
-  model._showCreditsOnScreenDirty = false;
-  model._credits.length = 0;
+    if (!model._showCreditsOnScreenDirty) {
+        return;
+    }
+    model._showCreditsOnScreenDirty = false;
+    model._credits.length = 0;
 
-  const showOnScreen = model._showCreditsOnScreen;
-  if (defined(model._credit)) {
-    const credit = Credit.clone(model._credit);
-    credit.showOnScreen = credit.showOnScreen || showOnScreen;
-    model._credits.push(credit);
-  }
+    const showOnScreen = model._showCreditsOnScreen;
+    if (defined(model._credit)) {
+        const credit = Credit.clone(model._credit);
+        credit.showOnScreen = credit.showOnScreen || showOnScreen;
+        model._credits.push(credit);
+    }
 
-  const resourceCredits = model._resourceCredits;
-  const resourceCreditsLength = resourceCredits.length;
-  for (let i = 0; i < resourceCreditsLength; i++) {
-    const credit = Credit.clone(resourceCredits[i]);
-    credit.showOnScreen = credit.showOnScreen || showOnScreen;
-    model._credits.push(credit);
-  }
+    const resourceCredits = model._resourceCredits;
+    const resourceCreditsLength = resourceCredits.length;
+    for (let i = 0; i < resourceCreditsLength; i++) {
+        const credit = Credit.clone(resourceCredits[i]);
+        credit.showOnScreen = credit.showOnScreen || showOnScreen;
+        model._credits.push(credit);
+    }
 
-  const gltfCredits = model._gltfCredits;
-  const gltfCreditsLength = gltfCredits.length;
-  for (let i = 0; i < gltfCreditsLength; i++) {
-    const credit = Credit.clone(gltfCredits[i]);
-    credit.showOnScreen = credit.showOnScreen || showOnScreen;
-    model._credits.push(credit);
-  }
+    const gltfCredits = model._gltfCredits;
+    const gltfCreditsLength = gltfCredits.length;
+    for (let i = 0; i < gltfCreditsLength; i++) {
+        const credit = Credit.clone(gltfCredits[i]);
+        credit.showOnScreen = credit.showOnScreen || showOnScreen;
+        model._credits.push(credit);
+    }
 }
 
 function submitDrawCommands(model, frameState) {
-  // Check that show is true after draw commands are built;
-  // we want the user to be able to instantly see the model
-  // when show is set to true.
+    // Check that show is true after draw commands are built;
+    // we want the user to be able to instantly see the model
+    // when show is set to true.
 
-  const displayConditionPassed = passesDistanceDisplayCondition(
-    model,
-    frameState,
-  );
+    const displayConditionPassed = passesDistanceDisplayCondition(
+        model,
+        frameState,
+    );
 
-  const invisible = model.isInvisible();
-  const silhouette = model.hasSilhouette(frameState);
+    const invisible = model.isInvisible();
+    const silhouette = model.hasSilhouette(frameState);
 
-  // If the model is invisible but has a silhouette, it still
-  // needs to draw in order to write to the stencil buffer and
-  // render the silhouette.
-  const showModel =
-    model._show &&
-    model._computedScale !== 0 &&
-    displayConditionPassed &&
-    (!invisible || silhouette);
+    // If the model is invisible but has a silhouette, it still
+    // needs to draw in order to write to the stencil buffer and
+    // render the silhouette.
+    const showModel =
+        model._show &&
+        model._computedScale !== 0 &&
+        displayConditionPassed &&
+        (!invisible || silhouette);
 
-  const passes = frameState.passes;
-  const submitCommandsForPass =
-    passes.render || (passes.pick && model.allowPicking);
+    const passes = frameState.passes;
+    const submitCommandsForPass =
+        passes.render || (passes.pick && model.allowPicking);
 
-  if (showModel && !model._ignoreCommands && submitCommandsForPass) {
-    addCreditsToCreditDisplay(model, frameState);
-    model._sceneGraph.pushDrawCommands(frameState);
-  }
+    if (showModel && !model._ignoreCommands && submitCommandsForPass) {
+        addCreditsToCreditDisplay(model, frameState);
+        model._sceneGraph.pushDrawCommands(frameState);
+    }
 }
 
 const scratchBoundingSphere = new BoundingSphere();
 
 function scaleInPixels(positionWC, radius, frameState) {
-  scratchBoundingSphere.center = positionWC;
-  scratchBoundingSphere.radius = radius;
-  return frameState.camera.getPixelSize(
-    scratchBoundingSphere,
-    frameState.context.drawingBufferWidth,
-    frameState.context.drawingBufferHeight,
-  );
+    scratchBoundingSphere.center = positionWC;
+    scratchBoundingSphere.radius = radius;
+    return frameState.camera.getPixelSize(
+        scratchBoundingSphere,
+        frameState.context.drawingBufferWidth,
+        frameState.context.drawingBufferHeight,
+    );
 }
 
 const scratchUpdateHeightCartesian = new Cartesian3();
 function getUpdateHeightCallback(model, ellipsoid, originalPostition) {
-  return function (clampedPosition) {
-    if (isHeightReferenceRelative(model.heightReference)) {
-      clampedPosition.height += originalPostition.height;
-    }
+    return function (clampedPosition) {
+        if (isHeightReferenceRelative(model.heightReference)) {
+            clampedPosition.height += originalPostition.height;
+        }
 
-    ellipsoid.cartographicToCartesian(
-      clampedPosition,
-      scratchUpdateHeightCartesian,
-    );
+        ellipsoid.cartographicToCartesian(
+            clampedPosition,
+            scratchUpdateHeightCartesian,
+        );
 
-    const clampedModelMatrix = model._clampedModelMatrix;
+        const clampedModelMatrix = model._clampedModelMatrix;
 
-    // Modify clamped model matrix to use new height
-    Matrix4.clone(model.modelMatrix, clampedModelMatrix);
-    clampedModelMatrix[12] = scratchUpdateHeightCartesian.x;
-    clampedModelMatrix[13] = scratchUpdateHeightCartesian.y;
-    clampedModelMatrix[14] = scratchUpdateHeightCartesian.z;
+        // Modify clamped model matrix to use new height
+        Matrix4.clone(model.modelMatrix, clampedModelMatrix);
+        clampedModelMatrix[12] = scratchUpdateHeightCartesian.x;
+        clampedModelMatrix[13] = scratchUpdateHeightCartesian.y;
+        clampedModelMatrix[14] = scratchUpdateHeightCartesian.z;
 
-    model._heightDirty = true;
-  };
+        model._heightDirty = true;
+    };
 }
 
 const scratchDisplayConditionCartesian = new Cartesian3();
 
 function passesDistanceDisplayCondition(model, frameState) {
-  const condition = model.distanceDisplayCondition;
-  if (!defined(condition)) {
-    return true;
-  }
+    const condition = model.distanceDisplayCondition;
+    if (!defined(condition)) {
+        return true;
+    }
 
-  const nearSquared = condition.near * condition.near;
-  const farSquared = condition.far * condition.far;
-  let distanceSquared;
+    const nearSquared = condition.near * condition.near;
+    const farSquared = condition.far * condition.far;
+    let distanceSquared;
 
-  if (frameState.mode === SceneMode.SCENE2D) {
-    const frustum2DWidth =
-      frameState.camera.frustum.right - frameState.camera.frustum.left;
-    const distance = frustum2DWidth * 0.5;
-    distanceSquared = distance * distance;
-  } else {
-    // Distance to center of primitive's reference frame
-    const position = Matrix4.getTranslation(
-      model.modelMatrix,
-      scratchDisplayConditionCartesian,
-    );
+    if (frameState.mode === SceneMode.SCENE2D) {
+        const frustum2DWidth =
+            frameState.camera.frustum.right - frameState.camera.frustum.left;
+        const distance = frustum2DWidth * 0.5;
+        distanceSquared = distance * distance;
+    } else {
+        // Distance to center of primitive's reference frame
+        const position = Matrix4.getTranslation(
+            model.modelMatrix,
+            scratchDisplayConditionCartesian,
+        );
 
-    // This will project the position if the scene is in Columbus View,
-    // but leave the position as-is in 3D mode.
-    SceneTransforms.computeActualEllipsoidPosition(
-      frameState,
-      position,
-      position,
-    );
+        // This will project the position if the scene is in Columbus View,
+        // but leave the position as-is in 3D mode.
+        SceneTransforms.computeActualEllipsoidPosition(
+            frameState,
+            position,
+            position,
+        );
 
-    distanceSquared = Cartesian3.distanceSquared(
-      position,
-      frameState.camera.positionWC,
-    );
-  }
+        distanceSquared = Cartesian3.distanceSquared(
+            position,
+            frameState.camera.positionWC,
+        );
+    }
 
-  return distanceSquared >= nearSquared && distanceSquared <= farSquared;
+    return distanceSquared >= nearSquared && distanceSquared <= farSquared;
 }
 
 function addCreditsToCreditDisplay(model, frameState) {
-  const creditDisplay = frameState.creditDisplay;
-  const credits = model._credits;
-  const creditsLength = credits.length;
-  for (let c = 0; c < creditsLength; c++) {
-    creditDisplay.addCreditToNextFrame(credits[c]);
-  }
+    const creditDisplay = frameState.creditDisplay;
+    const credits = model._credits;
+    const creditsLength = credits.length;
+    for (let c = 0; c < creditsLength; c++) {
+        creditDisplay.addCreditToNextFrame(credits[c]);
+    }
 }
 
 /**
@@ -2655,8 +2689,8 @@ function addCreditsToCreditDisplay(model, frameState) {
  * @private
  */
 Model.prototype.isTranslucent = function () {
-  const color = this.color;
-  return defined(color) && color.alpha > 0.0 && color.alpha < 1.0;
+    const color = this.color;
+    return defined(color) && color.alpha > 0.0 && color.alpha < 1.0;
 };
 
 /**
@@ -2667,12 +2701,12 @@ Model.prototype.isTranslucent = function () {
  * @private
  */
 Model.prototype.isInvisible = function () {
-  const color = this.color;
-  return defined(color) && color.alpha === 0.0;
+    const color = this.color;
+    return defined(color) && color.alpha === 0.0;
 };
 
 function supportsSilhouettes(frameState) {
-  return frameState.context.stencilBuffer;
+    return frameState.context.stencilBuffer;
 }
 
 /**
@@ -2687,12 +2721,12 @@ function supportsSilhouettes(frameState) {
  * @private
  */
 Model.prototype.hasSilhouette = function (frameState) {
-  return (
-    supportsSilhouettes(frameState) &&
-    this._silhouetteSize > 0.0 &&
-    this._silhouetteColor.alpha > 0.0 &&
-    !defined(this._classificationType)
-  );
+    return (
+        supportsSilhouettes(frameState) &&
+        this._silhouetteSize > 0.0 &&
+        this._silhouetteColor.alpha > 0.0 &&
+        !defined(this._classificationType)
+    );
 };
 
 /**
@@ -2705,13 +2739,13 @@ Model.prototype.hasSilhouette = function (frameState) {
  * @private
  */
 Model.prototype.hasSkipLevelOfDetail = function (frameState) {
-  if (!ModelType.is3DTiles(this.type)) {
-    return false;
-  }
+    if (!ModelType.is3DTiles(this.type)) {
+        return false;
+    }
 
-  const supportsSkipLevelOfDetail = frameState.context.stencilBuffer;
-  const tileset = this._content.tileset;
-  return supportsSkipLevelOfDetail && tileset.isSkippingLevelOfDetail;
+    const supportsSkipLevelOfDetail = frameState.context.stencilBuffer;
+    const tileset = this._content.tileset;
+    return supportsSkipLevelOfDetail && tileset.isSkippingLevelOfDetail;
 };
 
 /**
@@ -2721,12 +2755,12 @@ Model.prototype.hasSkipLevelOfDetail = function (frameState) {
  * @private
  */
 Model.prototype.isClippingEnabled = function () {
-  const clippingPlanes = this._clippingPlanes;
-  return (
-    defined(clippingPlanes) &&
-    clippingPlanes.enabled &&
-    clippingPlanes.length !== 0
-  );
+    const clippingPlanes = this._clippingPlanes;
+    return (
+        defined(clippingPlanes) &&
+        clippingPlanes.enabled &&
+        clippingPlanes.length !== 0
+    );
 };
 
 /**
@@ -2742,20 +2776,20 @@ Model.prototype.isClippingEnabled = function () {
  * @private
  */
 Model.prototype.pick = function (
-  ray,
-  frameState,
-  verticalExaggeration,
-  relativeHeight,
-  result,
-) {
-  return pickModel(
-    this,
     ray,
     frameState,
     verticalExaggeration,
     relativeHeight,
     result,
-  );
+) {
+    return pickModel(
+        this,
+        ray,
+        frameState,
+        verticalExaggeration,
+        relativeHeight,
+        result,
+    );
 };
 
 /**
@@ -2765,12 +2799,12 @@ Model.prototype.pick = function (
  * @private
  */
 Model.prototype.isClippingPolygonsEnabled = function () {
-  const clippingPolygons = this._clippingPolygons;
-  return (
-    defined(clippingPolygons) &&
-    clippingPolygons.enabled &&
-    clippingPolygons.length !== 0
-  );
+    const clippingPolygons = this._clippingPolygons;
+    return (
+        defined(clippingPolygons) &&
+        clippingPolygons.enabled &&
+        clippingPolygons.length !== 0
+    );
 };
 
 /**
@@ -2784,7 +2818,7 @@ Model.prototype.isClippingPolygonsEnabled = function () {
  * @see Model#destroy
  */
 Model.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -2804,75 +2838,75 @@ Model.prototype.isDestroyed = function () {
  * @see Model#isDestroyed
  */
 Model.prototype.destroy = function () {
-  const loader = this._loader;
-  if (defined(loader)) {
-    loader.destroy();
-  }
-
-  const featureTables = this._featureTables;
-  if (defined(featureTables)) {
-    const length = featureTables.length;
-    for (let i = 0; i < length; i++) {
-      featureTables[i].destroy();
+    const loader = this._loader;
+    if (defined(loader)) {
+        loader.destroy();
     }
-  }
 
-  this.destroyPipelineResources();
-  this.destroyModelResources();
+    const featureTables = this._featureTables;
+    if (defined(featureTables)) {
+        const length = featureTables.length;
+        for (let i = 0; i < length; i++) {
+            featureTables[i].destroy();
+        }
+    }
 
-  // Remove callbacks for height reference behavior.
-  if (defined(this._removeUpdateHeightCallback)) {
-    this._removeUpdateHeightCallback();
-    this._removeUpdateHeightCallback = undefined;
-  }
+    this.destroyPipelineResources();
+    this.destroyModelResources();
 
-  if (defined(this._terrainProviderChangedCallback)) {
-    this._terrainProviderChangedCallback();
-    this._terrainProviderChangedCallback = undefined;
-  }
+    // Remove callbacks for height reference behavior.
+    if (defined(this._removeUpdateHeightCallback)) {
+        this._removeUpdateHeightCallback();
+        this._removeUpdateHeightCallback = undefined;
+    }
 
-  // Only destroy the ClippingPlaneCollection if this is the owner.
-  const clippingPlaneCollection = this._clippingPlanes;
-  if (
-    defined(clippingPlaneCollection) &&
-    !clippingPlaneCollection.isDestroyed() &&
-    clippingPlaneCollection.owner === this
-  ) {
-    clippingPlaneCollection.destroy();
-  }
-  this._clippingPlanes = undefined;
+    if (defined(this._terrainProviderChangedCallback)) {
+        this._terrainProviderChangedCallback();
+        this._terrainProviderChangedCallback = undefined;
+    }
 
-  // Only destroy the ClippingPolygonCollection if this is the owner.
-  const clippingPolygonCollection = this._clippingPolygons;
-  if (
-    defined(clippingPolygonCollection) &&
-    !clippingPolygonCollection.isDestroyed() &&
-    clippingPolygonCollection.owner === this
-  ) {
-    clippingPolygonCollection.destroy();
-  }
-  this._clippingPolygons = undefined;
+    // Only destroy the ClippingPlaneCollection if this is the owner.
+    const clippingPlaneCollection = this._clippingPlanes;
+    if (
+        defined(clippingPlaneCollection) &&
+        !clippingPlaneCollection.isDestroyed() &&
+        clippingPlaneCollection.owner === this
+    ) {
+        clippingPlaneCollection.destroy();
+    }
+    this._clippingPlanes = undefined;
 
-  // Only destroy the ImageBasedLighting if this is the owner.
-  if (
-    this._shouldDestroyImageBasedLighting &&
-    !this._imageBasedLighting.isDestroyed()
-  ) {
-    this._imageBasedLighting.destroy();
-  }
-  this._imageBasedLighting = undefined;
+    // Only destroy the ClippingPolygonCollection if this is the owner.
+    const clippingPolygonCollection = this._clippingPolygons;
+    if (
+        defined(clippingPolygonCollection) &&
+        !clippingPolygonCollection.isDestroyed() &&
+        clippingPolygonCollection.owner === this
+    ) {
+        clippingPolygonCollection.destroy();
+    }
+    this._clippingPolygons = undefined;
 
-  // Only destroy the environment map manager if this is the owner.
-  const environmentMapManager = this._environmentMapManager;
-  if (
-    !environmentMapManager.isDestroyed() &&
-    environmentMapManager.owner === this
-  ) {
-    environmentMapManager.destroy();
-  }
-  this._environmentMapManager = undefined;
+    // Only destroy the ImageBasedLighting if this is the owner.
+    if (
+        this._shouldDestroyImageBasedLighting &&
+        !this._imageBasedLighting.isDestroyed()
+    ) {
+        this._imageBasedLighting.destroy();
+    }
+    this._imageBasedLighting = undefined;
 
-  destroyObject(this);
+    // Only destroy the environment map manager if this is the owner.
+    const environmentMapManager = this._environmentMapManager;
+    if (
+        !environmentMapManager.isDestroyed() &&
+        environmentMapManager.owner === this
+    ) {
+        environmentMapManager.destroy();
+    }
+    this._environmentMapManager = undefined;
+
+    destroyObject(this);
 };
 
 /**
@@ -2881,12 +2915,12 @@ Model.prototype.destroy = function () {
  * @private
  */
 Model.prototype.destroyPipelineResources = function () {
-  const resources = this._pipelineResources;
-  for (let i = 0; i < resources.length; i++) {
-    resources[i].destroy();
-  }
-  this._pipelineResources.length = 0;
-  this._pickIds.length = 0;
+    const resources = this._pipelineResources;
+    for (let i = 0; i < resources.length; i++) {
+        resources[i].destroy();
+    }
+    this._pipelineResources.length = 0;
+    this._pickIds.length = 0;
 };
 
 /**
@@ -2895,11 +2929,11 @@ Model.prototype.destroyPipelineResources = function () {
  * @private
  */
 Model.prototype.destroyModelResources = function () {
-  const resources = this._modelResources;
-  for (let i = 0; i < resources.length; i++) {
-    resources[i].destroy();
-  }
-  this._modelResources.length = 0;
+    const resources = this._modelResources;
+    for (let i = 0; i < resources.length; i++) {
+        resources[i].destroy();
+    }
+    this._modelResources.length = 0;
 };
 
 /**
@@ -3031,193 +3065,205 @@ Model.prototype.destroyModelResources = function () {
  * }
  */
 Model.fromGltfAsync = async function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(options.url) && !defined(options.gltf)) {
-    throw new DeveloperError("options.url is required.");
-  }
-  //>>includeEnd('debug');
-
-  // options.gltf is used internally for 3D Tiles. It can be a Resource, a URL
-  // to a glTF/glb file, a binary glTF buffer, or a JSON object containing the
-  // glTF contents.
-  const gltf = options.url ?? options.gltf;
-
-  const loaderOptions = {
-    releaseGltfJson: options.releaseGltfJson,
-    asynchronous: options.asynchronous,
-    incrementallyLoadTextures: options.incrementallyLoadTextures,
-    upAxis: options.upAxis,
-    forwardAxis: options.forwardAxis,
-    loadAttributesFor2D: options.projectTo2D,
-    enablePick: options.enablePick,
-    loadIndicesForWireframe: options.enableDebugWireframe,
-    loadPrimitiveOutline: options.enableShowOutline,
-    loadForClassification: defined(options.classificationType),
-  };
-
-  const basePath = options.basePath ?? "";
-  const baseResource = Resource.createIfNeeded(basePath);
-
-  if (defined(gltf.asset)) {
-    loaderOptions.gltfJson = gltf;
-    loaderOptions.baseResource = baseResource;
-    loaderOptions.gltfResource = baseResource;
-  } else if (gltf instanceof Uint8Array) {
-    loaderOptions.typedArray = gltf;
-    loaderOptions.baseResource = baseResource;
-    loaderOptions.gltfResource = baseResource;
-  } else {
-    loaderOptions.gltfResource = Resource.createIfNeeded(gltf);
-  }
-
-  const loader = new GltfLoader(loaderOptions);
-
-  const is3DTiles = defined(options.content);
-  const type = is3DTiles ? ModelType.TILE_GLTF : ModelType.GLTF;
-
-  const resource = loaderOptions.gltfResource;
-
-  const modelOptions = makeModelOptions(loader, type, options);
-  modelOptions.resource = resource;
-  modelOptions.environmentMapOptions = options.environmentMapOptions;
-
-  try {
-    // This load the gltf JSON and ensures the gltf is valid
-    // Further resource loading is handled synchronously in loader.process(), and requires
-    // hooking into model's update() as the frameState is needed
-    await loader.load();
-  } catch (error) {
-    loader.destroy();
-    throw ModelUtility.getError("model", resource, error);
-  }
-
-  const gltfCallback = options.gltfCallback;
-  if (defined(gltfCallback)) {
     //>>includeStart('debug', pragmas.debug);
-    Check.typeOf.func("options.gltfCallback", gltfCallback);
+    if (!defined(options.url) && !defined(options.gltf)) {
+        throw new DeveloperError("options.url is required.");
+    }
     //>>includeEnd('debug');
 
-    gltfCallback(loader.gltfJson);
-  }
+    // options.gltf is used internally for 3D Tiles. It can be a Resource, a URL
+    // to a glTF/glb file, a binary glTF buffer, or a JSON object containing the
+    // glTF contents.
+    const gltf = options.url ?? options.gltf;
 
-  const model = new Model(modelOptions);
+    const loaderOptions = {
+        releaseGltfJson: options.releaseGltfJson,
+        asynchronous: options.asynchronous,
+        incrementallyLoadTextures: options.incrementallyLoadTextures,
+        upAxis: options.upAxis,
+        forwardAxis: options.forwardAxis,
+        loadAttributesFor2D: options.projectTo2D,
+        enablePick: options.enablePick,
+        loadIndicesForWireframe: options.enableDebugWireframe,
+        loadPrimitiveOutline: options.enableShowOutline,
+        loadForClassification: defined(options.classificationType),
+    };
 
-  const resourceCredits = model._resource.credits;
-  if (defined(resourceCredits)) {
-    const length = resourceCredits.length;
-    for (let i = 0; i < length; i++) {
-      model._resourceCredits.push(Credit.clone(resourceCredits[i]));
+    const basePath = options.basePath ?? "";
+    const baseResource = Resource.createIfNeeded(basePath);
+
+    if (defined(gltf.asset)) {
+        loaderOptions.gltfJson = gltf;
+        loaderOptions.baseResource = baseResource;
+        loaderOptions.gltfResource = baseResource;
+    } else if (gltf instanceof Uint8Array) {
+        loaderOptions.typedArray = gltf;
+        loaderOptions.baseResource = baseResource;
+        loaderOptions.gltfResource = baseResource;
+    } else {
+        loaderOptions.gltfResource = Resource.createIfNeeded(gltf);
     }
-  }
 
-  return model;
+    const loader = new GltfLoader(loaderOptions);
+
+    const is3DTiles = defined(options.content);
+    const type = is3DTiles ? ModelType.TILE_GLTF : ModelType.GLTF;
+
+    const resource = loaderOptions.gltfResource;
+
+    const modelOptions = makeModelOptions(loader, type, options);
+    modelOptions.resource = resource;
+    modelOptions.environmentMapOptions = options.environmentMapOptions;
+
+    try {
+        // This load the gltf JSON and ensures the gltf is valid
+        // Further resource loading is handled synchronously in loader.process(), and requires
+        // hooking into model's update() as the frameState is needed
+        await loader.load();
+    } catch (error) {
+        loader.destroy();
+        throw ModelUtility.getError("model", resource, error);
+    }
+
+    const gltfCallback = options.gltfCallback;
+    if (defined(gltfCallback)) {
+        //>>includeStart('debug', pragmas.debug);
+        Check.typeOf.func("options.gltfCallback", gltfCallback);
+        //>>includeEnd('debug');
+
+        gltfCallback(loader.gltfJson);
+    }
+
+    const model = new Model(modelOptions);
+
+    const resourceCredits = model._resource.credits;
+    if (defined(resourceCredits)) {
+        const length = resourceCredits.length;
+        for (let i = 0; i < length; i++) {
+            model._resourceCredits.push(Credit.clone(resourceCredits[i]));
+        }
+    }
+
+    return model;
 };
 
 /*
  * @private
  */
 Model.fromB3dm = async function (options) {
-  const loaderOptions = {
-    b3dmResource: options.resource,
-    arrayBuffer: options.arrayBuffer,
-    byteOffset: options.byteOffset,
-    releaseGltfJson: options.releaseGltfJson,
-    asynchronous: options.asynchronous,
-    incrementallyLoadTextures: options.incrementallyLoadTextures,
-    upAxis: options.upAxis,
-    forwardAxis: options.forwardAxis,
-    loadAttributesFor2D: options.projectTo2D,
-    enablePick: options.enablePick,
-    loadIndicesForWireframe: options.enableDebugWireframe,
-    loadPrimitiveOutline: options.enableShowOutline,
-    loadForClassification: defined(options.classificationType),
-  };
+    const loaderOptions = {
+        b3dmResource: options.resource,
+        arrayBuffer: options.arrayBuffer,
+        byteOffset: options.byteOffset,
+        releaseGltfJson: options.releaseGltfJson,
+        asynchronous: options.asynchronous,
+        incrementallyLoadTextures: options.incrementallyLoadTextures,
+        upAxis: options.upAxis,
+        forwardAxis: options.forwardAxis,
+        loadAttributesFor2D: options.projectTo2D,
+        enablePick: options.enablePick,
+        loadIndicesForWireframe: options.enableDebugWireframe,
+        loadPrimitiveOutline: options.enableShowOutline,
+        loadForClassification: defined(options.classificationType),
+    };
 
-  const loader = new B3dmLoader(loaderOptions);
+    const loader = new B3dmLoader(loaderOptions);
 
-  try {
-    await loader.load();
+    try {
+        await loader.load();
 
-    const modelOptions = makeModelOptions(loader, ModelType.TILE_B3DM, options);
-    const model = new Model(modelOptions);
-    return model;
-  } catch (error) {
-    loader.destroy();
-    throw error;
-  }
+        const modelOptions = makeModelOptions(
+            loader,
+            ModelType.TILE_B3DM,
+            options,
+        );
+        const model = new Model(modelOptions);
+        return model;
+    } catch (error) {
+        loader.destroy();
+        throw error;
+    }
 };
 
 /**
  * @private
  */
 Model.fromPnts = async function (options) {
-  const loaderOptions = {
-    arrayBuffer: options.arrayBuffer,
-    byteOffset: options.byteOffset,
-    loadAttributesFor2D: options.projectTo2D,
-  };
-  const loader = new PntsLoader(loaderOptions);
+    const loaderOptions = {
+        arrayBuffer: options.arrayBuffer,
+        byteOffset: options.byteOffset,
+        loadAttributesFor2D: options.projectTo2D,
+    };
+    const loader = new PntsLoader(loaderOptions);
 
-  try {
-    await loader.load();
-    const modelOptions = makeModelOptions(loader, ModelType.TILE_PNTS, options);
-    const model = new Model(modelOptions);
-    return model;
-  } catch (error) {
-    loader.destroy();
-    throw error;
-  }
+    try {
+        await loader.load();
+        const modelOptions = makeModelOptions(
+            loader,
+            ModelType.TILE_PNTS,
+            options,
+        );
+        const model = new Model(modelOptions);
+        return model;
+    } catch (error) {
+        loader.destroy();
+        throw error;
+    }
 };
 
 /*
  * @private
  */
 Model.fromI3dm = async function (options) {
-  const loaderOptions = {
-    i3dmResource: options.resource,
-    arrayBuffer: options.arrayBuffer,
-    byteOffset: options.byteOffset,
-    releaseGltfJson: options.releaseGltfJson,
-    asynchronous: options.asynchronous,
-    incrementallyLoadTextures: options.incrementallyLoadTextures,
-    upAxis: options.upAxis,
-    forwardAxis: options.forwardAxis,
-    loadAttributesFor2D: options.projectTo2D,
-    enablePick: options.enablePick,
-    loadIndicesForWireframe: options.enableDebugWireframe,
-    loadPrimitiveOutline: options.enableShowOutline,
-  };
-  const loader = new I3dmLoader(loaderOptions);
+    const loaderOptions = {
+        i3dmResource: options.resource,
+        arrayBuffer: options.arrayBuffer,
+        byteOffset: options.byteOffset,
+        releaseGltfJson: options.releaseGltfJson,
+        asynchronous: options.asynchronous,
+        incrementallyLoadTextures: options.incrementallyLoadTextures,
+        upAxis: options.upAxis,
+        forwardAxis: options.forwardAxis,
+        loadAttributesFor2D: options.projectTo2D,
+        enablePick: options.enablePick,
+        loadIndicesForWireframe: options.enableDebugWireframe,
+        loadPrimitiveOutline: options.enableShowOutline,
+    };
+    const loader = new I3dmLoader(loaderOptions);
 
-  try {
-    await loader.load();
+    try {
+        await loader.load();
 
-    const modelOptions = makeModelOptions(loader, ModelType.TILE_I3DM, options);
-    const model = new Model(modelOptions);
-    return model;
-  } catch (error) {
-    loader.destroy();
-    throw error;
-  }
+        const modelOptions = makeModelOptions(
+            loader,
+            ModelType.TILE_I3DM,
+            options,
+        );
+        const model = new Model(modelOptions);
+        return model;
+    } catch (error) {
+        loader.destroy();
+        throw error;
+    }
 };
 
 /*
  * @private
  */
 Model.fromGeoJson = async function (options) {
-  const loaderOptions = {
-    geoJson: options.geoJson,
-  };
-  const loader = new GeoJsonLoader(loaderOptions);
-  const modelOptions = makeModelOptions(
-    loader,
-    ModelType.TILE_GEOJSON,
-    options,
-  );
-  const model = new Model(modelOptions);
-  return model;
+    const loaderOptions = {
+        geoJson: options.geoJson,
+    };
+    const loader = new GeoJsonLoader(loaderOptions);
+    const modelOptions = makeModelOptions(
+        loader,
+        ModelType.TILE_GEOJSON,
+        options,
+    );
+    const model = new Model(modelOptions);
+    return model;
 };
 
 const scratchColor = new Color();
@@ -3226,108 +3272,108 @@ const scratchColor = new Color();
  * @private
  */
 Model.prototype.applyColorAndShow = function (style) {
-  const previousColor = Color.clone(this._color, scratchColor);
-  const hasColorStyle = defined(style) && defined(style.color);
-  const hasShowStyle = defined(style) && defined(style.show);
+    const previousColor = Color.clone(this._color, scratchColor);
+    const hasColorStyle = defined(style) && defined(style.color);
+    const hasShowStyle = defined(style) && defined(style.show);
 
-  this._color = hasColorStyle
-    ? style.color.evaluateColor(undefined, this._color)
-    : Color.clone(Color.WHITE, this._color);
-  this._show = hasShowStyle ? style.show.evaluate(undefined) : true;
+    this._color = hasColorStyle
+        ? style.color.evaluateColor(undefined, this._color)
+        : Color.clone(Color.WHITE, this._color);
+    this._show = hasShowStyle ? style.show.evaluate(undefined) : true;
 
-  if (isColorAlphaDirty(previousColor, this._color)) {
-    this.resetDrawCommands();
-  }
+    if (isColorAlphaDirty(previousColor, this._color)) {
+        this.resetDrawCommands();
+    }
 };
 
 /**
  * @private
  */
 Model.prototype.applyStyle = function (style) {
-  const isPnts = this.type === ModelType.TILE_PNTS;
+    const isPnts = this.type === ModelType.TILE_PNTS;
 
-  const hasFeatureTable =
-    defined(this.featureTableId) &&
-    this.featureTables[this.featureTableId].featuresLength > 0;
+    const hasFeatureTable =
+        defined(this.featureTableId) &&
+        this.featureTables[this.featureTableId].featuresLength > 0;
 
-  const propertyAttributes = defined(this.structuralMetadata)
-    ? this.structuralMetadata.propertyAttributes
-    : undefined;
-  const hasPropertyAttributes =
-    defined(propertyAttributes) && defined(propertyAttributes[0]);
+    const propertyAttributes = defined(this.structuralMetadata)
+        ? this.structuralMetadata.propertyAttributes
+        : undefined;
+    const hasPropertyAttributes =
+        defined(propertyAttributes) && defined(propertyAttributes[0]);
 
-  // Point clouds will be styled on the GPU unless they contain a batch table.
-  // That is, CPU styling will not be applied if:
-  // - points have no metadata at all, or
-  // - points have metadata stored as a property attribute
-  if (isPnts && (!hasFeatureTable || hasPropertyAttributes)) {
-    // Commands are rebuilt for point cloud styling since the new style may
-    // contain different shader functions.
-    this.resetDrawCommands();
-    return;
-  }
+    // Point clouds will be styled on the GPU unless they contain a batch table.
+    // That is, CPU styling will not be applied if:
+    // - points have no metadata at all, or
+    // - points have metadata stored as a property attribute
+    if (isPnts && (!hasFeatureTable || hasPropertyAttributes)) {
+        // Commands are rebuilt for point cloud styling since the new style may
+        // contain different shader functions.
+        this.resetDrawCommands();
+        return;
+    }
 
-  // The style is only set by the ModelFeatureTable. If there are no features,
-  // the color and show from the style are directly applied.
-  if (hasFeatureTable) {
-    const featureTable = this.featureTables[this.featureTableId];
-    featureTable.applyStyle(style);
-    updateStyleCommandsNeeded(this, style);
-  } else {
-    this.applyColorAndShow(style);
-    this._styleCommandsNeeded = undefined;
-  }
+    // The style is only set by the ModelFeatureTable. If there are no features,
+    // the color and show from the style are directly applied.
+    if (hasFeatureTable) {
+        const featureTable = this.featureTables[this.featureTableId];
+        featureTable.applyStyle(style);
+        updateStyleCommandsNeeded(this, style);
+    } else {
+        this.applyColorAndShow(style);
+        this._styleCommandsNeeded = undefined;
+    }
 };
 
 function makeModelOptions(loader, modelType, options) {
-  return {
-    loader: loader,
-    type: modelType,
-    resource: options.resource,
-    show: options.show,
-    modelMatrix: options.modelMatrix,
-    scale: options.scale,
-    enableVerticalExaggeration: options.enableVerticalExaggeration,
-    minimumPixelSize: options.minimumPixelSize,
-    maximumScale: options.maximumScale,
-    id: options.id,
-    allowPicking: options.allowPicking,
-    clampAnimations: options.clampAnimations,
-    shadows: options.shadows,
-    debugShowBoundingVolume: options.debugShowBoundingVolume,
-    enableDebugWireframe: options.enableDebugWireframe,
-    debugWireframe: options.debugWireframe,
-    cull: options.cull,
-    opaquePass: options.opaquePass,
-    customShader: options.customShader,
-    content: options.content,
-    heightReference: options.heightReference,
-    scene: options.scene,
-    distanceDisplayCondition: options.distanceDisplayCondition,
-    color: options.color,
-    colorBlendAmount: options.colorBlendAmount,
-    colorBlendMode: options.colorBlendMode,
-    silhouetteColor: options.silhouetteColor,
-    silhouetteSize: options.silhouetteSize,
-    enableShowOutline: options.enableShowOutline,
-    showOutline: options.showOutline,
-    outlineColor: options.outlineColor,
-    clippingPlanes: options.clippingPlanes,
-    clippingPolygons: options.clippingPolygons,
-    lightColor: options.lightColor,
-    imageBasedLighting: options.imageBasedLighting,
-    backFaceCulling: options.backFaceCulling,
-    credit: options.credit,
-    showCreditsOnScreen: options.showCreditsOnScreen,
-    splitDirection: options.splitDirection,
-    projectTo2D: options.projectTo2D,
-    enablePick: options.enablePick,
-    featureIdLabel: options.featureIdLabel,
-    instanceFeatureIdLabel: options.instanceFeatureIdLabel,
-    pointCloudShading: options.pointCloudShading,
-    classificationType: options.classificationType,
-    pickObject: options.pickObject,
-  };
+    return {
+        loader: loader,
+        type: modelType,
+        resource: options.resource,
+        show: options.show,
+        modelMatrix: options.modelMatrix,
+        scale: options.scale,
+        enableVerticalExaggeration: options.enableVerticalExaggeration,
+        minimumPixelSize: options.minimumPixelSize,
+        maximumScale: options.maximumScale,
+        id: options.id,
+        allowPicking: options.allowPicking,
+        clampAnimations: options.clampAnimations,
+        shadows: options.shadows,
+        debugShowBoundingVolume: options.debugShowBoundingVolume,
+        enableDebugWireframe: options.enableDebugWireframe,
+        debugWireframe: options.debugWireframe,
+        cull: options.cull,
+        opaquePass: options.opaquePass,
+        customShader: options.customShader,
+        content: options.content,
+        heightReference: options.heightReference,
+        scene: options.scene,
+        distanceDisplayCondition: options.distanceDisplayCondition,
+        color: options.color,
+        colorBlendAmount: options.colorBlendAmount,
+        colorBlendMode: options.colorBlendMode,
+        silhouetteColor: options.silhouetteColor,
+        silhouetteSize: options.silhouetteSize,
+        enableShowOutline: options.enableShowOutline,
+        showOutline: options.showOutline,
+        outlineColor: options.outlineColor,
+        clippingPlanes: options.clippingPlanes,
+        clippingPolygons: options.clippingPolygons,
+        lightColor: options.lightColor,
+        imageBasedLighting: options.imageBasedLighting,
+        backFaceCulling: options.backFaceCulling,
+        credit: options.credit,
+        showCreditsOnScreen: options.showCreditsOnScreen,
+        splitDirection: options.splitDirection,
+        projectTo2D: options.projectTo2D,
+        enablePick: options.enablePick,
+        featureIdLabel: options.featureIdLabel,
+        instanceFeatureIdLabel: options.instanceFeatureIdLabel,
+        pointCloudShading: options.pointCloudShading,
+        classificationType: options.classificationType,
+        pickObject: options.pickObject,
+    };
 }
 
 /**

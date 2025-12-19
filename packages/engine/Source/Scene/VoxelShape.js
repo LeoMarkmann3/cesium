@@ -15,88 +15,88 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @private
  */
 function VoxelShape() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 Object.defineProperties(VoxelShape.prototype, {
-  /**
-   * An oriented bounding box containing the bounded shape.
-   *
-   * @memberof VoxelShape.prototype
-   * @type {OrientedBoundingBox}
-   * @readonly
-   * @private
-   */
-  orientedBoundingBox: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * An oriented bounding box containing the bounded shape.
+     *
+     * @memberof VoxelShape.prototype
+     * @type {OrientedBoundingBox}
+     * @readonly
+     * @private
+     */
+    orientedBoundingBox: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * A bounding sphere containing the bounded shape.
-   *
-   * @memberof VoxelShape.prototype
-   * @type {BoundingSphere}
-   * @readonly
-   * @private
-   */
-  boundingSphere: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * A bounding sphere containing the bounded shape.
+     *
+     * @memberof VoxelShape.prototype
+     * @type {BoundingSphere}
+     * @readonly
+     * @private
+     */
+    boundingSphere: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * A transformation matrix containing the bounded shape.
-   *
-   * @memberof VoxelShape.prototype
-   * @type {Matrix4}
-   * @readonly
-   * @private
-   */
-  boundTransform: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * A transformation matrix containing the bounded shape.
+     *
+     * @memberof VoxelShape.prototype
+     * @type {Matrix4}
+     * @readonly
+     * @private
+     */
+    boundTransform: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * A transformation matrix containing the shape, ignoring the bounds.
-   *
-   * @memberof VoxelShape.prototype
-   * @type {Matrix4}
-   * @readonly
-   * @private
-   */
-  shapeTransform: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * A transformation matrix containing the shape, ignoring the bounds.
+     *
+     * @memberof VoxelShape.prototype
+     * @type {Matrix4}
+     * @readonly
+     * @private
+     */
+    shapeTransform: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * @memberof VoxelShape.prototype
-   * @type {Object<string, any>}
-   * @readonly
-   * @private
-   */
-  shaderUniforms: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * @memberof VoxelShape.prototype
+     * @type {Object<string, any>}
+     * @readonly
+     * @private
+     */
+    shaderUniforms: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * @memberof VoxelShape.prototype
-   * @type {Object<string, any>}
-   * @readonly
-   * @private
-   */
-  shaderDefines: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * @memberof VoxelShape.prototype
+     * @type {Object<string, any>}
+     * @readonly
+     * @private
+     */
+    shaderDefines: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * The maximum number of intersections against the shape for any ray direction.
-   * @memberof VoxelShape.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  shaderMaximumIntersectionsLength: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * The maximum number of intersections against the shape for any ray direction.
+     * @memberof VoxelShape.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    shaderMaximumIntersectionsLength: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 /**
@@ -117,7 +117,7 @@ VoxelShape.prototype.update = DeveloperError.throwInstantiationError;
  * @param {FrameState} frameState The frame state.
  */
 VoxelShape.prototype.updateViewTransforms =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Converts a local coordinate to the shape's UV space.
@@ -127,7 +127,7 @@ VoxelShape.prototype.updateViewTransforms =
  * @returns {Cartesian3} The converted UV coordinate.
  */
 VoxelShape.prototype.convertLocalToShapeUvSpace =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Computes an oriented bounding box for a specified tile.
@@ -140,7 +140,7 @@ VoxelShape.prototype.convertLocalToShapeUvSpace =
  * @returns {OrientedBoundingBox} The oriented bounding box.
  */
 VoxelShape.prototype.computeOrientedBoundingBoxForTile =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Computes an oriented bounding box for a specified sample within a specified tile.
@@ -152,7 +152,7 @@ VoxelShape.prototype.computeOrientedBoundingBoxForTile =
  * @returns {OrientedBoundingBox} The oriented bounding box.
  */
 VoxelShape.prototype.computeOrientedBoundingBoxForSample =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Defines the minimum bounds of the shape. The meaning can vary per-shape.

@@ -47,83 +47,83 @@ const removeDuplicatesEpsilon = CesiumMath.EPSILON10;
  * @private
  */
 function arrayRemoveDuplicates(
-  values,
-  equalsEpsilon,
-  wrapAround,
-  removedIndices,
+    values,
+    equalsEpsilon,
+    wrapAround,
+    removedIndices,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("equalsEpsilon", equalsEpsilon);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("equalsEpsilon", equalsEpsilon);
+    //>>includeEnd('debug');
 
-  if (!defined(values)) {
-    return undefined;
-  }
+    if (!defined(values)) {
+        return undefined;
+    }
 
-  wrapAround = wrapAround ?? false;
-  const storeRemovedIndices = defined(removedIndices);
+    wrapAround = wrapAround ?? false;
+    const storeRemovedIndices = defined(removedIndices);
 
-  const length = values.length;
-  if (length < 2) {
-    return values;
-  }
+    const length = values.length;
+    if (length < 2) {
+        return values;
+    }
 
-  let i;
-  let v0 = values[0];
-  let v1;
+    let i;
+    let v0 = values[0];
+    let v1;
 
-  // We only want to create a new array if there are duplicates in the array.
-  // As such, cleanedValues is undefined until it encounters the first duplicate, if it exists.
-  let cleanedValues;
-  let lastCleanIndex = 0;
+    // We only want to create a new array if there are duplicates in the array.
+    // As such, cleanedValues is undefined until it encounters the first duplicate, if it exists.
+    let cleanedValues;
+    let lastCleanIndex = 0;
 
-  // removedIndexLCI keeps track of where lastCleanIndex would be if it were sorted into the removedIndices array.
-  // In case of arrays such as [A, B, C, ..., A, A, A], removedIndices will not be sorted properly without this.
-  let removedIndexLCI = -1;
+    // removedIndexLCI keeps track of where lastCleanIndex would be if it were sorted into the removedIndices array.
+    // In case of arrays such as [A, B, C, ..., A, A, A], removedIndices will not be sorted properly without this.
+    let removedIndexLCI = -1;
 
-  for (i = 1; i < length; ++i) {
-    v1 = values[i];
-    if (equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
-      if (!defined(cleanedValues)) {
-        cleanedValues = values.slice(0, i);
-        lastCleanIndex = i - 1;
-        removedIndexLCI = 0;
-      }
-      if (storeRemovedIndices) {
-        removedIndices.push(i);
-      }
-    } else {
-      if (defined(cleanedValues)) {
-        cleanedValues.push(v1);
-        lastCleanIndex = i;
-        if (storeRemovedIndices) {
-          removedIndexLCI = removedIndices.length;
+    for (i = 1; i < length; ++i) {
+        v1 = values[i];
+        if (equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
+            if (!defined(cleanedValues)) {
+                cleanedValues = values.slice(0, i);
+                lastCleanIndex = i - 1;
+                removedIndexLCI = 0;
+            }
+            if (storeRemovedIndices) {
+                removedIndices.push(i);
+            }
+        } else {
+            if (defined(cleanedValues)) {
+                cleanedValues.push(v1);
+                lastCleanIndex = i;
+                if (storeRemovedIndices) {
+                    removedIndexLCI = removedIndices.length;
+                }
+            }
+            v0 = v1;
         }
-      }
-      v0 = v1;
-    }
-  }
-
-  if (
-    wrapAround &&
-    equalsEpsilon(values[0], values[length - 1], removeDuplicatesEpsilon)
-  ) {
-    if (storeRemovedIndices) {
-      if (defined(cleanedValues)) {
-        removedIndices.splice(removedIndexLCI, 0, lastCleanIndex);
-      } else {
-        removedIndices.push(length - 1);
-      }
     }
 
-    if (defined(cleanedValues)) {
-      cleanedValues.length -= 1;
-    } else {
-      cleanedValues = values.slice(0, -1);
-    }
-  }
+    if (
+        wrapAround &&
+        equalsEpsilon(values[0], values[length - 1], removeDuplicatesEpsilon)
+    ) {
+        if (storeRemovedIndices) {
+            if (defined(cleanedValues)) {
+                removedIndices.splice(removedIndexLCI, 0, lastCleanIndex);
+            } else {
+                removedIndices.push(length - 1);
+            }
+        }
 
-  return defined(cleanedValues) ? cleanedValues : values;
+        if (defined(cleanedValues)) {
+            cleanedValues.length -= 1;
+        } else {
+            cleanedValues = values.slice(0, -1);
+        }
+    }
+
+    return defined(cleanedValues) ? cleanedValues : values;
 }
 
 export default arrayRemoveDuplicates;

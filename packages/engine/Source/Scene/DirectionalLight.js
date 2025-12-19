@@ -17,33 +17,33 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @constructor
  */
 function DirectionalLight(options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options", options);
-  Check.typeOf.object("options.direction", options.direction);
-  if (Cartesian3.equals(options.direction, Cartesian3.ZERO)) {
-    throw new DeveloperError("options.direction cannot be zero-length");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options", options);
+    Check.typeOf.object("options.direction", options.direction);
+    if (Cartesian3.equals(options.direction, Cartesian3.ZERO)) {
+        throw new DeveloperError("options.direction cannot be zero-length");
+    }
+    //>>includeEnd('debug');
 
-  /**
-   * The direction in which light gets emitted.
-   * @type {Cartesian3}
-   */
-  this.direction = Cartesian3.clone(options.direction);
+    /**
+     * The direction in which light gets emitted.
+     * @type {Cartesian3}
+     */
+    this.direction = Cartesian3.clone(options.direction);
 
-  /**
-   * The color of the light.
-   * @type {Color}
-   * @default Color.WHITE
-   */
-  this.color = Color.clone(options.color ?? Color.WHITE);
+    /**
+     * The color of the light.
+     * @type {Color}
+     * @default Color.WHITE
+     */
+    this.color = Color.clone(options.color ?? Color.WHITE);
 
-  /**
-   * The intensity of the light.
-   * @type {number}
-   * @default 1.0
-   */
-  this.intensity = options.intensity ?? 1.0;
+    /**
+     * The intensity of the light.
+     * @type {number}
+     * @default 1.0
+     */
+    this.intensity = options.intensity ?? 1.0;
 }
 
 export default DirectionalLight;

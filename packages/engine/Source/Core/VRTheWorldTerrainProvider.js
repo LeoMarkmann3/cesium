@@ -15,8 +15,8 @@ import TerrainProvider from "./TerrainProvider.js";
 import TileProviderError from "./TileProviderError.js";
 
 function DataRectangle(rectangle, maxLevel) {
-  this.rectangle = rectangle;
-  this.maxLevel = maxLevel;
+    this.rectangle = rectangle;
+    this.maxLevel = maxLevel;
 }
 
 /**
@@ -37,101 +37,104 @@ function DataRectangle(rectangle, maxLevel) {
  * @param {VRTheWorldTerrainProvider.ConstructorOptions} options An object describing initialization options
  */
 function TerrainProviderBuilder(options) {
-  this.ellipsoid = options.ellipsoid ?? Ellipsoid.default;
-  this.tilingScheme = undefined;
-  this.heightmapWidth = undefined;
-  this.heightmapHeight = undefined;
-  this.levelZeroMaximumGeometricError = undefined;
-  this.rectangles = [];
+    this.ellipsoid = options.ellipsoid ?? Ellipsoid.default;
+    this.tilingScheme = undefined;
+    this.heightmapWidth = undefined;
+    this.heightmapHeight = undefined;
+    this.levelZeroMaximumGeometricError = undefined;
+    this.rectangles = [];
 }
 
 TerrainProviderBuilder.prototype.build = function (provider) {
-  provider._tilingScheme = this.tilingScheme;
-  provider._heightmapWidth = this.heightmapWidth;
-  provider._heightmapHeight = this.heightmapHeight;
-  provider._levelZeroMaximumGeometricError =
-    this.levelZeroMaximumGeometricError;
-  provider._rectangles = this.rectangles;
+    provider._tilingScheme = this.tilingScheme;
+    provider._heightmapWidth = this.heightmapWidth;
+    provider._heightmapHeight = this.heightmapHeight;
+    provider._levelZeroMaximumGeometricError =
+        this.levelZeroMaximumGeometricError;
+    provider._rectangles = this.rectangles;
 };
 
 function metadataSuccess(terrainProviderBuilder, xml) {
-  const srs = xml.getElementsByTagName("SRS")[0].textContent;
-  if (srs === "EPSG:4326") {
-    terrainProviderBuilder.tilingScheme = new GeographicTilingScheme({
-      ellipsoid: terrainProviderBuilder.ellipsoid,
-    });
-  } else {
-    throw new RuntimeError(`SRS ${srs} is not supported`);
-  }
+    const srs = xml.getElementsByTagName("SRS")[0].textContent;
+    if (srs === "EPSG:4326") {
+        terrainProviderBuilder.tilingScheme = new GeographicTilingScheme({
+            ellipsoid: terrainProviderBuilder.ellipsoid,
+        });
+    } else {
+        throw new RuntimeError(`SRS ${srs} is not supported`);
+    }
 
-  const tileFormat = xml.getElementsByTagName("TileFormat")[0];
-  terrainProviderBuilder.heightmapWidth = parseInt(
-    tileFormat.getAttribute("width"),
-    10,
-  );
-  terrainProviderBuilder.heightmapHeight = parseInt(
-    tileFormat.getAttribute("height"),
-    10,
-  );
-  terrainProviderBuilder.levelZeroMaximumGeometricError =
-    TerrainProvider.getEstimatedLevelZeroGeometricErrorForAHeightmap(
-      terrainProviderBuilder.ellipsoid,
-      Math.min(
-        terrainProviderBuilder.heightmapWidth,
-        terrainProviderBuilder.heightmapHeight,
-      ),
-      terrainProviderBuilder.tilingScheme.getNumberOfXTilesAtLevel(0),
+    const tileFormat = xml.getElementsByTagName("TileFormat")[0];
+    terrainProviderBuilder.heightmapWidth = parseInt(
+        tileFormat.getAttribute("width"),
+        10,
     );
+    terrainProviderBuilder.heightmapHeight = parseInt(
+        tileFormat.getAttribute("height"),
+        10,
+    );
+    terrainProviderBuilder.levelZeroMaximumGeometricError =
+        TerrainProvider.getEstimatedLevelZeroGeometricErrorForAHeightmap(
+            terrainProviderBuilder.ellipsoid,
+            Math.min(
+                terrainProviderBuilder.heightmapWidth,
+                terrainProviderBuilder.heightmapHeight,
+            ),
+            terrainProviderBuilder.tilingScheme.getNumberOfXTilesAtLevel(0),
+        );
 
-  const dataRectangles = xml.getElementsByTagName("DataExtent");
+    const dataRectangles = xml.getElementsByTagName("DataExtent");
 
-  for (let i = 0; i < dataRectangles.length; ++i) {
-    const dataRectangle = dataRectangles[i];
+    for (let i = 0; i < dataRectangles.length; ++i) {
+        const dataRectangle = dataRectangles[i];
 
-    const west = CesiumMath.toRadians(
-      parseFloat(dataRectangle.getAttribute("minx")),
-    );
-    const south = CesiumMath.toRadians(
-      parseFloat(dataRectangle.getAttribute("miny")),
-    );
-    const east = CesiumMath.toRadians(
-      parseFloat(dataRectangle.getAttribute("maxx")),
-    );
-    const north = CesiumMath.toRadians(
-      parseFloat(dataRectangle.getAttribute("maxy")),
-    );
-    const maxLevel = parseInt(dataRectangle.getAttribute("maxlevel"), 10);
+        const west = CesiumMath.toRadians(
+            parseFloat(dataRectangle.getAttribute("minx")),
+        );
+        const south = CesiumMath.toRadians(
+            parseFloat(dataRectangle.getAttribute("miny")),
+        );
+        const east = CesiumMath.toRadians(
+            parseFloat(dataRectangle.getAttribute("maxx")),
+        );
+        const north = CesiumMath.toRadians(
+            parseFloat(dataRectangle.getAttribute("maxy")),
+        );
+        const maxLevel = parseInt(dataRectangle.getAttribute("maxlevel"), 10);
 
-    terrainProviderBuilder.rectangles.push(
-      new DataRectangle(new Rectangle(west, south, east, north), maxLevel),
-    );
-  }
+        terrainProviderBuilder.rectangles.push(
+            new DataRectangle(
+                new Rectangle(west, south, east, north),
+                maxLevel,
+            ),
+        );
+    }
 }
 
 function metadataFailure(resource, error, provider) {
-  let message = `An error occurred while accessing ${resource.url}`;
+    let message = `An error occurred while accessing ${resource.url}`;
 
-  if (defined(error) && defined(error.message)) {
-    message = `${message}: ${error.message}`;
-  }
+    if (defined(error) && defined(error.message)) {
+        message = `${message}: ${error.message}`;
+    }
 
-  TileProviderError.reportError(
-    undefined,
-    provider,
-    defined(provider) ? provider._errorEvent : undefined,
-    message,
-  );
+    TileProviderError.reportError(
+        undefined,
+        provider,
+        defined(provider) ? provider._errorEvent : undefined,
+        message,
+    );
 
-  throw new RuntimeError(message);
+    throw new RuntimeError(message);
 }
 
 async function requestMetadata(terrainProviderBuilder, resource, provider) {
-  try {
-    const xml = await resource.fetchXML();
-    metadataSuccess(terrainProviderBuilder, xml);
-  } catch (error) {
-    metadataFailure(resource, error, provider);
-  }
+    try {
+        const xml = await resource.fetchXML();
+        metadataSuccess(terrainProviderBuilder, xml);
+    } catch (error) {
+        metadataFailure(resource, error, provider);
+    }
 }
 
 /**
@@ -156,109 +159,109 @@ async function requestMetadata(terrainProviderBuilder, resource, provider) {
  * @see TerrainProvider
  */
 function VRTheWorldTerrainProvider(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._errorEvent = new Event();
+    this._errorEvent = new Event();
 
-  this._terrainDataStructure = {
-    heightScale: 1.0 / 1000.0,
-    heightOffset: -1000.0,
-    elementsPerHeight: 3,
-    stride: 4,
-    elementMultiplier: 256.0,
-    isBigEndian: true,
-    lowestEncodedHeight: 0,
-    highestEncodedHeight: 256 * 256 * 256 - 1,
-  };
+    this._terrainDataStructure = {
+        heightScale: 1.0 / 1000.0,
+        heightOffset: -1000.0,
+        elementsPerHeight: 3,
+        stride: 4,
+        elementMultiplier: 256.0,
+        isBigEndian: true,
+        lowestEncodedHeight: 0,
+        highestEncodedHeight: 256 * 256 * 256 - 1,
+    };
 
-  let credit = options.credit;
-  if (typeof credit === "string") {
-    credit = new Credit(credit);
-  }
-  this._credit = credit;
+    let credit = options.credit;
+    if (typeof credit === "string") {
+        credit = new Credit(credit);
+    }
+    this._credit = credit;
 
-  this._tilingScheme = undefined;
-  this._rectangles = [];
+    this._tilingScheme = undefined;
+    this._rectangles = [];
 }
 
 Object.defineProperties(VRTheWorldTerrainProvider.prototype, {
-  /**
-   * Gets an event that is raised when the terrain provider encounters an asynchronous error.  By subscribing
-   * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
-   * are passed an instance of {@link TileProviderError}.
-   * @memberof VRTheWorldTerrainProvider.prototype
-   * @type {Event}
-   * @readonly
-   */
-  errorEvent: {
-    get: function () {
-      return this._errorEvent;
+    /**
+     * Gets an event that is raised when the terrain provider encounters an asynchronous error.  By subscribing
+     * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
+     * are passed an instance of {@link TileProviderError}.
+     * @memberof VRTheWorldTerrainProvider.prototype
+     * @type {Event}
+     * @readonly
+     */
+    errorEvent: {
+        get: function () {
+            return this._errorEvent;
+        },
     },
-  },
 
-  /**
-   * Gets the credit to display when this terrain provider is active.  Typically this is used to credit
-   * the source of the terrain.
-   * @memberof VRTheWorldTerrainProvider.prototype
-   * @type {Credit}
-   * @readonly
-   */
-  credit: {
-    get: function () {
-      return this._credit;
+    /**
+     * Gets the credit to display when this terrain provider is active.  Typically this is used to credit
+     * the source of the terrain.
+     * @memberof VRTheWorldTerrainProvider.prototype
+     * @type {Credit}
+     * @readonly
+     */
+    credit: {
+        get: function () {
+            return this._credit;
+        },
     },
-  },
 
-  /**
-   * Gets the tiling scheme used by this provider.
-   * @memberof VRTheWorldTerrainProvider.prototype
-   * @type {GeographicTilingScheme}
-   * @readonly
-   */
-  tilingScheme: {
-    get: function () {
-      return this._tilingScheme;
+    /**
+     * Gets the tiling scheme used by this provider.
+     * @memberof VRTheWorldTerrainProvider.prototype
+     * @type {GeographicTilingScheme}
+     * @readonly
+     */
+    tilingScheme: {
+        get: function () {
+            return this._tilingScheme;
+        },
     },
-  },
 
-  /**
-   * Gets a value indicating whether or not the provider includes a water mask.  The water mask
-   * indicates which areas of the globe are water rather than land, so they can be rendered
-   * as a reflective surface with animated waves.
-   * @memberof VRTheWorldTerrainProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  hasWaterMask: {
-    get: function () {
-      return false;
+    /**
+     * Gets a value indicating whether or not the provider includes a water mask.  The water mask
+     * indicates which areas of the globe are water rather than land, so they can be rendered
+     * as a reflective surface with animated waves.
+     * @memberof VRTheWorldTerrainProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    hasWaterMask: {
+        get: function () {
+            return false;
+        },
     },
-  },
 
-  /**
-   * Gets a value indicating whether or not the requested tiles include vertex normals.
-   * @memberof VRTheWorldTerrainProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  hasVertexNormals: {
-    get: function () {
-      return false;
+    /**
+     * Gets a value indicating whether or not the requested tiles include vertex normals.
+     * @memberof VRTheWorldTerrainProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    hasVertexNormals: {
+        get: function () {
+            return false;
+        },
     },
-  },
-  /**
-   * Gets an object that can be used to determine availability of terrain from this provider, such as
-   * at points and in rectangles. This property may be undefined if availability
-   * information is not available.
-   * @memberof VRTheWorldTerrainProvider.prototype
-   * @type {TileAvailability|undefined}
-   * @readonly
-   */
-  availability: {
-    get: function () {
-      return undefined;
+    /**
+     * Gets an object that can be used to determine availability of terrain from this provider, such as
+     * at points and in rectangles. This property may be undefined if availability
+     * information is not available.
+     * @memberof VRTheWorldTerrainProvider.prototype
+     * @type {TileAvailability|undefined}
+     * @readonly
+     */
+    availability: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 });
 
 /**
@@ -278,22 +281,22 @@ Object.defineProperties(VRTheWorldTerrainProvider.prototype, {
  * @exception {RuntimeError} metadata specifies and unknown SRS
  */
 VRTheWorldTerrainProvider.fromUrl = async function (url, options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("url", url);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("url", url);
+    //>>includeEnd('debug');
 
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const terrainProviderBuilder = new TerrainProviderBuilder(options);
-  const resource = Resource.createIfNeeded(url);
+    const terrainProviderBuilder = new TerrainProviderBuilder(options);
+    const resource = Resource.createIfNeeded(url);
 
-  await requestMetadata(terrainProviderBuilder, resource);
+    await requestMetadata(terrainProviderBuilder, resource);
 
-  const provider = new VRTheWorldTerrainProvider(options);
-  terrainProviderBuilder.build(provider);
-  provider._resource = resource;
+    const provider = new VRTheWorldTerrainProvider(options);
+    terrainProviderBuilder.build(provider);
+    provider._resource = resource;
 
-  return provider;
+    return provider;
 };
 
 /**
@@ -309,36 +312,36 @@ VRTheWorldTerrainProvider.fromUrl = async function (url, options) {
  *          pending and the request will be retried later.
  */
 VRTheWorldTerrainProvider.prototype.requestTileGeometry = function (
-  x,
-  y,
-  level,
-  request,
+    x,
+    y,
+    level,
+    request,
 ) {
-  const yTiles = this._tilingScheme.getNumberOfYTilesAtLevel(level);
-  const resource = this._resource.getDerivedResource({
-    url: `${level}/${x}/${yTiles - y - 1}.tif`,
-    queryParameters: {
-      cesium: true,
-    },
-    request: request,
-  });
-  const promise = resource.fetchImage({
-    preferImageBitmap: true,
-  });
-  if (!defined(promise)) {
-    return undefined;
-  }
-
-  const that = this;
-  return Promise.resolve(promise).then(function (image) {
-    return new HeightmapTerrainData({
-      buffer: getImagePixels(image),
-      width: that._heightmapWidth,
-      height: that._heightmapHeight,
-      childTileMask: getChildMask(that, x, y, level),
-      structure: that._terrainDataStructure,
+    const yTiles = this._tilingScheme.getNumberOfYTilesAtLevel(level);
+    const resource = this._resource.getDerivedResource({
+        url: `${level}/${x}/${yTiles - y - 1}.tif`,
+        queryParameters: {
+            cesium: true,
+        },
+        request: request,
     });
-  });
+    const promise = resource.fetchImage({
+        preferImageBitmap: true,
+    });
+    if (!defined(promise)) {
+        return undefined;
+    }
+
+    const that = this;
+    return Promise.resolve(promise).then(function (image) {
+        return new HeightmapTerrainData({
+            buffer: getImagePixels(image),
+            width: that._heightmapWidth,
+            height: that._heightmapHeight,
+            childTileMask: getChildMask(that, x, y, level),
+            structure: that._terrainDataStructure,
+        });
+    });
 };
 
 /**
@@ -348,84 +351,90 @@ VRTheWorldTerrainProvider.prototype.requestTileGeometry = function (
  * @returns {number} The maximum geometric error.
  */
 VRTheWorldTerrainProvider.prototype.getLevelMaximumGeometricError = function (
-  level,
+    level,
 ) {
-  return this._levelZeroMaximumGeometricError / (1 << level);
+    return this._levelZeroMaximumGeometricError / (1 << level);
 };
 
 const rectangleScratch = new Rectangle();
 
 function getChildMask(provider, x, y, level) {
-  const tilingScheme = provider._tilingScheme;
-  const rectangles = provider._rectangles;
-  const parentRectangle = tilingScheme.tileXYToRectangle(x, y, level);
+    const tilingScheme = provider._tilingScheme;
+    const rectangles = provider._rectangles;
+    const parentRectangle = tilingScheme.tileXYToRectangle(x, y, level);
 
-  let childMask = 0;
+    let childMask = 0;
 
-  for (let i = 0; i < rectangles.length && childMask !== 15; ++i) {
-    const rectangle = rectangles[i];
-    if (rectangle.maxLevel <= level) {
-      continue;
+    for (let i = 0; i < rectangles.length && childMask !== 15; ++i) {
+        const rectangle = rectangles[i];
+        if (rectangle.maxLevel <= level) {
+            continue;
+        }
+
+        const testRectangle = rectangle.rectangle;
+
+        const intersection = Rectangle.intersection(
+            testRectangle,
+            parentRectangle,
+            rectangleScratch,
+        );
+        if (defined(intersection)) {
+            // Parent tile is inside this rectangle, so at least one child is, too.
+            if (
+                isTileInRectangle(
+                    tilingScheme,
+                    testRectangle,
+                    x * 2,
+                    y * 2,
+                    level + 1,
+                )
+            ) {
+                childMask |= 4; // northwest
+            }
+            if (
+                isTileInRectangle(
+                    tilingScheme,
+                    testRectangle,
+                    x * 2 + 1,
+                    y * 2,
+                    level + 1,
+                )
+            ) {
+                childMask |= 8; // northeast
+            }
+            if (
+                isTileInRectangle(
+                    tilingScheme,
+                    testRectangle,
+                    x * 2,
+                    y * 2 + 1,
+                    level + 1,
+                )
+            ) {
+                childMask |= 1; // southwest
+            }
+            if (
+                isTileInRectangle(
+                    tilingScheme,
+                    testRectangle,
+                    x * 2 + 1,
+                    y * 2 + 1,
+                    level + 1,
+                )
+            ) {
+                childMask |= 2; // southeast
+            }
+        }
     }
 
-    const testRectangle = rectangle.rectangle;
-
-    const intersection = Rectangle.intersection(
-      testRectangle,
-      parentRectangle,
-      rectangleScratch,
-    );
-    if (defined(intersection)) {
-      // Parent tile is inside this rectangle, so at least one child is, too.
-      if (
-        isTileInRectangle(tilingScheme, testRectangle, x * 2, y * 2, level + 1)
-      ) {
-        childMask |= 4; // northwest
-      }
-      if (
-        isTileInRectangle(
-          tilingScheme,
-          testRectangle,
-          x * 2 + 1,
-          y * 2,
-          level + 1,
-        )
-      ) {
-        childMask |= 8; // northeast
-      }
-      if (
-        isTileInRectangle(
-          tilingScheme,
-          testRectangle,
-          x * 2,
-          y * 2 + 1,
-          level + 1,
-        )
-      ) {
-        childMask |= 1; // southwest
-      }
-      if (
-        isTileInRectangle(
-          tilingScheme,
-          testRectangle,
-          x * 2 + 1,
-          y * 2 + 1,
-          level + 1,
-        )
-      ) {
-        childMask |= 2; // southeast
-      }
-    }
-  }
-
-  return childMask;
+    return childMask;
 }
 
 function isTileInRectangle(tilingScheme, rectangle, x, y, level) {
-  const tileRectangle = tilingScheme.tileXYToRectangle(x, y, level);
-  return defined(
-    Rectangle.intersection(tileRectangle, rectangle, rectangleScratch),
-  );
+    const tileRectangle = tilingScheme.tileXYToRectangle(x, y, level);
+    return defined(
+        Rectangle.intersection(tileRectangle, rectangle, rectangleScratch),
+    );
 }
 
 /**
@@ -437,11 +446,11 @@ function isTileInRectangle(tilingScheme, rectangle, x, y, level) {
  * @returns {boolean|undefined} Undefined if not supported, otherwise true or false.
  */
 VRTheWorldTerrainProvider.prototype.getTileDataAvailable = function (
-  x,
-  y,
-  level,
+    x,
+    y,
+    level,
 ) {
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -453,10 +462,10 @@ VRTheWorldTerrainProvider.prototype.getTileDataAvailable = function (
  * @returns {undefined|Promise<void>} Undefined if nothing need to be loaded or a Promise that resolves when all required tiles are loaded
  */
 VRTheWorldTerrainProvider.prototype.loadTileDataAvailability = function (
-  x,
-  y,
-  level,
+    x,
+    y,
+    level,
 ) {
-  return undefined;
+    return undefined;
 };
 export default VRTheWorldTerrainProvider;

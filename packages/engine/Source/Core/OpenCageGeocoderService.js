@@ -35,60 +35,60 @@ import Resource from "./Resource.js";
  * });
  */
 function OpenCageGeocoderService(url, apiKey, params) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("url", url);
-  Check.defined("apiKey", apiKey);
-  if (defined(params)) {
-    Check.typeOf.object("params", params);
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("url", url);
+    Check.defined("apiKey", apiKey);
+    if (defined(params)) {
+        Check.typeOf.object("params", params);
+    }
+    //>>includeEnd('debug');
 
-  url = Resource.createIfNeeded(url);
-  url.appendForwardSlash();
-  url.setQueryParameters({ key: apiKey });
-  this._url = url;
-  this._params = params ?? {};
-  this._credit = new Credit(
-    `Geodata copyright <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors`,
-    false,
-  );
+    url = Resource.createIfNeeded(url);
+    url.appendForwardSlash();
+    url.setQueryParameters({ key: apiKey });
+    this._url = url;
+    this._params = params ?? {};
+    this._credit = new Credit(
+        `Geodata copyright <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors`,
+        false,
+    );
 }
 
 Object.defineProperties(OpenCageGeocoderService.prototype, {
-  /**
-   * The Resource used to access the OpenCage endpoint.
-   * @type {Resource}
-   * @memberof OpenCageGeocoderService.prototype
-   * @readonly
-   */
-  url: {
-    get: function () {
-      return this._url;
+    /**
+     * The Resource used to access the OpenCage endpoint.
+     * @type {Resource}
+     * @memberof OpenCageGeocoderService.prototype
+     * @readonly
+     */
+    url: {
+        get: function () {
+            return this._url;
+        },
     },
-  },
-  /**
-   * Optional params passed to OpenCage in order to customize geocoding
-   * @type {object}
-   * @memberof OpenCageGeocoderService.prototype
-   * @readonly
-   */
-  params: {
-    get: function () {
-      return this._params;
+    /**
+     * Optional params passed to OpenCage in order to customize geocoding
+     * @type {object}
+     * @memberof OpenCageGeocoderService.prototype
+     * @readonly
+     */
+    params: {
+        get: function () {
+            return this._params;
+        },
     },
-  },
-  /**
-   * Gets the credit to display after a geocode is performed. Typically this is used to credit
-   * the geocoder service.
-   * @memberof OpenCageGeocoderService.prototype
-   * @type {Credit|undefined}
-   * @readonly
-   */
-  credit: {
-    get: function () {
-      return this._credit;
+    /**
+     * Gets the credit to display after a geocode is performed. Typically this is used to credit
+     * the geocoder service.
+     * @memberof OpenCageGeocoderService.prototype
+     * @type {Credit|undefined}
+     * @readonly
+     */
+    credit: {
+        get: function () {
+            return this._credit;
+        },
     },
-  },
 });
 
 /**
@@ -98,37 +98,37 @@ Object.defineProperties(OpenCageGeocoderService.prototype, {
  * @returns {Promise<GeocoderService.Result[]>}
  */
 OpenCageGeocoderService.prototype.geocode = async function (query) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("query", query);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("query", query);
+    //>>includeEnd('debug');
 
-  const resource = this._url.getDerivedResource({
-    url: "json",
-    queryParameters: combine(this._params, { q: query }),
-  });
-  return resource.fetchJson().then(function (response) {
-    return response.results.map(function (resultObject) {
-      let destination;
-      const bounds = resultObject.bounds;
-
-      if (defined(bounds)) {
-        destination = Rectangle.fromDegrees(
-          bounds.southwest.lng,
-          bounds.southwest.lat,
-          bounds.northeast.lng,
-          bounds.northeast.lat,
-        );
-      } else {
-        const lon = resultObject.geometry.lat;
-        const lat = resultObject.geometry.lng;
-        destination = Cartesian3.fromDegrees(lon, lat);
-      }
-
-      return {
-        displayName: resultObject.formatted,
-        destination: destination,
-      };
+    const resource = this._url.getDerivedResource({
+        url: "json",
+        queryParameters: combine(this._params, { q: query }),
     });
-  });
+    return resource.fetchJson().then(function (response) {
+        return response.results.map(function (resultObject) {
+            let destination;
+            const bounds = resultObject.bounds;
+
+            if (defined(bounds)) {
+                destination = Rectangle.fromDegrees(
+                    bounds.southwest.lng,
+                    bounds.southwest.lat,
+                    bounds.northeast.lng,
+                    bounds.northeast.lat,
+                );
+            } else {
+                const lon = resultObject.geometry.lat;
+                const lat = resultObject.geometry.lng;
+                destination = Cartesian3.fromDegrees(lon, lat);
+            }
+
+            return {
+                displayName: resultObject.formatted,
+                destination: destination,
+            };
+        });
+    });
 };
 export default OpenCageGeocoderService;

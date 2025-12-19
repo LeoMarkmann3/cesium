@@ -139,188 +139,188 @@ import Rectangle from "../Core/Rectangle.js";
  * }
  */
 function I3SDataProvider(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  // All public configuration is defined as ES5 properties
-  // These are just the "private" variables and their defaults.
-  this._name = options.name;
-  this._show = options.show ?? true;
-  this._geoidTiledTerrainProvider = options.geoidTiledTerrainProvider;
-  this._showFeatures = options.showFeatures ?? false;
-  this._adjustMaterialAlphaMode = options.adjustMaterialAlphaMode ?? false;
-  this._applySymbology = options.applySymbology ?? false;
-  this._calculateNormals = options.calculateNormals ?? false;
+    // All public configuration is defined as ES5 properties
+    // These are just the "private" variables and their defaults.
+    this._name = options.name;
+    this._show = options.show ?? true;
+    this._geoidTiledTerrainProvider = options.geoidTiledTerrainProvider;
+    this._showFeatures = options.showFeatures ?? false;
+    this._adjustMaterialAlphaMode = options.adjustMaterialAlphaMode ?? false;
+    this._applySymbology = options.applySymbology ?? false;
+    this._calculateNormals = options.calculateNormals ?? false;
 
-  this._cesium3dTilesetOptions =
-    options.cesium3dTilesetOptions ?? Frozen.EMPTY_OBJECT;
+    this._cesium3dTilesetOptions =
+        options.cesium3dTilesetOptions ?? Frozen.EMPTY_OBJECT;
 
-  this._layers = [];
-  this._sublayers = [];
-  this._data = undefined;
-  this._extent = undefined;
-  this._geoidDataPromise = undefined;
-  this._geoidDataList = undefined;
-  this._decoderTaskProcessor = undefined;
-  this._taskProcessorReadyPromise = undefined;
-  this._attributeStatistics = [];
-  this._layersExtent = [];
+    this._layers = [];
+    this._sublayers = [];
+    this._data = undefined;
+    this._extent = undefined;
+    this._geoidDataPromise = undefined;
+    this._geoidDataList = undefined;
+    this._decoderTaskProcessor = undefined;
+    this._taskProcessorReadyPromise = undefined;
+    this._attributeStatistics = [];
+    this._layersExtent = [];
 }
 
 Object.defineProperties(I3SDataProvider.prototype, {
-  /**
-   * Gets a human-readable name for this dataset.
-   * @memberof I3SDataProvider.prototype
-   * @type {string}
-   * @readonly
-   */
-  name: {
-    get: function () {
-      return this._name;
+    /**
+     * Gets a human-readable name for this dataset.
+     * @memberof I3SDataProvider.prototype
+     * @type {string}
+     * @readonly
+     */
+    name: {
+        get: function () {
+            return this._name;
+        },
     },
-  },
 
-  /**
-   * Determines if the dataset will be shown.
-   * @memberof I3SDataProvider.prototype
-   * @type {boolean}
-   */
-  show: {
-    get: function () {
-      return this._show;
-    },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      Check.defined("value", value);
-      //>>includeEnd('debug');
+    /**
+     * Determines if the dataset will be shown.
+     * @memberof I3SDataProvider.prototype
+     * @type {boolean}
+     */
+    show: {
+        get: function () {
+            return this._show;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            Check.defined("value", value);
+            //>>includeEnd('debug');
 
-      if (this._show !== value) {
-        this._show = value;
-        for (let i = 0; i < this._layers.length; i++) {
-          this._layers[i]._updateVisibility();
-        }
-      }
+            if (this._show !== value) {
+                this._show = value;
+                for (let i = 0; i < this._layers.length; i++) {
+                    this._layers[i]._updateVisibility();
+                }
+            }
+        },
     },
-  },
 
-  /**
-   * The terrain provider referencing the GEOID service to be used for orthometric to ellipsoidal conversion.
-   * @memberof I3SDataProvider.prototype
-   * @type {ArcGISTiledElevationTerrainProvider}
-   * @readonly
-   */
-  geoidTiledTerrainProvider: {
-    get: function () {
-      return this._geoidTiledTerrainProvider;
+    /**
+     * The terrain provider referencing the GEOID service to be used for orthometric to ellipsoidal conversion.
+     * @memberof I3SDataProvider.prototype
+     * @type {ArcGISTiledElevationTerrainProvider}
+     * @readonly
+     */
+    geoidTiledTerrainProvider: {
+        get: function () {
+            return this._geoidTiledTerrainProvider;
+        },
     },
-  },
 
-  /**
-   * Gets the collection of layers.
-   * @memberof I3SDataProvider.prototype
-   * @type {I3SLayer[]}
-   * @readonly
-   */
-  layers: {
-    get: function () {
-      return this._layers;
+    /**
+     * Gets the collection of layers.
+     * @memberof I3SDataProvider.prototype
+     * @type {I3SLayer[]}
+     * @readonly
+     */
+    layers: {
+        get: function () {
+            return this._layers;
+        },
     },
-  },
 
-  /**
-   * Gets the collection of building sublayers.
-   * @memberof I3SDataProvider.prototype
-   * @type {I3SSublayer[]}
-   * @readonly
-   */
-  sublayers: {
-    get: function () {
-      return this._sublayers;
+    /**
+     * Gets the collection of building sublayers.
+     * @memberof I3SDataProvider.prototype
+     * @type {I3SSublayer[]}
+     * @readonly
+     */
+    sublayers: {
+        get: function () {
+            return this._sublayers;
+        },
     },
-  },
 
-  /**
-   * Gets the I3S data for this object.
-   * @memberof I3SDataProvider.prototype
-   * @type {object}
-   * @readonly
-   */
-  data: {
-    get: function () {
-      return this._data;
+    /**
+     * Gets the I3S data for this object.
+     * @memberof I3SDataProvider.prototype
+     * @type {object}
+     * @readonly
+     */
+    data: {
+        get: function () {
+            return this._data;
+        },
     },
-  },
 
-  /**
-   * Gets the extent covered by this I3S.
-   * @memberof I3SDataProvider.prototype
-   * @type {Rectangle}
-   * @readonly
-   */
-  extent: {
-    get: function () {
-      return this._extent;
+    /**
+     * Gets the extent covered by this I3S.
+     * @memberof I3SDataProvider.prototype
+     * @type {Rectangle}
+     * @readonly
+     */
+    extent: {
+        get: function () {
+            return this._extent;
+        },
     },
-  },
 
-  /**
-   * The resource used to fetch the I3S dataset.
-   * @memberof I3SDataProvider.prototype
-   * @type {Resource}
-   * @readonly
-   */
-  resource: {
-    get: function () {
-      return this._resource;
+    /**
+     * The resource used to fetch the I3S dataset.
+     * @memberof I3SDataProvider.prototype
+     * @type {Resource}
+     * @readonly
+     */
+    resource: {
+        get: function () {
+            return this._resource;
+        },
     },
-  },
 
-  /**
-   * Determines if the features will be shown.
-   * @memberof I3SDataProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  showFeatures: {
-    get: function () {
-      return this._showFeatures;
+    /**
+     * Determines if the features will be shown.
+     * @memberof I3SDataProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    showFeatures: {
+        get: function () {
+            return this._showFeatures;
+        },
     },
-  },
 
-  /**
-   * Determines if the alpha mode of the material will be adjusted depending on the color vertex attribute.
-   * @memberof I3SDataProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  adjustMaterialAlphaMode: {
-    get: function () {
-      return this._adjustMaterialAlphaMode;
+    /**
+     * Determines if the alpha mode of the material will be adjusted depending on the color vertex attribute.
+     * @memberof I3SDataProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    adjustMaterialAlphaMode: {
+        get: function () {
+            return this._adjustMaterialAlphaMode;
+        },
     },
-  },
 
-  /**
-   * Determines if the I3S symbology will be parsed and applied for the layers.
-   * @memberof I3SDataProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  applySymbology: {
-    get: function () {
-      return this._applySymbology;
+    /**
+     * Determines if the I3S symbology will be parsed and applied for the layers.
+     * @memberof I3SDataProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    applySymbology: {
+        get: function () {
+            return this._applySymbology;
+        },
     },
-  },
 
-  /**
-   * Determines if the flat normals will be generated for I3S geometry without normals.
-   * @memberof I3SDataProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  calculateNormals: {
-    get: function () {
-      return this._calculateNormals;
+    /**
+     * Determines if the flat normals will be generated for I3S geometry without normals.
+     * @memberof I3SDataProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    calculateNormals: {
+        get: function () {
+            return this._calculateNormals;
+        },
     },
-  },
 });
 
 /**
@@ -337,13 +337,13 @@ Object.defineProperties(I3SDataProvider.prototype, {
  * @see I3SDataProvider#isDestroyed
  */
 I3SDataProvider.prototype.destroy = function () {
-  for (let i = 0; i < this._layers.length; i++) {
-    if (defined(this._layers[i]._tileset)) {
-      this._layers[i]._tileset.destroy();
+    for (let i = 0; i < this._layers.length; i++) {
+        if (defined(this._layers[i]._tileset)) {
+            this._layers[i]._tileset.destroy();
+        }
     }
-  }
 
-  return destroyObject(this);
+    return destroyObject(this);
 };
 
 /**
@@ -358,146 +358,146 @@ I3SDataProvider.prototype.destroy = function () {
  * @see I3SDataProvider#destroy
  */
 I3SDataProvider.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
  * @private
  */
 I3SDataProvider.prototype.update = function (frameState) {
-  for (let i = 0; i < this._layers.length; i++) {
-    if (defined(this._layers[i]._tileset)) {
-      this._layers[i]._tileset.update(frameState);
+    for (let i = 0; i < this._layers.length; i++) {
+        if (defined(this._layers[i]._tileset)) {
+            this._layers[i]._tileset.update(frameState);
+        }
     }
-  }
 };
 
 /**
  * @private
  */
 I3SDataProvider.prototype.prePassesUpdate = function (frameState) {
-  for (let i = 0; i < this._layers.length; i++) {
-    if (defined(this._layers[i]._tileset)) {
-      this._layers[i]._tileset.prePassesUpdate(frameState);
+    for (let i = 0; i < this._layers.length; i++) {
+        if (defined(this._layers[i]._tileset)) {
+            this._layers[i]._tileset.prePassesUpdate(frameState);
+        }
     }
-  }
 };
 
 /**
  * @private
  */
 I3SDataProvider.prototype.postPassesUpdate = function (frameState) {
-  for (let i = 0; i < this._layers.length; i++) {
-    if (defined(this._layers[i]._tileset)) {
-      this._layers[i]._tileset.postPassesUpdate(frameState);
+    for (let i = 0; i < this._layers.length; i++) {
+        if (defined(this._layers[i]._tileset)) {
+            this._layers[i]._tileset.postPassesUpdate(frameState);
+        }
     }
-  }
 };
 
 /**
  * @private
  */
 I3SDataProvider.prototype.updateForPass = function (frameState, passState) {
-  for (let i = 0; i < this._layers.length; i++) {
-    if (defined(this._layers[i]._tileset)) {
-      this._layers[i]._tileset.updateForPass(frameState, passState);
+    for (let i = 0; i < this._layers.length; i++) {
+        if (defined(this._layers[i]._tileset)) {
+            this._layers[i]._tileset.updateForPass(frameState, passState);
+        }
     }
-  }
 };
 
 function buildLayerUrl(provider, layerId) {
-  const dataProviderUrl = provider.resource.getUrlComponent();
+    const dataProviderUrl = provider.resource.getUrlComponent();
 
-  let layerUrl = "";
-  if (dataProviderUrl.match(/layers\/\d/)) {
-    layerUrl = `${dataProviderUrl}`.replace(/\/+$/, "");
-  } else {
-    // Add '/' to url if needed + `$layers/${layerId}/` if tilesetUrl not already in ../layers/[id] format
-    layerUrl = `${dataProviderUrl}`
-      .replace(/\/?$/, "/")
-      .concat(`layers/${layerId}`);
-  }
-  return layerUrl;
+    let layerUrl = "";
+    if (dataProviderUrl.match(/layers\/\d/)) {
+        layerUrl = `${dataProviderUrl}`.replace(/\/+$/, "");
+    } else {
+        // Add '/' to url if needed + `$layers/${layerId}/` if tilesetUrl not already in ../layers/[id] format
+        layerUrl = `${dataProviderUrl}`
+            .replace(/\/?$/, "/")
+            .concat(`layers/${layerId}`);
+    }
+    return layerUrl;
 }
 
 async function addLayers(provider, data, options) {
-  if (data.layerType === "Building") {
-    if (!defined(options.showFeatures)) {
-      // The Building Scene Layer requires features to be shown to support filtering
-      provider._showFeatures = true;
-    }
-    if (!defined(options.adjustMaterialAlphaMode)) {
-      // The Building Scene Layer enables transparency by default
-      provider._adjustMaterialAlphaMode = true;
-    }
-    if (!defined(options.applySymbology)) {
-      // The Building Scene Layer applies symbology by default
-      provider._applySymbology = true;
-    }
-    if (!defined(options.calculateNormals)) {
-      // The Building Scene Layer calculates flat normals by default
-      provider._calculateNormals = true;
-    }
+    if (data.layerType === "Building") {
+        if (!defined(options.showFeatures)) {
+            // The Building Scene Layer requires features to be shown to support filtering
+            provider._showFeatures = true;
+        }
+        if (!defined(options.adjustMaterialAlphaMode)) {
+            // The Building Scene Layer enables transparency by default
+            provider._adjustMaterialAlphaMode = true;
+        }
+        if (!defined(options.applySymbology)) {
+            // The Building Scene Layer applies symbology by default
+            provider._applySymbology = true;
+        }
+        if (!defined(options.calculateNormals)) {
+            // The Building Scene Layer calculates flat normals by default
+            provider._calculateNormals = true;
+        }
 
-    const buildingLayerUrl = buildLayerUrl(provider, data.id);
-    if (defined(data.sublayers)) {
-      const promises = [];
-      for (let i = 0; i < data.sublayers.length; i++) {
-        const promise = I3SSublayer._fromData(
-          provider,
-          buildingLayerUrl,
-          data.sublayers[i],
-          provider,
-        );
-        promises.push(promise);
-      }
-      const sublayers = await Promise.all(promises);
-      for (let i = 0; i < sublayers.length; i++) {
-        const sublayer = sublayers[i];
-        provider._sublayers.push(sublayer);
-        provider._layers.push(...sublayer._i3sLayers);
-      }
-    }
+        const buildingLayerUrl = buildLayerUrl(provider, data.id);
+        if (defined(data.sublayers)) {
+            const promises = [];
+            for (let i = 0; i < data.sublayers.length; i++) {
+                const promise = I3SSublayer._fromData(
+                    provider,
+                    buildingLayerUrl,
+                    data.sublayers[i],
+                    provider,
+                );
+                promises.push(promise);
+            }
+            const sublayers = await Promise.all(promises);
+            for (let i = 0; i < sublayers.length; i++) {
+                const sublayer = sublayers[i];
+                provider._sublayers.push(sublayer);
+                provider._layers.push(...sublayer._i3sLayers);
+            }
+        }
 
-    if (defined(data.statisticsHRef)) {
-      const uri = buildingLayerUrl.concat(`/${data.statisticsHRef}`);
-      const statistics = new I3SStatistics(provider, uri);
-      await statistics.load();
-      provider._attributeStatistics.push(statistics);
-    }
+        if (defined(data.statisticsHRef)) {
+            const uri = buildingLayerUrl.concat(`/${data.statisticsHRef}`);
+            const statistics = new I3SStatistics(provider, uri);
+            await statistics.load();
+            provider._attributeStatistics.push(statistics);
+        }
 
-    if (defined(data.fullExtent)) {
-      const extent = Rectangle.fromDegrees(
-        data.fullExtent.xmin,
-        data.fullExtent.ymin,
-        data.fullExtent.xmax,
-        data.fullExtent.ymax,
-      );
-      provider._layersExtent.push(extent);
-    }
-  } else if (
-    data.layerType === "3DObject" ||
-    data.layerType === "IntegratedMesh"
-  ) {
-    if (
-      !defined(options.calculateNormals) &&
-      !defined(data.textureSetDefinitions)
+        if (defined(data.fullExtent)) {
+            const extent = Rectangle.fromDegrees(
+                data.fullExtent.xmin,
+                data.fullExtent.ymin,
+                data.fullExtent.xmax,
+                data.fullExtent.ymax,
+            );
+            provider._layersExtent.push(extent);
+        }
+    } else if (
+        data.layerType === "3DObject" ||
+        data.layerType === "IntegratedMesh"
     ) {
-      // I3S Layers without textures should calculate flat normals by default
-      provider._calculateNormals = true;
-    }
+        if (
+            !defined(options.calculateNormals) &&
+            !defined(data.textureSetDefinitions)
+        ) {
+            // I3S Layers without textures should calculate flat normals by default
+            provider._calculateNormals = true;
+        }
 
-    const newLayer = new I3SLayer(provider, data, provider);
-    provider._layers.push(newLayer);
-    if (defined(newLayer._extent)) {
-      provider._layersExtent.push(newLayer._extent);
+        const newLayer = new I3SLayer(provider, data, provider);
+        provider._layers.push(newLayer);
+        if (defined(newLayer._extent)) {
+            provider._layersExtent.push(newLayer._extent);
+        }
+    } else {
+        // Filter other scene layer types out
+        console.log(
+            `${data.layerType} layer ${data.name} is skipped as not supported.`,
+        );
     }
-  } else {
-    // Filter other scene layer types out
-    console.log(
-      `${data.layerType} layer ${data.name} is skipped as not supported.`,
-    );
-  }
 }
 
 /**
@@ -533,52 +533,60 @@ async function addLayers(provider, data, options) {
  * }
  */
 I3SDataProvider.fromUrl = async function (url, options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("url", url);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("url", url);
+    //>>includeEnd('debug');
 
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const resource = Resource.createIfNeeded(url);
-  // Set a query parameter for json to avoid failure on html pages
-  resource.setQueryParameters({ f: "pjson" }, true);
-  const data = await I3SDataProvider.loadJson(resource);
+    const resource = Resource.createIfNeeded(url);
+    // Set a query parameter for json to avoid failure on html pages
+    resource.setQueryParameters({ f: "pjson" }, true);
+    const data = await I3SDataProvider.loadJson(resource);
 
-  const provider = new I3SDataProvider(options);
-  provider._resource = resource;
-  provider._data = data;
+    const provider = new I3SDataProvider(options);
+    provider._resource = resource;
+    provider._data = data;
 
-  // Success
-  if (defined(data.layers)) {
-    const promises = [];
-    for (let layerIndex = 0; layerIndex < data.layers.length; layerIndex++) {
-      const promise = addLayers(provider, data.layers[layerIndex], options);
-      promises.push(promise);
+    // Success
+    if (defined(data.layers)) {
+        const promises = [];
+        for (
+            let layerIndex = 0;
+            layerIndex < data.layers.length;
+            layerIndex++
+        ) {
+            const promise = addLayers(
+                provider,
+                data.layers[layerIndex],
+                options,
+            );
+            promises.push(promise);
+        }
+        await Promise.all(promises);
+    } else {
+        await addLayers(provider, data, options);
     }
-    await Promise.all(promises);
-  } else {
-    await addLayers(provider, data, options);
-  }
 
-  provider._computeExtent();
+    provider._computeExtent();
 
-  // Start loading all of the tiles
-  const layerPromises = [];
-  for (let i = 0; i < provider._layers.length; i++) {
-    layerPromises.push(
-      provider._layers[i].load(options.cesium3dTilesetOptions),
-    );
-  }
+    // Start loading all of the tiles
+    const layerPromises = [];
+    for (let i = 0; i < provider._layers.length; i++) {
+        layerPromises.push(
+            provider._layers[i].load(options.cesium3dTilesetOptions),
+        );
+    }
 
-  await Promise.all(layerPromises);
-  return provider;
+    await Promise.all(layerPromises);
+    return provider;
 };
 
 /**
  * @private
  */
 I3SDataProvider._fetchJson = function (resource) {
-  return resource.fetchJson();
+    return resource.fetchJson();
 };
 
 /**
@@ -588,228 +596,233 @@ I3SDataProvider._fetchJson = function (resource) {
  * @returns {Promise<object>} The fetched data
  */
 I3SDataProvider.loadJson = async function (resource) {
-  const data = await I3SDataProvider._fetchJson(resource);
-  if (defined(data.error)) {
-    console.error("Failed to fetch I3S ", resource.url);
-    if (defined(data.error.message)) {
-      console.error(data.error.message);
-    }
-    if (defined(data.error.details)) {
-      for (let i = 0; i < data.error.details.length; i++) {
-        console.log(data.error.details[i]);
-      }
+    const data = await I3SDataProvider._fetchJson(resource);
+    if (defined(data.error)) {
+        console.error("Failed to fetch I3S ", resource.url);
+        if (defined(data.error.message)) {
+            console.error(data.error.message);
+        }
+        if (defined(data.error.details)) {
+            for (let i = 0; i < data.error.details.length; i++) {
+                console.log(data.error.details[i]);
+            }
+        }
+
+        throw new RuntimeError(data.error);
     }
 
-    throw new RuntimeError(data.error);
-  }
-
-  return data;
+    return data;
 };
 
 /**
  * @private
  */
 I3SDataProvider.prototype._loadBinary = async function (resource) {
-  const buffer = await resource.fetchArrayBuffer();
-  if (buffer.byteLength > 0) {
-    // Check if we have a JSON response with 404
-    const array = new Uint8Array(buffer);
-    if (array[0] === "{".charCodeAt(0)) {
-      const textContent = new TextDecoder();
-      const str = textContent.decode(buffer);
-      if (str.includes("404")) {
-        throw new RuntimeError(`Failed to load binary: ${resource.url}`);
-      }
+    const buffer = await resource.fetchArrayBuffer();
+    if (buffer.byteLength > 0) {
+        // Check if we have a JSON response with 404
+        const array = new Uint8Array(buffer);
+        if (array[0] === "{".charCodeAt(0)) {
+            const textContent = new TextDecoder();
+            const str = textContent.decode(buffer);
+            if (str.includes("404")) {
+                throw new RuntimeError(
+                    `Failed to load binary: ${resource.url}`,
+                );
+            }
+        }
     }
-  }
-  return buffer;
+    return buffer;
 };
 
 /**
  * @private
  */
 I3SDataProvider.prototype._binarizeGltf = function (rawGltf) {
-  const encoder = new TextEncoder();
-  const rawGltfData = encoder.encode(JSON.stringify(rawGltf));
-  const binaryGltfData = new Uint8Array(rawGltfData.byteLength + 20);
-  const binaryGltf = {
-    magic: new Uint8Array(binaryGltfData.buffer, 0, 4),
-    version: new Uint32Array(binaryGltfData.buffer, 4, 1),
-    length: new Uint32Array(binaryGltfData.buffer, 8, 1),
-    chunkLength: new Uint32Array(binaryGltfData.buffer, 12, 1),
-    chunkType: new Uint32Array(binaryGltfData.buffer, 16, 1),
-    chunkData: new Uint8Array(
-      binaryGltfData.buffer,
-      20,
-      rawGltfData.byteLength,
-    ),
-  };
+    const encoder = new TextEncoder();
+    const rawGltfData = encoder.encode(JSON.stringify(rawGltf));
+    const binaryGltfData = new Uint8Array(rawGltfData.byteLength + 20);
+    const binaryGltf = {
+        magic: new Uint8Array(binaryGltfData.buffer, 0, 4),
+        version: new Uint32Array(binaryGltfData.buffer, 4, 1),
+        length: new Uint32Array(binaryGltfData.buffer, 8, 1),
+        chunkLength: new Uint32Array(binaryGltfData.buffer, 12, 1),
+        chunkType: new Uint32Array(binaryGltfData.buffer, 16, 1),
+        chunkData: new Uint8Array(
+            binaryGltfData.buffer,
+            20,
+            rawGltfData.byteLength,
+        ),
+    };
 
-  binaryGltf.magic[0] = "g".charCodeAt();
-  binaryGltf.magic[1] = "l".charCodeAt();
-  binaryGltf.magic[2] = "T".charCodeAt();
-  binaryGltf.magic[3] = "F".charCodeAt();
+    binaryGltf.magic[0] = "g".charCodeAt();
+    binaryGltf.magic[1] = "l".charCodeAt();
+    binaryGltf.magic[2] = "T".charCodeAt();
+    binaryGltf.magic[3] = "F".charCodeAt();
 
-  binaryGltf.version[0] = 2;
-  binaryGltf.length[0] = binaryGltfData.byteLength;
-  binaryGltf.chunkLength[0] = rawGltfData.byteLength;
-  binaryGltf.chunkType[0] = 0x4e4f534a; // JSON
-  binaryGltf.chunkData.set(rawGltfData);
+    binaryGltf.version[0] = 2;
+    binaryGltf.length[0] = binaryGltfData.byteLength;
+    binaryGltf.chunkLength[0] = rawGltfData.byteLength;
+    binaryGltf.chunkType[0] = 0x4e4f534a; // JSON
+    binaryGltf.chunkData.set(rawGltfData);
 
-  return binaryGltfData;
+    return binaryGltfData;
 };
 
 const scratchCartesian2 = new Cartesian2();
 
 function getCoveredTiles(terrainProvider, extent) {
-  const tilingScheme = terrainProvider.tilingScheme;
+    const tilingScheme = terrainProvider.tilingScheme;
 
-  // Sort points into a set of tiles
-  const tileRequests = []; // Result will be an Array as it's easier to work with
-  const tileRequestSet = {}; // A unique set
+    // Sort points into a set of tiles
+    const tileRequests = []; // Result will be an Array as it's easier to work with
+    const tileRequestSet = {}; // A unique set
 
-  const maxLevel = terrainProvider._lodCount;
+    const maxLevel = terrainProvider._lodCount;
 
-  const topLeftCorner = Cartographic.fromRadians(extent.west, extent.north);
-  const bottomRightCorner = Cartographic.fromRadians(extent.east, extent.south);
-  const minCornerXY = tilingScheme.positionToTileXY(topLeftCorner, maxLevel);
-  const maxCornerXY = tilingScheme.positionToTileXY(
-    bottomRightCorner,
-    maxLevel,
-  );
-
-  // Get all the tiles in between
-  for (let x = minCornerXY.x; x <= maxCornerXY.x; x++) {
-    for (let y = minCornerXY.y; y <= maxCornerXY.y; y++) {
-      const xy = Cartesian2.fromElements(x, y, scratchCartesian2);
-      const key = xy.toString();
-      if (!tileRequestSet.hasOwnProperty(key)) {
-        // When tile is requested for the first time
-        const value = {
-          x: xy.x,
-          y: xy.y,
-          level: maxLevel,
-          tilingScheme: tilingScheme,
-          terrainProvider: terrainProvider,
-          positions: [],
-        };
-        tileRequestSet[key] = value;
-        tileRequests.push(value);
-      }
-    }
-  }
-
-  // Send request for each required tile
-  const tilePromises = [];
-  for (let i = 0; i < tileRequests.length; ++i) {
-    const tileRequest = tileRequests[i];
-    const requestPromise = tileRequest.terrainProvider.requestTileGeometry(
-      tileRequest.x,
-      tileRequest.y,
-      tileRequest.level,
+    const topLeftCorner = Cartographic.fromRadians(extent.west, extent.north);
+    const bottomRightCorner = Cartographic.fromRadians(
+        extent.east,
+        extent.south,
+    );
+    const minCornerXY = tilingScheme.positionToTileXY(topLeftCorner, maxLevel);
+    const maxCornerXY = tilingScheme.positionToTileXY(
+        bottomRightCorner,
+        maxLevel,
     );
 
-    tilePromises.push(requestPromise);
-  }
-
-  return Promise.all(tilePromises).then(function (heightMapBuffers) {
-    const heightMaps = [];
-    for (let i = 0; i < heightMapBuffers.length; i++) {
-      const options = {
-        tilingScheme: tilingScheme,
-        x: tileRequests[i].x,
-        y: tileRequests[i].y,
-        level: tileRequests[i].level,
-      };
-      const heightMap = heightMapBuffers[i];
-
-      let projectionType = "Geographic";
-      if (tilingScheme._projection instanceof WebMercatorProjection) {
-        projectionType = "WebMercator";
-      }
-
-      const heightMapData = {
-        projectionType: projectionType,
-        projection: tilingScheme._projection,
-        nativeExtent: tilingScheme.tileXYToNativeRectangle(
-          options.x,
-          options.y,
-          options.level,
-        ),
-        height: heightMap._height,
-        width: heightMap._width,
-        scale: heightMap._structure.heightScale,
-        offset: heightMap._structure.heightOffset,
-      };
-
-      if (heightMap._encoding === HeightmapEncoding.LERC) {
-        const result = Lerc.decode(heightMap._buffer);
-        heightMapData.buffer = result.pixels[0];
-      } else {
-        heightMapData.buffer = heightMap._buffer;
-      }
-
-      heightMaps.push(heightMapData);
+    // Get all the tiles in between
+    for (let x = minCornerXY.x; x <= maxCornerXY.x; x++) {
+        for (let y = minCornerXY.y; y <= maxCornerXY.y; y++) {
+            const xy = Cartesian2.fromElements(x, y, scratchCartesian2);
+            const key = xy.toString();
+            if (!tileRequestSet.hasOwnProperty(key)) {
+                // When tile is requested for the first time
+                const value = {
+                    x: xy.x,
+                    y: xy.y,
+                    level: maxLevel,
+                    tilingScheme: tilingScheme,
+                    terrainProvider: terrainProvider,
+                    positions: [],
+                };
+                tileRequestSet[key] = value;
+                tileRequests.push(value);
+            }
+        }
     }
 
-    return heightMaps;
-  });
+    // Send request for each required tile
+    const tilePromises = [];
+    for (let i = 0; i < tileRequests.length; ++i) {
+        const tileRequest = tileRequests[i];
+        const requestPromise = tileRequest.terrainProvider.requestTileGeometry(
+            tileRequest.x,
+            tileRequest.y,
+            tileRequest.level,
+        );
+
+        tilePromises.push(requestPromise);
+    }
+
+    return Promise.all(tilePromises).then(function (heightMapBuffers) {
+        const heightMaps = [];
+        for (let i = 0; i < heightMapBuffers.length; i++) {
+            const options = {
+                tilingScheme: tilingScheme,
+                x: tileRequests[i].x,
+                y: tileRequests[i].y,
+                level: tileRequests[i].level,
+            };
+            const heightMap = heightMapBuffers[i];
+
+            let projectionType = "Geographic";
+            if (tilingScheme._projection instanceof WebMercatorProjection) {
+                projectionType = "WebMercator";
+            }
+
+            const heightMapData = {
+                projectionType: projectionType,
+                projection: tilingScheme._projection,
+                nativeExtent: tilingScheme.tileXYToNativeRectangle(
+                    options.x,
+                    options.y,
+                    options.level,
+                ),
+                height: heightMap._height,
+                width: heightMap._width,
+                scale: heightMap._structure.heightScale,
+                offset: heightMap._structure.heightOffset,
+            };
+
+            if (heightMap._encoding === HeightmapEncoding.LERC) {
+                const result = Lerc.decode(heightMap._buffer);
+                heightMapData.buffer = result.pixels[0];
+            } else {
+                heightMapData.buffer = heightMap._buffer;
+            }
+
+            heightMaps.push(heightMapData);
+        }
+
+        return heightMaps;
+    });
 }
 
 async function loadGeoidData(provider) {
-  // Load tiles from arcgis
-  const geoidTerrainProvider = provider._geoidTiledTerrainProvider;
+    // Load tiles from arcgis
+    const geoidTerrainProvider = provider._geoidTiledTerrainProvider;
 
-  if (!defined(geoidTerrainProvider)) {
-    return;
-  }
+    if (!defined(geoidTerrainProvider)) {
+        return;
+    }
 
-  try {
-    const heightMaps = await getCoveredTiles(
-      geoidTerrainProvider,
-      provider._extent,
-    );
-    provider._geoidDataList = heightMaps;
-  } catch (error) {
-    console.log(
-      "Error retrieving Geoid Terrain tiles - no geoid conversion will be performed.",
-    );
-  }
+    try {
+        const heightMaps = await getCoveredTiles(
+            geoidTerrainProvider,
+            provider._extent,
+        );
+        provider._geoidDataList = heightMaps;
+    } catch (error) {
+        console.log(
+            "Error retrieving Geoid Terrain tiles - no geoid conversion will be performed.",
+        );
+    }
 }
 
 /**
  * @private
  */
 I3SDataProvider.prototype.loadGeoidData = async function () {
-  if (defined(this._geoidDataPromise)) {
-    return this._geoidDataPromise;
-  }
+    if (defined(this._geoidDataPromise)) {
+        return this._geoidDataPromise;
+    }
 
-  this._geoidDataPromise = loadGeoidData(this);
-  return this._geoidDataPromise;
+    this._geoidDataPromise = loadGeoidData(this);
+    return this._geoidDataPromise;
 };
 
 /**
  * @private
  */
 I3SDataProvider.prototype._computeExtent = function () {
-  let rectangle;
+    let rectangle;
 
-  // Compute the extent from all layers
-  for (
-    let layerIndex = 0;
-    layerIndex < this._layersExtent.length;
-    layerIndex++
-  ) {
-    const layerExtent = this._layersExtent[layerIndex];
-    if (!defined(rectangle)) {
-      rectangle = Rectangle.clone(layerExtent);
-    } else {
-      Rectangle.union(rectangle, layerExtent, rectangle);
+    // Compute the extent from all layers
+    for (
+        let layerIndex = 0;
+        layerIndex < this._layersExtent.length;
+        layerIndex++
+    ) {
+        const layerExtent = this._layersExtent[layerIndex];
+        if (!defined(rectangle)) {
+            rectangle = Rectangle.clone(layerExtent);
+        } else {
+            Rectangle.union(rectangle, layerExtent, rectangle);
+        }
     }
-  }
 
-  this._extent = rectangle;
+    this._extent = rectangle;
 };
 
 /**
@@ -817,11 +830,11 @@ I3SDataProvider.prototype._computeExtent = function () {
  * @returns {string[]} The collection of attribute names
  */
 I3SDataProvider.prototype.getAttributeNames = function () {
-  const attributes = [];
-  for (let i = 0; i < this._attributeStatistics.length; ++i) {
-    attributes.push(...this._attributeStatistics[i].names);
-  }
-  return attributes;
+    const attributes = [];
+    for (let i = 0; i < this._attributeStatistics.length; ++i) {
+        attributes.push(...this._attributeStatistics[i].names);
+    }
+    return attributes;
 };
 
 /**
@@ -830,17 +843,17 @@ I3SDataProvider.prototype.getAttributeNames = function () {
  * @returns {string[]} The collection of attribute values
  */
 I3SDataProvider.prototype.getAttributeValues = function (name) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("name", name);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("name", name);
+    //>>includeEnd('debug');
 
-  for (let i = 0; i < this._attributeStatistics.length; ++i) {
-    const values = this._attributeStatistics[i]._getValues(name);
-    if (defined(values)) {
-      return values;
+    for (let i = 0; i < this._attributeStatistics.length; ++i) {
+        const values = this._attributeStatistics[i]._getValues(name);
+        if (defined(values)) {
+            return values;
+        }
     }
-  }
-  return [];
+    return [];
 };
 
 /**
@@ -849,12 +862,12 @@ I3SDataProvider.prototype.getAttributeValues = function (name) {
  * @returns {Promise<void>} A promise that is resolved when the filter is applied
  */
 I3SDataProvider.prototype.filterByAttributes = function (filters) {
-  const promises = [];
-  for (let i = 0; i < this._layers.length; i++) {
-    const promise = this._layers[i].filterByAttributes(filters);
-    promises.push(promise);
-  }
-  return Promise.all(promises);
+    const promises = [];
+    for (let i = 0; i < this._layers.length; i++) {
+        const promise = this._layers[i].filterByAttributes(filters);
+        promises.push(promise);
+    }
+    return Promise.all(promises);
 };
 
 export default I3SDataProvider;

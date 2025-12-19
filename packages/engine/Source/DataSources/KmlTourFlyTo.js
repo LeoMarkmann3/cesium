@@ -17,14 +17,14 @@ import EasingFunction from "../Core/EasingFunction.js";
  * @see KmlTourWait
  */
 function KmlTourFlyTo(duration, flyToMode, view) {
-  this.type = "KmlTourFlyTo";
-  this.blocking = true;
-  this.activeCamera = null;
-  this.activeCallback = null;
+    this.type = "KmlTourFlyTo";
+    this.blocking = true;
+    this.activeCamera = null;
+    this.activeCallback = null;
 
-  this.duration = duration;
-  this.view = view;
-  this.flyToMode = flyToMode;
+    this.duration = duration;
+    this.view = view;
+    this.flyToMode = flyToMode;
 }
 
 /**
@@ -35,35 +35,35 @@ function KmlTourFlyTo(duration, flyToMode, view) {
  * @param {object} [cameraOptions] which will be merged with camera flyTo options. See {@link Camera#flyTo}
  */
 KmlTourFlyTo.prototype.play = function (done, camera, cameraOptions) {
-  this.activeCamera = camera;
-  if (defined(done) && done !== null) {
-    const self = this;
-    this.activeCallback = function (terminated) {
-      delete self.activeCallback;
-      delete self.activeCamera;
-      done(defined(terminated) ? false : terminated);
-    };
-  }
+    this.activeCamera = camera;
+    if (defined(done) && done !== null) {
+        const self = this;
+        this.activeCallback = function (terminated) {
+            delete self.activeCallback;
+            delete self.activeCamera;
+            done(defined(terminated) ? false : terminated);
+        };
+    }
 
-  const options = this.getCameraOptions(cameraOptions);
-  if (this.view.headingPitchRoll) {
-    camera.flyTo(options);
-  } else if (this.view.headingPitchRange) {
-    const target = new BoundingSphere(this.view.position);
-    camera.flyToBoundingSphere(target, options);
-  }
+    const options = this.getCameraOptions(cameraOptions);
+    if (this.view.headingPitchRoll) {
+        camera.flyTo(options);
+    } else if (this.view.headingPitchRange) {
+        const target = new BoundingSphere(this.view.position);
+        camera.flyToBoundingSphere(target, options);
+    }
 };
 
 /**
  * Stop execution of curent entry. Cancel camera flyTo
  */
 KmlTourFlyTo.prototype.stop = function () {
-  if (defined(this.activeCamera)) {
-    this.activeCamera.cancelFlight();
-  }
-  if (defined(this.activeCallback)) {
-    this.activeCallback(true);
-  }
+    if (defined(this.activeCamera)) {
+        this.activeCamera.cancelFlight();
+    }
+    if (defined(this.activeCallback)) {
+        this.activeCallback(true);
+    }
 };
 
 /**
@@ -74,29 +74,29 @@ KmlTourFlyTo.prototype.stop = function () {
  * @returns {object} {@link Camera#flyTo} or {@link Camera#flyToBoundingSphere} options
  */
 KmlTourFlyTo.prototype.getCameraOptions = function (cameraOptions) {
-  let options = {
-    duration: this.duration,
-  };
+    let options = {
+        duration: this.duration,
+    };
 
-  if (defined(this.activeCallback)) {
-    options.complete = this.activeCallback;
-  }
+    if (defined(this.activeCallback)) {
+        options.complete = this.activeCallback;
+    }
 
-  if (this.flyToMode === "smooth") {
-    options.easingFunction = EasingFunction.LINEAR_NONE;
-  }
+    if (this.flyToMode === "smooth") {
+        options.easingFunction = EasingFunction.LINEAR_NONE;
+    }
 
-  if (this.view.headingPitchRoll) {
-    options.destination = this.view.position;
-    options.orientation = this.view.headingPitchRoll;
-  } else if (this.view.headingPitchRange) {
-    options.offset = this.view.headingPitchRange;
-  }
+    if (this.view.headingPitchRoll) {
+        options.destination = this.view.position;
+        options.orientation = this.view.headingPitchRoll;
+    } else if (this.view.headingPitchRange) {
+        options.offset = this.view.headingPitchRange;
+    }
 
-  if (defined(cameraOptions)) {
-    options = combine(options, cameraOptions);
-  }
-  return options;
+    if (defined(cameraOptions)) {
+        options = combine(options, cameraOptions);
+    }
+    return options;
 };
 
 /**

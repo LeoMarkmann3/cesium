@@ -11,55 +11,69 @@
  * @private
  */
 function createBillboardPointCallback(
-  centerAlpha,
-  cssColor,
-  cssOutlineColor,
-  cssOutlineWidth,
-  pixelSize,
+    centerAlpha,
+    cssColor,
+    cssOutlineColor,
+    cssOutlineWidth,
+    pixelSize,
 ) {
-  return function () {
-    const canvas = document.createElement("canvas");
+    return function () {
+        const canvas = document.createElement("canvas");
 
-    const length = pixelSize + 2 * cssOutlineWidth;
-    canvas.height = canvas.width = length;
+        const length = pixelSize + 2 * cssOutlineWidth;
+        canvas.height = canvas.width = length;
 
-    const context2D = canvas.getContext("2d");
-    context2D.clearRect(0, 0, length, length);
+        const context2D = canvas.getContext("2d");
+        context2D.clearRect(0, 0, length, length);
 
-    if (cssOutlineWidth !== 0) {
-      context2D.beginPath();
-      context2D.arc(length / 2, length / 2, length / 2, 0, 2 * Math.PI, true);
-      context2D.closePath();
-      context2D.fillStyle = cssOutlineColor;
-      context2D.fill();
-      // Punch a hole in the center if needed.
-      if (centerAlpha < 1.0) {
-        context2D.save();
-        context2D.globalCompositeOperation = "destination-out";
+        if (cssOutlineWidth !== 0) {
+            context2D.beginPath();
+            context2D.arc(
+                length / 2,
+                length / 2,
+                length / 2,
+                0,
+                2 * Math.PI,
+                true,
+            );
+            context2D.closePath();
+            context2D.fillStyle = cssOutlineColor;
+            context2D.fill();
+            // Punch a hole in the center if needed.
+            if (centerAlpha < 1.0) {
+                context2D.save();
+                context2D.globalCompositeOperation = "destination-out";
+                context2D.beginPath();
+                context2D.arc(
+                    length / 2,
+                    length / 2,
+                    pixelSize / 2,
+                    0,
+                    2 * Math.PI,
+                    true,
+                );
+                context2D.closePath();
+                context2D.fillStyle = "black";
+                context2D.fill();
+                context2D.restore();
+            }
+        }
+
         context2D.beginPath();
         context2D.arc(
-          length / 2,
-          length / 2,
-          pixelSize / 2,
-          0,
-          2 * Math.PI,
-          true,
+            length / 2,
+            length / 2,
+            pixelSize / 2,
+            0,
+            2 * Math.PI,
+            true,
         );
         context2D.closePath();
-        context2D.fillStyle = "black";
+        context2D.fillStyle = cssColor;
         context2D.fill();
-        context2D.restore();
-      }
-    }
 
-    context2D.beginPath();
-    context2D.arc(length / 2, length / 2, pixelSize / 2, 0, 2 * Math.PI, true);
-    context2D.closePath();
-    context2D.fillStyle = cssColor;
-    context2D.fill();
-
-    return canvas;
-  };
+        return canvas;
+    };
 }
 
 /**

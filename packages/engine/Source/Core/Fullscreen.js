@@ -2,12 +2,12 @@ import defined from "./defined.js";
 
 let _supportsFullscreen;
 const _names = {
-  requestFullscreen: undefined,
-  exitFullscreen: undefined,
-  fullscreenEnabled: undefined,
-  fullscreenElement: undefined,
-  fullscreenchange: undefined,
-  fullscreenerror: undefined,
+    requestFullscreen: undefined,
+    exitFullscreen: undefined,
+    fullscreenEnabled: undefined,
+    fullscreenElement: undefined,
+    fullscreenchange: undefined,
+    fullscreenerror: undefined,
 };
 
 /**
@@ -20,92 +20,92 @@ const _names = {
 const Fullscreen = {};
 
 Object.defineProperties(Fullscreen, {
-  /**
-   * The element that is currently fullscreen, if any.  To simply check if the
-   * browser is in fullscreen mode or not, use {@link Fullscreen#fullscreen}.
-   * @memberof Fullscreen
-   * @type {object}
-   * @readonly
-   */
-  element: {
-    get: function () {
-      if (!Fullscreen.supportsFullscreen()) {
-        return undefined;
-      }
+    /**
+     * The element that is currently fullscreen, if any.  To simply check if the
+     * browser is in fullscreen mode or not, use {@link Fullscreen#fullscreen}.
+     * @memberof Fullscreen
+     * @type {object}
+     * @readonly
+     */
+    element: {
+        get: function () {
+            if (!Fullscreen.supportsFullscreen()) {
+                return undefined;
+            }
 
-      return document[_names.fullscreenElement];
+            return document[_names.fullscreenElement];
+        },
     },
-  },
 
-  /**
-   * The name of the event on the document that is fired when fullscreen is
-   * entered or exited.  This event name is intended for use with addEventListener.
-   * In your event handler, to determine if the browser is in fullscreen mode or not,
-   * use {@link Fullscreen#fullscreen}.
-   * @memberof Fullscreen
-   * @type {string}
-   * @readonly
-   */
-  changeEventName: {
-    get: function () {
-      if (!Fullscreen.supportsFullscreen()) {
-        return undefined;
-      }
+    /**
+     * The name of the event on the document that is fired when fullscreen is
+     * entered or exited.  This event name is intended for use with addEventListener.
+     * In your event handler, to determine if the browser is in fullscreen mode or not,
+     * use {@link Fullscreen#fullscreen}.
+     * @memberof Fullscreen
+     * @type {string}
+     * @readonly
+     */
+    changeEventName: {
+        get: function () {
+            if (!Fullscreen.supportsFullscreen()) {
+                return undefined;
+            }
 
-      return _names.fullscreenchange;
+            return _names.fullscreenchange;
+        },
     },
-  },
 
-  /**
-   * The name of the event that is fired when a fullscreen error
-   * occurs.  This event name is intended for use with addEventListener.
-   * @memberof Fullscreen
-   * @type {string}
-   * @readonly
-   */
-  errorEventName: {
-    get: function () {
-      if (!Fullscreen.supportsFullscreen()) {
-        return undefined;
-      }
+    /**
+     * The name of the event that is fired when a fullscreen error
+     * occurs.  This event name is intended for use with addEventListener.
+     * @memberof Fullscreen
+     * @type {string}
+     * @readonly
+     */
+    errorEventName: {
+        get: function () {
+            if (!Fullscreen.supportsFullscreen()) {
+                return undefined;
+            }
 
-      return _names.fullscreenerror;
+            return _names.fullscreenerror;
+        },
     },
-  },
 
-  /**
-   * Determine whether the browser will allow an element to be made fullscreen, or not.
-   * For example, by default, iframes cannot go fullscreen unless the containing page
-   * adds an "allowfullscreen" attribute (or prefixed equivalent).
-   * @memberof Fullscreen
-   * @type {boolean}
-   * @readonly
-   */
-  enabled: {
-    get: function () {
-      if (!Fullscreen.supportsFullscreen()) {
-        return undefined;
-      }
+    /**
+     * Determine whether the browser will allow an element to be made fullscreen, or not.
+     * For example, by default, iframes cannot go fullscreen unless the containing page
+     * adds an "allowfullscreen" attribute (or prefixed equivalent).
+     * @memberof Fullscreen
+     * @type {boolean}
+     * @readonly
+     */
+    enabled: {
+        get: function () {
+            if (!Fullscreen.supportsFullscreen()) {
+                return undefined;
+            }
 
-      return document[_names.fullscreenEnabled];
+            return document[_names.fullscreenEnabled];
+        },
     },
-  },
 
-  /**
-   * Determines if the browser is currently in fullscreen mode.
-   * @memberof Fullscreen
-   * @type {boolean}
-   * @readonly
-   */
-  fullscreen: {
-    get: function () {
-      if (!Fullscreen.supportsFullscreen()) {
-        return undefined;
-      }
+    /**
+     * Determines if the browser is currently in fullscreen mode.
+     * @memberof Fullscreen
+     * @type {boolean}
+     * @readonly
+     */
+    fullscreen: {
+        get: function () {
+            if (!Fullscreen.supportsFullscreen()) {
+                return undefined;
+            }
 
-      return Fullscreen.element !== null;
+            return Fullscreen.element !== null;
+        },
     },
-  },
 });
 
 /**
@@ -115,99 +115,99 @@ Object.defineProperties(Fullscreen, {
  * <code>false</code> otherwise.
  */
 Fullscreen.supportsFullscreen = function () {
-  if (defined(_supportsFullscreen)) {
-    return _supportsFullscreen;
-  }
+    if (defined(_supportsFullscreen)) {
+        return _supportsFullscreen;
+    }
 
-  _supportsFullscreen = false;
+    _supportsFullscreen = false;
 
-  const body = document.body;
-  if (typeof body.requestFullscreen === "function") {
-    // go with the unprefixed, standard set of names
-    _names.requestFullscreen = "requestFullscreen";
-    _names.exitFullscreen = "exitFullscreen";
-    _names.fullscreenEnabled = "fullscreenEnabled";
-    _names.fullscreenElement = "fullscreenElement";
-    _names.fullscreenchange = "fullscreenchange";
-    _names.fullscreenerror = "fullscreenerror";
-    _supportsFullscreen = true;
-    return _supportsFullscreen;
-  }
-
-  //check for the correct combination of prefix plus the various names that browsers use
-  const prefixes = ["webkit", "moz", "o", "ms", "khtml"];
-  let name;
-  for (let i = 0, len = prefixes.length; i < len; ++i) {
-    const prefix = prefixes[i];
-
-    // casing of Fullscreen differs across browsers
-    name = `${prefix}RequestFullscreen`;
-    if (typeof body[name] === "function") {
-      _names.requestFullscreen = name;
-      _supportsFullscreen = true;
-    } else {
-      name = `${prefix}RequestFullScreen`;
-      if (typeof body[name] === "function") {
-        _names.requestFullscreen = name;
+    const body = document.body;
+    if (typeof body.requestFullscreen === "function") {
+        // go with the unprefixed, standard set of names
+        _names.requestFullscreen = "requestFullscreen";
+        _names.exitFullscreen = "exitFullscreen";
+        _names.fullscreenEnabled = "fullscreenEnabled";
+        _names.fullscreenElement = "fullscreenElement";
+        _names.fullscreenchange = "fullscreenchange";
+        _names.fullscreenerror = "fullscreenerror";
         _supportsFullscreen = true;
-      }
+        return _supportsFullscreen;
     }
 
-    // disagreement about whether it's "exit" as per spec, or "cancel"
-    name = `${prefix}ExitFullscreen`;
-    if (typeof document[name] === "function") {
-      _names.exitFullscreen = name;
-    } else {
-      name = `${prefix}CancelFullScreen`;
-      if (typeof document[name] === "function") {
-        _names.exitFullscreen = name;
-      }
+    //check for the correct combination of prefix plus the various names that browsers use
+    const prefixes = ["webkit", "moz", "o", "ms", "khtml"];
+    let name;
+    for (let i = 0, len = prefixes.length; i < len; ++i) {
+        const prefix = prefixes[i];
+
+        // casing of Fullscreen differs across browsers
+        name = `${prefix}RequestFullscreen`;
+        if (typeof body[name] === "function") {
+            _names.requestFullscreen = name;
+            _supportsFullscreen = true;
+        } else {
+            name = `${prefix}RequestFullScreen`;
+            if (typeof body[name] === "function") {
+                _names.requestFullscreen = name;
+                _supportsFullscreen = true;
+            }
+        }
+
+        // disagreement about whether it's "exit" as per spec, or "cancel"
+        name = `${prefix}ExitFullscreen`;
+        if (typeof document[name] === "function") {
+            _names.exitFullscreen = name;
+        } else {
+            name = `${prefix}CancelFullScreen`;
+            if (typeof document[name] === "function") {
+                _names.exitFullscreen = name;
+            }
+        }
+
+        // casing of Fullscreen differs across browsers
+        name = `${prefix}FullscreenEnabled`;
+        if (document[name] !== undefined) {
+            _names.fullscreenEnabled = name;
+        } else {
+            name = `${prefix}FullScreenEnabled`;
+            if (document[name] !== undefined) {
+                _names.fullscreenEnabled = name;
+            }
+        }
+
+        // casing of Fullscreen differs across browsers
+        name = `${prefix}FullscreenElement`;
+        if (document[name] !== undefined) {
+            _names.fullscreenElement = name;
+        } else {
+            name = `${prefix}FullScreenElement`;
+            if (document[name] !== undefined) {
+                _names.fullscreenElement = name;
+            }
+        }
+
+        // thankfully, event names are all lowercase per spec
+        name = `${prefix}fullscreenchange`;
+        // event names do not have 'on' in the front, but the property on the document does
+        if (document[`on${name}`] !== undefined) {
+            //except on IE
+            if (prefix === "ms") {
+                name = "MSFullscreenChange";
+            }
+            _names.fullscreenchange = name;
+        }
+
+        name = `${prefix}fullscreenerror`;
+        if (document[`on${name}`] !== undefined) {
+            //except on IE
+            if (prefix === "ms") {
+                name = "MSFullscreenError";
+            }
+            _names.fullscreenerror = name;
+        }
     }
 
-    // casing of Fullscreen differs across browsers
-    name = `${prefix}FullscreenEnabled`;
-    if (document[name] !== undefined) {
-      _names.fullscreenEnabled = name;
-    } else {
-      name = `${prefix}FullScreenEnabled`;
-      if (document[name] !== undefined) {
-        _names.fullscreenEnabled = name;
-      }
-    }
-
-    // casing of Fullscreen differs across browsers
-    name = `${prefix}FullscreenElement`;
-    if (document[name] !== undefined) {
-      _names.fullscreenElement = name;
-    } else {
-      name = `${prefix}FullScreenElement`;
-      if (document[name] !== undefined) {
-        _names.fullscreenElement = name;
-      }
-    }
-
-    // thankfully, event names are all lowercase per spec
-    name = `${prefix}fullscreenchange`;
-    // event names do not have 'on' in the front, but the property on the document does
-    if (document[`on${name}`] !== undefined) {
-      //except on IE
-      if (prefix === "ms") {
-        name = "MSFullscreenChange";
-      }
-      _names.fullscreenchange = name;
-    }
-
-    name = `${prefix}fullscreenerror`;
-    if (document[`on${name}`] !== undefined) {
-      //except on IE
-      if (prefix === "ms") {
-        name = "MSFullscreenError";
-      }
-      _names.fullscreenerror = name;
-    }
-  }
-
-  return _supportsFullscreen;
+    return _supportsFullscreen;
 };
 
 /**
@@ -225,11 +225,11 @@ Fullscreen.supportsFullscreen = function () {
  * Cesium.Fullscreen.requestFullscreen(scene.canvas)
  */
 Fullscreen.requestFullscreen = function (element, vrDevice) {
-  if (!Fullscreen.supportsFullscreen()) {
-    return;
-  }
+    if (!Fullscreen.supportsFullscreen()) {
+        return;
+    }
 
-  element[_names.requestFullscreen]({ vrDisplay: vrDevice });
+    element[_names.requestFullscreen]({ vrDisplay: vrDevice });
 };
 
 /**
@@ -237,11 +237,11 @@ Fullscreen.requestFullscreen = function (element, vrDevice) {
  * in fullscreen, or if fullscreen mode is not supported by the browser, does nothing.
  */
 Fullscreen.exitFullscreen = function () {
-  if (!Fullscreen.supportsFullscreen()) {
-    return;
-  }
+    if (!Fullscreen.supportsFullscreen()) {
+        return;
+    }
 
-  document[_names.exitFullscreen]();
+    document[_names.exitFullscreen]();
 };
 
 //For unit tests

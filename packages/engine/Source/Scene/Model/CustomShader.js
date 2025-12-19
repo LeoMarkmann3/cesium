@@ -120,284 +120,292 @@ import CustomShaderTranslucencyMode from "./CustomShaderTranslucencyMode.js";
  * });
  */
 function CustomShader(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  /**
-   * A value determining how the custom shader interacts with the overall
-   * fragment shader. This is used by {@link CustomShaderPipelineStage}
-   *
-   * @type {CustomShaderMode}
-   * @readonly
-   */
-  this.mode = options.mode ?? CustomShaderMode.MODIFY_MATERIAL;
-  /**
-   * The lighting model to use when using the custom shader.
-   * This is used by {@link CustomShaderPipelineStage}
-   *
-   * @type {LightingModel}
-   * @readonly
-   */
-  this.lightingModel = options.lightingModel;
-  /**
-   * Additional uniforms as declared by the user.
-   *
-   * @type {Object<string, UniformSpecifier>}
-   * @readonly
-   */
-  this.uniforms = options.uniforms ?? Frozen.EMPTY_OBJECT;
-  /**
-   * Additional varyings as declared by the user.
-   * This is used by {@link CustomShaderPipelineStage}
-   *
-   * @type {Object<string, VaryingType>}
-   * @readonly
-   */
-  this.varyings = options.varyings ?? Frozen.EMPTY_OBJECT;
-  /**
-   * The user-defined GLSL code for the vertex shader
-   *
-   * @type {string}
-   * @readonly
-   */
-  this.vertexShaderText = options.vertexShaderText;
-  /**
-   * The user-defined GLSL code for the fragment shader
-   *
-   * @type {string}
-   * @readonly
-   */
-  this.fragmentShaderText = options.fragmentShaderText;
+    /**
+     * A value determining how the custom shader interacts with the overall
+     * fragment shader. This is used by {@link CustomShaderPipelineStage}
+     *
+     * @type {CustomShaderMode}
+     * @readonly
+     */
+    this.mode = options.mode ?? CustomShaderMode.MODIFY_MATERIAL;
+    /**
+     * The lighting model to use when using the custom shader.
+     * This is used by {@link CustomShaderPipelineStage}
+     *
+     * @type {LightingModel}
+     * @readonly
+     */
+    this.lightingModel = options.lightingModel;
+    /**
+     * Additional uniforms as declared by the user.
+     *
+     * @type {Object<string, UniformSpecifier>}
+     * @readonly
+     */
+    this.uniforms = options.uniforms ?? Frozen.EMPTY_OBJECT;
+    /**
+     * Additional varyings as declared by the user.
+     * This is used by {@link CustomShaderPipelineStage}
+     *
+     * @type {Object<string, VaryingType>}
+     * @readonly
+     */
+    this.varyings = options.varyings ?? Frozen.EMPTY_OBJECT;
+    /**
+     * The user-defined GLSL code for the vertex shader
+     *
+     * @type {string}
+     * @readonly
+     */
+    this.vertexShaderText = options.vertexShaderText;
+    /**
+     * The user-defined GLSL code for the fragment shader
+     *
+     * @type {string}
+     * @readonly
+     */
+    this.fragmentShaderText = options.fragmentShaderText;
 
-  /**
-   * The translucency mode, which determines how the custom shader will be applied. If the value is
-   * CustomShaderTransulcencyMode.OPAQUE or CustomShaderTransulcencyMode.TRANSLUCENT, the custom shader
-   * will override settings from the model's material. If the value isCustomShaderTransulcencyMode.INHERIT,
-   * the custom shader will render as either opaque or translucent depending on the primitive's material settings.
-   *
-   * @type {CustomShaderTranslucencyMode}
-   * @default CustomShaderTranslucencyMode.INHERIT
-   * @readonly
-   */
-  this.translucencyMode =
-    options.translucencyMode ?? CustomShaderTranslucencyMode.INHERIT;
+    /**
+     * The translucency mode, which determines how the custom shader will be applied. If the value is
+     * CustomShaderTransulcencyMode.OPAQUE or CustomShaderTransulcencyMode.TRANSLUCENT, the custom shader
+     * will override settings from the model's material. If the value isCustomShaderTransulcencyMode.INHERIT,
+     * the custom shader will render as either opaque or translucent depending on the primitive's material settings.
+     *
+     * @type {CustomShaderTranslucencyMode}
+     * @default CustomShaderTranslucencyMode.INHERIT
+     * @readonly
+     */
+    this.translucencyMode =
+        options.translucencyMode ?? CustomShaderTranslucencyMode.INHERIT;
 
-  /**
-   * texture uniforms require some asynchronous processing. This is delegated
-   * to a texture manager.
-   *
-   * @type {TextureManager}
-   * @readonly
-   * @private
-   */
-  this._textureManager = new TextureManager();
-  /**
-   * The default texture (from the {@link Context}) to use while textures
-   * are loading
-   *
-   * @type {Texture}
-   * @readonly
-   * @private
-   */
-  this._defaultTexture = undefined;
-  /**
-   * The map of uniform names to a function that returns a value. This map
-   * is combined with the overall uniform map used by the {@link DrawCommand}
-   *
-   * @type {Object<string, Function>}
-   * @readonly
-   * @private
-   */
-  this.uniformMap = buildUniformMap(this);
+    /**
+     * texture uniforms require some asynchronous processing. This is delegated
+     * to a texture manager.
+     *
+     * @type {TextureManager}
+     * @readonly
+     * @private
+     */
+    this._textureManager = new TextureManager();
+    /**
+     * The default texture (from the {@link Context}) to use while textures
+     * are loading
+     *
+     * @type {Texture}
+     * @readonly
+     * @private
+     */
+    this._defaultTexture = undefined;
+    /**
+     * The map of uniform names to a function that returns a value. This map
+     * is combined with the overall uniform map used by the {@link DrawCommand}
+     *
+     * @type {Object<string, Function>}
+     * @readonly
+     * @private
+     */
+    this.uniformMap = buildUniformMap(this);
 
-  /**
-   * A collection of variables used in <code>vertexShaderText</code>. This
-   * is used only for optimizations in {@link CustomShaderPipelineStage}.
-   * @type {VertexVariableSets}
-   * @private
-   */
-  this.usedVariablesVertex = {
-    attributeSet: {},
-    featureIdSet: {},
-    metadataSet: {},
-  };
-  /**
-   * A collection of variables used in <code>fragmentShaderText</code>. This
-   * is used only for optimizations in {@link CustomShaderPipelineStage}.
-   * @type {FragmentVariableSets}
-   * @private
-   */
-  this.usedVariablesFragment = {
-    attributeSet: {},
-    featureIdSet: {},
-    metadataSet: {},
-    materialSet: {},
-  };
+    /**
+     * A collection of variables used in <code>vertexShaderText</code>. This
+     * is used only for optimizations in {@link CustomShaderPipelineStage}.
+     * @type {VertexVariableSets}
+     * @private
+     */
+    this.usedVariablesVertex = {
+        attributeSet: {},
+        featureIdSet: {},
+        metadataSet: {},
+    };
+    /**
+     * A collection of variables used in <code>fragmentShaderText</code>. This
+     * is used only for optimizations in {@link CustomShaderPipelineStage}.
+     * @type {FragmentVariableSets}
+     * @private
+     */
+    this.usedVariablesFragment = {
+        attributeSet: {},
+        featureIdSet: {},
+        metadataSet: {},
+        materialSet: {},
+    };
 
-  findUsedVariables(this);
-  validateBuiltinVariables(this);
+    findUsedVariables(this);
+    validateBuiltinVariables(this);
 }
 
 function buildUniformMap(customShader) {
-  const uniforms = customShader.uniforms;
-  const uniformMap = {};
-  for (const uniformName in uniforms) {
-    if (uniforms.hasOwnProperty(uniformName)) {
-      const uniform = uniforms[uniformName];
-      const type = uniform.type;
-      //>>includeStart('debug', pragmas.debug);
-      if (type === UniformType.SAMPLER_CUBE) {
-        throw new DeveloperError(
-          "CustomShader does not support samplerCube uniforms",
-        );
-      }
-      //>>includeEnd('debug');
+    const uniforms = customShader.uniforms;
+    const uniformMap = {};
+    for (const uniformName in uniforms) {
+        if (uniforms.hasOwnProperty(uniformName)) {
+            const uniform = uniforms[uniformName];
+            const type = uniform.type;
+            //>>includeStart('debug', pragmas.debug);
+            if (type === UniformType.SAMPLER_CUBE) {
+                throw new DeveloperError(
+                    "CustomShader does not support samplerCube uniforms",
+                );
+            }
+            //>>includeEnd('debug');
 
-      if (type === UniformType.SAMPLER_2D) {
-        customShader._textureManager.loadTexture2D(uniformName, uniform.value);
-        uniformMap[uniformName] = createUniformTexture2DFunction(
-          customShader,
-          uniformName,
-        );
-      } else {
-        uniformMap[uniformName] = createUniformFunction(
-          customShader,
-          uniformName,
-        );
-      }
+            if (type === UniformType.SAMPLER_2D) {
+                customShader._textureManager.loadTexture2D(
+                    uniformName,
+                    uniform.value,
+                );
+                uniformMap[uniformName] = createUniformTexture2DFunction(
+                    customShader,
+                    uniformName,
+                );
+            } else {
+                uniformMap[uniformName] = createUniformFunction(
+                    customShader,
+                    uniformName,
+                );
+            }
+        }
     }
-  }
-  return uniformMap;
+    return uniformMap;
 }
 
 function createUniformTexture2DFunction(customShader, uniformName) {
-  return function () {
-    return (
-      customShader._textureManager.getTexture(uniformName) ??
-      customShader._defaultTexture
-    );
-  };
+    return function () {
+        return (
+            customShader._textureManager.getTexture(uniformName) ??
+            customShader._defaultTexture
+        );
+    };
 }
 
 function createUniformFunction(customShader, uniformName) {
-  return function () {
-    return customShader.uniforms[uniformName].value;
-  };
+    return function () {
+        return customShader.uniforms[uniformName].value;
+    };
 }
 
 function getVariables(shaderText, regex, outputSet) {
-  let match;
-  while ((match = regex.exec(shaderText)) !== null) {
-    const variableName = match[1];
+    let match;
+    while ((match = regex.exec(shaderText)) !== null) {
+        const variableName = match[1];
 
-    // Using a dictionary like a set. The value doesn't
-    // matter, as this will only be used for queries such as
-    // if (set.hasOwnProperty(variableName)) { ... }
-    outputSet[variableName] = true;
-  }
+        // Using a dictionary like a set. The value doesn't
+        // matter, as this will only be used for queries such as
+        // if (set.hasOwnProperty(variableName)) { ... }
+        outputSet[variableName] = true;
+    }
 }
 
 function findUsedVariables(customShader) {
-  const attributeRegex = /[vf]sInput\.attributes\.(\w+)/g;
-  const featureIdRegex = /[vf]sInput\.featureIds\.(\w+)/g;
-  const metadataRegex = /[vf]sInput\.metadata.(\w+)/g;
-  let attributeSet;
+    const attributeRegex = /[vf]sInput\.attributes\.(\w+)/g;
+    const featureIdRegex = /[vf]sInput\.featureIds\.(\w+)/g;
+    const metadataRegex = /[vf]sInput\.metadata.(\w+)/g;
+    let attributeSet;
 
-  const vertexShaderText = customShader.vertexShaderText;
-  if (defined(vertexShaderText)) {
-    attributeSet = customShader.usedVariablesVertex.attributeSet;
-    getVariables(vertexShaderText, attributeRegex, attributeSet);
+    const vertexShaderText = customShader.vertexShaderText;
+    if (defined(vertexShaderText)) {
+        attributeSet = customShader.usedVariablesVertex.attributeSet;
+        getVariables(vertexShaderText, attributeRegex, attributeSet);
 
-    attributeSet = customShader.usedVariablesVertex.featureIdSet;
-    getVariables(vertexShaderText, featureIdRegex, attributeSet);
+        attributeSet = customShader.usedVariablesVertex.featureIdSet;
+        getVariables(vertexShaderText, featureIdRegex, attributeSet);
 
-    attributeSet = customShader.usedVariablesVertex.metadataSet;
-    getVariables(vertexShaderText, metadataRegex, attributeSet);
-  }
+        attributeSet = customShader.usedVariablesVertex.metadataSet;
+        getVariables(vertexShaderText, metadataRegex, attributeSet);
+    }
 
-  const fragmentShaderText = customShader.fragmentShaderText;
-  if (defined(fragmentShaderText)) {
-    attributeSet = customShader.usedVariablesFragment.attributeSet;
-    getVariables(fragmentShaderText, attributeRegex, attributeSet);
+    const fragmentShaderText = customShader.fragmentShaderText;
+    if (defined(fragmentShaderText)) {
+        attributeSet = customShader.usedVariablesFragment.attributeSet;
+        getVariables(fragmentShaderText, attributeRegex, attributeSet);
 
-    attributeSet = customShader.usedVariablesFragment.featureIdSet;
-    getVariables(fragmentShaderText, featureIdRegex, attributeSet);
+        attributeSet = customShader.usedVariablesFragment.featureIdSet;
+        getVariables(fragmentShaderText, featureIdRegex, attributeSet);
 
-    attributeSet = customShader.usedVariablesFragment.metadataSet;
-    getVariables(fragmentShaderText, metadataRegex, attributeSet);
+        attributeSet = customShader.usedVariablesFragment.metadataSet;
+        getVariables(fragmentShaderText, metadataRegex, attributeSet);
 
-    const materialRegex = /material\.(\w+)/g;
-    const materialSet = customShader.usedVariablesFragment.materialSet;
-    getVariables(fragmentShaderText, materialRegex, materialSet);
-  }
+        const materialRegex = /material\.(\w+)/g;
+        const materialSet = customShader.usedVariablesFragment.materialSet;
+        getVariables(fragmentShaderText, materialRegex, materialSet);
+    }
 }
 
 function expandCoordinateAbbreviations(variableName) {
-  const modelCoordinatesRegex = /^.*MC$/;
-  const worldCoordinatesRegex = /^.*WC$/;
-  const eyeCoordinatesRegex = /^.*EC$/;
+    const modelCoordinatesRegex = /^.*MC$/;
+    const worldCoordinatesRegex = /^.*WC$/;
+    const eyeCoordinatesRegex = /^.*EC$/;
 
-  if (modelCoordinatesRegex.test(variableName)) {
-    return `${variableName} (model coordinates)`;
-  }
+    if (modelCoordinatesRegex.test(variableName)) {
+        return `${variableName} (model coordinates)`;
+    }
 
-  if (worldCoordinatesRegex.test(variableName)) {
-    return `${variableName} (Cartesian world coordinates)`;
-  }
+    if (worldCoordinatesRegex.test(variableName)) {
+        return `${variableName} (Cartesian world coordinates)`;
+    }
 
-  if (eyeCoordinatesRegex.test(variableName)) {
-    return `${variableName} (eye coordinates)`;
-  }
+    if (eyeCoordinatesRegex.test(variableName)) {
+        return `${variableName} (eye coordinates)`;
+    }
 
-  return variableName;
+    return variableName;
 }
 
 function validateVariableUsage(
-  variableSet,
-  incorrectVariable,
-  correctVariable,
-  vertexOrFragment,
+    variableSet,
+    incorrectVariable,
+    correctVariable,
+    vertexOrFragment,
 ) {
-  if (variableSet.hasOwnProperty(incorrectVariable)) {
-    const message = `${expandCoordinateAbbreviations(
-      incorrectVariable,
-    )} is not available in the ${vertexOrFragment} shader. Did you mean ${expandCoordinateAbbreviations(
-      correctVariable,
-    )} instead?`;
-    throw new DeveloperError(message);
-  }
+    if (variableSet.hasOwnProperty(incorrectVariable)) {
+        const message = `${expandCoordinateAbbreviations(
+            incorrectVariable,
+        )} is not available in the ${vertexOrFragment} shader. Did you mean ${expandCoordinateAbbreviations(
+            correctVariable,
+        )} instead?`;
+        throw new DeveloperError(message);
+    }
 }
 
 function validateBuiltinVariables(customShader) {
-  const attributesVS = customShader.usedVariablesVertex.attributeSet;
+    const attributesVS = customShader.usedVariablesVertex.attributeSet;
 
-  // names without MC/WC/EC are ambiguous
-  validateVariableUsage(attributesVS, "position", "positionMC", "vertex");
-  validateVariableUsage(attributesVS, "normal", "normalMC", "vertex");
-  validateVariableUsage(attributesVS, "tangent", "tangentMC", "vertex");
-  validateVariableUsage(attributesVS, "bitangent", "bitangentMC", "vertex");
+    // names without MC/WC/EC are ambiguous
+    validateVariableUsage(attributesVS, "position", "positionMC", "vertex");
+    validateVariableUsage(attributesVS, "normal", "normalMC", "vertex");
+    validateVariableUsage(attributesVS, "tangent", "tangentMC", "vertex");
+    validateVariableUsage(attributesVS, "bitangent", "bitangentMC", "vertex");
 
-  // world and eye coordinate positions are only available in the fragment shader.
-  validateVariableUsage(attributesVS, "positionWC", "positionMC", "vertex");
-  validateVariableUsage(attributesVS, "positionEC", "positionMC", "vertex");
+    // world and eye coordinate positions are only available in the fragment shader.
+    validateVariableUsage(attributesVS, "positionWC", "positionMC", "vertex");
+    validateVariableUsage(attributesVS, "positionEC", "positionMC", "vertex");
 
-  // normal, tangent and bitangent are in model coordinates in the vertex shader
-  validateVariableUsage(attributesVS, "normalEC", "normalMC", "vertex");
-  validateVariableUsage(attributesVS, "tangentEC", "tangentMC", "vertex");
-  validateVariableUsage(attributesVS, "bitangentEC", "bitangentMC", "vertex");
+    // normal, tangent and bitangent are in model coordinates in the vertex shader
+    validateVariableUsage(attributesVS, "normalEC", "normalMC", "vertex");
+    validateVariableUsage(attributesVS, "tangentEC", "tangentMC", "vertex");
+    validateVariableUsage(attributesVS, "bitangentEC", "bitangentMC", "vertex");
 
-  const attributesFS = customShader.usedVariablesFragment.attributeSet;
+    const attributesFS = customShader.usedVariablesFragment.attributeSet;
 
-  // names without MC/WC/EC are ambiguous
-  validateVariableUsage(attributesFS, "position", "positionEC", "fragment");
-  validateVariableUsage(attributesFS, "normal", "normalEC", "fragment");
-  validateVariableUsage(attributesFS, "tangent", "tangentEC", "fragment");
-  validateVariableUsage(attributesFS, "bitangent", "bitangentEC", "fragment");
+    // names without MC/WC/EC are ambiguous
+    validateVariableUsage(attributesFS, "position", "positionEC", "fragment");
+    validateVariableUsage(attributesFS, "normal", "normalEC", "fragment");
+    validateVariableUsage(attributesFS, "tangent", "tangentEC", "fragment");
+    validateVariableUsage(attributesFS, "bitangent", "bitangentEC", "fragment");
 
-  // normal, tangent, and bitangent are in eye coordinates in the fragment
-  // shader.
-  validateVariableUsage(attributesFS, "normalMC", "normalEC", "fragment");
-  validateVariableUsage(attributesFS, "tangentMC", "tangentEC", "fragment");
-  validateVariableUsage(attributesFS, "bitangentMC", "bitangentEC", "fragment");
+    // normal, tangent, and bitangent are in eye coordinates in the fragment
+    // shader.
+    validateVariableUsage(attributesFS, "normalMC", "normalEC", "fragment");
+    validateVariableUsage(attributesFS, "tangentMC", "tangentEC", "fragment");
+    validateVariableUsage(
+        attributesFS,
+        "bitangentMC",
+        "bitangentEC",
+        "fragment",
+    );
 }
 
 /**
@@ -406,30 +414,30 @@ function validateBuiltinVariables(customShader) {
  * @param {boolean|number|Cartesian2|Cartesian3|Cartesian4|Matrix2|Matrix3|Matrix4|string|Resource|TextureUniform} value The new value of the uniform.
  */
 CustomShader.prototype.setUniform = function (uniformName, value) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("uniformName", uniformName);
-  Check.defined("value", value);
-  if (!defined(this.uniforms[uniformName])) {
-    throw new DeveloperError(
-      `Uniform ${uniformName} must be declared in the CustomShader constructor.`,
-    );
-  }
-  //>>includeEnd('debug');
-  const uniform = this.uniforms[uniformName];
-  if (uniform.type === UniformType.SAMPLER_2D) {
-    // Textures are loaded asynchronously
-    this._textureManager.loadTexture2D(uniformName, value);
-  } else if (defined(value.clone)) {
-    // clone Cartesian and Matrix types.
-    uniform.value = value.clone(uniform.value);
-  } else {
-    uniform.value = value;
-  }
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("uniformName", uniformName);
+    Check.defined("value", value);
+    if (!defined(this.uniforms[uniformName])) {
+        throw new DeveloperError(
+            `Uniform ${uniformName} must be declared in the CustomShader constructor.`,
+        );
+    }
+    //>>includeEnd('debug');
+    const uniform = this.uniforms[uniformName];
+    if (uniform.type === UniformType.SAMPLER_2D) {
+        // Textures are loaded asynchronously
+        this._textureManager.loadTexture2D(uniformName, value);
+    } else if (defined(value.clone)) {
+        // clone Cartesian and Matrix types.
+        uniform.value = value.clone(uniform.value);
+    } else {
+        uniform.value = value;
+    }
 };
 
 CustomShader.prototype.update = function (frameState) {
-  this._defaultTexture = frameState.context.defaultTexture;
-  this._textureManager.update(frameState);
+    this._defaultTexture = frameState.context.defaultTexture;
+    this._textureManager.update(frameState);
 };
 
 /**
@@ -443,7 +451,7 @@ CustomShader.prototype.update = function (frameState) {
  * @see CustomShader#destroy
  */
 CustomShader.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -462,8 +470,9 @@ CustomShader.prototype.isDestroyed = function () {
  * @see CustomShader#isDestroyed
  */
 CustomShader.prototype.destroy = function () {
-  this._textureManager = this._textureManager && this._textureManager.destroy();
-  destroyObject(this);
+    this._textureManager =
+        this._textureManager && this._textureManager.destroy();
+    destroyObject(this);
 };
 
 export default CustomShader;

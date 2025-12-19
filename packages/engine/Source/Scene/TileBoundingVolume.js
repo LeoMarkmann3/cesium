@@ -39,7 +39,7 @@ TileBoundingVolume.prototype.boundingSphere = undefined;
  *                  Returns 0.0 if the camera is inside the tile.
  */
 TileBoundingVolume.prototype.distanceToCamera = function (frameState) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -52,7 +52,7 @@ TileBoundingVolume.prototype.distanceToCamera = function (frameState) {
  *                      intersects the plane.
  */
 TileBoundingVolume.prototype.intersectPlane = function (plane) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -63,6 +63,6 @@ TileBoundingVolume.prototype.intersectPlane = function (plane) {
  * @return {Primitive}
  */
 TileBoundingVolume.prototype.createDebugVolume = function (color) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 export default TileBoundingVolume;

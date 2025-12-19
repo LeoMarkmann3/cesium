@@ -13,7 +13,7 @@ import LightingModel from "./LightingModel.js";
  * @private
  */
 const LightingPipelineStage = {
-  name: "LightingPipelineStage", // Helps with debugging
+    name: "LightingPipelineStage", // Helps with debugging
 };
 
 /**
@@ -28,46 +28,46 @@ const LightingPipelineStage = {
  * @private
  */
 LightingPipelineStage.process = function (renderResources, primitive) {
-  const { model, lightingOptions, shaderBuilder } = renderResources;
+    const { model, lightingOptions, shaderBuilder } = renderResources;
 
-  if (defined(model.lightColor)) {
-    shaderBuilder.addDefine(
-      "USE_CUSTOM_LIGHT_COLOR",
-      undefined,
-      ShaderDestination.FRAGMENT,
-    );
+    if (defined(model.lightColor)) {
+        shaderBuilder.addDefine(
+            "USE_CUSTOM_LIGHT_COLOR",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
 
-    shaderBuilder.addUniform(
-      "vec3",
-      "model_lightColorHdr",
-      ShaderDestination.FRAGMENT,
-    );
+        shaderBuilder.addUniform(
+            "vec3",
+            "model_lightColorHdr",
+            ShaderDestination.FRAGMENT,
+        );
 
-    const uniformMap = renderResources.uniformMap;
-    uniformMap.model_lightColorHdr = function () {
-      return model.lightColor;
-    };
-  }
+        const uniformMap = renderResources.uniformMap;
+        uniformMap.model_lightColorHdr = function () {
+            return model.lightColor;
+        };
+    }
 
-  // The lighting model is always set by the material. However, custom shaders
-  // can override this.
-  const { lightingModel } = lightingOptions;
+    // The lighting model is always set by the material. However, custom shaders
+    // can override this.
+    const { lightingModel } = lightingOptions;
 
-  if (lightingModel === LightingModel.PBR) {
-    shaderBuilder.addDefine(
-      "LIGHTING_PBR",
-      undefined,
-      ShaderDestination.FRAGMENT,
-    );
-  } else {
-    shaderBuilder.addDefine(
-      "LIGHTING_UNLIT",
-      undefined,
-      ShaderDestination.FRAGMENT,
-    );
-  }
+    if (lightingModel === LightingModel.PBR) {
+        shaderBuilder.addDefine(
+            "LIGHTING_PBR",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
+    } else {
+        shaderBuilder.addDefine(
+            "LIGHTING_UNLIT",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
+    }
 
-  shaderBuilder.addFragmentLines(LightingStageFS);
+    shaderBuilder.addFragmentLines(LightingStageFS);
 };
 
 export default LightingPipelineStage;

@@ -22,37 +22,37 @@ import defined from "./defined.js";
  * evt.removeEventListener(MyObject.prototype.myListener);
  */
 function Event() {
-  /**
-   * @type {Map<Listener,Set<object>>}
-   * @private
-   */
-  this._listeners = new Map();
-  /**
-   * @type {Map<Listener,Set<object>>}
-   * @private
-   */
-  this._toRemove = new Map();
-  /**
-   * @type {Map<Listener,Set<object>>}
-   * @private
-   */
-  this._toAdd = new Map();
-  this._invokingListeners = false;
-  this._listenerCount = 0; // Tracks number of listener + scope pairs
+    /**
+     * @type {Map<Listener,Set<object>>}
+     * @private
+     */
+    this._listeners = new Map();
+    /**
+     * @type {Map<Listener,Set<object>>}
+     * @private
+     */
+    this._toRemove = new Map();
+    /**
+     * @type {Map<Listener,Set<object>>}
+     * @private
+     */
+    this._toAdd = new Map();
+    this._invokingListeners = false;
+    this._listenerCount = 0; // Tracks number of listener + scope pairs
 }
 
 Object.defineProperties(Event.prototype, {
-  /**
-   * The number of listeners currently subscribed to the event.
-   * @memberof Event.prototype
-   * @type {number}
-   * @readonly
-   */
-  numberOfListeners: {
-    get: function () {
-      return this._listenerCount;
+    /**
+     * The number of listeners currently subscribed to the event.
+     * @memberof Event.prototype
+     * @type {number}
+     * @readonly
+     */
+    numberOfListeners: {
+        get: function () {
+            return this._listenerCount;
+        },
     },
-  },
 });
 
 /**
@@ -69,35 +69,35 @@ Object.defineProperties(Event.prototype, {
  * @see Event#removeEventListener
  */
 Event.prototype.addEventListener = function (listener, scope) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.func("listener", listener);
-  //>>includeEnd('debug');
-  const event = this;
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.func("listener", listener);
+    //>>includeEnd('debug');
+    const event = this;
 
-  const listenerMap = event._invokingListeners
-    ? event._toAdd
-    : event._listeners;
-  const added = addEventListener(this, listenerMap, listener, scope);
-  if (added) {
-    event._listenerCount++;
-  }
+    const listenerMap = event._invokingListeners
+        ? event._toAdd
+        : event._listeners;
+    const added = addEventListener(this, listenerMap, listener, scope);
+    if (added) {
+        event._listenerCount++;
+    }
 
-  return function () {
-    event.removeEventListener(listener, scope);
-  };
+    return function () {
+        event.removeEventListener(listener, scope);
+    };
 };
 
 function addEventListener(event, listenerMap, listener, scope) {
-  if (!listenerMap.has(listener)) {
-    listenerMap.set(listener, new Set());
-  }
-  const scopes = listenerMap.get(listener);
-  if (!scopes.has(scope)) {
-    scopes.add(scope);
-    return true;
-  }
+    if (!listenerMap.has(listener)) {
+        listenerMap.set(listener, new Set());
+    }
+    const scopes = listenerMap.get(listener);
+    if (!scopes.has(scope)) {
+        scopes.add(scope);
+        return true;
+    }
 
-  return false;
+    return false;
 }
 
 /**
@@ -111,50 +111,50 @@ function addEventListener(event, listenerMap, listener, scope) {
  * @see Event#raiseEvent
  */
 Event.prototype.removeEventListener = function (listener, scope) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.func("listener", listener);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.func("listener", listener);
+    //>>includeEnd('debug');
 
-  const removedFromListeners = removeEventListener(
-    this,
-    this._listeners,
-    listener,
-    scope,
-  );
-  const removedFromToAdd = removeEventListener(
-    this,
-    this._toAdd,
-    listener,
-    scope,
-  );
+    const removedFromListeners = removeEventListener(
+        this,
+        this._listeners,
+        listener,
+        scope,
+    );
+    const removedFromToAdd = removeEventListener(
+        this,
+        this._toAdd,
+        listener,
+        scope,
+    );
 
-  const removed = removedFromListeners || removedFromToAdd;
-  if (removed) {
-    this._listenerCount--;
-  }
+    const removed = removedFromListeners || removedFromToAdd;
+    if (removed) {
+        this._listenerCount--;
+    }
 
-  return removed;
+    return removed;
 };
 
 function removeEventListener(event, listenerMap, listener, scope) {
-  const scopes = listenerMap.get(listener);
-  if (!scopes || !scopes.has(scope)) {
-    return false;
-  }
-
-  if (event._invokingListeners) {
-    if (!addEventListener(event, event._toRemove, listener, scope)) {
-      // Already marked for removal
-      return false;
+    const scopes = listenerMap.get(listener);
+    if (!scopes || !scopes.has(scope)) {
+        return false;
     }
-  } else {
-    scopes.delete(scope);
-    if (scopes.size === 0) {
-      listenerMap.delete(listener);
-    }
-  }
 
-  return true;
+    if (event._invokingListeners) {
+        if (!addEventListener(event, event._toRemove, listener, scope)) {
+            // Already marked for removal
+            return false;
+        }
+    } else {
+        scopes.delete(scope);
+        if (scopes.size === 0) {
+            listenerMap.delete(listener);
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -166,35 +166,35 @@ function removeEventListener(event, listenerMap, listener, scope) {
  * @see Event#removeEventListener
  */
 Event.prototype.raiseEvent = function () {
-  this._invokingListeners = true;
+    this._invokingListeners = true;
 
-  for (const [listener, scopes] of this._listeners.entries()) {
-    if (!defined(listener)) {
-      continue;
+    for (const [listener, scopes] of this._listeners.entries()) {
+        if (!defined(listener)) {
+            continue;
+        }
+
+        for (const scope of scopes) {
+            listener.apply(scope, arguments);
+        }
     }
 
-    for (const scope of scopes) {
-      listener.apply(scope, arguments);
-    }
-  }
+    this._invokingListeners = false;
 
-  this._invokingListeners = false;
-
-  // Actually add items marked for addition
-  for (const [listener, scopes] of this._toAdd.entries()) {
-    for (const scope of scopes) {
-      addEventListener(this, this._listeners, listener, scope);
+    // Actually add items marked for addition
+    for (const [listener, scopes] of this._toAdd.entries()) {
+        for (const scope of scopes) {
+            addEventListener(this, this._listeners, listener, scope);
+        }
     }
-  }
-  this._toAdd.clear();
+    this._toAdd.clear();
 
-  // Actually remove items marked for removal
-  for (const [listener, scopes] of this._toRemove.entries()) {
-    for (const scope of scopes) {
-      removeEventListener(this, this._listeners, listener, scope);
+    // Actually remove items marked for removal
+    for (const [listener, scopes] of this._toRemove.entries()) {
+        for (const scope of scopes) {
+            removeEventListener(this, this._listeners, listener, scope);
+        }
     }
-  }
-  this._toRemove.clear();
+    this._toRemove.clear();
 };
 
 /**

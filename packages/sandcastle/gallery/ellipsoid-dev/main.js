@@ -12,31 +12,33 @@ const radii = new Cesium.Cartesian3(200000.0, 200000.0, 300000.0);
 // globe surface.
 const positionOnEllipsoid = Cesium.Cartesian3.fromDegrees(-100.0, 40.0);
 const modelMatrix = Cesium.Matrix4.multiplyByTranslation(
-  Cesium.Transforms.eastNorthUpToFixedFrame(positionOnEllipsoid),
-  new Cesium.Cartesian3(0.0, 0.0, radii.z),
-  new Cesium.Matrix4(),
+    Cesium.Transforms.eastNorthUpToFixedFrame(positionOnEllipsoid),
+    new Cesium.Cartesian3(0.0, 0.0, radii.z),
+    new Cesium.Matrix4(),
 );
 // Create a ellipsoid geometry.
 const ellipsoidGeometry = new Cesium.EllipsoidGeometry({
-  vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
-  radii: radii,
+    vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+    radii: radii,
 });
 // Create a geometry instance using the geometry
 // and model matrix created above.
 const ellipsoidInstance = new Cesium.GeometryInstance({
-  geometry: ellipsoidGeometry,
-  modelMatrix: modelMatrix,
-  attributes: {
-    color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.BLUE),
-  },
+    geometry: ellipsoidGeometry,
+    modelMatrix: modelMatrix,
+    attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+            Cesium.Color.BLUE,
+        ),
+    },
 });
 // Add the geometry instance to primitives.
 scene.primitives.add(
-  new Cesium.Primitive({
-    geometryInstances: ellipsoidInstance,
-    appearance: new Cesium.PerInstanceColorAppearance({
-      translucent: false,
-      closed: true,
+    new Cesium.Primitive({
+        geometryInstances: ellipsoidInstance,
+        appearance: new Cesium.PerInstanceColorAppearance({
+            translucent: false,
+            closed: true,
+        }),
     }),
-  }),
 );

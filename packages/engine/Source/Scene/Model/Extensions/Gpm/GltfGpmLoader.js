@@ -32,18 +32,18 @@ function GltfGpmLoader() {}
  * @returns {Matrix3} The Matrix3
  */
 function createCovarianceMatrixFromUpperTriangle(array) {
-  const covarianceMatrix = new Matrix3(
-    array[0],
-    array[1],
-    array[3],
-    array[1],
-    array[2],
-    array[4],
-    array[3],
-    array[4],
-    array[5],
-  );
-  return covarianceMatrix;
+    const covarianceMatrix = new Matrix3(
+        array[0],
+        array[1],
+        array[3],
+        array[1],
+        array[2],
+        array[4],
+        array[3],
+        array[4],
+        array[5],
+    );
+    return covarianceMatrix;
 }
 
 /**
@@ -53,21 +53,21 @@ function createCovarianceMatrixFromUpperTriangle(array) {
  * @returns {AnchorPointDirect} The direct anchor point
  */
 function createAnchorPointDirect(anchorPointDirectJson) {
-  const position = Cartesian3.fromArray(
-    anchorPointDirectJson.position,
-    0,
-    new Cartesian3(),
-  );
-  const adjustmentParams = Cartesian3.fromArray(
-    anchorPointDirectJson.adjustmentParams,
-    0,
-    new Cartesian3(),
-  );
-  const anchorPointDirect = new AnchorPointDirect({
-    position: position,
-    adjustmentParams: adjustmentParams,
-  });
-  return anchorPointDirect;
+    const position = Cartesian3.fromArray(
+        anchorPointDirectJson.position,
+        0,
+        new Cartesian3(),
+    );
+    const adjustmentParams = Cartesian3.fromArray(
+        anchorPointDirectJson.adjustmentParams,
+        0,
+        new Cartesian3(),
+    );
+    const anchorPointDirect = new AnchorPointDirect({
+        position: position,
+        adjustmentParams: adjustmentParams,
+    });
+    return anchorPointDirect;
 }
 
 /**
@@ -77,25 +77,25 @@ function createAnchorPointDirect(anchorPointDirectJson) {
  * @returns {AnchorPointIndirect} The indirect anchor point
  */
 function createAnchorPointIndirect(anchorPointIndirectJson) {
-  const position = Cartesian3.fromArray(
-    anchorPointIndirectJson.position,
-    0,
-    new Cartesian3(),
-  );
-  const adjustmentParams = Cartesian3.fromArray(
-    anchorPointIndirectJson.adjustmentParams,
-    0,
-    new Cartesian3(),
-  );
-  const covarianceMatrix = createCovarianceMatrixFromUpperTriangle(
-    anchorPointIndirectJson.covarianceMatrix,
-  );
-  const anchorPointIndirect = new AnchorPointIndirect({
-    position: position,
-    adjustmentParams: adjustmentParams,
-    covarianceMatrix: covarianceMatrix,
-  });
-  return anchorPointIndirect;
+    const position = Cartesian3.fromArray(
+        anchorPointIndirectJson.position,
+        0,
+        new Cartesian3(),
+    );
+    const adjustmentParams = Cartesian3.fromArray(
+        anchorPointIndirectJson.adjustmentParams,
+        0,
+        new Cartesian3(),
+    );
+    const covarianceMatrix = createCovarianceMatrixFromUpperTriangle(
+        anchorPointIndirectJson.covarianceMatrix,
+    );
+    const anchorPointIndirect = new AnchorPointIndirect({
+        position: position,
+        adjustmentParams: adjustmentParams,
+        covarianceMatrix: covarianceMatrix,
+    });
+    return anchorPointIndirect;
 }
 
 /**
@@ -105,28 +105,28 @@ function createAnchorPointIndirect(anchorPointIndirectJson) {
  * @returns {CorrelationGroup} The correlation group
  */
 function createCorrelationGroup(correlationGroupJson) {
-  const groupFlags = correlationGroupJson.groupFlags;
-  const rotationThetas = Cartesian3.fromArray(
-    correlationGroupJson.rotationThetas,
-    0,
-    new Cartesian3(),
-  );
-  const params = [];
-  for (const paramJson of correlationGroupJson.params) {
-    const param = new Spdcf({
-      A: paramJson.A,
-      alpha: paramJson.alpha,
-      beta: paramJson.beta,
-      T: paramJson.T,
+    const groupFlags = correlationGroupJson.groupFlags;
+    const rotationThetas = Cartesian3.fromArray(
+        correlationGroupJson.rotationThetas,
+        0,
+        new Cartesian3(),
+    );
+    const params = [];
+    for (const paramJson of correlationGroupJson.params) {
+        const param = new Spdcf({
+            A: paramJson.A,
+            alpha: paramJson.alpha,
+            beta: paramJson.beta,
+            T: paramJson.T,
+        });
+        params.push(param);
+    }
+    const correlationGroup = new CorrelationGroup({
+        groupFlags: groupFlags,
+        rotationThetas: rotationThetas,
+        params: params,
     });
-    params.push(param);
-  }
-  const correlationGroup = new CorrelationGroup({
-    groupFlags: groupFlags,
-    rotationThetas: rotationThetas,
-    params: params,
-  });
-  return correlationGroup;
+    return correlationGroup;
 }
 
 /**
@@ -139,20 +139,20 @@ function createCorrelationGroup(correlationGroupJson) {
  * @private
  */
 GltfGpmLoader.load = function (gltfGpmLocalJson) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("gltfGpmLocalJson", gltfGpmLocalJson);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("gltfGpmLocalJson", gltfGpmLocalJson);
+    //>>includeEnd('debug');
 
-  const storageType = gltfGpmLocalJson.storageType;
-  if (storageType === StorageType.Direct) {
-    return GltfGpmLoader.loadDirect(gltfGpmLocalJson);
-  }
-  if (storageType === StorageType.Indirect) {
-    return GltfGpmLoader.loadIndirect(gltfGpmLocalJson);
-  }
-  throw new RuntimeError(
-    `Invalid storage type in NGA_gpm_local - expected 'Direct' or 'Indirect', but found ${storageType}`,
-  );
+    const storageType = gltfGpmLocalJson.storageType;
+    if (storageType === StorageType.Direct) {
+        return GltfGpmLoader.loadDirect(gltfGpmLocalJson);
+    }
+    if (storageType === StorageType.Indirect) {
+        return GltfGpmLoader.loadIndirect(gltfGpmLocalJson);
+    }
+    throw new RuntimeError(
+        `Invalid storage type in NGA_gpm_local - expected 'Direct' or 'Indirect', but found ${storageType}`,
+    );
 };
 
 /**
@@ -166,34 +166,36 @@ GltfGpmLoader.load = function (gltfGpmLocalJson) {
  * @private
  */
 GltfGpmLoader.loadDirect = function (gltfGpmLocalJson) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("gltfGpmLocalJson", gltfGpmLocalJson);
-  Check.typeOf.object(
-    "gltfGpmLocalJson.anchorPointsDirect",
-    gltfGpmLocalJson.anchorPointsDirect,
-  );
-  Check.typeOf.object(
-    "gltfGpmLocalJson.covarianceDirectUpperTriangle",
-    gltfGpmLocalJson.covarianceDirectUpperTriangle,
-  );
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("gltfGpmLocalJson", gltfGpmLocalJson);
+    Check.typeOf.object(
+        "gltfGpmLocalJson.anchorPointsDirect",
+        gltfGpmLocalJson.anchorPointsDirect,
+    );
+    Check.typeOf.object(
+        "gltfGpmLocalJson.covarianceDirectUpperTriangle",
+        gltfGpmLocalJson.covarianceDirectUpperTriangle,
+    );
+    //>>includeEnd('debug');
 
-  const anchorPointsDirect = [];
-  const anchorPointsDirectJson = gltfGpmLocalJson.anchorPointsDirect;
-  for (const anchorPointDirectJson of anchorPointsDirectJson) {
-    const anchorPointDirect = createAnchorPointDirect(anchorPointDirectJson);
-    anchorPointsDirect.push(anchorPointDirect);
-  }
-  const covarianceDirect = createCovarianceMatrixFromUpperTriangle(
-    gltfGpmLocalJson.covarianceDirectUpperTriangle,
-  );
+    const anchorPointsDirect = [];
+    const anchorPointsDirectJson = gltfGpmLocalJson.anchorPointsDirect;
+    for (const anchorPointDirectJson of anchorPointsDirectJson) {
+        const anchorPointDirect = createAnchorPointDirect(
+            anchorPointDirectJson,
+        );
+        anchorPointsDirect.push(anchorPointDirect);
+    }
+    const covarianceDirect = createCovarianceMatrixFromUpperTriangle(
+        gltfGpmLocalJson.covarianceDirectUpperTriangle,
+    );
 
-  const gltfGpmLocal = new GltfGpmLocal({
-    storageType: StorageType.Direct,
-    anchorPointsDirect: anchorPointsDirect,
-    covarianceDirect: covarianceDirect,
-  });
-  return gltfGpmLocal;
+    const gltfGpmLocal = new GltfGpmLocal({
+        storageType: StorageType.Direct,
+        anchorPointsDirect: anchorPointsDirect,
+        covarianceDirect: covarianceDirect,
+    });
+    return gltfGpmLocal;
 };
 
 /**
@@ -207,42 +209,42 @@ GltfGpmLoader.loadDirect = function (gltfGpmLocalJson) {
  * @private
  */
 GltfGpmLoader.loadIndirect = function (gltfGpmLocalJson) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("gltfGpmLocalJson", gltfGpmLocalJson);
-  Check.typeOf.object(
-    "gltfGpmLocalJson.anchorPointsIndirect",
-    gltfGpmLocalJson.anchorPointsIndirect,
-  );
-  Check.typeOf.object(
-    "gltfGpmLocalJson.intraTileCorrelationGroups",
-    gltfGpmLocalJson.intraTileCorrelationGroups,
-  );
-  //>>includeEnd('debug');
-
-  const anchorPointsIndirect = [];
-  const anchorPointsIndirectJson = gltfGpmLocalJson.anchorPointsIndirect;
-  for (const anchorPointIndirectJson of anchorPointsIndirectJson) {
-    const anchorPointIndirect = createAnchorPointIndirect(
-      anchorPointIndirectJson,
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("gltfGpmLocalJson", gltfGpmLocalJson);
+    Check.typeOf.object(
+        "gltfGpmLocalJson.anchorPointsIndirect",
+        gltfGpmLocalJson.anchorPointsIndirect,
     );
-    anchorPointsIndirect.push(anchorPointIndirect);
-  }
+    Check.typeOf.object(
+        "gltfGpmLocalJson.intraTileCorrelationGroups",
+        gltfGpmLocalJson.intraTileCorrelationGroups,
+    );
+    //>>includeEnd('debug');
 
-  const intraTileCorrelationGroupsJson =
-    gltfGpmLocalJson.intraTileCorrelationGroups;
-  const intraTileCorrelationGroups = [];
+    const anchorPointsIndirect = [];
+    const anchorPointsIndirectJson = gltfGpmLocalJson.anchorPointsIndirect;
+    for (const anchorPointIndirectJson of anchorPointsIndirectJson) {
+        const anchorPointIndirect = createAnchorPointIndirect(
+            anchorPointIndirectJson,
+        );
+        anchorPointsIndirect.push(anchorPointIndirect);
+    }
 
-  for (const correlationGroupJson of intraTileCorrelationGroupsJson) {
-    const correlationGroup = createCorrelationGroup(correlationGroupJson);
-    intraTileCorrelationGroups.push(correlationGroup);
-  }
+    const intraTileCorrelationGroupsJson =
+        gltfGpmLocalJson.intraTileCorrelationGroups;
+    const intraTileCorrelationGroups = [];
 
-  const gltfGpmLocal = new GltfGpmLocal({
-    storageType: StorageType.Indirect,
-    anchorPointsIndirect: anchorPointsIndirect,
-    intraTileCorrelationGroups: intraTileCorrelationGroups,
-  });
-  return gltfGpmLocal;
+    for (const correlationGroupJson of intraTileCorrelationGroupsJson) {
+        const correlationGroup = createCorrelationGroup(correlationGroupJson);
+        intraTileCorrelationGroups.push(correlationGroup);
+    }
+
+    const gltfGpmLocal = new GltfGpmLocal({
+        storageType: StorageType.Indirect,
+        anchorPointsIndirect: anchorPointsIndirect,
+        intraTileCorrelationGroups: intraTileCorrelationGroups,
+    });
+    return gltfGpmLocal;
 };
 
 export default GltfGpmLoader;

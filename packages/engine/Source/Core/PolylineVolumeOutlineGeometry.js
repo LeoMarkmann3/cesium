@@ -20,58 +20,58 @@ import PrimitiveType from "./PrimitiveType.js";
 import WindingOrder from "./WindingOrder.js";
 
 function computeAttributes(positions, shape) {
-  const attributes = new GeometryAttributes();
-  attributes.position = new GeometryAttribute({
-    componentDatatype: ComponentDatatype.DOUBLE,
-    componentsPerAttribute: 3,
-    values: positions,
-  });
+    const attributes = new GeometryAttributes();
+    attributes.position = new GeometryAttribute({
+        componentDatatype: ComponentDatatype.DOUBLE,
+        componentsPerAttribute: 3,
+        values: positions,
+    });
 
-  const shapeLength = shape.length;
-  const vertexCount = attributes.position.values.length / 3;
-  const positionLength = positions.length / 3;
-  const shapeCount = positionLength / shapeLength;
-  const indices = IndexDatatype.createTypedArray(
-    vertexCount,
-    2 * shapeLength * (shapeCount + 1),
-  );
-  let i, j;
-  let index = 0;
-  i = 0;
-  let offset = i * shapeLength;
-  for (j = 0; j < shapeLength - 1; j++) {
-    indices[index++] = j + offset;
-    indices[index++] = j + offset + 1;
-  }
-  indices[index++] = shapeLength - 1 + offset;
-  indices[index++] = offset;
-
-  i = shapeCount - 1;
-  offset = i * shapeLength;
-  for (j = 0; j < shapeLength - 1; j++) {
-    indices[index++] = j + offset;
-    indices[index++] = j + offset + 1;
-  }
-  indices[index++] = shapeLength - 1 + offset;
-  indices[index++] = offset;
-
-  for (i = 0; i < shapeCount - 1; i++) {
-    const firstOffset = shapeLength * i;
-    const secondOffset = firstOffset + shapeLength;
-    for (j = 0; j < shapeLength; j++) {
-      indices[index++] = j + firstOffset;
-      indices[index++] = j + secondOffset;
+    const shapeLength = shape.length;
+    const vertexCount = attributes.position.values.length / 3;
+    const positionLength = positions.length / 3;
+    const shapeCount = positionLength / shapeLength;
+    const indices = IndexDatatype.createTypedArray(
+        vertexCount,
+        2 * shapeLength * (shapeCount + 1),
+    );
+    let i, j;
+    let index = 0;
+    i = 0;
+    let offset = i * shapeLength;
+    for (j = 0; j < shapeLength - 1; j++) {
+        indices[index++] = j + offset;
+        indices[index++] = j + offset + 1;
     }
-  }
+    indices[index++] = shapeLength - 1 + offset;
+    indices[index++] = offset;
 
-  const geometry = new Geometry({
-    attributes: attributes,
-    indices: IndexDatatype.createTypedArray(vertexCount, indices),
-    boundingSphere: BoundingSphere.fromVertices(positions),
-    primitiveType: PrimitiveType.LINES,
-  });
+    i = shapeCount - 1;
+    offset = i * shapeLength;
+    for (j = 0; j < shapeLength - 1; j++) {
+        indices[index++] = j + offset;
+        indices[index++] = j + offset + 1;
+    }
+    indices[index++] = shapeLength - 1 + offset;
+    indices[index++] = offset;
 
-  return geometry;
+    for (i = 0; i < shapeCount - 1; i++) {
+        const firstOffset = shapeLength * i;
+        const secondOffset = firstOffset + shapeLength;
+        for (j = 0; j < shapeLength; j++) {
+            indices[index++] = j + firstOffset;
+            indices[index++] = j + secondOffset;
+        }
+    }
+
+    const geometry = new Geometry({
+        attributes: attributes,
+        indices: IndexDatatype.createTypedArray(vertexCount, indices),
+        boundingSphere: BoundingSphere.fromVertices(positions),
+        primitiveType: PrimitiveType.LINES,
+    });
+
+    return geometry;
 }
 
 /**
@@ -108,34 +108,34 @@ function computeAttributes(positions, shape) {
  * });
  */
 function PolylineVolumeOutlineGeometry(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const positions = options.polylinePositions;
-  const shape = options.shapePositions;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const positions = options.polylinePositions;
+    const shape = options.shapePositions;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(positions)) {
-    throw new DeveloperError("options.polylinePositions is required.");
-  }
-  if (!defined(shape)) {
-    throw new DeveloperError("options.shapePositions is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(positions)) {
+        throw new DeveloperError("options.polylinePositions is required.");
+    }
+    if (!defined(shape)) {
+        throw new DeveloperError("options.shapePositions is required.");
+    }
+    //>>includeEnd('debug');
 
-  this._positions = positions;
-  this._shape = shape;
-  this._ellipsoid = Ellipsoid.clone(options.ellipsoid ?? Ellipsoid.default);
-  this._cornerType = options.cornerType ?? CornerType.ROUNDED;
-  this._granularity = options.granularity ?? CesiumMath.RADIANS_PER_DEGREE;
-  this._workerName = "createPolylineVolumeOutlineGeometry";
+    this._positions = positions;
+    this._shape = shape;
+    this._ellipsoid = Ellipsoid.clone(options.ellipsoid ?? Ellipsoid.default);
+    this._cornerType = options.cornerType ?? CornerType.ROUNDED;
+    this._granularity = options.granularity ?? CesiumMath.RADIANS_PER_DEGREE;
+    this._workerName = "createPolylineVolumeOutlineGeometry";
 
-  let numComponents = 1 + positions.length * Cartesian3.packedLength;
-  numComponents += 1 + shape.length * Cartesian2.packedLength;
+    let numComponents = 1 + positions.length * Cartesian3.packedLength;
+    numComponents += 1 + shape.length * Cartesian2.packedLength;
 
-  /**
-   * The number of elements used to pack the object into an array.
-   * @type {number}
-   */
-  this.packedLength = numComponents + Ellipsoid.packedLength + 2;
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {number}
+     */
+    this.packedLength = numComponents + Ellipsoid.packedLength + 2;
 }
 
 /**
@@ -148,52 +148,52 @@ function PolylineVolumeOutlineGeometry(options) {
  * @returns {number[]} The array that was packed into
  */
 PolylineVolumeOutlineGeometry.pack = function (value, array, startingIndex) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(value)) {
-    throw new DeveloperError("value is required");
-  }
-  if (!defined(array)) {
-    throw new DeveloperError("array is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(value)) {
+        throw new DeveloperError("value is required");
+    }
+    if (!defined(array)) {
+        throw new DeveloperError("array is required");
+    }
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  let i;
+    let i;
 
-  const positions = value._positions;
-  let length = positions.length;
-  array[startingIndex++] = length;
+    const positions = value._positions;
+    let length = positions.length;
+    array[startingIndex++] = length;
 
-  for (i = 0; i < length; ++i, startingIndex += Cartesian3.packedLength) {
-    Cartesian3.pack(positions[i], array, startingIndex);
-  }
+    for (i = 0; i < length; ++i, startingIndex += Cartesian3.packedLength) {
+        Cartesian3.pack(positions[i], array, startingIndex);
+    }
 
-  const shape = value._shape;
-  length = shape.length;
-  array[startingIndex++] = length;
+    const shape = value._shape;
+    length = shape.length;
+    array[startingIndex++] = length;
 
-  for (i = 0; i < length; ++i, startingIndex += Cartesian2.packedLength) {
-    Cartesian2.pack(shape[i], array, startingIndex);
-  }
+    for (i = 0; i < length; ++i, startingIndex += Cartesian2.packedLength) {
+        Cartesian2.pack(shape[i], array, startingIndex);
+    }
 
-  Ellipsoid.pack(value._ellipsoid, array, startingIndex);
-  startingIndex += Ellipsoid.packedLength;
+    Ellipsoid.pack(value._ellipsoid, array, startingIndex);
+    startingIndex += Ellipsoid.packedLength;
 
-  array[startingIndex++] = value._cornerType;
-  array[startingIndex] = value._granularity;
+    array[startingIndex++] = value._cornerType;
+    array[startingIndex] = value._granularity;
 
-  return array;
+    return array;
 };
 
 const scratchEllipsoid = Ellipsoid.clone(Ellipsoid.UNIT_SPHERE);
 const scratchOptions = {
-  polylinePositions: undefined,
-  shapePositions: undefined,
-  ellipsoid: scratchEllipsoid,
-  height: undefined,
-  cornerType: undefined,
-  granularity: undefined,
+    polylinePositions: undefined,
+    shapePositions: undefined,
+    ellipsoid: scratchEllipsoid,
+    height: undefined,
+    cornerType: undefined,
+    granularity: undefined,
 };
 
 /**
@@ -205,51 +205,51 @@ const scratchOptions = {
  * @returns {PolylineVolumeOutlineGeometry} The modified result parameter or a new PolylineVolumeOutlineGeometry instance if one was not provided.
  */
 PolylineVolumeOutlineGeometry.unpack = function (array, startingIndex, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(array)) {
-    throw new DeveloperError("array is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(array)) {
+        throw new DeveloperError("array is required");
+    }
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  let i;
+    let i;
 
-  let length = array[startingIndex++];
-  const positions = new Array(length);
+    let length = array[startingIndex++];
+    const positions = new Array(length);
 
-  for (i = 0; i < length; ++i, startingIndex += Cartesian3.packedLength) {
-    positions[i] = Cartesian3.unpack(array, startingIndex);
-  }
+    for (i = 0; i < length; ++i, startingIndex += Cartesian3.packedLength) {
+        positions[i] = Cartesian3.unpack(array, startingIndex);
+    }
 
-  length = array[startingIndex++];
-  const shape = new Array(length);
+    length = array[startingIndex++];
+    const shape = new Array(length);
 
-  for (i = 0; i < length; ++i, startingIndex += Cartesian2.packedLength) {
-    shape[i] = Cartesian2.unpack(array, startingIndex);
-  }
+    for (i = 0; i < length; ++i, startingIndex += Cartesian2.packedLength) {
+        shape[i] = Cartesian2.unpack(array, startingIndex);
+    }
 
-  const ellipsoid = Ellipsoid.unpack(array, startingIndex, scratchEllipsoid);
-  startingIndex += Ellipsoid.packedLength;
+    const ellipsoid = Ellipsoid.unpack(array, startingIndex, scratchEllipsoid);
+    startingIndex += Ellipsoid.packedLength;
 
-  const cornerType = array[startingIndex++];
-  const granularity = array[startingIndex];
+    const cornerType = array[startingIndex++];
+    const granularity = array[startingIndex];
 
-  if (!defined(result)) {
-    scratchOptions.polylinePositions = positions;
-    scratchOptions.shapePositions = shape;
-    scratchOptions.cornerType = cornerType;
-    scratchOptions.granularity = granularity;
-    return new PolylineVolumeOutlineGeometry(scratchOptions);
-  }
+    if (!defined(result)) {
+        scratchOptions.polylinePositions = positions;
+        scratchOptions.shapePositions = shape;
+        scratchOptions.cornerType = cornerType;
+        scratchOptions.granularity = granularity;
+        return new PolylineVolumeOutlineGeometry(scratchOptions);
+    }
 
-  result._positions = positions;
-  result._shape = shape;
-  result._ellipsoid = Ellipsoid.clone(ellipsoid, result._ellipsoid);
-  result._cornerType = cornerType;
-  result._granularity = granularity;
+    result._positions = positions;
+    result._shape = shape;
+    result._ellipsoid = Ellipsoid.clone(ellipsoid, result._ellipsoid);
+    result._cornerType = cornerType;
+    result._granularity = granularity;
 
-  return result;
+    return result;
 };
 
 const brScratch = new BoundingRectangle();
@@ -261,34 +261,35 @@ const brScratch = new BoundingRectangle();
  * @returns {Geometry|undefined} The computed vertices and indices.
  */
 PolylineVolumeOutlineGeometry.createGeometry = function (
-  polylineVolumeOutlineGeometry,
-) {
-  const positions = polylineVolumeOutlineGeometry._positions;
-  const cleanPositions = arrayRemoveDuplicates(
-    positions,
-    Cartesian3.equalsEpsilon,
-  );
-  let shape2D = polylineVolumeOutlineGeometry._shape;
-  shape2D = PolylineVolumeGeometryLibrary.removeDuplicatesFromShape(shape2D);
-
-  if (cleanPositions.length < 2 || shape2D.length < 3) {
-    return undefined;
-  }
-
-  if (
-    PolygonPipeline.computeWindingOrder2D(shape2D) === WindingOrder.CLOCKWISE
-  ) {
-    shape2D.reverse();
-  }
-  const boundingRectangle = BoundingRectangle.fromPoints(shape2D, brScratch);
-
-  const computedPositions = PolylineVolumeGeometryLibrary.computePositions(
-    cleanPositions,
-    shape2D,
-    boundingRectangle,
     polylineVolumeOutlineGeometry,
-    false,
-  );
-  return computeAttributes(computedPositions, shape2D);
+) {
+    const positions = polylineVolumeOutlineGeometry._positions;
+    const cleanPositions = arrayRemoveDuplicates(
+        positions,
+        Cartesian3.equalsEpsilon,
+    );
+    let shape2D = polylineVolumeOutlineGeometry._shape;
+    shape2D = PolylineVolumeGeometryLibrary.removeDuplicatesFromShape(shape2D);
+
+    if (cleanPositions.length < 2 || shape2D.length < 3) {
+        return undefined;
+    }
+
+    if (
+        PolygonPipeline.computeWindingOrder2D(shape2D) ===
+        WindingOrder.CLOCKWISE
+    ) {
+        shape2D.reverse();
+    }
+    const boundingRectangle = BoundingRectangle.fromPoints(shape2D, brScratch);
+
+    const computedPositions = PolylineVolumeGeometryLibrary.computePositions(
+        cleanPositions,
+        shape2D,
+        boundingRectangle,
+        polylineVolumeOutlineGeometry,
+        false,
+    );
+    return computeAttributes(computedPositions, shape2D);
 };
 export default PolylineVolumeOutlineGeometry;

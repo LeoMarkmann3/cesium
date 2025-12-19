@@ -15,20 +15,20 @@ import Cesium3DTilesetTraversal from "./Cesium3DTilesetTraversal.js";
 function Cesium3DTilesetSkipTraversal() {}
 
 const traversal = {
-  stack: new ManagedArray(),
-  stackMaximumLength: 0,
+    stack: new ManagedArray(),
+    stackMaximumLength: 0,
 };
 
 const descendantTraversal = {
-  stack: new ManagedArray(),
-  stackMaximumLength: 0,
+    stack: new ManagedArray(),
+    stackMaximumLength: 0,
 };
 
 const selectionTraversal = {
-  stack: new ManagedArray(),
-  stackMaximumLength: 0,
-  ancestorStack: new ManagedArray(),
-  ancestorStackMaximumLength: 0,
+    stack: new ManagedArray(),
+    stackMaximumLength: 0,
+    ancestorStack: new ManagedArray(),
+    ancestorStackMaximumLength: 0,
 };
 
 const descendantSelectionDepth = 2;
@@ -41,47 +41,47 @@ const descendantSelectionDepth = 2;
  * @param {FrameState} frameState
  */
 Cesium3DTilesetSkipTraversal.selectTiles = function (tileset, frameState) {
-  tileset._requestedTiles.length = 0;
+    tileset._requestedTiles.length = 0;
 
-  if (tileset.debugFreezeFrame) {
-    return;
-  }
+    if (tileset.debugFreezeFrame) {
+        return;
+    }
 
-  tileset._selectedTiles.length = 0;
-  tileset._selectedTilesToStyle.length = 0;
-  tileset._emptyTiles.length = 0;
-  tileset.hasMixedContent = false;
+    tileset._selectedTiles.length = 0;
+    tileset._selectedTilesToStyle.length = 0;
+    tileset._emptyTiles.length = 0;
+    tileset.hasMixedContent = false;
 
-  const root = tileset.root;
-  Cesium3DTilesetTraversal.updateTile(root, frameState);
+    const root = tileset.root;
+    Cesium3DTilesetTraversal.updateTile(root, frameState);
 
-  if (!root.isVisible) {
-    return;
-  }
+    if (!root.isVisible) {
+        return;
+    }
 
-  if (
-    root.getScreenSpaceError(frameState, true) <=
-    tileset.memoryAdjustedScreenSpaceError
-  ) {
-    return;
-  }
+    if (
+        root.getScreenSpaceError(frameState, true) <=
+        tileset.memoryAdjustedScreenSpaceError
+    ) {
+        return;
+    }
 
-  executeTraversal(root, frameState);
-  traverseAndSelect(root, frameState);
+    executeTraversal(root, frameState);
+    traverseAndSelect(root, frameState);
 
-  traversal.stack.trim(traversal.stackMaximumLength);
-  descendantTraversal.stack.trim(descendantTraversal.stackMaximumLength);
-  selectionTraversal.stack.trim(selectionTraversal.stackMaximumLength);
-  selectionTraversal.ancestorStack.trim(
-    selectionTraversal.ancestorStackMaximumLength,
-  );
+    traversal.stack.trim(traversal.stackMaximumLength);
+    descendantTraversal.stack.trim(descendantTraversal.stackMaximumLength);
+    selectionTraversal.stack.trim(selectionTraversal.stackMaximumLength);
+    selectionTraversal.ancestorStack.trim(
+        selectionTraversal.ancestorStackMaximumLength,
+    );
 
-  // Update the priority for any requests found during traversal
-  // Update after traversal so that min and max values can be used to normalize priority values
-  const requestedTiles = tileset._requestedTiles;
-  for (let i = 0; i < requestedTiles.length; ++i) {
-    requestedTiles[i].updatePriority();
-  }
+    // Update the priority for any requests found during traversal
+    // Update after traversal so that min and max values can be used to normalize priority values
+    const requestedTiles = tileset._requestedTiles;
+    for (let i = 0; i < requestedTiles.length; ++i) {
+        requestedTiles[i].updatePriority();
+    }
 };
 
 /**
@@ -92,30 +92,33 @@ Cesium3DTilesetSkipTraversal.selectTiles = function (tileset, frameState) {
  * @param {FrameState} frameState
  */
 function selectDescendants(root, frameState) {
-  const { updateTile, touchTile, selectTile } = Cesium3DTilesetTraversal;
-  const stack = descendantTraversal.stack;
-  stack.push(root);
-  while (stack.length > 0) {
-    descendantTraversal.stackMaximumLength = Math.max(
-      descendantTraversal.stackMaximumLength,
-      stack.length,
-    );
-    const tile = stack.pop();
-    const children = tile.children;
-    for (let i = 0; i < children.length; ++i) {
-      const child = children[i];
-      if (child.isVisible) {
-        if (child.contentAvailable) {
-          updateTile(child, frameState);
-          touchTile(child, frameState);
-          selectTile(child, frameState);
-        } else if (child._depth - root._depth < descendantSelectionDepth) {
-          // Continue traversing, but not too far
-          stack.push(child);
+    const { updateTile, touchTile, selectTile } = Cesium3DTilesetTraversal;
+    const stack = descendantTraversal.stack;
+    stack.push(root);
+    while (stack.length > 0) {
+        descendantTraversal.stackMaximumLength = Math.max(
+            descendantTraversal.stackMaximumLength,
+            stack.length,
+        );
+        const tile = stack.pop();
+        const children = tile.children;
+        for (let i = 0; i < children.length; ++i) {
+            const child = children[i];
+            if (child.isVisible) {
+                if (child.contentAvailable) {
+                    updateTile(child, frameState);
+                    touchTile(child, frameState);
+                    selectTile(child, frameState);
+                } else if (
+                    child._depth - root._depth <
+                    descendantSelectionDepth
+                ) {
+                    // Continue traversing, but not too far
+                    stack.push(child);
+                }
+            }
         }
-      }
     }
-  }
 }
 
 /**
@@ -128,18 +131,18 @@ function selectDescendants(root, frameState) {
  * @param {FrameState} frameState
  */
 function selectDesiredTile(tile, frameState) {
-  // If this tile is not loaded attempt to select its ancestor instead
-  const loadedTile = tile.contentAvailable
-    ? tile
-    : tile._ancestorWithContentAvailable;
-  if (defined(loadedTile)) {
-    // Tiles will actually be selected in traverseAndSelect
-    loadedTile._shouldSelect = true;
-  } else {
-    // If no ancestors are ready traverse down and select tiles to minimize empty regions.
-    // This happens often for immediatelyLoadDesiredLevelOfDetail where parent tiles are not necessarily loaded before zooming out.
-    selectDescendants(tile, frameState);
-  }
+    // If this tile is not loaded attempt to select its ancestor instead
+    const loadedTile = tile.contentAvailable
+        ? tile
+        : tile._ancestorWithContentAvailable;
+    if (defined(loadedTile)) {
+        // Tiles will actually be selected in traverseAndSelect
+        loadedTile._shouldSelect = true;
+    } else {
+        // If no ancestors are ready traverse down and select tiles to minimize empty regions.
+        // This happens often for immediatelyLoadDesiredLevelOfDetail where parent tiles are not necessarily loaded before zooming out.
+        selectDescendants(tile, frameState);
+    }
 }
 
 /**
@@ -150,27 +153,27 @@ function selectDesiredTile(tile, frameState) {
  * @param {FrameState} frameState
  */
 function updateTileAncestorContentLinks(tile, frameState) {
-  tile._ancestorWithContent = undefined;
-  tile._ancestorWithContentAvailable = undefined;
+    tile._ancestorWithContent = undefined;
+    tile._ancestorWithContentAvailable = undefined;
 
-  const { parent } = tile;
-  if (!defined(parent)) {
-    return;
-  }
-  const parentHasContent =
-    !parent.hasUnloadedRenderableContent ||
-    parent._requestedFrame === frameState.frameNumber;
+    const { parent } = tile;
+    if (!defined(parent)) {
+        return;
+    }
+    const parentHasContent =
+        !parent.hasUnloadedRenderableContent ||
+        parent._requestedFrame === frameState.frameNumber;
 
-  // ancestorWithContent is an ancestor that has content or has the potential to have
-  // content. Used in conjunction with tileset.skipLevels to know when to skip a tile.
-  tile._ancestorWithContent = parentHasContent
-    ? parent
-    : parent._ancestorWithContent;
+    // ancestorWithContent is an ancestor that has content or has the potential to have
+    // content. Used in conjunction with tileset.skipLevels to know when to skip a tile.
+    tile._ancestorWithContent = parentHasContent
+        ? parent
+        : parent._ancestorWithContent;
 
-  // ancestorWithContentAvailable is an ancestor that is rendered if a desired tile is not loaded
-  tile._ancestorWithContentAvailable = parent.contentAvailable
-    ? parent
-    : parent._ancestorWithContentAvailable;
+    // ancestorWithContentAvailable is an ancestor that is rendered if a desired tile is not loaded
+    tile._ancestorWithContentAvailable = parent.contentAvailable
+        ? parent
+        : parent._ancestorWithContentAvailable;
 }
 
 /**
@@ -183,15 +186,16 @@ function updateTileAncestorContentLinks(tile, frameState) {
  * @returns {boolean} true if this tile should not be skipped
  */
 function reachedSkippingThreshold(tileset, tile) {
-  const ancestor = tile._ancestorWithContent;
-  return (
-    !tileset.immediatelyLoadDesiredLevelOfDetail &&
-    (tile._priorityProgressiveResolutionScreenSpaceErrorLeaf ||
-      (defined(ancestor) &&
-        tile._screenSpaceError <
-          ancestor._screenSpaceError / tileset.skipScreenSpaceErrorFactor &&
-        tile._depth > ancestor._depth + tileset.skipLevels))
-  );
+    const ancestor = tile._ancestorWithContent;
+    return (
+        !tileset.immediatelyLoadDesiredLevelOfDetail &&
+        (tile._priorityProgressiveResolutionScreenSpaceErrorLeaf ||
+            (defined(ancestor) &&
+                tile._screenSpaceError <
+                    ancestor._screenSpaceError /
+                        tileset.skipScreenSpaceErrorFactor &&
+                tile._depth > ancestor._depth + tileset.skipLevels))
+    );
 }
 
 /**
@@ -202,30 +206,30 @@ function reachedSkippingThreshold(tileset, tile) {
  * @returns {boolean}
  */
 function updateAndPushChildren(tile, stack, frameState) {
-  const { tileset, children } = tile;
-  const { updateTile, loadTile, touchTile } = Cesium3DTilesetTraversal;
+    const { tileset, children } = tile;
+    const { updateTile, loadTile, touchTile } = Cesium3DTilesetTraversal;
 
-  for (let i = 0; i < children.length; ++i) {
-    updateTile(children[i], frameState);
-  }
-
-  // Sort by distance to take advantage of early Z and reduce artifacts
-  children.sort(Cesium3DTilesetTraversal.sortChildrenByDistanceToCamera);
-
-  let anyChildrenVisible = false;
-
-  for (let i = 0; i < children.length; ++i) {
-    const child = children[i];
-    if (child.isVisible) {
-      stack.push(child);
-      anyChildrenVisible = true;
-    } else if (tileset.loadSiblings) {
-      loadTile(child, frameState);
-      touchTile(child, frameState);
+    for (let i = 0; i < children.length; ++i) {
+        updateTile(children[i], frameState);
     }
-  }
 
-  return anyChildrenVisible;
+    // Sort by distance to take advantage of early Z and reduce artifacts
+    children.sort(Cesium3DTilesetTraversal.sortChildrenByDistanceToCamera);
+
+    let anyChildrenVisible = false;
+
+    for (let i = 0; i < children.length; ++i) {
+        const child = children[i];
+        if (child.isVisible) {
+            stack.push(child);
+            anyChildrenVisible = true;
+        } else if (tileset.loadSiblings) {
+            loadTile(child, frameState);
+            touchTile(child, frameState);
+        }
+    }
+
+    return anyChildrenVisible;
 }
 
 /**
@@ -238,19 +242,19 @@ function updateAndPushChildren(tile, stack, frameState) {
  * @returns {boolean}
  */
 function inBaseTraversal(tile, baseScreenSpaceError) {
-  const { tileset } = tile;
-  if (tileset.immediatelyLoadDesiredLevelOfDetail) {
-    return false;
-  }
-  if (!defined(tile._ancestorWithContent)) {
-    // Include root or near-root tiles in the base traversal so there is something to select up to
-    return true;
-  }
-  if (tile._screenSpaceError === 0.0) {
-    // If a leaf, use parent's SSE
-    return tile.parent._screenSpaceError > baseScreenSpaceError;
-  }
-  return tile._screenSpaceError > baseScreenSpaceError;
+    const { tileset } = tile;
+    if (tileset.immediatelyLoadDesiredLevelOfDetail) {
+        return false;
+    }
+    if (!defined(tile._ancestorWithContent)) {
+        // Include root or near-root tiles in the base traversal so there is something to select up to
+        return true;
+    }
+    if (tile._screenSpaceError === 0.0) {
+        // If a leaf, use parent's SSE
+        return tile.parent._screenSpaceError > baseScreenSpaceError;
+    }
+    return tile._screenSpaceError > baseScreenSpaceError;
 }
 
 /**
@@ -264,70 +268,70 @@ function inBaseTraversal(tile, baseScreenSpaceError) {
  * @param {FrameState} frameState
  */
 function executeTraversal(root, frameState) {
-  const { tileset } = root;
-  const baseScreenSpaceError = tileset.immediatelyLoadDesiredLevelOfDetail
-    ? Number.MAX_VALUE
-    : Math.max(
-        tileset.baseScreenSpaceError,
-        tileset.memoryAdjustedScreenSpaceError,
-      );
-  const { canTraverse, loadTile, visitTile, touchTile } =
-    Cesium3DTilesetTraversal;
-  const stack = traversal.stack;
-  stack.push(root);
+    const { tileset } = root;
+    const baseScreenSpaceError = tileset.immediatelyLoadDesiredLevelOfDetail
+        ? Number.MAX_VALUE
+        : Math.max(
+              tileset.baseScreenSpaceError,
+              tileset.memoryAdjustedScreenSpaceError,
+          );
+    const { canTraverse, loadTile, visitTile, touchTile } =
+        Cesium3DTilesetTraversal;
+    const stack = traversal.stack;
+    stack.push(root);
 
-  while (stack.length > 0) {
-    traversal.stackMaximumLength = Math.max(
-      traversal.stackMaximumLength,
-      stack.length,
-    );
+    while (stack.length > 0) {
+        traversal.stackMaximumLength = Math.max(
+            traversal.stackMaximumLength,
+            stack.length,
+        );
 
-    const tile = stack.pop();
+        const tile = stack.pop();
 
-    updateTileAncestorContentLinks(tile, frameState);
-    const parent = tile.parent;
-    const parentRefines = !defined(parent) || parent._refines;
+        updateTileAncestorContentLinks(tile, frameState);
+        const parent = tile.parent;
+        const parentRefines = !defined(parent) || parent._refines;
 
-    tile._refines = canTraverse(tile)
-      ? updateAndPushChildren(tile, stack, frameState) && parentRefines
-      : false;
+        tile._refines = canTraverse(tile)
+            ? updateAndPushChildren(tile, stack, frameState) && parentRefines
+            : false;
 
-    const stoppedRefining = !tile._refines && parentRefines;
+        const stoppedRefining = !tile._refines && parentRefines;
 
-    if (!tile.hasRenderableContent) {
-      // Add empty tile just to show its debug bounding volume
-      // If the tile has tileset content load the external tileset
-      // If the tile cannot refine further select its nearest loaded ancestor
-      tileset._emptyTiles.push(tile);
-      loadTile(tile, frameState);
-      if (stoppedRefining) {
-        selectDesiredTile(tile, frameState);
-      }
-    } else if (tile.refine === Cesium3DTileRefine.ADD) {
-      // Additive tiles are always loaded and selected
-      selectDesiredTile(tile, frameState);
-      loadTile(tile, frameState);
-    } else if (tile.refine === Cesium3DTileRefine.REPLACE) {
-      if (inBaseTraversal(tile, baseScreenSpaceError)) {
-        // Always load tiles in the base traversal
-        // Select tiles that can't refine further
-        loadTile(tile, frameState);
-        if (stoppedRefining) {
-          selectDesiredTile(tile, frameState);
+        if (!tile.hasRenderableContent) {
+            // Add empty tile just to show its debug bounding volume
+            // If the tile has tileset content load the external tileset
+            // If the tile cannot refine further select its nearest loaded ancestor
+            tileset._emptyTiles.push(tile);
+            loadTile(tile, frameState);
+            if (stoppedRefining) {
+                selectDesiredTile(tile, frameState);
+            }
+        } else if (tile.refine === Cesium3DTileRefine.ADD) {
+            // Additive tiles are always loaded and selected
+            selectDesiredTile(tile, frameState);
+            loadTile(tile, frameState);
+        } else if (tile.refine === Cesium3DTileRefine.REPLACE) {
+            if (inBaseTraversal(tile, baseScreenSpaceError)) {
+                // Always load tiles in the base traversal
+                // Select tiles that can't refine further
+                loadTile(tile, frameState);
+                if (stoppedRefining) {
+                    selectDesiredTile(tile, frameState);
+                }
+            } else if (stoppedRefining) {
+                // In skip traversal, load and select tiles that can't refine further
+                selectDesiredTile(tile, frameState);
+                loadTile(tile, frameState);
+            } else if (reachedSkippingThreshold(tileset, tile)) {
+                // In skip traversal, load tiles that aren't skipped
+                loadTile(tile, frameState);
+            }
         }
-      } else if (stoppedRefining) {
-        // In skip traversal, load and select tiles that can't refine further
-        selectDesiredTile(tile, frameState);
-        loadTile(tile, frameState);
-      } else if (reachedSkippingThreshold(tileset, tile)) {
-        // In skip traversal, load tiles that aren't skipped
-        loadTile(tile, frameState);
-      }
-    }
 
-    visitTile(tile, frameState);
-    touchTile(tile, frameState);
-  }
+        visitTile(tile, frameState);
+        touchTile(tile, frameState);
+    }
 }
 
 /**
@@ -351,70 +355,70 @@ function executeTraversal(root, frameState) {
  * @param {FrameState} frameState
  */
 function traverseAndSelect(root, frameState) {
-  const { selectTile, canTraverse } = Cesium3DTilesetTraversal;
-  const { stack, ancestorStack } = selectionTraversal;
-  let lastAncestor;
+    const { selectTile, canTraverse } = Cesium3DTilesetTraversal;
+    const { stack, ancestorStack } = selectionTraversal;
+    let lastAncestor;
 
-  stack.push(root);
+    stack.push(root);
 
-  while (stack.length > 0 || ancestorStack.length > 0) {
-    selectionTraversal.stackMaximumLength = Math.max(
-      selectionTraversal.stackMaximumLength,
-      stack.length,
-    );
-    selectionTraversal.ancestorStackMaximumLength = Math.max(
-      selectionTraversal.ancestorStackMaximumLength,
-      ancestorStack.length,
-    );
+    while (stack.length > 0 || ancestorStack.length > 0) {
+        selectionTraversal.stackMaximumLength = Math.max(
+            selectionTraversal.stackMaximumLength,
+            stack.length,
+        );
+        selectionTraversal.ancestorStackMaximumLength = Math.max(
+            selectionTraversal.ancestorStackMaximumLength,
+            ancestorStack.length,
+        );
 
-    if (ancestorStack.length > 0) {
-      const waitingTile = ancestorStack.peek();
-      if (waitingTile._stackLength === stack.length) {
-        ancestorStack.pop();
-        if (waitingTile !== lastAncestor) {
-          waitingTile._finalResolution = false;
+        if (ancestorStack.length > 0) {
+            const waitingTile = ancestorStack.peek();
+            if (waitingTile._stackLength === stack.length) {
+                ancestorStack.pop();
+                if (waitingTile !== lastAncestor) {
+                    waitingTile._finalResolution = false;
+                }
+                selectTile(waitingTile, frameState);
+                continue;
+            }
         }
-        selectTile(waitingTile, frameState);
-        continue;
-      }
-    }
 
-    const tile = stack.pop();
-    if (!defined(tile)) {
-      // stack is empty but ancestorStack isn't
-      continue;
-    }
-
-    const traverse = canTraverse(tile);
-
-    if (tile._shouldSelect) {
-      if (tile.refine === Cesium3DTileRefine.ADD) {
-        selectTile(tile, frameState);
-      } else {
-        tile._selectionDepth = ancestorStack.length;
-        if (tile._selectionDepth > 0) {
-          tile.tileset.hasMixedContent = true;
+        const tile = stack.pop();
+        if (!defined(tile)) {
+            // stack is empty but ancestorStack isn't
+            continue;
         }
-        lastAncestor = tile;
-        if (!traverse) {
-          selectTile(tile, frameState);
-          continue;
-        }
-        ancestorStack.push(tile);
-        tile._stackLength = stack.length;
-      }
-    }
 
-    if (traverse) {
-      const children = tile.children;
-      for (let i = 0; i < children.length; ++i) {
-        const child = children[i];
-        if (child.isVisible) {
-          stack.push(child);
+        const traverse = canTraverse(tile);
+
+        if (tile._shouldSelect) {
+            if (tile.refine === Cesium3DTileRefine.ADD) {
+                selectTile(tile, frameState);
+            } else {
+                tile._selectionDepth = ancestorStack.length;
+                if (tile._selectionDepth > 0) {
+                    tile.tileset.hasMixedContent = true;
+                }
+                lastAncestor = tile;
+                if (!traverse) {
+                    selectTile(tile, frameState);
+                    continue;
+                }
+                ancestorStack.push(tile);
+                tile._stackLength = stack.length;
+            }
         }
-      }
+
+        if (traverse) {
+            const children = tile.children;
+            for (let i = 0; i < children.length; ++i) {
+                const child = children[i];
+                if (child.isVisible) {
+                    stack.push(child);
+                }
+            }
+        }
     }
-  }
 }
 
 export default Cesium3DTilesetSkipTraversal;

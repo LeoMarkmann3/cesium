@@ -18,26 +18,27 @@ import CesiumInspector from "../CesiumInspector/CesiumInspector.js";
  * viewer.extend(Cesium.viewerCesiumInspectorMixin);
  */
 function viewerCesiumInspectorMixin(viewer) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(viewer)) {
-    throw new DeveloperError("viewer is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(viewer)) {
+        throw new DeveloperError("viewer is required.");
+    }
+    //>>includeEnd('debug');
 
-  const cesiumInspectorContainer = document.createElement("div");
-  cesiumInspectorContainer.className = "cesium-viewer-cesiumInspectorContainer";
-  viewer.container.appendChild(cesiumInspectorContainer);
-  const cesiumInspector = new CesiumInspector(
-    cesiumInspectorContainer,
-    viewer.scene,
-  );
+    const cesiumInspectorContainer = document.createElement("div");
+    cesiumInspectorContainer.className =
+        "cesium-viewer-cesiumInspectorContainer";
+    viewer.container.appendChild(cesiumInspectorContainer);
+    const cesiumInspector = new CesiumInspector(
+        cesiumInspectorContainer,
+        viewer.scene,
+    );
 
-  Object.defineProperties(viewer, {
-    cesiumInspector: {
-      get: function () {
-        return cesiumInspector;
-      },
-    },
-  });
+    Object.defineProperties(viewer, {
+        cesiumInspector: {
+            get: function () {
+                return cesiumInspector;
+            },
+        },
+    });
 }
 export default viewerCesiumInspectorMixin;

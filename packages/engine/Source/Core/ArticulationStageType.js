@@ -8,16 +8,16 @@
  * @private
  */
 const ArticulationStageType = {
-  XTRANSLATE: "xTranslate",
-  YTRANSLATE: "yTranslate",
-  ZTRANSLATE: "zTranslate",
-  XROTATE: "xRotate",
-  YROTATE: "yRotate",
-  ZROTATE: "zRotate",
-  XSCALE: "xScale",
-  YSCALE: "yScale",
-  ZSCALE: "zScale",
-  UNIFORMSCALE: "uniformScale",
+    XTRANSLATE: "xTranslate",
+    YTRANSLATE: "yTranslate",
+    ZTRANSLATE: "zTranslate",
+    XROTATE: "xRotate",
+    YROTATE: "yRotate",
+    ZROTATE: "zRotate",
+    XSCALE: "xScale",
+    YSCALE: "yScale",
+    ZSCALE: "zScale",
+    UNIFORMSCALE: "uniformScale",
 };
 
 export default Object.freeze(ArticulationStageType);

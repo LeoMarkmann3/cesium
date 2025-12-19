@@ -5,77 +5,77 @@ import destroyObject from "../Core/destroyObject.js";
  * @private
  */
 function TextureCache() {
-  this._textures = {};
-  this._numberOfTextures = 0;
-  this._texturesToRelease = {};
+    this._textures = {};
+    this._numberOfTextures = 0;
+    this._texturesToRelease = {};
 }
 
 Object.defineProperties(TextureCache.prototype, {
-  numberOfTextures: {
-    get: function () {
-      return this._numberOfTextures;
+    numberOfTextures: {
+        get: function () {
+            return this._numberOfTextures;
+        },
     },
-  },
 });
 
 TextureCache.prototype.getTexture = function (keyword) {
-  const cachedTexture = this._textures[keyword];
-  if (!defined(cachedTexture)) {
-    return undefined;
-  }
+    const cachedTexture = this._textures[keyword];
+    if (!defined(cachedTexture)) {
+        return undefined;
+    }
 
-  // No longer want to release this if it was previously released.
-  delete this._texturesToRelease[keyword];
+    // No longer want to release this if it was previously released.
+    delete this._texturesToRelease[keyword];
 
-  ++cachedTexture.count;
-  return cachedTexture.texture;
+    ++cachedTexture.count;
+    return cachedTexture.texture;
 };
 
 TextureCache.prototype.addTexture = function (keyword, texture) {
-  const cachedTexture = {
-    texture: texture,
-    count: 1,
-  };
+    const cachedTexture = {
+        texture: texture,
+        count: 1,
+    };
 
-  texture.finalDestroy = texture.destroy;
+    texture.finalDestroy = texture.destroy;
 
-  const that = this;
-  texture.destroy = function () {
-    if (--cachedTexture.count === 0) {
-      that._texturesToRelease[keyword] = cachedTexture;
-    }
-  };
+    const that = this;
+    texture.destroy = function () {
+        if (--cachedTexture.count === 0) {
+            that._texturesToRelease[keyword] = cachedTexture;
+        }
+    };
 
-  this._textures[keyword] = cachedTexture;
-  ++this._numberOfTextures;
+    this._textures[keyword] = cachedTexture;
+    ++this._numberOfTextures;
 };
 
 TextureCache.prototype.destroyReleasedTextures = function () {
-  const texturesToRelease = this._texturesToRelease;
+    const texturesToRelease = this._texturesToRelease;
 
-  for (const keyword in texturesToRelease) {
-    if (texturesToRelease.hasOwnProperty(keyword)) {
-      const cachedTexture = texturesToRelease[keyword];
-      delete this._textures[keyword];
-      cachedTexture.texture.finalDestroy();
-      --this._numberOfTextures;
+    for (const keyword in texturesToRelease) {
+        if (texturesToRelease.hasOwnProperty(keyword)) {
+            const cachedTexture = texturesToRelease[keyword];
+            delete this._textures[keyword];
+            cachedTexture.texture.finalDestroy();
+            --this._numberOfTextures;
+        }
     }
-  }
 
-  this._texturesToRelease = {};
+    this._texturesToRelease = {};
 };
 
 TextureCache.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 TextureCache.prototype.destroy = function () {
-  const textures = this._textures;
-  for (const keyword in textures) {
-    if (textures.hasOwnProperty(keyword)) {
-      textures[keyword].texture.finalDestroy();
+    const textures = this._textures;
+    for (const keyword in textures) {
+        if (textures.hasOwnProperty(keyword)) {
+            textures[keyword].texture.finalDestroy();
+        }
     }
-  }
-  return destroyObject(this);
+    return destroyObject(this);
 };
 export default TextureCache;

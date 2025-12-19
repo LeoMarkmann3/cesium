@@ -9,13 +9,13 @@ const viewer = new Cesium.Viewer("cesiumContainer");
 const htmlOverlay = document.getElementById("htmlOverlay");
 const scratch = new Cesium.Cartesian2();
 viewer.scene.preRender.addEventListener(function () {
-  const position = Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883);
-  const canvasPosition = viewer.scene.cartesianToCanvasCoordinates(
-    position,
-    scratch,
-  );
-  if (Cesium.defined(canvasPosition)) {
-    htmlOverlay.style.top = `${canvasPosition.y}px`;
-    htmlOverlay.style.left = `${canvasPosition.x}px`;
-  }
+    const position = Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883);
+    const canvasPosition = viewer.scene.cartesianToCanvasCoordinates(
+        position,
+        scratch,
+    );
+    if (Cesium.defined(canvasPosition)) {
+        htmlOverlay.style.top = `${canvasPosition.y}px`;
+        htmlOverlay.style.left = `${canvasPosition.x}px`;
+    }
 });

@@ -24,16 +24,16 @@ const scratchBarycentricCoords = new Cartesian3();
  *   new Cesium.Cartesian2(0.0, 1.0));
  */
 function pointInsideTriangle(point, p0, p1, p2) {
-  const coords = barycentricCoordinates(
-    point,
-    p0,
-    p1,
-    p2,
-    scratchBarycentricCoords,
-  );
-  if (!defined(coords)) {
-    return false;
-  }
-  return coords.x > 0.0 && coords.y > 0.0 && coords.z > 0;
+    const coords = barycentricCoordinates(
+        point,
+        p0,
+        p1,
+        p2,
+        scratchBarycentricCoords,
+    );
+    if (!defined(coords)) {
+        return false;
+    }
+    return coords.x > 0.0 && coords.y > 0.0 && coords.z > 0;
 }
 export default pointInsideTriangle;

@@ -1,44 +1,44 @@
 import * as Cesium from "cesium";
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  shouldAnimate: true,
+    shouldAnimate: true,
 });
 
 const dates = [
-  "2018-07-19T15:18:00Z",
-  "2018-07-19T15:18:00.5Z",
-  "2018-07-19T15:18:01Z",
-  "2018-07-19T15:18:01.5Z",
-  "2018-07-19T15:18:02Z",
-  "2018-07-19T15:18:02.5Z",
+    "2018-07-19T15:18:00Z",
+    "2018-07-19T15:18:00.5Z",
+    "2018-07-19T15:18:01Z",
+    "2018-07-19T15:18:01.5Z",
+    "2018-07-19T15:18:02Z",
+    "2018-07-19T15:18:02.5Z",
 ];
 
 const uris = [
-  "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/0.pnts",
-  "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/1.pnts",
-  "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/2.pnts",
-  "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/3.pnts",
-  "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/4.pnts",
+    "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/0.pnts",
+    "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/1.pnts",
+    "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/2.pnts",
+    "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/3.pnts",
+    "../../SampleData/Cesium3DTiles/PointCloud/PointCloudTimeDynamic/4.pnts",
 ];
 
 function dataCallback(interval, index) {
-  return {
-    uri: uris[index],
-  };
+    return {
+        uri: uris[index],
+    };
 }
 
 const timeIntervalCollection =
-  Cesium.TimeIntervalCollection.fromIso8601DateArray({
-    iso8601Dates: dates,
-    dataCallback: dataCallback,
-  });
+    Cesium.TimeIntervalCollection.fromIso8601DateArray({
+        iso8601Dates: dates,
+        dataCallback: dataCallback,
+    });
 
 const pointCloud = new Cesium.TimeDynamicPointCloud({
-  intervals: timeIntervalCollection,
-  clock: viewer.clock,
-  style: new Cesium.Cesium3DTileStyle({
-    pointSize: 5,
-  }),
+    intervals: timeIntervalCollection,
+    clock: viewer.clock,
+    style: new Cesium.Cesium3DTileStyle({
+        pointSize: 5,
+    }),
 });
 viewer.scene.primitives.add(pointCloud);
 

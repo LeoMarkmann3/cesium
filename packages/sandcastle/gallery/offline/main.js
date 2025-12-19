@@ -8,11 +8,11 @@ import * as Cesium from "cesium";
 // https://github.com/CesiumGS/cesium/tree/main/Documentation/OfflineGuide
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-    Cesium.TileMapServiceImageryProvider.fromUrl(
-      Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII"),
+    baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+        Cesium.TileMapServiceImageryProvider.fromUrl(
+            Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII"),
+        ),
     ),
-  ),
-  baseLayerPicker: false,
-  geocoder: false,
+    baseLayerPicker: false,
+    geocoder: false,
 });

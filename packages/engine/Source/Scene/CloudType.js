@@ -5,13 +5,13 @@
  */
 
 const CloudType = {
-  /**
-   * Cumulus cloud.
-   *
-   * @type {number}
-   * @constant
-   */
-  CUMULUS: 0,
+    /**
+     * Cumulus cloud.
+     *
+     * @type {number}
+     * @constant
+     */
+    CUMULUS: 0,
 };
 
 /**
@@ -27,7 +27,7 @@ const CloudType = {
  */
 
 CloudType.validate = function (cloudType) {
-  return cloudType === CloudType.CUMULUS;
+    return cloudType === CloudType.CUMULUS;
 };
 
 export default Object.freeze(CloudType);

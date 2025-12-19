@@ -17,94 +17,94 @@ import ClearCommand from "../Renderer/ClearCommand.js";
  * @private
  */
 function EdgeFramebuffer(options) {
-  options = options || {};
+    options = options || {};
 
-  // Create framebuffer manager with multiple render targets (MRT)
-  // Color attachment 0: edge color output (visualization / debug)
-  // Color attachment 1: R: edge type, G: featureId (metadata / ids)
-  // Color attachment 2: packed depth (czm_packDepth) for edge fragments
-  this._framebufferManager = new FramebufferManager({
-    colorAttachmentsLength: 3, // MRT: Color + ID + Depth (packed RGBA)
-    createColorAttachments: true,
-    depthStencil: true,
-    supportsDepthTexture: true,
-    color: true,
-  });
+    // Create framebuffer manager with multiple render targets (MRT)
+    // Color attachment 0: edge color output (visualization / debug)
+    // Color attachment 1: R: edge type, G: featureId (metadata / ids)
+    // Color attachment 2: packed depth (czm_packDepth) for edge fragments
+    this._framebufferManager = new FramebufferManager({
+        colorAttachmentsLength: 3, // MRT: Color + ID + Depth (packed RGBA)
+        createColorAttachments: true,
+        depthStencil: true,
+        supportsDepthTexture: true,
+        color: true,
+    });
 
-  this._framebuffer = undefined;
-  this._colorTexture = undefined;
-  this._idTexture = undefined;
-  this._depthTexture = undefined; // packed depth color attachment (location = 2)
-  this._depthStencilTexture = undefined;
+    this._framebuffer = undefined;
+    this._colorTexture = undefined;
+    this._idTexture = undefined;
+    this._depthTexture = undefined; // packed depth color attachment (location = 2)
+    this._depthStencilTexture = undefined;
 
-  this._clearCommand = new ClearCommand({
-    color: new Color(0.0, 0.0, 0.0, 0.0),
-    depth: 1.0,
-    stencil: 0,
-    owner: this,
-  });
+    this._clearCommand = new ClearCommand({
+        color: new Color(0.0, 0.0, 0.0, 0.0),
+        depth: 1.0,
+        stencil: 0,
+        owner: this,
+    });
 }
 
 Object.defineProperties(EdgeFramebuffer.prototype, {
-  /**
-   * Gets the framebuffer for edge rendering.
-   * @memberof EdgeFramebuffer.prototype
-   * @type {Framebuffer}
-   * @readonly
-   */
-  framebuffer: {
-    get: function () {
-      return this._framebuffer;
+    /**
+     * Gets the framebuffer for edge rendering.
+     * @memberof EdgeFramebuffer.prototype
+     * @type {Framebuffer}
+     * @readonly
+     */
+    framebuffer: {
+        get: function () {
+            return this._framebuffer;
+        },
     },
-  },
 
-  /**
-   * Gets the color texture.
-   * @memberof EdgeFramebuffer.prototype
-   * @type {Texture}
-   * @readonly
-   */
-  colorTexture: {
-    get: function () {
-      return this._colorTexture;
+    /**
+     * Gets the color texture.
+     * @memberof EdgeFramebuffer.prototype
+     * @type {Texture}
+     * @readonly
+     */
+    colorTexture: {
+        get: function () {
+            return this._colorTexture;
+        },
     },
-  },
 
-  /**
-   * Gets the ID texture.
-   * @memberof EdgeFramebuffer.prototype
-   * @type {Texture}
-   * @readonly
-   */
-  idTexture: {
-    get: function () {
-      return this._idTexture;
+    /**
+     * Gets the ID texture.
+     * @memberof EdgeFramebuffer.prototype
+     * @type {Texture}
+     * @readonly
+     */
+    idTexture: {
+        get: function () {
+            return this._idTexture;
+        },
     },
-  },
 
-  /**
-   * Gets the packed depth texture written during the edge pass.
-   * @memberof EdgeFramebuffer.prototype
-   * @type {Texture}
-   * @readonly
-   */
-  depthTexture: {
-    get: function () {
-      return this._depthTexture;
+    /**
+     * Gets the packed depth texture written during the edge pass.
+     * @memberof EdgeFramebuffer.prototype
+     * @type {Texture}
+     * @readonly
+     */
+    depthTexture: {
+        get: function () {
+            return this._depthTexture;
+        },
     },
-  },
 
-  /**
-   * Gets the depth-stencil texture.
-   * @memberof EdgeFramebuffer.prototype
-   * @type {Texture}
-   * @readonly
-   */
-  depthStencilTexture: {
-    get: function () {
-      return this._depthStencilTexture;
+    /**
+     * Gets the depth-stencil texture.
+     * @memberof EdgeFramebuffer.prototype
+     * @type {Texture}
+     * @readonly
+     */
+    depthStencilTexture: {
+        get: function () {
+            return this._depthStencilTexture;
+        },
     },
-  },
 });
 
 /**
@@ -119,46 +119,46 @@ Object.defineProperties(EdgeFramebuffer.prototype, {
  * @returns {boolean} True if the framebuffer was updated; otherwise, false.
  */
 EdgeFramebuffer.prototype.update = function (
-  context,
-  viewport,
-  hdr,
-  existingColorTexture,
-  existingDepthTexture,
-) {
-  const width = viewport.width;
-  const height = viewport.height;
-
-  const pixelDatatype = hdr
-    ? context.halfFloatingPointTexture
-      ? PixelDatatype.HALF_FLOAT
-      : PixelDatatype.FLOAT
-    : PixelDatatype.UNSIGNED_BYTE;
-
-  const changed = this._framebufferManager.update(
     context,
-    width,
-    height,
-    1, // No MSAA
-    pixelDatatype,
-    PixelFormat.RGBA,
-  );
+    viewport,
+    hdr,
+    existingColorTexture,
+    existingDepthTexture,
+) {
+    const width = viewport.width;
+    const height = viewport.height;
 
-  // Always assign framebuffer if FramebufferManager has one
-  if (this._framebufferManager.framebuffer) {
-    this._framebuffer = this._framebufferManager.framebuffer;
+    const pixelDatatype = hdr
+        ? context.halfFloatingPointTexture
+            ? PixelDatatype.HALF_FLOAT
+            : PixelDatatype.FLOAT
+        : PixelDatatype.UNSIGNED_BYTE;
 
-    // Get the textures from the framebuffer manager or use existing ones
-    this._colorTexture = defined(existingColorTexture)
-      ? existingColorTexture
-      : this._framebufferManager.getColorTexture(0); // Color attachment 0
-    this._idTexture = this._framebufferManager.getColorTexture(1); // Color attachment 1: ID texture
-    this._depthTexture = this._framebufferManager.getColorTexture(2); // Color attachment 2: packed depth
-    this._depthStencilTexture = defined(existingDepthTexture)
-      ? existingDepthTexture
-      : this._framebufferManager.getDepthStencilTexture();
-  }
+    const changed = this._framebufferManager.update(
+        context,
+        width,
+        height,
+        1, // No MSAA
+        pixelDatatype,
+        PixelFormat.RGBA,
+    );
 
-  return changed;
+    // Always assign framebuffer if FramebufferManager has one
+    if (this._framebufferManager.framebuffer) {
+        this._framebuffer = this._framebufferManager.framebuffer;
+
+        // Get the textures from the framebuffer manager or use existing ones
+        this._colorTexture = defined(existingColorTexture)
+            ? existingColorTexture
+            : this._framebufferManager.getColorTexture(0); // Color attachment 0
+        this._idTexture = this._framebufferManager.getColorTexture(1); // Color attachment 1: ID texture
+        this._depthTexture = this._framebufferManager.getColorTexture(2); // Color attachment 2: packed depth
+        this._depthStencilTexture = defined(existingDepthTexture)
+            ? existingDepthTexture
+            : this._framebufferManager.getDepthStencilTexture();
+    }
+
+    return changed;
 };
 
 /**
@@ -170,8 +170,8 @@ EdgeFramebuffer.prototype.update = function (
  * @param {Color} clearColor The clear color.
  */
 EdgeFramebuffer.prototype.clear = function (context, passState, clearColor) {
-  const clearCommand = this.getClearCommand(clearColor);
-  clearCommand.execute(context, passState);
+    const clearCommand = this.getClearCommand(clearColor);
+    clearCommand.execute(context, passState);
 };
 
 /**
@@ -181,13 +181,13 @@ EdgeFramebuffer.prototype.clear = function (context, passState, clearColor) {
  * @returns {ClearCommand} The clear command.
  */
 EdgeFramebuffer.prototype.getClearCommand = function (clearColor) {
-  this._clearCommand.framebuffer = this._framebuffer;
+    this._clearCommand.framebuffer = this._framebuffer;
 
-  if (defined(clearColor)) {
-    Color.clone(clearColor, this._clearCommand.color);
-  }
+    if (defined(clearColor)) {
+        Color.clone(clearColor, this._clearCommand.color);
+    }
 
-  return this._clearCommand;
+    return this._clearCommand;
 };
 
 /**
@@ -201,19 +201,19 @@ EdgeFramebuffer.prototype.getClearCommand = function (clearColor) {
  * @returns {Framebuffer} The edge framebuffer.
  */
 EdgeFramebuffer.prototype.getFramebuffer = function (
-  context,
-  viewport,
-  existingColorTexture,
-  existingDepthTexture,
-) {
-  this.update(
     context,
     viewport,
-    false,
     existingColorTexture,
     existingDepthTexture,
-  );
-  return this._framebuffer;
+) {
+    this.update(
+        context,
+        viewport,
+        false,
+        existingColorTexture,
+        existingDepthTexture,
+    );
+    return this._framebuffer;
 };
 
 /**
@@ -222,7 +222,7 @@ EdgeFramebuffer.prototype.getFramebuffer = function (
  * @returns {boolean} True if this object was destroyed; otherwise, false.
  */
 EdgeFramebuffer.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -236,10 +236,10 @@ EdgeFramebuffer.prototype.isDestroyed = function () {
  * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
  */
 EdgeFramebuffer.prototype.destroy = function () {
-  this._framebufferManager =
-    this._framebufferManager && this._framebufferManager.destroy();
-  this._clearCommand = undefined;
-  return destroyObject(this);
+    this._framebufferManager =
+        this._framebufferManager && this._framebufferManager.destroy();
+    this._clearCommand = undefined;
+    return destroyObject(this);
 };
 
 export default EdgeFramebuffer;

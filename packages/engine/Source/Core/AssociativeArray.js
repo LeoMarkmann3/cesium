@@ -8,35 +8,35 @@ import DeveloperError from "./DeveloperError.js";
  * @constructor
  */
 function AssociativeArray() {
-  this._array = [];
-  this._hash = {};
+    this._array = [];
+    this._hash = {};
 }
 
 Object.defineProperties(AssociativeArray.prototype, {
-  /**
-   * Gets the number of items in the collection.
-   * @memberof AssociativeArray.prototype
-   *
-   * @type {number}
-   */
-  length: {
-    get: function () {
-      return this._array.length;
+    /**
+     * Gets the number of items in the collection.
+     * @memberof AssociativeArray.prototype
+     *
+     * @type {number}
+     */
+    length: {
+        get: function () {
+            return this._array.length;
+        },
     },
-  },
-  /**
-   * Gets an unordered array of all values in the collection.
-   * This is a live array that will automatically reflect the values in the collection,
-   * it should not be modified directly.
-   * @memberof AssociativeArray.prototype
-   *
-   * @type {Array}
-   */
-  values: {
-    get: function () {
-      return this._array;
+    /**
+     * Gets an unordered array of all values in the collection.
+     * This is a live array that will automatically reflect the values in the collection,
+     * it should not be modified directly.
+     * @memberof AssociativeArray.prototype
+     *
+     * @type {Array}
+     */
+    values: {
+        get: function () {
+            return this._array;
+        },
     },
-  },
 });
 
 /**
@@ -46,12 +46,12 @@ Object.defineProperties(AssociativeArray.prototype, {
  * @returns {boolean} <code>true</code> if the key is in the array, <code>false</code> otherwise.
  */
 AssociativeArray.prototype.contains = function (key) {
-  //>>includeStart('debug', pragmas.debug);
-  if (typeof key !== "string" && typeof key !== "number") {
-    throw new DeveloperError("key is required to be a string or number.");
-  }
-  //>>includeEnd('debug');
-  return defined(this._hash[key]);
+    //>>includeStart('debug', pragmas.debug);
+    if (typeof key !== "string" && typeof key !== "number") {
+        throw new DeveloperError("key is required to be a string or number.");
+    }
+    //>>includeEnd('debug');
+    return defined(this._hash[key]);
 };
 
 /**
@@ -62,18 +62,18 @@ AssociativeArray.prototype.contains = function (key) {
  * @param {*} value The value to associate with the provided key.
  */
 AssociativeArray.prototype.set = function (key, value) {
-  //>>includeStart('debug', pragmas.debug);
-  if (typeof key !== "string" && typeof key !== "number") {
-    throw new DeveloperError("key is required to be a string or number.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (typeof key !== "string" && typeof key !== "number") {
+        throw new DeveloperError("key is required to be a string or number.");
+    }
+    //>>includeEnd('debug');
 
-  const oldValue = this._hash[key];
-  if (value !== oldValue) {
-    this.remove(key);
-    this._hash[key] = value;
-    this._array.push(value);
-  }
+    const oldValue = this._hash[key];
+    if (value !== oldValue) {
+        this.remove(key);
+        this._hash[key] = value;
+        this._array.push(value);
+    }
 };
 
 /**
@@ -83,12 +83,12 @@ AssociativeArray.prototype.set = function (key, value) {
  * @returns {*} The associated value, or undefined if the key does not exist in the collection.
  */
 AssociativeArray.prototype.get = function (key) {
-  //>>includeStart('debug', pragmas.debug);
-  if (typeof key !== "string" && typeof key !== "number") {
-    throw new DeveloperError("key is required to be a string or number.");
-  }
-  //>>includeEnd('debug');
-  return this._hash[key];
+    //>>includeStart('debug', pragmas.debug);
+    if (typeof key !== "string" && typeof key !== "number") {
+        throw new DeveloperError("key is required to be a string or number.");
+    }
+    //>>includeEnd('debug');
+    return this._hash[key];
 };
 
 /**
@@ -98,30 +98,30 @@ AssociativeArray.prototype.get = function (key) {
  * @returns {boolean} True if it was removed, false if the key was not in the collection.
  */
 AssociativeArray.prototype.remove = function (key) {
-  //>>includeStart('debug', pragmas.debug);
-  if (defined(key) && typeof key !== "string" && typeof key !== "number") {
-    throw new DeveloperError("key is required to be a string or number.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (defined(key) && typeof key !== "string" && typeof key !== "number") {
+        throw new DeveloperError("key is required to be a string or number.");
+    }
+    //>>includeEnd('debug');
 
-  const value = this._hash[key];
-  const hasValue = defined(value);
-  if (hasValue) {
-    const array = this._array;
-    array.splice(array.indexOf(value), 1);
-    delete this._hash[key];
-  }
-  return hasValue;
+    const value = this._hash[key];
+    const hasValue = defined(value);
+    if (hasValue) {
+        const array = this._array;
+        array.splice(array.indexOf(value), 1);
+        delete this._hash[key];
+    }
+    return hasValue;
 };
 
 /**
  * Clears the collection.
  */
 AssociativeArray.prototype.removeAll = function () {
-  const array = this._array;
-  if (array.length > 0) {
-    this._hash = {};
-    array.length = 0;
-  }
+    const array = this._array;
+    if (array.length > 0) {
+        this._hash = {};
+        array.length = 0;
+    }
 };
 export default AssociativeArray;

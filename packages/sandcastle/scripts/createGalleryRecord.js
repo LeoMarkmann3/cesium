@@ -1,15 +1,15 @@
 export function createRecordHtml({
-  id,
-  title,
-  description,
-  image,
-  code,
-  labels,
+    id,
+    title,
+    description,
+    image,
+    code,
+    labels,
 }) {
-  // Pagefind best indexes content in a hierarchical structure.
-  // Heading levels and data-pagefind-weight attributes will factor into the search relevance.
-  // Headings with id attributes are helpful for structuring the search subresults for highlighting.
-  return `
+    // Pagefind best indexes content in a hierarchical structure.
+    // Heading levels and data-pagefind-weight attributes will factor into the search relevance.
+    // Headings with id attributes are helpful for structuring the search subresults for highlighting.
+    return `
 <html lang="en">
     <body id="${id}" data-pagefind-meta="id:${id}">
         <h1 id="title" data-pagefind-weight="10">${title}</h1>
@@ -25,13 +25,13 @@ export function createRecordHtml({
             data-pagefind-weight="0">Labels</h2>
         <ul data-pagefind-ignore>
         ${labels
-          .map(
-            (label) =>
-              `<li data-pagefind-meta="labels" 
+            .map(
+                (label) =>
+                    `<li data-pagefind-meta="labels" 
                 data-pagefind-filter="labels" 
                 data-pagefind-weight="2">${label}</li>`,
-          )
-          .join("\n")}
+            )
+            .join("\n")}
         </ul>
 
         <h2 id="code" 
@@ -46,10 +46,10 @@ ${code}
 }
 
 export function createGalleryRecord(galleryData) {
-  return {
-    url: `?id=${galleryData.id}`,
-    content: createRecordHtml(galleryData),
-  };
+    return {
+        url: `?id=${galleryData.id}`,
+        content: createRecordHtml(galleryData),
+    };
 }
 
 export default createGalleryRecord;

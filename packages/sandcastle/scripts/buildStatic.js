@@ -24,9 +24,9 @@ import typescriptCompile from "./typescriptCompile.js";
  * @param {string} name
  */
 function checkForImport(imports, name) {
-  if (!imports[name]) {
-    throw new Error(`Missing import for ${name}`);
-  }
+    if (!imports[name]) {
+        throw new Error(`Missing import for ${name}`);
+    }
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -49,73 +49,73 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * @param {{src: string, dest: string}[]} [options.copyExtraFiles] Extra paths passed to viteStaticCopy. Use this to consolidate files for a singular static deployment (ie during production). Source paths should be absolute, dest paths should be relative to the page root. It is up to you to ensure these files exist BEFORE building sandcastle.
  */
 export function createSandcastleConfig({
-  outDir,
-  basePath,
-  cesiumBaseUrl,
-  cesiumVersion,
-  commitSha,
-  imports,
-  copyExtraFiles = [],
+    outDir,
+    basePath,
+    cesiumBaseUrl,
+    cesiumVersion,
+    commitSha,
+    imports,
+    copyExtraFiles = [],
 }) {
-  if (!cesiumVersion || cesiumVersion === "") {
-    throw new Error("Must provide a CesiumJS version");
-  }
+    if (!cesiumVersion || cesiumVersion === "") {
+        throw new Error("Must provide a CesiumJS version");
+    }
 
-  /** @type {UserConfig} */
-  const config = { ...baseConfig };
+    /** @type {UserConfig} */
+    const config = { ...baseConfig };
 
-  config.base = basePath;
+    config.base = basePath;
 
-  config.build = {
-    ...config.build,
-    outDir: outDir,
-  };
+    config.build = {
+        ...config.build,
+        outDir: outDir,
+    };
 
-  const copyPlugin = viteStaticCopy({
-    targets: [
-      { src: "templates/Sandcastle.(d.ts|js)", dest: "templates" },
-      ...copyExtraFiles,
-    ],
-  });
+    const copyPlugin = viteStaticCopy({
+        targets: [
+            { src: "templates/Sandcastle.(d.ts|js)", dest: "templates" },
+            ...copyExtraFiles,
+        ],
+    });
 
-  checkForImport(imports, "cesium");
-  checkForImport(imports, "@cesium/engine");
-  checkForImport(imports, "@cesium/widgets");
-  if (imports["Sandcastle"]) {
-    throw new Error(
-      "Don't specify the Sandcastle import this is taken care of internally",
-    );
-  }
+    checkForImport(imports, "cesium");
+    checkForImport(imports, "@cesium/engine");
+    checkForImport(imports, "@cesium/widgets");
+    if (imports["Sandcastle"]) {
+        throw new Error(
+            "Don't specify the Sandcastle import this is taken care of internally",
+        );
+    }
 
-  /** @type {Object<string, string>} */
-  const importMap = {
-    Sandcastle: "../templates/Sandcastle.js",
-  };
-  /** @type {Object<string, string>} */
-  const typePaths = {
-    Sandcastle: "../templates/Sandcastle.d.ts",
-  };
-  for (const [key, value] of Object.entries(imports)) {
-    importMap[key] = value.path;
-    typePaths[key] = value.typesPath;
-  }
+    /** @type {Object<string, string>} */
+    const importMap = {
+        Sandcastle: "../templates/Sandcastle.js",
+    };
+    /** @type {Object<string, string>} */
+    const typePaths = {
+        Sandcastle: "../templates/Sandcastle.d.ts",
+    };
+    for (const [key, value] of Object.entries(imports)) {
+        importMap[key] = value.path;
+        typePaths[key] = value.typesPath;
+    }
 
-  config.define = {
-    ...config.define,
-    __VITE_TYPE_IMPORT_PATHS__: JSON.stringify(typePaths),
-    __CESIUM_VERSION__: JSON.stringify(`Cesium ${cesiumVersion}`),
-    __COMMIT_SHA__: JSON.stringify(commitSha ?? undefined),
-  };
+    config.define = {
+        ...config.define,
+        __VITE_TYPE_IMPORT_PATHS__: JSON.stringify(typePaths),
+        __CESIUM_VERSION__: JSON.stringify(`Cesium ${cesiumVersion}`),
+        __COMMIT_SHA__: JSON.stringify(commitSha ?? undefined),
+    };
 
-  const plugins = config.plugins ?? [];
-  config.plugins = [
-    ...plugins,
-    copyPlugin,
-    cesiumPathReplace(cesiumBaseUrl),
-    insertImportMap(importMap, ["bucket.html", "standalone.html"]),
-  ];
+    const plugins = config.plugins ?? [];
+    config.plugins = [
+        ...plugins,
+        copyPlugin,
+        cesiumPathReplace(cesiumBaseUrl),
+        insertImportMap(importMap, ["bucket.html", "standalone.html"]),
+    ];
 
-  return defineConfig(config);
+    return defineConfig(config);
 }
 
 /**
@@ -130,23 +130,23 @@ export function createSandcastleConfig({
  * @returns {Promise<void>}
  */
 export async function buildStatic(config, logLevel = "warn") {
-  // We have to do the compile for the Sandcastle API outside of the vite build
-  // because we need to reference the js file and types directly from the app
-  // and we don't want them bundled with the rest of the code
-  const exitCode = await typescriptCompile(
-    join(__dirname, "../templates/tsconfig.lib.json"),
-  );
+    // We have to do the compile for the Sandcastle API outside of the vite build
+    // because we need to reference the js file and types directly from the app
+    // and we don't want them bundled with the rest of the code
+    const exitCode = await typescriptCompile(
+        join(__dirname, "../templates/tsconfig.lib.json"),
+    );
 
-  if (exitCode === 0) {
-    console.log(`Sandcastle typescript build complete`);
-  } else {
-    throw new Error("Sandcastle typescript build failed");
-  }
+    if (exitCode === 0) {
+        console.log(`Sandcastle typescript build complete`);
+    } else {
+        throw new Error("Sandcastle typescript build failed");
+    }
 
-  console.log("Building Sandcastle with Vite");
-  await build({
-    ...config,
-    root: join(__dirname, "../"),
-    logLevel,
-  });
+    console.log("Building Sandcastle with Vite");
+    await build({
+        ...config,
+        root: join(__dirname, "../"),
+        logLevel,
+    });
 }

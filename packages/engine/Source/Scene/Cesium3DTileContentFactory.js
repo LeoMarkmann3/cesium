@@ -13,106 +13,125 @@ import RuntimeError from "../Core/RuntimeError.js";
  * @private
  */
 const Cesium3DTileContentFactory = {
-  b3dm: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    return Model3DTileContent.fromB3dm(
-      tileset,
-      tile,
-      resource,
-      arrayBuffer,
-      byteOffset,
-    );
-  },
-  pnts: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    return Model3DTileContent.fromPnts(
-      tileset,
-      tile,
-      resource,
-      arrayBuffer,
-      byteOffset,
-    );
-  },
-  i3dm: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    return Model3DTileContent.fromI3dm(
-      tileset,
-      tile,
-      resource,
-      arrayBuffer,
-      byteOffset,
-    );
-  },
-  cmpt: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    // Send in the factory in order to avoid a cyclical dependency
-    return Composite3DTileContent.fromTileType(
-      tileset,
-      tile,
-      resource,
-      arrayBuffer,
-      byteOffset,
-      Cesium3DTileContentFactory,
-    );
-  },
-  externalTileset: function (tileset, tile, resource, json) {
-    return Tileset3DTileContent.fromJson(tileset, tile, resource, json);
-  },
-  geom: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    return new Geometry3DTileContent(
-      tileset,
-      tile,
-      resource,
-      arrayBuffer,
-      byteOffset,
-    );
-  },
-  vctr: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    return new Vector3DTileContent(
-      tileset,
-      tile,
-      resource,
-      arrayBuffer,
-      byteOffset,
-    );
-  },
-  subt: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    return Implicit3DTileContent.fromSubtreeJson(
-      tileset,
-      tile,
-      resource,
-      undefined,
-      arrayBuffer,
-      byteOffset,
-    );
-  },
-  subtreeJson: function (tileset, tile, resource, json) {
-    return Implicit3DTileContent.fromSubtreeJson(tileset, tile, resource, json);
-  },
-  glb: function (tileset, tile, resource, arrayBuffer, byteOffset) {
-    const arrayBufferByteLength = arrayBuffer.byteLength;
-    if (arrayBufferByteLength < 12) {
-      throw new RuntimeError("Invalid glb content");
-    }
-    const dataView = new DataView(arrayBuffer, byteOffset);
-    const byteLength = dataView.getUint32(8, true);
-    const glb = new Uint8Array(arrayBuffer, byteOffset, byteLength);
+    b3dm: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        return Model3DTileContent.fromB3dm(
+            tileset,
+            tile,
+            resource,
+            arrayBuffer,
+            byteOffset,
+        );
+    },
+    pnts: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        return Model3DTileContent.fromPnts(
+            tileset,
+            tile,
+            resource,
+            arrayBuffer,
+            byteOffset,
+        );
+    },
+    i3dm: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        return Model3DTileContent.fromI3dm(
+            tileset,
+            tile,
+            resource,
+            arrayBuffer,
+            byteOffset,
+        );
+    },
+    cmpt: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        // Send in the factory in order to avoid a cyclical dependency
+        return Composite3DTileContent.fromTileType(
+            tileset,
+            tile,
+            resource,
+            arrayBuffer,
+            byteOffset,
+            Cesium3DTileContentFactory,
+        );
+    },
+    externalTileset: function (tileset, tile, resource, json) {
+        return Tileset3DTileContent.fromJson(tileset, tile, resource, json);
+    },
+    geom: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        return new Geometry3DTileContent(
+            tileset,
+            tile,
+            resource,
+            arrayBuffer,
+            byteOffset,
+        );
+    },
+    vctr: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        return new Vector3DTileContent(
+            tileset,
+            tile,
+            resource,
+            arrayBuffer,
+            byteOffset,
+        );
+    },
+    subt: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        return Implicit3DTileContent.fromSubtreeJson(
+            tileset,
+            tile,
+            resource,
+            undefined,
+            arrayBuffer,
+            byteOffset,
+        );
+    },
+    subtreeJson: function (tileset, tile, resource, json) {
+        return Implicit3DTileContent.fromSubtreeJson(
+            tileset,
+            tile,
+            resource,
+            json,
+        );
+    },
+    glb: function (tileset, tile, resource, arrayBuffer, byteOffset) {
+        const arrayBufferByteLength = arrayBuffer.byteLength;
+        if (arrayBufferByteLength < 12) {
+            throw new RuntimeError("Invalid glb content");
+        }
+        const dataView = new DataView(arrayBuffer, byteOffset);
+        const byteLength = dataView.getUint32(8, true);
+        const glb = new Uint8Array(arrayBuffer, byteOffset, byteLength);
 
-    if (
-      GaussianSplat3DTileContent.tilesetRequiresGaussianSplattingExt(tileset)
-    ) {
-      return GaussianSplat3DTileContent.fromGltf(tileset, tile, resource, glb);
-    }
+        if (
+            GaussianSplat3DTileContent.tilesetRequiresGaussianSplattingExt(
+                tileset,
+            )
+        ) {
+            return GaussianSplat3DTileContent.fromGltf(
+                tileset,
+                tile,
+                resource,
+                glb,
+            );
+        }
 
-    return Model3DTileContent.fromGltf(tileset, tile, resource, glb);
-  },
-  gltf: function (tileset, tile, resource, json) {
-    if (
-      GaussianSplat3DTileContent.tilesetRequiresGaussianSplattingExt(tileset)
-    ) {
-      return GaussianSplat3DTileContent.fromGltf(tileset, tile, resource, json);
-    }
+        return Model3DTileContent.fromGltf(tileset, tile, resource, glb);
+    },
+    gltf: function (tileset, tile, resource, json) {
+        if (
+            GaussianSplat3DTileContent.tilesetRequiresGaussianSplattingExt(
+                tileset,
+            )
+        ) {
+            return GaussianSplat3DTileContent.fromGltf(
+                tileset,
+                tile,
+                resource,
+                json,
+            );
+        }
 
-    return Model3DTileContent.fromGltf(tileset, tile, resource, json);
-  },
-  geoJson: function (tileset, tile, resource, json) {
-    return Model3DTileContent.fromGeoJson(tileset, tile, resource, json);
-  },
+        return Model3DTileContent.fromGltf(tileset, tile, resource, json);
+    },
+    geoJson: function (tileset, tile, resource, json) {
+        return Model3DTileContent.fromGeoJson(tileset, tile, resource, json);
+    },
 };
 export default Cesium3DTileContentFactory;

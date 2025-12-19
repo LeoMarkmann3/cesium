@@ -25,48 +25,48 @@ import Rectangle from "./Rectangle.js";
  * the tile tree.
  */
 function GeographicTilingScheme(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._ellipsoid = options.ellipsoid ?? Ellipsoid.default;
-  this._rectangle = options.rectangle ?? Rectangle.MAX_VALUE;
-  this._projection = new GeographicProjection(this._ellipsoid);
-  this._numberOfLevelZeroTilesX = options.numberOfLevelZeroTilesX ?? 2;
-  this._numberOfLevelZeroTilesY = options.numberOfLevelZeroTilesY ?? 1;
+    this._ellipsoid = options.ellipsoid ?? Ellipsoid.default;
+    this._rectangle = options.rectangle ?? Rectangle.MAX_VALUE;
+    this._projection = new GeographicProjection(this._ellipsoid);
+    this._numberOfLevelZeroTilesX = options.numberOfLevelZeroTilesX ?? 2;
+    this._numberOfLevelZeroTilesY = options.numberOfLevelZeroTilesY ?? 1;
 }
 
 Object.defineProperties(GeographicTilingScheme.prototype, {
-  /**
-   * Gets the ellipsoid that is tiled by this tiling scheme.
-   * @memberof GeographicTilingScheme.prototype
-   * @type {Ellipsoid}
-   */
-  ellipsoid: {
-    get: function () {
-      return this._ellipsoid;
+    /**
+     * Gets the ellipsoid that is tiled by this tiling scheme.
+     * @memberof GeographicTilingScheme.prototype
+     * @type {Ellipsoid}
+     */
+    ellipsoid: {
+        get: function () {
+            return this._ellipsoid;
+        },
     },
-  },
 
-  /**
-   * Gets the rectangle, in radians, covered by this tiling scheme.
-   * @memberof GeographicTilingScheme.prototype
-   * @type {Rectangle}
-   */
-  rectangle: {
-    get: function () {
-      return this._rectangle;
+    /**
+     * Gets the rectangle, in radians, covered by this tiling scheme.
+     * @memberof GeographicTilingScheme.prototype
+     * @type {Rectangle}
+     */
+    rectangle: {
+        get: function () {
+            return this._rectangle;
+        },
     },
-  },
 
-  /**
-   * Gets the map projection used by this tiling scheme.
-   * @memberof GeographicTilingScheme.prototype
-   * @type {MapProjection}
-   */
-  projection: {
-    get: function () {
-      return this._projection;
+    /**
+     * Gets the map projection used by this tiling scheme.
+     * @memberof GeographicTilingScheme.prototype
+     * @type {MapProjection}
+     */
+    projection: {
+        get: function () {
+            return this._projection;
+        },
     },
-  },
 });
 
 /**
@@ -76,7 +76,7 @@ Object.defineProperties(GeographicTilingScheme.prototype, {
  * @returns {number} The number of tiles in the X direction at the given level.
  */
 GeographicTilingScheme.prototype.getNumberOfXTilesAtLevel = function (level) {
-  return this._numberOfLevelZeroTilesX << level;
+    return this._numberOfLevelZeroTilesX << level;
 };
 
 /**
@@ -86,7 +86,7 @@ GeographicTilingScheme.prototype.getNumberOfXTilesAtLevel = function (level) {
  * @returns {number} The number of tiles in the Y direction at the given level.
  */
 GeographicTilingScheme.prototype.getNumberOfYTilesAtLevel = function (level) {
-  return this._numberOfLevelZeroTilesY << level;
+    return this._numberOfLevelZeroTilesY << level;
 };
 
 /**
@@ -100,27 +100,27 @@ GeographicTilingScheme.prototype.getNumberOfYTilesAtLevel = function (level) {
  *          is undefined.
  */
 GeographicTilingScheme.prototype.rectangleToNativeRectangle = function (
-  rectangle,
-  result,
+    rectangle,
+    result,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("rectangle", rectangle);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("rectangle", rectangle);
+    //>>includeEnd('debug');
 
-  const west = CesiumMath.toDegrees(rectangle.west);
-  const south = CesiumMath.toDegrees(rectangle.south);
-  const east = CesiumMath.toDegrees(rectangle.east);
-  const north = CesiumMath.toDegrees(rectangle.north);
+    const west = CesiumMath.toDegrees(rectangle.west);
+    const south = CesiumMath.toDegrees(rectangle.south);
+    const east = CesiumMath.toDegrees(rectangle.east);
+    const north = CesiumMath.toDegrees(rectangle.north);
 
-  if (!defined(result)) {
-    return new Rectangle(west, south, east, north);
-  }
+    if (!defined(result)) {
+        return new Rectangle(west, south, east, north);
+    }
 
-  result.west = west;
-  result.south = south;
-  result.east = east;
-  result.north = north;
-  return result;
+    result.west = west;
+    result.south = south;
+    result.east = east;
+    result.north = north;
+    return result;
 };
 
 /**
@@ -136,17 +136,17 @@ GeographicTilingScheme.prototype.rectangleToNativeRectangle = function (
  *          if 'result' is undefined.
  */
 GeographicTilingScheme.prototype.tileXYToNativeRectangle = function (
-  x,
-  y,
-  level,
-  result,
+    x,
+    y,
+    level,
+    result,
 ) {
-  const rectangleRadians = this.tileXYToRectangle(x, y, level, result);
-  rectangleRadians.west = CesiumMath.toDegrees(rectangleRadians.west);
-  rectangleRadians.south = CesiumMath.toDegrees(rectangleRadians.south);
-  rectangleRadians.east = CesiumMath.toDegrees(rectangleRadians.east);
-  rectangleRadians.north = CesiumMath.toDegrees(rectangleRadians.north);
-  return rectangleRadians;
+    const rectangleRadians = this.tileXYToRectangle(x, y, level, result);
+    rectangleRadians.west = CesiumMath.toDegrees(rectangleRadians.west);
+    rectangleRadians.south = CesiumMath.toDegrees(rectangleRadians.south);
+    rectangleRadians.east = CesiumMath.toDegrees(rectangleRadians.east);
+    rectangleRadians.north = CesiumMath.toDegrees(rectangleRadians.north);
+    return rectangleRadians;
 };
 
 /**
@@ -161,33 +161,33 @@ GeographicTilingScheme.prototype.tileXYToNativeRectangle = function (
  *          if 'result' is undefined.
  */
 GeographicTilingScheme.prototype.tileXYToRectangle = function (
-  x,
-  y,
-  level,
-  result,
+    x,
+    y,
+    level,
+    result,
 ) {
-  const rectangle = this._rectangle;
+    const rectangle = this._rectangle;
 
-  const xTiles = this.getNumberOfXTilesAtLevel(level);
-  const yTiles = this.getNumberOfYTilesAtLevel(level);
+    const xTiles = this.getNumberOfXTilesAtLevel(level);
+    const yTiles = this.getNumberOfYTilesAtLevel(level);
 
-  const xTileWidth = rectangle.width / xTiles;
-  const west = x * xTileWidth + rectangle.west;
-  const east = (x + 1) * xTileWidth + rectangle.west;
+    const xTileWidth = rectangle.width / xTiles;
+    const west = x * xTileWidth + rectangle.west;
+    const east = (x + 1) * xTileWidth + rectangle.west;
 
-  const yTileHeight = rectangle.height / yTiles;
-  const north = rectangle.north - y * yTileHeight;
-  const south = rectangle.north - (y + 1) * yTileHeight;
+    const yTileHeight = rectangle.height / yTiles;
+    const north = rectangle.north - y * yTileHeight;
+    const south = rectangle.north - (y + 1) * yTileHeight;
 
-  if (!defined(result)) {
-    result = new Rectangle(west, south, east, north);
-  }
+    if (!defined(result)) {
+        result = new Rectangle(west, south, east, north);
+    }
 
-  result.west = west;
-  result.south = south;
-  result.east = east;
-  result.north = north;
-  return result;
+    result.west = west;
+    result.south = south;
+    result.east = east;
+    result.north = north;
+    return result;
 };
 
 /**
@@ -202,44 +202,44 @@ GeographicTilingScheme.prototype.tileXYToRectangle = function (
  *          if 'result' is undefined.
  */
 GeographicTilingScheme.prototype.positionToTileXY = function (
-  position,
-  level,
-  result,
+    position,
+    level,
+    result,
 ) {
-  const rectangle = this._rectangle;
-  if (!Rectangle.contains(rectangle, position)) {
-    // outside the bounds of the tiling scheme
-    return undefined;
-  }
+    const rectangle = this._rectangle;
+    if (!Rectangle.contains(rectangle, position)) {
+        // outside the bounds of the tiling scheme
+        return undefined;
+    }
 
-  const xTiles = this.getNumberOfXTilesAtLevel(level);
-  const yTiles = this.getNumberOfYTilesAtLevel(level);
+    const xTiles = this.getNumberOfXTilesAtLevel(level);
+    const yTiles = this.getNumberOfYTilesAtLevel(level);
 
-  const xTileWidth = rectangle.width / xTiles;
-  const yTileHeight = rectangle.height / yTiles;
+    const xTileWidth = rectangle.width / xTiles;
+    const yTileHeight = rectangle.height / yTiles;
 
-  let longitude = position.longitude;
-  if (rectangle.east < rectangle.west) {
-    longitude += CesiumMath.TWO_PI;
-  }
+    let longitude = position.longitude;
+    if (rectangle.east < rectangle.west) {
+        longitude += CesiumMath.TWO_PI;
+    }
 
-  let xTileCoordinate = ((longitude - rectangle.west) / xTileWidth) | 0;
-  if (xTileCoordinate >= xTiles) {
-    xTileCoordinate = xTiles - 1;
-  }
+    let xTileCoordinate = ((longitude - rectangle.west) / xTileWidth) | 0;
+    if (xTileCoordinate >= xTiles) {
+        xTileCoordinate = xTiles - 1;
+    }
 
-  let yTileCoordinate =
-    ((rectangle.north - position.latitude) / yTileHeight) | 0;
-  if (yTileCoordinate >= yTiles) {
-    yTileCoordinate = yTiles - 1;
-  }
+    let yTileCoordinate =
+        ((rectangle.north - position.latitude) / yTileHeight) | 0;
+    if (yTileCoordinate >= yTiles) {
+        yTileCoordinate = yTiles - 1;
+    }
 
-  if (!defined(result)) {
-    return new Cartesian2(xTileCoordinate, yTileCoordinate);
-  }
+    if (!defined(result)) {
+        return new Cartesian2(xTileCoordinate, yTileCoordinate);
+    }
 
-  result.x = xTileCoordinate;
-  result.y = yTileCoordinate;
-  return result;
+    result.x = xTileCoordinate;
+    result.y = yTileCoordinate;
+    return result;
 };
 export default GeographicTilingScheme;

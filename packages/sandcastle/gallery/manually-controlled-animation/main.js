@@ -1,16 +1,16 @@
 import * as Cesium from "cesium";
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  shouldAnimate: true,
+    shouldAnimate: true,
 });
 
 //Make sure viewer is at the desired time.
 const start = Cesium.JulianDate.fromDate(new Date(2018, 11, 12, 15));
 const totalSeconds = 30;
 const stop = Cesium.JulianDate.addSeconds(
-  start,
-  totalSeconds,
-  new Cesium.JulianDate(),
+    start,
+    totalSeconds,
+    new Cesium.JulianDate(),
 );
 viewer.clock.startTime = start.clone();
 viewer.clock.stopTime = stop.clone();
@@ -22,19 +22,19 @@ viewer.timeline.zoomTo(start, stop);
 const position = new Cesium.SampledPositionProperty();
 const distance = new Cesium.SampledProperty(Number);
 const startPosition = new Cesium.Cartesian3(
-  -2379556.799372864,
-  -4665528.205030263,
-  3628013.106599678,
+    -2379556.799372864,
+    -4665528.205030263,
+    3628013.106599678,
 );
 const endPosition = new Cesium.Cartesian3(
-  -2379603.7074103747,
-  -4665623.48990283,
-  3627860.82704567,
+    -2379603.7074103747,
+    -4665623.48990283,
+    3627860.82704567,
 );
 // A velocity vector property will give us the entity's speed and direction at any given time.
 const velocityVectorProperty = new Cesium.VelocityVectorProperty(
-  position,
-  false,
+    position,
+    false,
 );
 const velocityVector = new Cesium.Cartesian3();
 
@@ -42,88 +42,91 @@ const numberOfSamples = 100;
 let prevLocation = startPosition;
 let totalDistance = 0;
 for (let i = 0; i <= numberOfSamples; ++i) {
-  const factor = i / numberOfSamples;
-  const time = Cesium.JulianDate.addSeconds(
-    start,
-    factor * totalSeconds,
-    new Cesium.JulianDate(),
-  );
+    const factor = i / numberOfSamples;
+    const time = Cesium.JulianDate.addSeconds(
+        start,
+        factor * totalSeconds,
+        new Cesium.JulianDate(),
+    );
 
-  // Lerp using a non-linear factor so that the model accelerates.
-  const locationFactor = Math.pow(factor, 2);
-  const location = Cesium.Cartesian3.lerp(
-    startPosition,
-    endPosition,
-    locationFactor,
-    new Cesium.Cartesian3(),
-  );
-  position.addSample(time, location);
-  distance.addSample(
-    time,
-    (totalDistance += Cesium.Cartesian3.distance(location, prevLocation)),
-  );
-  prevLocation = location;
+    // Lerp using a non-linear factor so that the model accelerates.
+    const locationFactor = Math.pow(factor, 2);
+    const location = Cesium.Cartesian3.lerp(
+        startPosition,
+        endPosition,
+        locationFactor,
+        new Cesium.Cartesian3(),
+    );
+    position.addSample(time, location);
+    distance.addSample(
+        time,
+        (totalDistance += Cesium.Cartesian3.distance(location, prevLocation)),
+    );
+    prevLocation = location;
 }
 
 function updateSpeedLabel(time, result) {
-  velocityVectorProperty.getValue(time, velocityVector);
-  const metersPerSecond = Cesium.Cartesian3.magnitude(velocityVector);
-  const kmPerHour = Math.round(metersPerSecond * 3.6);
+    velocityVectorProperty.getValue(time, velocityVector);
+    const metersPerSecond = Cesium.Cartesian3.magnitude(velocityVector);
+    const kmPerHour = Math.round(metersPerSecond * 3.6);
 
-  return `${kmPerHour} km/hr`;
+    return `${kmPerHour} km/hr`;
 }
 
 // Add our model.
 try {
-  const modelPrimitive = viewer.scene.primitives.add(
-    await Cesium.Model.fromGltfAsync({
-      url: "../../SampleData/models/CesiumMan/Cesium_Man.glb",
-      scale: 4,
-    }),
-  );
+    const modelPrimitive = viewer.scene.primitives.add(
+        await Cesium.Model.fromGltfAsync({
+            url: "../../SampleData/models/CesiumMan/Cesium_Man.glb",
+            scale: 4,
+        }),
+    );
 
-  modelPrimitive.readyEvent.addEventListener(() => {
-    modelPrimitive.activeAnimations.addAll({
-      loop: Cesium.ModelAnimationLoop.REPEAT,
-      animationTime: function (duration) {
-        return distance.getValue(viewer.clock.currentTime) / duration;
-      },
-      multiplier: 0.25,
+    modelPrimitive.readyEvent.addEventListener(() => {
+        modelPrimitive.activeAnimations.addAll({
+            loop: Cesium.ModelAnimationLoop.REPEAT,
+            animationTime: function (duration) {
+                return distance.getValue(viewer.clock.currentTime) / duration;
+            },
+            multiplier: 0.25,
+        });
     });
-  });
 
-  const rotation = new Cesium.Matrix3();
-  viewer.scene.preUpdate.addEventListener(function () {
-    const time = viewer.clock.currentTime;
-    const pos = position.getValue(time);
-    const vel = velocityVectorProperty.getValue(time);
-    Cesium.Cartesian3.normalize(vel, vel);
-    Cesium.Transforms.rotationMatrixFromPositionVelocity(
-      pos,
-      vel,
-      viewer.scene.globe.ellipsoid,
-      rotation,
-    );
-    Cesium.Matrix4.fromRotationTranslation(
-      rotation,
-      pos,
-      modelPrimitive.modelMatrix,
-    );
-  });
+    const rotation = new Cesium.Matrix3();
+    viewer.scene.preUpdate.addEventListener(function () {
+        const time = viewer.clock.currentTime;
+        const pos = position.getValue(time);
+        const vel = velocityVectorProperty.getValue(time);
+        Cesium.Cartesian3.normalize(vel, vel);
+        Cesium.Transforms.rotationMatrixFromPositionVelocity(
+            pos,
+            vel,
+            viewer.scene.globe.ellipsoid,
+            rotation,
+        );
+        Cesium.Matrix4.fromRotationTranslation(
+            rotation,
+            pos,
+            modelPrimitive.modelMatrix,
+        );
+    });
 } catch (error) {
-  window.alert(error);
+    window.alert(error);
 }
 
 const modelLabel = viewer.entities.add({
-  position: position,
-  orientation: new Cesium.VelocityOrientationProperty(position), // Automatically set the model's orientation to the direction it's facing.
-  label: {
-    text: new Cesium.CallbackProperty(updateSpeedLabel, false),
-    font: "20px sans-serif",
-    showBackground: true,
-    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0.0, 100.0),
-    eyeOffset: new Cesium.Cartesian3(0, 7.2, 0),
-  },
+    position: position,
+    orientation: new Cesium.VelocityOrientationProperty(position), // Automatically set the model's orientation to the direction it's facing.
+    label: {
+        text: new Cesium.CallbackProperty(updateSpeedLabel, false),
+        font: "20px sans-serif",
+        showBackground: true,
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
+            0.0,
+            100.0,
+        ),
+        eyeOffset: new Cesium.Cartesian3(0, 7.2, 0),
+    },
 });
 viewer.trackedEntity = modelLabel;
 modelLabel.viewFrom = new Cesium.Cartesian3(-30.0, -10.0, 10.0);

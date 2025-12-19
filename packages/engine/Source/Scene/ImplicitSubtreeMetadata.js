@@ -19,67 +19,67 @@ import MetadataEntity from "./MetadataEntity.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function ImplicitSubtreeMetadata(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const subtreeMetadata = options.subtreeMetadata;
-  const metadataClass = options.class;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const subtreeMetadata = options.subtreeMetadata;
+    const metadataClass = options.class;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.subtreeMetadata", subtreeMetadata);
-  Check.typeOf.object("options.class", metadataClass);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.subtreeMetadata", subtreeMetadata);
+    Check.typeOf.object("options.class", metadataClass);
+    //>>includeEnd('debug');
 
-  const properties = defined(subtreeMetadata.properties)
-    ? subtreeMetadata.properties
-    : {};
+    const properties = defined(subtreeMetadata.properties)
+        ? subtreeMetadata.properties
+        : {};
 
-  this._class = metadataClass;
-  this._properties = properties;
-  this._extras = subtreeMetadata.extras;
-  this._extensions = subtreeMetadata.extensions;
+    this._class = metadataClass;
+    this._properties = properties;
+    this._extras = subtreeMetadata.extras;
+    this._extensions = subtreeMetadata.extensions;
 }
 
 Object.defineProperties(ImplicitSubtreeMetadata.prototype, {
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof ImplicitSubtreeMetadata.prototype
-   * @type {MetadataClass}
-   * @readonly
-   * @private
-   */
-  class: {
-    get: function () {
-      return this._class;
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof ImplicitSubtreeMetadata.prototype
+     * @type {MetadataClass}
+     * @readonly
+     * @private
+     */
+    class: {
+        get: function () {
+            return this._class;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof ImplicitSubtreeMetadata.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof ImplicitSubtreeMetadata.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof ImplicitSubtreeMetadata.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof ImplicitSubtreeMetadata.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 });
 
 /**
@@ -90,7 +90,11 @@ Object.defineProperties(ImplicitSubtreeMetadata.prototype, {
  * @private
  */
 ImplicitSubtreeMetadata.prototype.hasProperty = function (propertyId) {
-  return MetadataEntity.hasProperty(propertyId, this._properties, this._class);
+    return MetadataEntity.hasProperty(
+        propertyId,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -101,11 +105,11 @@ ImplicitSubtreeMetadata.prototype.hasProperty = function (propertyId) {
  * @private
  */
 ImplicitSubtreeMetadata.prototype.hasPropertyBySemantic = function (semantic) {
-  return MetadataEntity.hasPropertyBySemantic(
-    semantic,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.hasPropertyBySemantic(
+        semantic,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -116,7 +120,11 @@ ImplicitSubtreeMetadata.prototype.hasPropertyBySemantic = function (semantic) {
  * @private
  */
 ImplicitSubtreeMetadata.prototype.getPropertyIds = function (results) {
-  return MetadataEntity.getPropertyIds(this._properties, this._class, results);
+    return MetadataEntity.getPropertyIds(
+        this._properties,
+        this._class,
+        results,
+    );
 };
 
 /**
@@ -130,7 +138,11 @@ ImplicitSubtreeMetadata.prototype.getPropertyIds = function (results) {
  * @private
  */
 ImplicitSubtreeMetadata.prototype.getProperty = function (propertyId) {
-  return MetadataEntity.getProperty(propertyId, this._properties, this._class);
+    return MetadataEntity.getProperty(
+        propertyId,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -145,12 +157,12 @@ ImplicitSubtreeMetadata.prototype.getProperty = function (propertyId) {
  * @private
  */
 ImplicitSubtreeMetadata.prototype.setProperty = function (propertyId, value) {
-  return MetadataEntity.setProperty(
-    propertyId,
-    value,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.setProperty(
+        propertyId,
+        value,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -161,11 +173,11 @@ ImplicitSubtreeMetadata.prototype.setProperty = function (propertyId, value) {
  * @private
  */
 ImplicitSubtreeMetadata.prototype.getPropertyBySemantic = function (semantic) {
-  return MetadataEntity.getPropertyBySemantic(
-    semantic,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.getPropertyBySemantic(
+        semantic,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -177,15 +189,15 @@ ImplicitSubtreeMetadata.prototype.getPropertyBySemantic = function (semantic) {
  * @private
  */
 ImplicitSubtreeMetadata.prototype.setPropertyBySemantic = function (
-  semantic,
-  value,
-) {
-  return MetadataEntity.setPropertyBySemantic(
     semantic,
     value,
-    this._properties,
-    this._class,
-  );
+) {
+    return MetadataEntity.setPropertyBySemantic(
+        semantic,
+        value,
+        this._properties,
+        this._class,
+    );
 };
 
 export default ImplicitSubtreeMetadata;

@@ -7,28 +7,28 @@
  * @see SampledProperty
  */
 const ExtrapolationType = {
-  /**
-   * No extrapolation occurs.
-   *
-   * @type {number}
-   * @constant
-   */
-  NONE: 0,
+    /**
+     * No extrapolation occurs.
+     *
+     * @type {number}
+     * @constant
+     */
+    NONE: 0,
 
-  /**
-   * The first or last value is used when outside the range of sample data.
-   *
-   * @type {number}
-   * @constant
-   */
-  HOLD: 1,
+    /**
+     * The first or last value is used when outside the range of sample data.
+     *
+     * @type {number}
+     * @constant
+     */
+    HOLD: 1,
 
-  /**
-   * The value is extrapolated.
-   *
-   * @type {number}
-   * @constant
-   */
-  EXTRAPOLATE: 2,
+    /**
+     * The value is extrapolated.
+     *
+     * @type {number}
+     * @constant
+     */
+    EXTRAPOLATE: 2,
 };
 export default Object.freeze(ExtrapolationType);

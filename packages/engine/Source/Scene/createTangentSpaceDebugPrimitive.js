@@ -30,85 +30,100 @@ import Primitive from "./Primitive.js";
  * }));
  */
 function createTangentSpaceDebugPrimitive(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const instances = [];
-  let geometry = options.geometry;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const instances = [];
+    let geometry = options.geometry;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(geometry)) {
-    throw new DeveloperError("options.geometry is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(geometry)) {
+        throw new DeveloperError("options.geometry is required.");
+    }
+    //>>includeEnd('debug');
 
-  if (!defined(geometry.attributes) || !defined(geometry.primitiveType)) {
-    // to create the debug lines, we need the computed attributes.
-    // compute them if they are undefined.
-    geometry = geometry.constructor.createGeometry(geometry);
-  }
+    if (!defined(geometry.attributes) || !defined(geometry.primitiveType)) {
+        // to create the debug lines, we need the computed attributes.
+        // compute them if they are undefined.
+        geometry = geometry.constructor.createGeometry(geometry);
+    }
 
-  const attributes = geometry.attributes;
-  const modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
-  const length = options.length ?? 10000.0;
+    const attributes = geometry.attributes;
+    const modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
+    const length = options.length ?? 10000.0;
 
-  if (defined(attributes.normal)) {
-    instances.push(
-      new GeometryInstance({
-        geometry: GeometryPipeline.createLineSegmentsForVectors(
-          geometry,
-          "normal",
-          length,
-        ),
-        attributes: {
-          color: new ColorGeometryInstanceAttribute(1.0, 0.0, 0.0, 1.0),
-        },
-        modelMatrix: modelMatrix,
-      }),
-    );
-  }
+    if (defined(attributes.normal)) {
+        instances.push(
+            new GeometryInstance({
+                geometry: GeometryPipeline.createLineSegmentsForVectors(
+                    geometry,
+                    "normal",
+                    length,
+                ),
+                attributes: {
+                    color: new ColorGeometryInstanceAttribute(
+                        1.0,
+                        0.0,
+                        0.0,
+                        1.0,
+                    ),
+                },
+                modelMatrix: modelMatrix,
+            }),
+        );
+    }
 
-  if (defined(attributes.tangent)) {
-    instances.push(
-      new GeometryInstance({
-        geometry: GeometryPipeline.createLineSegmentsForVectors(
-          geometry,
-          "tangent",
-          length,
-        ),
-        attributes: {
-          color: new ColorGeometryInstanceAttribute(0.0, 1.0, 0.0, 1.0),
-        },
-        modelMatrix: modelMatrix,
-      }),
-    );
-  }
+    if (defined(attributes.tangent)) {
+        instances.push(
+            new GeometryInstance({
+                geometry: GeometryPipeline.createLineSegmentsForVectors(
+                    geometry,
+                    "tangent",
+                    length,
+                ),
+                attributes: {
+                    color: new ColorGeometryInstanceAttribute(
+                        0.0,
+                        1.0,
+                        0.0,
+                        1.0,
+                    ),
+                },
+                modelMatrix: modelMatrix,
+            }),
+        );
+    }
 
-  if (defined(attributes.bitangent)) {
-    instances.push(
-      new GeometryInstance({
-        geometry: GeometryPipeline.createLineSegmentsForVectors(
-          geometry,
-          "bitangent",
-          length,
-        ),
-        attributes: {
-          color: new ColorGeometryInstanceAttribute(0.0, 0.0, 1.0, 1.0),
-        },
-        modelMatrix: modelMatrix,
-      }),
-    );
-  }
+    if (defined(attributes.bitangent)) {
+        instances.push(
+            new GeometryInstance({
+                geometry: GeometryPipeline.createLineSegmentsForVectors(
+                    geometry,
+                    "bitangent",
+                    length,
+                ),
+                attributes: {
+                    color: new ColorGeometryInstanceAttribute(
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0,
+                    ),
+                },
+                modelMatrix: modelMatrix,
+            }),
+        );
+    }
 
-  if (instances.length > 0) {
-    return new Primitive({
-      asynchronous: false,
-      geometryInstances: instances,
-      appearance: new PerInstanceColorAppearance({
-        flat: true,
-        translucent: false,
-      }),
-    });
-  }
+    if (instances.length > 0) {
+        return new Primitive({
+            asynchronous: false,
+            geometryInstances: instances,
+            appearance: new PerInstanceColorAppearance({
+                flat: true,
+                translucent: false,
+            }),
+        });
+    }
 
-  return undefined;
+    return undefined;
 }
 export default createTangentSpaceDebugPrimitive;

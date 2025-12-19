@@ -12,10 +12,10 @@ import ModelUtility from "./ModelUtility.js";
  * @private
  */
 const SelectedFeatureIdPipelineStage = {
-  name: "SelectedFeatureIdPipelineStage", // Helps with debugging
+    name: "SelectedFeatureIdPipelineStage", // Helps with debugging
 
-  STRUCT_ID_SELECTED_FEATURE: "SelectedFeature",
-  STRUCT_NAME_SELECTED_FEATURE: "SelectedFeature",
+    STRUCT_ID_SELECTED_FEATURE: "SelectedFeature",
+    STRUCT_NAME_SELECTED_FEATURE: "SelectedFeature",
 };
 
 /**
@@ -30,118 +30,122 @@ const SelectedFeatureIdPipelineStage = {
  * @param {FrameState} frameState The frame state.
  */
 SelectedFeatureIdPipelineStage.process = function (
-  renderResources,
-  primitive,
-  frameState,
+    renderResources,
+    primitive,
+    frameState,
 ) {
-  const shaderBuilder = renderResources.shaderBuilder;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  renderResources.hasPropertyTable = true;
+    renderResources.hasPropertyTable = true;
 
-  const model = renderResources.model;
-  const node = renderResources.runtimeNode.node;
-  const selectedFeatureIds = getSelectedFeatureIds(model, node, primitive);
-  const shaderDestination = selectedFeatureIds.shaderDestination;
+    const model = renderResources.model;
+    const node = renderResources.runtimeNode.node;
+    const selectedFeatureIds = getSelectedFeatureIds(model, node, primitive);
+    const shaderDestination = selectedFeatureIds.shaderDestination;
 
-  shaderBuilder.addDefine(
-    "HAS_SELECTED_FEATURE_ID",
-    undefined,
-    shaderDestination,
-  );
-
-  // Add a define to insert the variable to use.
-  // Example: #define SELECTED_FEATURE_ID featureId_1
-  // This corresponds to featureIds.featureId_1
-  shaderBuilder.addDefine(
-    "SELECTED_FEATURE_ID",
-    selectedFeatureIds.variableName,
-    shaderDestination,
-  );
-
-  // Add a define to the shader to distinguish feature ID attributes from
-  // textures. This is needed for determining where to filter features
-  // by pass type.
-  shaderBuilder.addDefine(
-    selectedFeatureIds.featureIdDefine,
-    undefined,
-    shaderDestination,
-  );
-
-  updateFeatureStruct(shaderBuilder);
-
-  const nullFeatureId = selectedFeatureIds.featureIds.nullFeatureId;
-  const uniformMap = renderResources.uniformMap;
-  if (defined(nullFeatureId)) {
     shaderBuilder.addDefine(
-      "HAS_NULL_FEATURE_ID",
-      undefined,
-      shaderDestination,
+        "HAS_SELECTED_FEATURE_ID",
+        undefined,
+        shaderDestination,
     );
-    shaderBuilder.addUniform("int", "model_nullFeatureId", shaderDestination);
-    uniformMap.model_nullFeatureId = function () {
-      return nullFeatureId;
-    };
-  }
 
-  if (selectedFeatureIds.shaderDestination === ShaderDestination.BOTH) {
-    shaderBuilder.addVertexLines(SelectedFeatureIdStageCommon);
-  }
-  shaderBuilder.addFragmentLines(SelectedFeatureIdStageCommon);
+    // Add a define to insert the variable to use.
+    // Example: #define SELECTED_FEATURE_ID featureId_1
+    // This corresponds to featureIds.featureId_1
+    shaderBuilder.addDefine(
+        "SELECTED_FEATURE_ID",
+        selectedFeatureIds.variableName,
+        shaderDestination,
+    );
+
+    // Add a define to the shader to distinguish feature ID attributes from
+    // textures. This is needed for determining where to filter features
+    // by pass type.
+    shaderBuilder.addDefine(
+        selectedFeatureIds.featureIdDefine,
+        undefined,
+        shaderDestination,
+    );
+
+    updateFeatureStruct(shaderBuilder);
+
+    const nullFeatureId = selectedFeatureIds.featureIds.nullFeatureId;
+    const uniformMap = renderResources.uniformMap;
+    if (defined(nullFeatureId)) {
+        shaderBuilder.addDefine(
+            "HAS_NULL_FEATURE_ID",
+            undefined,
+            shaderDestination,
+        );
+        shaderBuilder.addUniform(
+            "int",
+            "model_nullFeatureId",
+            shaderDestination,
+        );
+        uniformMap.model_nullFeatureId = function () {
+            return nullFeatureId;
+        };
+    }
+
+    if (selectedFeatureIds.shaderDestination === ShaderDestination.BOTH) {
+        shaderBuilder.addVertexLines(SelectedFeatureIdStageCommon);
+    }
+    shaderBuilder.addFragmentLines(SelectedFeatureIdStageCommon);
 };
 
 function getFeatureIdDefine(featureIds) {
-  if (featureIds instanceof ModelComponents.FeatureIdTexture) {
-    return "HAS_SELECTED_FEATURE_ID_TEXTURE";
-  }
+    if (featureIds instanceof ModelComponents.FeatureIdTexture) {
+        return "HAS_SELECTED_FEATURE_ID_TEXTURE";
+    }
 
-  return "HAS_SELECTED_FEATURE_ID_ATTRIBUTE";
+    return "HAS_SELECTED_FEATURE_ID_ATTRIBUTE";
 }
 
 function getShaderDestination(featureIds) {
-  // Feature ID textures are only supported in the fragment shader.
-  if (featureIds instanceof ModelComponents.FeatureIdTexture) {
-    return ShaderDestination.FRAGMENT;
-  }
+    // Feature ID textures are only supported in the fragment shader.
+    if (featureIds instanceof ModelComponents.FeatureIdTexture) {
+        return ShaderDestination.FRAGMENT;
+    }
 
-  return ShaderDestination.BOTH;
+    return ShaderDestination.BOTH;
 }
 
 function getSelectedFeatureIds(model, node, primitive) {
-  let variableName;
-  let featureIds;
-  // Check instances first, as this is the most specific type of
-  // feature ID
-  if (defined(node.instances)) {
-    featureIds = ModelUtility.getFeatureIdsByLabel(
-      node.instances.featureIds,
-      model.instanceFeatureIdLabel,
-    );
+    let variableName;
+    let featureIds;
+    // Check instances first, as this is the most specific type of
+    // feature ID
+    if (defined(node.instances)) {
+        featureIds = ModelUtility.getFeatureIdsByLabel(
+            node.instances.featureIds,
+            model.instanceFeatureIdLabel,
+        );
 
-    if (defined(featureIds)) {
-      // Either label could be used here, but prefer label as it may be more
-      // meaningful when debugging
-      variableName = featureIds.label ?? featureIds.positionalLabel;
-      return {
+        if (defined(featureIds)) {
+            // Either label could be used here, but prefer label as it may be more
+            // meaningful when debugging
+            variableName = featureIds.label ?? featureIds.positionalLabel;
+            return {
+                featureIds: featureIds,
+                variableName: variableName,
+                shaderDestination: getShaderDestination(featureIds),
+                featureIdDefine: getFeatureIdDefine(featureIds),
+            };
+        }
+    }
+
+    featureIds = ModelUtility.getFeatureIdsByLabel(
+        primitive.featureIds,
+        model.featureIdLabel,
+    );
+    // again, prefer label for being more descriptive
+    variableName = featureIds.label ?? featureIds.positionalLabel;
+    return {
         featureIds: featureIds,
         variableName: variableName,
         shaderDestination: getShaderDestination(featureIds),
         featureIdDefine: getFeatureIdDefine(featureIds),
-      };
-    }
-  }
-
-  featureIds = ModelUtility.getFeatureIdsByLabel(
-    primitive.featureIds,
-    model.featureIdLabel,
-  );
-  // again, prefer label for being more descriptive
-  variableName = featureIds.label ?? featureIds.positionalLabel;
-  return {
-    featureIds: featureIds,
-    variableName: variableName,
-    shaderDestination: getShaderDestination(featureIds),
-    featureIdDefine: getFeatureIdDefine(featureIds),
-  };
+    };
 }
 
 /**
@@ -158,23 +162,23 @@ function getSelectedFeatureIds(model, node, primitive) {
  * @private
  */
 function updateFeatureStruct(shaderBuilder) {
-  shaderBuilder.addStructField(
-    SelectedFeatureIdPipelineStage.STRUCT_ID_SELECTED_FEATURE,
-    "int",
-    "id",
-  );
+    shaderBuilder.addStructField(
+        SelectedFeatureIdPipelineStage.STRUCT_ID_SELECTED_FEATURE,
+        "int",
+        "id",
+    );
 
-  shaderBuilder.addStructField(
-    SelectedFeatureIdPipelineStage.STRUCT_ID_SELECTED_FEATURE,
-    "vec2",
-    "st",
-  );
+    shaderBuilder.addStructField(
+        SelectedFeatureIdPipelineStage.STRUCT_ID_SELECTED_FEATURE,
+        "vec2",
+        "st",
+    );
 
-  shaderBuilder.addStructField(
-    SelectedFeatureIdPipelineStage.STRUCT_ID_SELECTED_FEATURE,
-    "vec4",
-    "color",
-  );
+    shaderBuilder.addStructField(
+        SelectedFeatureIdPipelineStage.STRUCT_ID_SELECTED_FEATURE,
+        "vec4",
+        "color",
+    );
 }
 
 export default SelectedFeatureIdPipelineStage;

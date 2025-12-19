@@ -25,78 +25,78 @@ import Cesium3DTileContentType from "./Cesium3DTileContentType.js";
  * @private
  */
 function preprocess3DTileContent(arrayBuffer) {
-  const uint8Array = new Uint8Array(arrayBuffer);
-  let contentType = getMagic(uint8Array);
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let contentType = getMagic(uint8Array);
 
-  // We use glTF for JSON glTF files. For binary glTF, we rename this
-  // to glb to disambiguate
-  if (contentType === "glTF") {
-    contentType = "glb";
-  }
+    // We use glTF for JSON glTF files. For binary glTF, we rename this
+    // to glb to disambiguate
+    if (contentType === "glTF") {
+        contentType = "glb";
+    }
 
-  if (Cesium3DTileContentType.isBinaryFormat(contentType)) {
-    return {
-      // For binary files, the enum value is the magic number
-      contentType: contentType,
-      binaryPayload: uint8Array,
-    };
-  }
+    if (Cesium3DTileContentType.isBinaryFormat(contentType)) {
+        return {
+            // For binary files, the enum value is the magic number
+            contentType: contentType,
+            binaryPayload: uint8Array,
+        };
+    }
 
-  const json = getJsonContent(uint8Array);
-  if (defined(json.root)) {
-    // Most likely a tileset JSON
-    return {
-      contentType: Cesium3DTileContentType.EXTERNAL_TILESET,
-      jsonPayload: json,
-    };
-  }
+    const json = getJsonContent(uint8Array);
+    if (defined(json.root)) {
+        // Most likely a tileset JSON
+        return {
+            contentType: Cesium3DTileContentType.EXTERNAL_TILESET,
+            jsonPayload: json,
+        };
+    }
 
-  if (defined(json.asset)) {
-    // Most likely a glTF. Tileset JSON also has an "asset" property
-    // so this check needs to happen second
-    return {
-      contentType: Cesium3DTileContentType.GLTF,
-      jsonPayload: json,
-    };
-  }
+    if (defined(json.asset)) {
+        // Most likely a glTF. Tileset JSON also has an "asset" property
+        // so this check needs to happen second
+        return {
+            contentType: Cesium3DTileContentType.GLTF,
+            jsonPayload: json,
+        };
+    }
 
-  if (defined(json.tileAvailability)) {
-    // Most likely a subtree JSON.
-    return {
-      contentType: Cesium3DTileContentType.IMPLICIT_SUBTREE_JSON,
-      jsonPayload: json,
-    };
-  }
+    if (defined(json.tileAvailability)) {
+        // Most likely a subtree JSON.
+        return {
+            contentType: Cesium3DTileContentType.IMPLICIT_SUBTREE_JSON,
+            jsonPayload: json,
+        };
+    }
 
-  if (defined(json.type)) {
-    // Most likely a GeoJSON
-    return {
-      contentType: Cesium3DTileContentType.GEOJSON,
-      jsonPayload: json,
-    };
-  }
+    if (defined(json.type)) {
+        // Most likely a GeoJSON
+        return {
+            contentType: Cesium3DTileContentType.GEOJSON,
+            jsonPayload: json,
+        };
+    }
 
-  if (defined(json.voxelTable)) {
-    // Most likely a voxel JSON
-    return {
-      contentType: Cesium3DTileContentType.VOXEL_JSON,
-      jsonPayload: json,
-    };
-  }
+    if (defined(json.voxelTable)) {
+        // Most likely a voxel JSON
+        return {
+            contentType: Cesium3DTileContentType.VOXEL_JSON,
+            jsonPayload: json,
+        };
+    }
 
-  throw new RuntimeError("Invalid tile content.");
+    throw new RuntimeError("Invalid tile content.");
 }
 
 function getJsonContent(uint8Array) {
-  let json;
+    let json;
 
-  try {
-    json = getJsonFromTypedArray(uint8Array);
-  } catch (error) {
-    throw new RuntimeError("Invalid tile content.");
-  }
+    try {
+        json = getJsonFromTypedArray(uint8Array);
+    } catch (error) {
+        throw new RuntimeError("Invalid tile content.");
+    }
 
-  return json;
+    return json;
 }
 
 export default preprocess3DTileContent;

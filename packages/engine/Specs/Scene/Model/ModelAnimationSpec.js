@@ -1,251 +1,255 @@
 import {
-  Cartesian3,
-  InterpolationType,
-  JulianDate,
-  Matrix4,
-  ModelAnimationLoop,
-  ModelComponents,
-  ModelAnimation,
-  ModelRuntimeNode,
-  Quaternion,
+    Cartesian3,
+    InterpolationType,
+    JulianDate,
+    Matrix4,
+    ModelAnimationLoop,
+    ModelComponents,
+    ModelAnimation,
+    ModelRuntimeNode,
+    Quaternion,
 } from "../../../index.js";
 
 describe("Scene/Model/ModelAnimation", function () {
-  const AnimatedPropertyType = ModelComponents.AnimatedPropertyType;
+    const AnimatedPropertyType = ModelComponents.AnimatedPropertyType;
 
-  const mockNode = {
-    translation: Cartesian3.ZERO,
-    rotation: Quaternion.IDENTITY,
-    scale: new Cartesian3(1.0, 1.0, 1.0),
-    index: 0,
-  };
-
-  let runtimeNode;
-  let mockSceneGraph;
-  let mockModel;
-
-  function createMockChannel(mockNode, mockSampler, path) {
-    const mockTarget = {
-      node: mockNode,
-      path: path,
-    };
-    const mockChannel = {
-      sampler: mockSampler,
-      target: mockTarget,
-    };
-    return mockChannel;
-  }
-
-  beforeEach(function () {
-    mockSceneGraph = {
-      _runtimeNodes: [],
+    const mockNode = {
+        translation: Cartesian3.ZERO,
+        rotation: Quaternion.IDENTITY,
+        scale: new Cartesian3(1.0, 1.0, 1.0),
+        index: 0,
     };
 
-    runtimeNode = new ModelRuntimeNode({
-      node: mockNode,
-      transform: Matrix4.IDENTITY,
-      transformToRoot: Matrix4.IDENTITY,
-      sceneGraph: mockSceneGraph,
-      children: [],
+    let runtimeNode;
+    let mockSceneGraph;
+    let mockModel;
+
+    function createMockChannel(mockNode, mockSampler, path) {
+        const mockTarget = {
+            node: mockNode,
+            path: path,
+        };
+        const mockChannel = {
+            sampler: mockSampler,
+            target: mockTarget,
+        };
+        return mockChannel;
+    }
+
+    beforeEach(function () {
+        mockSceneGraph = {
+            _runtimeNodes: [],
+        };
+
+        runtimeNode = new ModelRuntimeNode({
+            node: mockNode,
+            transform: Matrix4.IDENTITY,
+            transformToRoot: Matrix4.IDENTITY,
+            sceneGraph: mockSceneGraph,
+            children: [],
+        });
+
+        mockSceneGraph._runtimeNodes.push(runtimeNode);
+        mockModel = {
+            clampAnimations: true,
+            sceneGraph: mockSceneGraph,
+        };
     });
 
-    mockSceneGraph._runtimeNodes.push(runtimeNode);
-    mockModel = {
-      clampAnimations: true,
-      sceneGraph: mockSceneGraph,
-    };
-  });
-
-  const mockTranslationSampler = {
-    input: [0, 0.5, 1.0],
-    interpolation: InterpolationType.LINEAR,
-    output: [
-      Cartesian3.ZERO,
-      new Cartesian3(1.0, 2.0, 3.0),
-      new Cartesian3(4.0, 5.0, 6.0),
-    ],
-  };
-
-  const mockRotationSampler = {
-    input: [0.25, 0.75, 1.25],
-    interpolation: InterpolationType.STEP,
-    output: [
-      Quaternion.IDENTITY,
-      new Quaternion(0.0, 0.0, 0.707, -0.707),
-      Quaternion.IDENTITY,
-    ],
-  };
-
-  const emptyOptions = {};
-
-  it("initializes", function () {
-    const mockAnimation = {
-      channels: [
-        createMockChannel(
-          mockNode,
-          mockTranslationSampler,
-          AnimatedPropertyType.TRANSLATION,
-        ),
-        createMockChannel(
-          mockNode,
-          mockRotationSampler,
-          AnimatedPropertyType.ROTATION,
-        ),
-      ],
-      name: "Sample Animation",
+    const mockTranslationSampler = {
+        input: [0, 0.5, 1.0],
+        interpolation: InterpolationType.LINEAR,
+        output: [
+            Cartesian3.ZERO,
+            new Cartesian3(1.0, 2.0, 3.0),
+            new Cartesian3(4.0, 5.0, 6.0),
+        ],
     };
 
-    const runtimeAnimation = new ModelAnimation(
-      mockModel,
-      mockAnimation,
-      emptyOptions,
-    );
-
-    expect(runtimeAnimation.animation).toBe(mockAnimation);
-    expect(runtimeAnimation.name).toEqual("Sample Animation");
-    expect(runtimeAnimation.model).toBe(mockModel);
-
-    const channels = runtimeAnimation.runtimeChannels;
-    expect(channels.length).toEqual(2);
-    expect(channels[0]._path).toEqual(AnimatedPropertyType.TRANSLATION);
-    expect(channels[1]._path).toEqual(AnimatedPropertyType.ROTATION);
-
-    expect(runtimeAnimation.localStartTime).toBe(0.0);
-    expect(runtimeAnimation.localStopTime).toBe(1.25);
-
-    expect(runtimeAnimation.startTime).toBeUndefined();
-    expect(runtimeAnimation.delay).toBe(0.0);
-    expect(runtimeAnimation.stopTime).toBeUndefined();
-    expect(runtimeAnimation.removeOnStop).toBe(false);
-    expect(runtimeAnimation.multiplier).toBe(1.0);
-    expect(runtimeAnimation.reverse).toBe(false);
-    expect(runtimeAnimation.loop).toBe(ModelAnimationLoop.NONE);
-  });
-
-  it("initializes with options", function () {
-    const mockAnimation = {
-      channels: [
-        createMockChannel(
-          mockNode,
-          mockTranslationSampler,
-          AnimatedPropertyType.TRANSLATION,
-        ),
-        createMockChannel(
-          mockNode,
-          mockRotationSampler,
-          AnimatedPropertyType.ROTATION,
-        ),
-      ],
-      name: "Sample Animation",
+    const mockRotationSampler = {
+        input: [0.25, 0.75, 1.25],
+        interpolation: InterpolationType.STEP,
+        output: [
+            Quaternion.IDENTITY,
+            new Quaternion(0.0, 0.0, 0.707, -0.707),
+            Quaternion.IDENTITY,
+        ],
     };
 
-    const options = {
-      startTime: JulianDate.fromDate(new Date("January 1, 2014 12:00:00 UTC")),
-      delay: 5.0,
-      stopTime: JulianDate.fromDate(new Date("January 1, 2014 12:01:30 UTC")),
-      multiplier: 0.5,
-      reverse: true,
-      loop: ModelAnimationLoop.REPEAT,
-      removeOnStop: true,
-    };
+    const emptyOptions = {};
 
-    const runtimeAnimation = new ModelAnimation(
-      mockModel,
-      mockAnimation,
-      options,
-    );
+    it("initializes", function () {
+        const mockAnimation = {
+            channels: [
+                createMockChannel(
+                    mockNode,
+                    mockTranslationSampler,
+                    AnimatedPropertyType.TRANSLATION,
+                ),
+                createMockChannel(
+                    mockNode,
+                    mockRotationSampler,
+                    AnimatedPropertyType.ROTATION,
+                ),
+            ],
+            name: "Sample Animation",
+        };
 
-    expect(runtimeAnimation.animation).toBe(mockAnimation);
-    expect(runtimeAnimation.name).toEqual("Sample Animation");
-    expect(runtimeAnimation.model).toBe(mockModel);
+        const runtimeAnimation = new ModelAnimation(
+            mockModel,
+            mockAnimation,
+            emptyOptions,
+        );
 
-    const channels = runtimeAnimation.runtimeChannels;
-    expect(channels.length).toEqual(2);
-    expect(channels[0]._path).toEqual(AnimatedPropertyType.TRANSLATION);
-    expect(channels[1]._path).toEqual(AnimatedPropertyType.ROTATION);
+        expect(runtimeAnimation.animation).toBe(mockAnimation);
+        expect(runtimeAnimation.name).toEqual("Sample Animation");
+        expect(runtimeAnimation.model).toBe(mockModel);
 
-    expect(runtimeAnimation.localStartTime).toBe(0.0);
-    expect(runtimeAnimation.localStopTime).toBe(1.25);
+        const channels = runtimeAnimation.runtimeChannels;
+        expect(channels.length).toEqual(2);
+        expect(channels[0]._path).toEqual(AnimatedPropertyType.TRANSLATION);
+        expect(channels[1]._path).toEqual(AnimatedPropertyType.ROTATION);
 
-    expect(runtimeAnimation.startTime).toEqual(options.startTime);
-    expect(runtimeAnimation.delay).toBe(5.0);
-    expect(runtimeAnimation.stopTime).toEqual(options.stopTime);
-    expect(runtimeAnimation.removeOnStop).toBe(true);
-    expect(runtimeAnimation.multiplier).toBe(0.5);
-    expect(runtimeAnimation.reverse).toBe(true);
-    expect(runtimeAnimation.loop).toBe(ModelAnimationLoop.REPEAT);
-  });
+        expect(runtimeAnimation.localStartTime).toBe(0.0);
+        expect(runtimeAnimation.localStopTime).toBe(1.25);
 
-  it("initializes without invalid channels", function () {
-    const mockAnimation = {
-      channels: [
-        createMockChannel(
-          mockNode,
-          mockTranslationSampler,
-          AnimatedPropertyType.TRANSLATION,
-        ),
-        {
-          sampler: mockRotationSampler,
-          target: undefined,
-        },
-      ],
-      name: "Sample Animation",
-    };
+        expect(runtimeAnimation.startTime).toBeUndefined();
+        expect(runtimeAnimation.delay).toBe(0.0);
+        expect(runtimeAnimation.stopTime).toBeUndefined();
+        expect(runtimeAnimation.removeOnStop).toBe(false);
+        expect(runtimeAnimation.multiplier).toBe(1.0);
+        expect(runtimeAnimation.reverse).toBe(false);
+        expect(runtimeAnimation.loop).toBe(ModelAnimationLoop.NONE);
+    });
 
-    const runtimeAnimation = new ModelAnimation(
-      mockModel,
-      mockAnimation,
-      emptyOptions,
-    );
+    it("initializes with options", function () {
+        const mockAnimation = {
+            channels: [
+                createMockChannel(
+                    mockNode,
+                    mockTranslationSampler,
+                    AnimatedPropertyType.TRANSLATION,
+                ),
+                createMockChannel(
+                    mockNode,
+                    mockRotationSampler,
+                    AnimatedPropertyType.ROTATION,
+                ),
+            ],
+            name: "Sample Animation",
+        };
 
-    expect(runtimeAnimation.animation).toBe(mockAnimation);
-    expect(runtimeAnimation.name).toEqual("Sample Animation");
-    expect(runtimeAnimation.model).toBe(mockModel);
+        const options = {
+            startTime: JulianDate.fromDate(
+                new Date("January 1, 2014 12:00:00 UTC"),
+            ),
+            delay: 5.0,
+            stopTime: JulianDate.fromDate(
+                new Date("January 1, 2014 12:01:30 UTC"),
+            ),
+            multiplier: 0.5,
+            reverse: true,
+            loop: ModelAnimationLoop.REPEAT,
+            removeOnStop: true,
+        };
 
-    const channels = runtimeAnimation.runtimeChannels;
-    expect(channels.length).toEqual(1);
-    expect(channels[0]._path).toEqual(AnimatedPropertyType.TRANSLATION);
+        const runtimeAnimation = new ModelAnimation(
+            mockModel,
+            mockAnimation,
+            options,
+        );
 
-    expect(runtimeAnimation.localStartTime).toBe(0.0);
-    expect(runtimeAnimation.localStopTime).toBe(1.0);
-  });
+        expect(runtimeAnimation.animation).toBe(mockAnimation);
+        expect(runtimeAnimation.name).toEqual("Sample Animation");
+        expect(runtimeAnimation.model).toBe(mockModel);
 
-  it("animates", function () {
-    const mockAnimation = {
-      channels: [
-        createMockChannel(
-          mockNode,
-          mockTranslationSampler,
-          AnimatedPropertyType.TRANSLATION,
-        ),
-        createMockChannel(
-          mockNode,
-          mockRotationSampler,
-          AnimatedPropertyType.ROTATION,
-        ),
-      ],
-      name: "Sample Animation",
-    };
+        const channels = runtimeAnimation.runtimeChannels;
+        expect(channels.length).toEqual(2);
+        expect(channels[0]._path).toEqual(AnimatedPropertyType.TRANSLATION);
+        expect(channels[1]._path).toEqual(AnimatedPropertyType.ROTATION);
 
-    const runtimeAnimation = new ModelAnimation(
-      mockModel,
-      mockAnimation,
-      emptyOptions,
-    );
+        expect(runtimeAnimation.localStartTime).toBe(0.0);
+        expect(runtimeAnimation.localStopTime).toBe(1.25);
 
-    expect(runtimeNode.translation).toEqual(Cartesian3.ZERO);
-    expect(runtimeNode.rotation).toEqual(Quaternion.IDENTITY);
+        expect(runtimeAnimation.startTime).toEqual(options.startTime);
+        expect(runtimeAnimation.delay).toBe(5.0);
+        expect(runtimeAnimation.stopTime).toEqual(options.stopTime);
+        expect(runtimeAnimation.removeOnStop).toBe(true);
+        expect(runtimeAnimation.multiplier).toBe(0.5);
+        expect(runtimeAnimation.reverse).toBe(true);
+        expect(runtimeAnimation.loop).toBe(ModelAnimationLoop.REPEAT);
+    });
 
-    runtimeAnimation.animate(0.5);
+    it("initializes without invalid channels", function () {
+        const mockAnimation = {
+            channels: [
+                createMockChannel(
+                    mockNode,
+                    mockTranslationSampler,
+                    AnimatedPropertyType.TRANSLATION,
+                ),
+                {
+                    sampler: mockRotationSampler,
+                    target: undefined,
+                },
+            ],
+            name: "Sample Animation",
+        };
 
-    expect(runtimeNode.translation).toEqual(new Cartesian3(1.0, 2.0, 3.0));
-    expect(runtimeNode.rotation).toEqual(Quaternion.IDENTITY);
+        const runtimeAnimation = new ModelAnimation(
+            mockModel,
+            mockAnimation,
+            emptyOptions,
+        );
 
-    runtimeAnimation.animate(1.0);
+        expect(runtimeAnimation.animation).toBe(mockAnimation);
+        expect(runtimeAnimation.name).toEqual("Sample Animation");
+        expect(runtimeAnimation.model).toBe(mockModel);
 
-    expect(runtimeNode.translation).toEqual(new Cartesian3(4.0, 5.0, 6.0));
-    expect(runtimeNode.rotation).toEqual(
-      new Quaternion(0.0, 0.0, 0.707, -0.707),
-    );
-  });
+        const channels = runtimeAnimation.runtimeChannels;
+        expect(channels.length).toEqual(1);
+        expect(channels[0]._path).toEqual(AnimatedPropertyType.TRANSLATION);
+
+        expect(runtimeAnimation.localStartTime).toBe(0.0);
+        expect(runtimeAnimation.localStopTime).toBe(1.0);
+    });
+
+    it("animates", function () {
+        const mockAnimation = {
+            channels: [
+                createMockChannel(
+                    mockNode,
+                    mockTranslationSampler,
+                    AnimatedPropertyType.TRANSLATION,
+                ),
+                createMockChannel(
+                    mockNode,
+                    mockRotationSampler,
+                    AnimatedPropertyType.ROTATION,
+                ),
+            ],
+            name: "Sample Animation",
+        };
+
+        const runtimeAnimation = new ModelAnimation(
+            mockModel,
+            mockAnimation,
+            emptyOptions,
+        );
+
+        expect(runtimeNode.translation).toEqual(Cartesian3.ZERO);
+        expect(runtimeNode.rotation).toEqual(Quaternion.IDENTITY);
+
+        runtimeAnimation.animate(0.5);
+
+        expect(runtimeNode.translation).toEqual(new Cartesian3(1.0, 2.0, 3.0));
+        expect(runtimeNode.rotation).toEqual(Quaternion.IDENTITY);
+
+        runtimeAnimation.animate(1.0);
+
+        expect(runtimeNode.translation).toEqual(new Cartesian3(4.0, 5.0, 6.0));
+        expect(runtimeNode.rotation).toEqual(
+            new Quaternion(0.0, 0.0, 0.707, -0.707),
+        );
+    });
 });

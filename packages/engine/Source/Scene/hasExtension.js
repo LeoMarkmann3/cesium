@@ -9,11 +9,11 @@ import defined from "../Core/defined.js";
  * @private
  */
 function hasExtension(json, extensionName) {
-  return (
-    defined(json) &&
-    defined(json.extensions) &&
-    defined(json.extensions[extensionName])
-  );
+    return (
+        defined(json) &&
+        defined(json.extensions) &&
+        defined(json.extensions[extensionName])
+    );
 }
 
 export default hasExtension;

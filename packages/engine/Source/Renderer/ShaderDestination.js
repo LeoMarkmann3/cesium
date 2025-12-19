@@ -7,9 +7,9 @@ import Check from "../Core/Check.js";
  * @private
  */
 const ShaderDestination = {
-  VERTEX: 0,
-  FRAGMENT: 1,
-  BOTH: 2,
+    VERTEX: 0,
+    FRAGMENT: 1,
+    BOTH: 2,
 };
 
 /**
@@ -20,14 +20,14 @@ const ShaderDestination = {
  * @private
  */
 ShaderDestination.includesVertexShader = function (destination) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("destination", destination);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("destination", destination);
+    //>>includeEnd('debug');
 
-  return (
-    destination === ShaderDestination.VERTEX ||
-    destination === ShaderDestination.BOTH
-  );
+    return (
+        destination === ShaderDestination.VERTEX ||
+        destination === ShaderDestination.BOTH
+    );
 };
 
 /**
@@ -38,14 +38,14 @@ ShaderDestination.includesVertexShader = function (destination) {
  * @private
  */
 ShaderDestination.includesFragmentShader = function (destination) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("destination", destination);
-  //>>includeEnd('debug');
-  //
-  return (
-    destination === ShaderDestination.FRAGMENT ||
-    destination === ShaderDestination.BOTH
-  );
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("destination", destination);
+    //>>includeEnd('debug');
+    //
+    return (
+        destination === ShaderDestination.FRAGMENT ||
+        destination === ShaderDestination.BOTH
+    );
 };
 
 export default Object.freeze(ShaderDestination);

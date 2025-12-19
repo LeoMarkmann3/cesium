@@ -19,67 +19,67 @@ import Frozen from "../Core/Frozen.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function ImplicitMetadataView(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const metadataTable = options.metadataTable;
-  const metadataClass = options.class;
-  const entityId = options.entityId;
-  const propertyTableJson = options.propertyTableJson;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const metadataTable = options.metadataTable;
+    const metadataClass = options.class;
+    const entityId = options.entityId;
+    const propertyTableJson = options.propertyTableJson;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.metadataTable", metadataTable);
-  Check.typeOf.object("options.class", metadataClass);
-  Check.typeOf.number("options.entityId", entityId);
-  Check.typeOf.object("options.propertyTableJson", propertyTableJson);
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.metadataTable", metadataTable);
+    Check.typeOf.object("options.class", metadataClass);
+    Check.typeOf.number("options.entityId", entityId);
+    Check.typeOf.object("options.propertyTableJson", propertyTableJson);
 
-  //>>includeEnd('debug');
+    //>>includeEnd('debug');
 
-  this._class = metadataClass;
-  this._metadataTable = metadataTable;
-  this._entityId = entityId;
+    this._class = metadataClass;
+    this._metadataTable = metadataTable;
+    this._entityId = entityId;
 
-  this._extensions = propertyTableJson.extensions;
-  this._extras = propertyTableJson.extras;
+    this._extensions = propertyTableJson.extensions;
+    this._extras = propertyTableJson.extras;
 }
 
 Object.defineProperties(ImplicitMetadataView.prototype, {
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof ImplicitMetadataView.prototype
-   * @type {MetadataClass}
-   * @readonly
-   */
-  class: {
-    get: function () {
-      return this._class;
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof ImplicitMetadataView.prototype
+     * @type {MetadataClass}
+     * @readonly
+     */
+    class: {
+        get: function () {
+            return this._class;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof ImplicitMetadataView.prototype
-   * @type {object}
-   * @readonly
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof ImplicitMetadataView.prototype
+     * @type {object}
+     * @readonly
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof ImplicitMetadataView.prototype
-   * @type {object}
-   * @readonly
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof ImplicitMetadataView.prototype
+     * @type {object}
+     * @readonly
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 });
 
 /**
@@ -90,7 +90,7 @@ Object.defineProperties(ImplicitMetadataView.prototype, {
  * @private
  */
 ImplicitMetadataView.prototype.hasProperty = function (propertyId) {
-  return this._metadataTable.hasProperty(propertyId);
+    return this._metadataTable.hasProperty(propertyId);
 };
 
 /**
@@ -101,7 +101,7 @@ ImplicitMetadataView.prototype.hasProperty = function (propertyId) {
  * @private
  */
 ImplicitMetadataView.prototype.hasPropertyBySemantic = function (semantic) {
-  return this._metadataTable.hasPropertyBySemantic(semantic);
+    return this._metadataTable.hasPropertyBySemantic(semantic);
 };
 
 /**
@@ -112,7 +112,7 @@ ImplicitMetadataView.prototype.hasPropertyBySemantic = function (semantic) {
  * @private
  */
 ImplicitMetadataView.prototype.getPropertyIds = function (results) {
-  return this._metadataTable.getPropertyIds(results);
+    return this._metadataTable.getPropertyIds(results);
 };
 
 /**
@@ -126,7 +126,7 @@ ImplicitMetadataView.prototype.getPropertyIds = function (results) {
  * @private
  */
 ImplicitMetadataView.prototype.getProperty = function (propertyId) {
-  return this._metadataTable.getProperty(this._entityId, propertyId);
+    return this._metadataTable.getProperty(this._entityId, propertyId);
 };
 
 /**
@@ -141,7 +141,7 @@ ImplicitMetadataView.prototype.getProperty = function (propertyId) {
  * @private
  */
 ImplicitMetadataView.prototype.setProperty = function (propertyId, value) {
-  return this._metadataTable.setProperty(this._entityId, propertyId, value);
+    return this._metadataTable.setProperty(this._entityId, propertyId, value);
 };
 
 /**
@@ -152,7 +152,7 @@ ImplicitMetadataView.prototype.setProperty = function (propertyId, value) {
  * @private
  */
 ImplicitMetadataView.prototype.getPropertyBySemantic = function (semantic) {
-  return this._metadataTable.getPropertyBySemantic(this._entityId, semantic);
+    return this._metadataTable.getPropertyBySemantic(this._entityId, semantic);
 };
 
 /**
@@ -165,14 +165,14 @@ ImplicitMetadataView.prototype.getPropertyBySemantic = function (semantic) {
  */
 
 ImplicitMetadataView.prototype.setPropertyBySemantic = function (
-  semantic,
-  value,
-) {
-  return this._metadataTable.setPropertyBySemantic(
-    this._entityId,
     semantic,
     value,
-  );
+) {
+    return this._metadataTable.setPropertyBySemantic(
+        this._entityId,
+        semantic,
+        value,
+    );
 };
 
 export default ImplicitMetadataView;

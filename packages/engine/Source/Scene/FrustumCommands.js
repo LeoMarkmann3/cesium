@@ -11,19 +11,19 @@ import Pass from "../Renderer/Pass.js";
  * @private
  */
 function FrustumCommands(near, far) {
-  this.near = near ?? 0.0;
-  this.far = far ?? 0.0;
+    this.near = near ?? 0.0;
+    this.far = far ?? 0.0;
 
-  const numPasses = Pass.NUMBER_OF_PASSES;
-  const commands = new Array(numPasses);
-  const indices = new Array(numPasses);
+    const numPasses = Pass.NUMBER_OF_PASSES;
+    const commands = new Array(numPasses);
+    const indices = new Array(numPasses);
 
-  for (let i = 0; i < numPasses; ++i) {
-    commands[i] = [];
-    indices[i] = 0;
-  }
+    for (let i = 0; i < numPasses; ++i) {
+        commands[i] = [];
+        indices[i] = 0;
+    }
 
-  this.commands = commands;
-  this.indices = indices;
+    this.commands = commands;
+    this.indices = indices;
 }
 export default FrustumCommands;

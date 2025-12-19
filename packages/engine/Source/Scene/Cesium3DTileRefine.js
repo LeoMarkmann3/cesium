@@ -10,20 +10,20 @@
  * @private
  */
 const Cesium3DTileRefine = {
-  /**
-   * Render this tile and, if it doesn't meet the screen space error, also refine to its children.
-   *
-   * @type {number}
-   * @constant
-   */
-  ADD: 0,
+    /**
+     * Render this tile and, if it doesn't meet the screen space error, also refine to its children.
+     *
+     * @type {number}
+     * @constant
+     */
+    ADD: 0,
 
-  /**
-   * Render this tile or, if it doesn't meet the screen space error, refine to its descendants instead.
-   *
-   * @type {number}
-   * @constant
-   */
-  REPLACE: 1,
+    /**
+     * Render this tile or, if it doesn't meet the screen space error, refine to its descendants instead.
+     *
+     * @type {number}
+     * @constant
+     */
+    REPLACE: 1,
 };
 export default Object.freeze(Cesium3DTileRefine);

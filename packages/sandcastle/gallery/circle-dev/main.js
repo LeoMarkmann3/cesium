@@ -8,29 +8,29 @@ const scene = viewer.scene;
 
 // Create the circle geometry.
 let circleGeometry = new Cesium.CircleGeometry({
-  center: Cesium.Cartesian3.fromDegrees(-95.0, 43.0),
-  radius: 250000.0,
-  vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+    center: Cesium.Cartesian3.fromDegrees(-95.0, 43.0),
+    radius: 250000.0,
+    vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
 });
 // Create a geometry instance using the circle geometry
 // created above. We can also specify a color attribute,
 // in this case, we're creating a translucent red color.
 const redCircleInstance = new Cesium.GeometryInstance({
-  geometry: circleGeometry,
-  attributes: {
-    color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-      new Cesium.Color(1.0, 0.0, 0.0, 0.5),
-    ),
-  },
+    geometry: circleGeometry,
+    attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+            new Cesium.Color(1.0, 0.0, 0.0, 0.5),
+        ),
+    },
 });
 // Add the geometry instance to primitives.
 scene.primitives.add(
-  new Cesium.Primitive({
-    geometryInstances: redCircleInstance,
-    appearance: new Cesium.PerInstanceColorAppearance({
-      closed: true,
+    new Cesium.Primitive({
+        geometryInstances: redCircleInstance,
+        appearance: new Cesium.PerInstanceColorAppearance({
+            closed: true,
+        }),
     }),
-  }),
 );
 
 // Example 2: Draw a green extruded circle.
@@ -38,30 +38,30 @@ scene.primitives.add(
 // Create the circle geometry.  To extrude, specify the
 // height of the geometry with the extrudedHeight option.
 circleGeometry = new Cesium.CircleGeometry({
-  center: Cesium.Cartesian3.fromDegrees(-90.0, 50.0),
-  radius: 250000.0,
-  extrudedHeight: 300000.0,
-  vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+    center: Cesium.Cartesian3.fromDegrees(-90.0, 50.0),
+    radius: 250000.0,
+    extrudedHeight: 300000.0,
+    vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
 });
 // Create a geometry instance using the circle geometry
 // created above. Set the color attribute to a
 // translucent green.
 const greenCircleInstance = new Cesium.GeometryInstance({
-  geometry: circleGeometry,
-  attributes: {
-    color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-      new Cesium.Color(0.0, 1.0, 0.0, 0.5),
-    ),
-  },
+    geometry: circleGeometry,
+    attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+            new Cesium.Color(0.0, 1.0, 0.0, 0.5),
+        ),
+    },
 });
 // Add the geometry instance to primitives.
 scene.primitives.add(
-  new Cesium.Primitive({
-    geometryInstances: greenCircleInstance,
-    appearance: new Cesium.PerInstanceColorAppearance({
-      closed: true,
+    new Cesium.Primitive({
+        geometryInstances: greenCircleInstance,
+        appearance: new Cesium.PerInstanceColorAppearance({
+            closed: true,
+        }),
     }),
-  }),
 );
 
 // Example 3: Draw a blue circle at a height.
@@ -69,26 +69,28 @@ scene.primitives.add(
 // Create the circle geometry.  Use the height option
 // to set the circles distance from the ground.
 circleGeometry = new Cesium.CircleGeometry({
-  center: Cesium.Cartesian3.fromDegrees(-85.0, 40.0),
-  radius: 400000.0,
-  height: 150000.0,
-  vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+    center: Cesium.Cartesian3.fromDegrees(-85.0, 40.0),
+    radius: 400000.0,
+    height: 150000.0,
+    vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
 });
 // Create a geometry instance using the circle geometry
 // created above. Set the color attribute to a solid blue.
 const blueCircleInstance = new Cesium.GeometryInstance({
-  geometry: circleGeometry,
-  attributes: {
-    color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.BLUE),
-  },
+    geometry: circleGeometry,
+    attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+            Cesium.Color.BLUE,
+        ),
+    },
 });
 // Add the geometry instance to primitives.
 scene.primitives.add(
-  new Cesium.Primitive({
-    geometryInstances: blueCircleInstance,
-    appearance: new Cesium.PerInstanceColorAppearance({
-      closed: true,
-      translucent: false,
+    new Cesium.Primitive({
+        geometryInstances: blueCircleInstance,
+        appearance: new Cesium.PerInstanceColorAppearance({
+            closed: true,
+            translucent: false,
+        }),
     }),
-  }),
 );

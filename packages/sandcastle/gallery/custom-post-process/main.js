@@ -1,17 +1,17 @@
 import * as Cesium from "cesium";
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  shouldAnimate: true,
+    shouldAnimate: true,
 });
 
 const position = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706);
 const url = "../../SampleData/models/CesiumMan/Cesium_Man.glb";
 viewer.trackedEntity = viewer.entities.add({
-  name: url,
-  position: position,
-  model: {
-    uri: url,
-  },
+    name: url,
+    position: position,
+    model: {
+        uri: url,
+    },
 });
 
 const fragmentShaderSource = `
@@ -35,7 +35,7 @@ const fragmentShaderSource = `
           }
           `;
 viewer.scene.postProcessStages.add(
-  new Cesium.PostProcessStage({
-    fragmentShader: fragmentShaderSource,
-  }),
+    new Cesium.PostProcessStage({
+        fragmentShader: fragmentShaderSource,
+    }),
 );

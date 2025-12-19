@@ -20,21 +20,21 @@ import RuntimeError from "../Core/RuntimeError.js";
 function ResourceLoader() {}
 
 Object.defineProperties(ResourceLoader.prototype, {
-  /**
-   * The cache key of the resource.
-   *
-   * @memberof ResourceLoader.prototype
-   *
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  cacheKey: {
-    // eslint-disable-next-line getter-return
-    get: function () {
-      DeveloperError.throwInstantiationError();
+    /**
+     * The cache key of the resource.
+     *
+     * @memberof ResourceLoader.prototype
+     *
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    cacheKey: {
+        // eslint-disable-next-line getter-return
+        get: function () {
+            DeveloperError.throwInstantiationError();
+        },
     },
-  },
 });
 
 /**
@@ -43,7 +43,7 @@ Object.defineProperties(ResourceLoader.prototype, {
  * @private
  */
 ResourceLoader.prototype.load = function () {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -60,7 +60,7 @@ ResourceLoader.prototype.unload = function () {};
  * @private
  */
 ResourceLoader.prototype.process = function (frameState) {
-  return false;
+    return false;
 };
 
 /**
@@ -73,20 +73,20 @@ ResourceLoader.prototype.process = function (frameState) {
  * @private
  */
 ResourceLoader.prototype.getError = function (errorMessage, error) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("errorMessage", errorMessage);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("errorMessage", errorMessage);
+    //>>includeEnd('debug');
 
-  if (defined(error) && defined(error.message)) {
-    errorMessage += `\n${error.message}`;
-  }
+    if (defined(error) && defined(error.message)) {
+        errorMessage += `\n${error.message}`;
+    }
 
-  const runtimeError = new RuntimeError(errorMessage);
-  if (defined(error)) {
-    runtimeError.stack = `Original stack:\n${error.stack}\nHandler stack:\n${runtimeError.stack}`;
-  }
+    const runtimeError = new RuntimeError(errorMessage);
+    if (defined(error)) {
+        runtimeError.stack = `Original stack:\n${error.stack}\nHandler stack:\n${runtimeError.stack}`;
+    }
 
-  return runtimeError;
+    return runtimeError;
 };
 
 /**
@@ -101,7 +101,7 @@ ResourceLoader.prototype.getError = function (errorMessage, error) {
  * @private
  */
 ResourceLoader.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -120,8 +120,8 @@ ResourceLoader.prototype.isDestroyed = function () {
  * @private
  */
 ResourceLoader.prototype.destroy = function () {
-  this.unload();
-  return destroyObject(this);
+    this.unload();
+    return destroyObject(this);
 };
 
 export default ResourceLoader;

@@ -6,78 +6,81 @@ import createScene from "../../../../Specs/createScene.js";
 import DomEventSimulator from "../../../../Specs/DomEventSimulator.js";
 
 describe(
-  "Widgets/SceneModePicker/SceneModePicker",
-  function () {
-    let scene;
+    "Widgets/SceneModePicker/SceneModePicker",
+    function () {
+        let scene;
 
-    beforeAll(function () {
-      scene = createScene();
-    });
+        beforeAll(function () {
+            scene = createScene();
+        });
 
-    afterAll(function () {
-      scene.destroyForSpecs();
-    });
+        afterAll(function () {
+            scene.destroyForSpecs();
+        });
 
-    it("can create and destroy", function () {
-      const container = document.createElement("span");
-      container.id = "testContainer";
-      document.body.appendChild(container);
+        it("can create and destroy", function () {
+            const container = document.createElement("span");
+            container.id = "testContainer";
+            document.body.appendChild(container);
 
-      const widget = new SceneModePicker("testContainer", scene);
-      expect(widget.container.id).toBe(container.id);
-      expect(widget.isDestroyed()).toEqual(false);
+            const widget = new SceneModePicker("testContainer", scene);
+            expect(widget.container.id).toBe(container.id);
+            expect(widget.isDestroyed()).toEqual(false);
 
-      widget.destroy();
-      expect(widget.isDestroyed()).toEqual(true);
+            widget.destroy();
+            expect(widget.isDestroyed()).toEqual(true);
 
-      document.body.removeChild(container);
-    });
+            document.body.removeChild(container);
+        });
 
-    function addCloseOnInputSpec(name, func) {
-      it(`${name} event closes dropdown if target is not inside container`, function () {
-        const container = document.createElement("span");
-        container.id = "testContainer";
-        document.body.appendChild(container);
+        function addCloseOnInputSpec(name, func) {
+            it(`${name} event closes dropdown if target is not inside container`, function () {
+                const container = document.createElement("span");
+                container.id = "testContainer";
+                document.body.appendChild(container);
 
-        const widget = new SceneModePicker("testContainer", scene);
+                const widget = new SceneModePicker("testContainer", scene);
 
-        widget.viewModel.dropDownVisible = true;
-        func(document.body);
-        expect(widget.viewModel.dropDownVisible).toEqual(false);
+                widget.viewModel.dropDownVisible = true;
+                func(document.body);
+                expect(widget.viewModel.dropDownVisible).toEqual(false);
 
-        widget.viewModel.dropDownVisible = true;
-        func(container.firstChild);
-        expect(widget.viewModel.dropDownVisible).toEqual(true);
+                widget.viewModel.dropDownVisible = true;
+                func(container.firstChild);
+                expect(widget.viewModel.dropDownVisible).toEqual(true);
 
-        widget.destroy();
-        document.body.removeChild(container);
-      });
-    }
+                widget.destroy();
+                document.body.removeChild(container);
+            });
+        }
 
-    if (FeatureDetection.supportsPointerEvents()) {
-      addCloseOnInputSpec("pointerDown", DomEventSimulator.firePointerDown);
-    } else {
-      addCloseOnInputSpec("mousedown", DomEventSimulator.fireMouseDown);
-      addCloseOnInputSpec("touchstart", DomEventSimulator.fireTouchStart);
-    }
+        if (FeatureDetection.supportsPointerEvents()) {
+            addCloseOnInputSpec(
+                "pointerDown",
+                DomEventSimulator.firePointerDown,
+            );
+        } else {
+            addCloseOnInputSpec("mousedown", DomEventSimulator.fireMouseDown);
+            addCloseOnInputSpec("touchstart", DomEventSimulator.fireTouchStart);
+        }
 
-    it("constructor throws with no transitioner", function () {
-      expect(function () {
-        return new SceneModePicker(document.body, undefined);
-      }).toThrowDeveloperError();
-    });
+        it("constructor throws with no transitioner", function () {
+            expect(function () {
+                return new SceneModePicker(document.body, undefined);
+            }).toThrowDeveloperError();
+        });
 
-    it("constructor throws with no element", function () {
-      expect(function () {
-        return new SceneModePicker(undefined, scene);
-      }).toThrowDeveloperError();
-    });
+        it("constructor throws with no element", function () {
+            expect(function () {
+                return new SceneModePicker(undefined, scene);
+            }).toThrowDeveloperError();
+        });
 
-    it("constructor throws with string element that does not exist", function () {
-      expect(function () {
-        return new SceneModePicker("does not exist", scene);
-      }).toThrowDeveloperError();
-    });
-  },
-  "WebGL",
+        it("constructor throws with string element that does not exist", function () {
+            expect(function () {
+                return new SceneModePicker("does not exist", scene);
+            }).toThrowDeveloperError();
+        });
+    },
+    "WebGL",
 );

@@ -4,16 +4,16 @@
  * @enum {number}
  */
 const StripeOrientation = {
-  /**
-   * Horizontal orientation.
-   * @type {number}
-   */
-  HORIZONTAL: 0,
+    /**
+     * Horizontal orientation.
+     * @type {number}
+     */
+    HORIZONTAL: 0,
 
-  /**
-   * Vertical orientation.
-   * @type {number}
-   */
-  VERTICAL: 1,
+    /**
+     * Vertical orientation.
+     * @type {number}
+     */
+    VERTICAL: 1,
 };
 export default Object.freeze(StripeOrientation);

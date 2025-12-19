@@ -4,7 +4,7 @@ import * as Cesium from "cesium";
 const viewer = new Cesium.Viewer("cesiumContainer");
 
 const imageryLayer = Cesium.ImageryLayer.fromProviderAsync(
-  Cesium.IonImageryProvider.fromAssetId(3827),
+    Cesium.IonImageryProvider.fromAssetId(3827),
 );
 
 viewer.imageryLayers.add(imageryLayer);

@@ -54,150 +54,150 @@ import TerrainProvider from "./TerrainProvider.js";
  * @see TerrainProvider
  */
 function CustomHeightmapTerrainProvider(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("options.callback", options.callback);
-  Check.defined("options.width", options.width);
-  Check.defined("options.height", options.height);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("options.callback", options.callback);
+    Check.defined("options.width", options.width);
+    Check.defined("options.height", options.height);
+    //>>includeEnd('debug');
 
-  this._callback = options.callback;
+    this._callback = options.callback;
 
-  this._tilingScheme = options.tilingScheme;
-  if (!defined(this._tilingScheme)) {
-    this._tilingScheme = new GeographicTilingScheme({
-      ellipsoid: options.ellipsoid ?? Ellipsoid.default,
-    });
-  }
+    this._tilingScheme = options.tilingScheme;
+    if (!defined(this._tilingScheme)) {
+        this._tilingScheme = new GeographicTilingScheme({
+            ellipsoid: options.ellipsoid ?? Ellipsoid.default,
+        });
+    }
 
-  this._width = options.width;
-  this._height = options.height;
-  const maxTileDimensions = Math.max(this._width, this._height);
+    this._width = options.width;
+    this._height = options.height;
+    const maxTileDimensions = Math.max(this._width, this._height);
 
-  this._levelZeroMaximumGeometricError =
-    TerrainProvider.getEstimatedLevelZeroGeometricErrorForAHeightmap(
-      this._tilingScheme.ellipsoid,
-      maxTileDimensions,
-      this._tilingScheme.getNumberOfXTilesAtLevel(0),
-    );
+    this._levelZeroMaximumGeometricError =
+        TerrainProvider.getEstimatedLevelZeroGeometricErrorForAHeightmap(
+            this._tilingScheme.ellipsoid,
+            maxTileDimensions,
+            this._tilingScheme.getNumberOfXTilesAtLevel(0),
+        );
 
-  this._errorEvent = new Event();
+    this._errorEvent = new Event();
 
-  let credit = options.credit;
-  if (typeof credit === "string") {
-    credit = new Credit(credit);
-  }
-  this._credit = credit;
+    let credit = options.credit;
+    if (typeof credit === "string") {
+        credit = new Credit(credit);
+    }
+    this._credit = credit;
 }
 
 Object.defineProperties(CustomHeightmapTerrainProvider.prototype, {
-  /**
-   * Gets an event that is raised when the terrain provider encounters an asynchronous error. By subscribing
-   * to the event, you will be notified of the error and can potentially recover from it. Event listeners
-   * are passed an instance of {@link TileProviderError}.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {Event}
-   * @readonly
-   */
-  errorEvent: {
-    get: function () {
-      return this._errorEvent;
+    /**
+     * Gets an event that is raised when the terrain provider encounters an asynchronous error. By subscribing
+     * to the event, you will be notified of the error and can potentially recover from it. Event listeners
+     * are passed an instance of {@link TileProviderError}.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {Event}
+     * @readonly
+     */
+    errorEvent: {
+        get: function () {
+            return this._errorEvent;
+        },
     },
-  },
 
-  /**
-   * Gets the credit to display when this terrain provider is active. Typically this is used to credit
-   * the source of the terrain.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {Credit}
-   * @readonly
-   */
-  credit: {
-    get: function () {
-      return this._credit;
+    /**
+     * Gets the credit to display when this terrain provider is active. Typically this is used to credit
+     * the source of the terrain.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {Credit}
+     * @readonly
+     */
+    credit: {
+        get: function () {
+            return this._credit;
+        },
     },
-  },
 
-  /**
-   * Gets the tiling scheme used by this provider.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {TilingScheme}
-   * @readonly
-   */
-  tilingScheme: {
-    get: function () {
-      return this._tilingScheme;
+    /**
+     * Gets the tiling scheme used by this provider.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {TilingScheme}
+     * @readonly
+     */
+    tilingScheme: {
+        get: function () {
+            return this._tilingScheme;
+        },
     },
-  },
 
-  /**
-   * Gets a value indicating whether or not the provider includes a water mask. The water mask
-   * indicates which areas of the globe are water rather than land, so they can be rendered
-   * as a reflective surface with animated waves.
-   * Water mask is not supported by {@link CustomHeightmapTerrainProvider}, so the return
-   * value will always be false.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  hasWaterMask: {
-    get: function () {
-      return false;
+    /**
+     * Gets a value indicating whether or not the provider includes a water mask. The water mask
+     * indicates which areas of the globe are water rather than land, so they can be rendered
+     * as a reflective surface with animated waves.
+     * Water mask is not supported by {@link CustomHeightmapTerrainProvider}, so the return
+     * value will always be false.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    hasWaterMask: {
+        get: function () {
+            return false;
+        },
     },
-  },
 
-  /**
-   * Gets a value indicating whether or not the requested tiles include vertex normals.
-   * Vertex normals are not supported by {@link CustomHeightmapTerrainProvider}, so the return
-   * value will always be false.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  hasVertexNormals: {
-    get: function () {
-      return false;
+    /**
+     * Gets a value indicating whether or not the requested tiles include vertex normals.
+     * Vertex normals are not supported by {@link CustomHeightmapTerrainProvider}, so the return
+     * value will always be false.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    hasVertexNormals: {
+        get: function () {
+            return false;
+        },
     },
-  },
 
-  /**
-   * Gets an object that can be used to determine availability of terrain from this provider, such as
-   * at points and in rectangles. This property may be undefined if availability
-   * information is not available.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {TileAvailability}
-   * @readonly
-   */
-  availability: {
-    get: function () {
-      return undefined;
+    /**
+     * Gets an object that can be used to determine availability of terrain from this provider, such as
+     * at points and in rectangles. This property may be undefined if availability
+     * information is not available.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {TileAvailability}
+     * @readonly
+     */
+    availability: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  /**
-   * Gets the number of columns per heightmap tile.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  width: {
-    get: function () {
-      return this._width;
+    /**
+     * Gets the number of columns per heightmap tile.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    width: {
+        get: function () {
+            return this._width;
+        },
     },
-  },
 
-  /**
-   * Gets the number of rows per heightmap tile.
-   * @memberof CustomHeightmapTerrainProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  height: {
-    get: function () {
-      return this._height;
+    /**
+     * Gets the number of rows per heightmap tile.
+     * @memberof CustomHeightmapTerrainProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    height: {
+        get: function () {
+            return this._height;
+        },
     },
-  },
 });
 
 /**
@@ -214,32 +214,32 @@ Object.defineProperties(CustomHeightmapTerrainProvider.prototype, {
  *          pending and the request will be retried later.
  */
 CustomHeightmapTerrainProvider.prototype.requestTileGeometry = function (
-  x,
-  y,
-  level,
-  request,
+    x,
+    y,
+    level,
+    request,
 ) {
-  const promise = this._callback(x, y, level);
-  if (!defined(promise)) {
-    return undefined;
-  }
-
-  const width = this._width;
-  const height = this._height;
-
-  return Promise.resolve(promise).then(function (heightmapData) {
-    let buffer = heightmapData;
-    if (Array.isArray(buffer)) {
-      // HeightmapTerrainData expects a TypedArray, so convert from number[] to Float64Array
-      buffer = new Float64Array(buffer);
+    const promise = this._callback(x, y, level);
+    if (!defined(promise)) {
+        return undefined;
     }
 
-    return new HeightmapTerrainData({
-      buffer: buffer,
-      width: width,
-      height: height,
+    const width = this._width;
+    const height = this._height;
+
+    return Promise.resolve(promise).then(function (heightmapData) {
+        let buffer = heightmapData;
+        if (Array.isArray(buffer)) {
+            // HeightmapTerrainData expects a TypedArray, so convert from number[] to Float64Array
+            buffer = new Float64Array(buffer);
+        }
+
+        return new HeightmapTerrainData({
+            buffer: buffer,
+            width: width,
+            height: height,
+        });
     });
-  });
 };
 
 /**
@@ -249,9 +249,9 @@ CustomHeightmapTerrainProvider.prototype.requestTileGeometry = function (
  * @returns {number} The maximum geometric error.
  */
 CustomHeightmapTerrainProvider.prototype.getLevelMaximumGeometricError =
-  function (level) {
-    return this._levelZeroMaximumGeometricError / (1 << level);
-  };
+    function (level) {
+        return this._levelZeroMaximumGeometricError / (1 << level);
+    };
 
 /**
  * Determines whether data for a tile is available to be loaded.
@@ -262,11 +262,11 @@ CustomHeightmapTerrainProvider.prototype.getLevelMaximumGeometricError =
  * @returns {boolean|undefined} Undefined if not supported, otherwise true or false.
  */
 CustomHeightmapTerrainProvider.prototype.getTileDataAvailable = function (
-  x,
-  y,
-  level,
+    x,
+    y,
+    level,
 ) {
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -278,10 +278,10 @@ CustomHeightmapTerrainProvider.prototype.getTileDataAvailable = function (
  * @returns {undefined|Promise<void>} Undefined if nothing need to be loaded or a Promise that resolves when all required tiles are loaded
  */
 CustomHeightmapTerrainProvider.prototype.loadTileDataAvailability = function (
-  x,
-  y,
-  level,
+    x,
+    y,
+    level,
 ) {
-  return undefined;
+    return undefined;
 };
 export default CustomHeightmapTerrainProvider;

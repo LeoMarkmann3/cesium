@@ -10,9 +10,9 @@ import Frozen from "../Core/Frozen.js";
  * @private
  */
 function SupportedImageFormats(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  this.webp = options.webp ?? false;
-  this.basis = options.basis ?? false;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    this.webp = options.webp ?? false;
+    this.basis = options.basis ?? false;
 }
 
 export default SupportedImageFormats;

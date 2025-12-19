@@ -22,7 +22,7 @@ import DeveloperError from "./DeveloperError.js";
  * @see Event
  */
 function EventHelper() {
-  this._removalFunctions = [];
+    this._removalFunctions = [];
 }
 
 /**
@@ -37,21 +37,21 @@ function EventHelper() {
  * @see Event#addEventListener
  */
 EventHelper.prototype.add = function (event, listener, scope) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(event)) {
-    throw new DeveloperError("event is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(event)) {
+        throw new DeveloperError("event is required");
+    }
+    //>>includeEnd('debug');
 
-  const removalFunction = event.addEventListener(listener, scope);
-  this._removalFunctions.push(removalFunction);
+    const removalFunction = event.addEventListener(listener, scope);
+    this._removalFunctions.push(removalFunction);
 
-  const that = this;
-  return function () {
-    removalFunction();
-    const removalFunctions = that._removalFunctions;
-    removalFunctions.splice(removalFunctions.indexOf(removalFunction), 1);
-  };
+    const that = this;
+    return function () {
+        removalFunction();
+        const removalFunctions = that._removalFunctions;
+        removalFunctions.splice(removalFunctions.indexOf(removalFunction), 1);
+    };
 };
 
 /**
@@ -60,11 +60,11 @@ EventHelper.prototype.add = function (event, listener, scope) {
  * @see Event#removeEventListener
  */
 EventHelper.prototype.removeAll = function () {
-  const removalFunctions = this._removalFunctions;
-  for (let i = 0, len = removalFunctions.length; i < len; ++i) {
-    removalFunctions[i]();
-  }
-  removalFunctions.length = 0;
+    const removalFunctions = this._removalFunctions;
+    for (let i = 0, len = removalFunctions.length; i < len; ++i) {
+        removalFunctions[i]();
+    }
+    removalFunctions.length = 0;
 };
 
 /**

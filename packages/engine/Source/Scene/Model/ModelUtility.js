@@ -28,19 +28,19 @@ function ModelUtility() {}
  * @private
  */
 ModelUtility.getError = function (type, path, error) {
-  let message = `Failed to load ${type}: ${path}`;
-  if (defined(error) && defined(error.message)) {
-    message += `\n${error.message}`;
-  }
+    let message = `Failed to load ${type}: ${path}`;
+    if (defined(error) && defined(error.message)) {
+        message += `\n${error.message}`;
+    }
 
-  const runtimeError = new RuntimeError(message);
-  if (defined(error)) {
-    // the original call stack is often more useful than the new error's stack,
-    // so add the information here
-    runtimeError.stack = `Original stack:\n${error.stack}\nHandler stack:\n${runtimeError.stack}`;
-  }
+    const runtimeError = new RuntimeError(message);
+    if (defined(error)) {
+        // the original call stack is often more useful than the new error's stack,
+        // so add the information here
+        runtimeError.stack = `Original stack:\n${error.stack}\nHandler stack:\n${runtimeError.stack}`;
+    }
 
-  return runtimeError;
+    return runtimeError;
 };
 
 /**
@@ -52,15 +52,15 @@ ModelUtility.getError = function (type, path, error) {
  * @private
  */
 ModelUtility.getNodeTransform = function (node) {
-  if (defined(node.matrix)) {
-    return node.matrix;
-  }
+    if (defined(node.matrix)) {
+        return node.matrix;
+    }
 
-  return Matrix4.fromTranslationQuaternionRotationScale(
-    defined(node.translation) ? node.translation : Cartesian3.ZERO,
-    defined(node.rotation) ? node.rotation : Quaternion.IDENTITY,
-    defined(node.scale) ? node.scale : Cartesian3.ONE,
-  );
+    return Matrix4.fromTranslationQuaternionRotationScale(
+        defined(node.translation) ? node.translation : Cartesian3.ZERO,
+        defined(node.rotation) ? node.rotation : Quaternion.IDENTITY,
+        defined(node.scale) ? node.scale : Cartesian3.ONE,
+    );
 };
 
 /**
@@ -74,19 +74,19 @@ ModelUtility.getNodeTransform = function (node) {
  * @private
  */
 ModelUtility.getAttributeBySemantic = function (object, semantic, setIndex) {
-  const attributes = object.attributes;
-  const attributesLength = attributes.length;
-  for (let i = 0; i < attributesLength; ++i) {
-    const attribute = attributes[i];
-    const matchesSetIndex = defined(setIndex)
-      ? attribute.setIndex === setIndex
-      : true;
-    if (attribute.semantic === semantic && matchesSetIndex) {
-      return attribute;
+    const attributes = object.attributes;
+    const attributesLength = attributes.length;
+    for (let i = 0; i < attributesLength; ++i) {
+        const attribute = attributes[i];
+        const matchesSetIndex = defined(setIndex)
+            ? attribute.setIndex === setIndex
+            : true;
+        if (attribute.semantic === semantic && matchesSetIndex) {
+            return attribute;
+        }
     }
-  }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -100,16 +100,16 @@ ModelUtility.getAttributeBySemantic = function (object, semantic, setIndex) {
  * @private
  */
 ModelUtility.getAttributeByName = function (object, name) {
-  const attributes = object.attributes;
-  const attributesLength = attributes.length;
-  for (let i = 0; i < attributesLength; ++i) {
-    const attribute = attributes[i];
-    if (attribute.name === name) {
-      return attribute;
+    const attributes = object.attributes;
+    const attributesLength = attributes.length;
+    for (let i = 0; i < attributesLength; ++i) {
+        const attribute = attributes[i];
+        if (attribute.name === name) {
+            return attribute;
+        }
     }
-  }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -122,31 +122,31 @@ ModelUtility.getAttributeByName = function (object, name) {
  * @private
  */
 ModelUtility.getFeatureIdsByLabel = function (featureIds, label) {
-  for (let i = 0; i < featureIds.length; i++) {
-    const featureIdSet = featureIds[i];
-    if (
-      featureIdSet.positionalLabel === label ||
-      featureIdSet.label === label
-    ) {
-      return featureIdSet;
+    for (let i = 0; i < featureIds.length; i++) {
+        const featureIdSet = featureIds[i];
+        if (
+            featureIdSet.positionalLabel === label ||
+            featureIdSet.label === label
+        ) {
+            return featureIdSet;
+        }
     }
-  }
 
-  return undefined;
+    return undefined;
 };
 
 ModelUtility.hasQuantizedAttributes = function (attributes) {
-  if (!defined(attributes)) {
-    return false;
-  }
-
-  for (let i = 0; i < attributes.length; i++) {
-    const attribute = attributes[i];
-    if (defined(attribute.quantization)) {
-      return true;
+    if (!defined(attributes)) {
+        return false;
     }
-  }
-  return false;
+
+    for (let i = 0; i < attributes.length; i++) {
+        const attribute = attributes[i];
+        if (defined(attribute.quantization)) {
+            return true;
+        }
+    }
+    return false;
 };
 
 /**
@@ -155,50 +155,53 @@ ModelUtility.hasQuantizedAttributes = function (attributes) {
  * @private
  */
 ModelUtility.getAttributeInfo = function (attribute) {
-  const semantic = attribute.semantic;
-  const setIndex = attribute.setIndex;
+    const semantic = attribute.semantic;
+    const setIndex = attribute.setIndex;
 
-  let variableName;
-  let hasSemantic = false;
-  if (defined(semantic)) {
-    variableName = VertexAttributeSemantic.getVariableName(semantic, setIndex);
-    hasSemantic = true;
-  } else {
-    variableName = attribute.name;
-    // According to the glTF 2.0 spec, custom attributes must be prepended with
-    // an underscore.
-    variableName = variableName.replace(/^_/, "");
-    variableName = variableName.toLowerCase();
-  }
+    let variableName;
+    let hasSemantic = false;
+    if (defined(semantic)) {
+        variableName = VertexAttributeSemantic.getVariableName(
+            semantic,
+            setIndex,
+        );
+        hasSemantic = true;
+    } else {
+        variableName = attribute.name;
+        // According to the glTF 2.0 spec, custom attributes must be prepended with
+        // an underscore.
+        variableName = variableName.replace(/^_/, "");
+        variableName = variableName.toLowerCase();
+    }
 
-  const isVertexColor = /^color_\d+$/.test(variableName);
-  const attributeType = attribute.type;
-  let glslType = AttributeType.getGlslType(attributeType);
+    const isVertexColor = /^color_\d+$/.test(variableName);
+    const attributeType = attribute.type;
+    let glslType = AttributeType.getGlslType(attributeType);
 
-  // color_n can be either a vec3 or a vec4. But in GLSL we can always use
-  // attribute vec4 since GLSL promotes vec3 attribute data to vec4 with
-  // the .a channel set to 1.0.
-  if (isVertexColor) {
-    glslType = "vec4";
-  }
+    // color_n can be either a vec3 or a vec4. But in GLSL we can always use
+    // attribute vec4 since GLSL promotes vec3 attribute data to vec4 with
+    // the .a channel set to 1.0.
+    if (isVertexColor) {
+        glslType = "vec4";
+    }
 
-  const isQuantized = defined(attribute.quantization);
-  let quantizedGlslType;
-  if (isQuantized) {
-    // The quantized color_n attribute also is promoted to a vec4 in the shader
-    quantizedGlslType = isVertexColor
-      ? "vec4"
-      : AttributeType.getGlslType(attribute.quantization.type);
-  }
+    const isQuantized = defined(attribute.quantization);
+    let quantizedGlslType;
+    if (isQuantized) {
+        // The quantized color_n attribute also is promoted to a vec4 in the shader
+        quantizedGlslType = isVertexColor
+            ? "vec4"
+            : AttributeType.getGlslType(attribute.quantization.type);
+    }
 
-  return {
-    attribute: attribute,
-    isQuantized: isQuantized,
-    variableName: variableName,
-    hasSemantic: hasSemantic,
-    glslType: glslType,
-    quantizedGlslType: quantizedGlslType,
-  };
+    return {
+        attribute: attribute,
+        isQuantized: isQuantized,
+        variableName: variableName,
+        hasSemantic: hasSemantic,
+        glslType: glslType,
+        quantizedGlslType: quantizedGlslType,
+    };
 };
 
 const cartesianMaxScratch = new Cartesian3();
@@ -218,35 +221,38 @@ const cartesianMinScratch = new Cartesian3();
  * @private
  */
 ModelUtility.getPositionMinMax = function (
-  primitive,
-  instancingTranslationMin,
-  instancingTranslationMax,
-) {
-  const positionGltfAttribute = ModelUtility.getAttributeBySemantic(
     primitive,
-    "POSITION",
-  );
-
-  let positionMax = positionGltfAttribute.max;
-  let positionMin = positionGltfAttribute.min;
-
-  if (defined(instancingTranslationMax) && defined(instancingTranslationMin)) {
-    positionMin = Cartesian3.add(
-      positionMin,
-      instancingTranslationMin,
-      cartesianMinScratch,
+    instancingTranslationMin,
+    instancingTranslationMax,
+) {
+    const positionGltfAttribute = ModelUtility.getAttributeBySemantic(
+        primitive,
+        "POSITION",
     );
-    positionMax = Cartesian3.add(
-      positionMax,
-      instancingTranslationMax,
-      cartesianMaxScratch,
-    );
-  }
 
-  return {
-    min: positionMin,
-    max: positionMax,
-  };
+    let positionMax = positionGltfAttribute.max;
+    let positionMin = positionGltfAttribute.min;
+
+    if (
+        defined(instancingTranslationMax) &&
+        defined(instancingTranslationMin)
+    ) {
+        positionMin = Cartesian3.add(
+            positionMin,
+            instancingTranslationMin,
+            cartesianMinScratch,
+        );
+        positionMax = Cartesian3.add(
+            positionMax,
+            instancingTranslationMax,
+            cartesianMaxScratch,
+        );
+    }
+
+    return {
+        min: positionMin,
+        max: positionMax,
+    };
 };
 
 /**
@@ -263,20 +269,24 @@ ModelUtility.getPositionMinMax = function (
  * @private
  */
 ModelUtility.getAxisCorrectionMatrix = function (upAxis, forwardAxis, result) {
-  result = Matrix4.clone(Matrix4.IDENTITY, result);
+    result = Matrix4.clone(Matrix4.IDENTITY, result);
 
-  if (upAxis === Axis.Y) {
-    result = Matrix4.clone(Axis.Y_UP_TO_Z_UP, result);
-  } else if (upAxis === Axis.X) {
-    result = Matrix4.clone(Axis.X_UP_TO_Z_UP, result);
-  }
+    if (upAxis === Axis.Y) {
+        result = Matrix4.clone(Axis.Y_UP_TO_Z_UP, result);
+    } else if (upAxis === Axis.X) {
+        result = Matrix4.clone(Axis.X_UP_TO_Z_UP, result);
+    }
 
-  if (forwardAxis === Axis.Z) {
-    // glTF 2.0 has a Z-forward convention that must be adapted here to X-forward.
-    result = Matrix4.multiplyTransformation(result, Axis.Z_UP_TO_X_UP, result);
-  }
+    if (forwardAxis === Axis.Z) {
+        // glTF 2.0 has a Z-forward convention that must be adapted here to X-forward.
+        result = Matrix4.multiplyTransformation(
+            result,
+            Axis.Z_UP_TO_X_UP,
+            result,
+        );
+    }
 
-  return result;
+    return result;
 };
 
 const scratchMatrix3 = new Matrix3();
@@ -299,12 +309,12 @@ const scratchMatrix3 = new Matrix3();
  * @private
  */
 ModelUtility.getCullFace = function (modelMatrix, primitiveType) {
-  if (!PrimitiveType.isTriangles(primitiveType)) {
-    return CullFace.BACK;
-  }
+    if (!PrimitiveType.isTriangles(primitiveType)) {
+        return CullFace.BACK;
+    }
 
-  const matrix3 = Matrix4.getMatrix3(modelMatrix, scratchMatrix3);
-  return Matrix3.determinant(matrix3) < 0.0 ? CullFace.FRONT : CullFace.BACK;
+    const matrix3 = Matrix4.getMatrix3(modelMatrix, scratchMatrix3);
+    return Matrix3.determinant(matrix3) < 0.0 ? CullFace.FRONT : CullFace.BACK;
 };
 
 /**
@@ -327,50 +337,50 @@ ModelUtility.getCullFace = function (modelMatrix, primitiveType) {
  * @returns {string} The sanitized version of the identifier.
  */
 ModelUtility.sanitizeGlslIdentifier = function (identifier) {
-  // Remove non-alphanumeric characters and replace with a single underscore.
-  // This regex is designed so that the result won't have multiple underscores
-  // in a row.
-  let sanitizedIdentifier = identifier.replaceAll(/[^A-Za-z0-9]+/g, "_");
-  // Remove the gl_ prefix if present.
-  sanitizedIdentifier = sanitizedIdentifier.replace(/^gl_/, "");
-  // Add an underscore if first character is a digit.
-  if (/^\d/.test(sanitizedIdentifier)) {
-    sanitizedIdentifier = `_${sanitizedIdentifier}`;
-  }
+    // Remove non-alphanumeric characters and replace with a single underscore.
+    // This regex is designed so that the result won't have multiple underscores
+    // in a row.
+    let sanitizedIdentifier = identifier.replaceAll(/[^A-Za-z0-9]+/g, "_");
+    // Remove the gl_ prefix if present.
+    sanitizedIdentifier = sanitizedIdentifier.replace(/^gl_/, "");
+    // Add an underscore if first character is a digit.
+    if (/^\d/.test(sanitizedIdentifier)) {
+        sanitizedIdentifier = `_${sanitizedIdentifier}`;
+    }
 
-  return sanitizedIdentifier;
+    return sanitizedIdentifier;
 };
 
 ModelUtility.supportedExtensions = {
-  AGI_articulations: true,
-  CESIUM_primitive_outline: true,
-  CESIUM_RTC: true,
-  EXT_feature_metadata: true,
-  EXT_implicit_cylinder_region: true,
-  EXT_implicit_ellipsoid_region: true,
-  EXT_instance_features: true,
-  EXT_mesh_features: true,
-  EXT_mesh_gpu_instancing: true,
-  EXT_meshopt_compression: true,
-  EXT_primitive_voxels: true,
-  EXT_structural_metadata: true,
-  EXT_texture_webp: true,
-  KHR_blend: true,
-  KHR_draco_mesh_compression: true,
-  KHR_implicit_shapes: true,
-  KHR_materials_common: true,
-  KHR_materials_pbrSpecularGlossiness: true,
-  KHR_materials_specular: true,
-  KHR_materials_anisotropy: true,
-  KHR_materials_clearcoat: true,
-  KHR_materials_unlit: true,
-  KHR_mesh_quantization: true,
-  KHR_techniques_webgl: true,
-  KHR_texture_basisu: true,
-  KHR_texture_transform: true,
-  KHR_gaussian_splatting: true,
-  KHR_gaussian_splatting_compression_spz_2: true,
-  WEB3D_quantized_attributes: true,
+    AGI_articulations: true,
+    CESIUM_primitive_outline: true,
+    CESIUM_RTC: true,
+    EXT_feature_metadata: true,
+    EXT_implicit_cylinder_region: true,
+    EXT_implicit_ellipsoid_region: true,
+    EXT_instance_features: true,
+    EXT_mesh_features: true,
+    EXT_mesh_gpu_instancing: true,
+    EXT_meshopt_compression: true,
+    EXT_primitive_voxels: true,
+    EXT_structural_metadata: true,
+    EXT_texture_webp: true,
+    KHR_blend: true,
+    KHR_draco_mesh_compression: true,
+    KHR_implicit_shapes: true,
+    KHR_materials_common: true,
+    KHR_materials_pbrSpecularGlossiness: true,
+    KHR_materials_specular: true,
+    KHR_materials_anisotropy: true,
+    KHR_materials_clearcoat: true,
+    KHR_materials_unlit: true,
+    KHR_mesh_quantization: true,
+    KHR_techniques_webgl: true,
+    KHR_texture_basisu: true,
+    KHR_texture_transform: true,
+    KHR_gaussian_splatting: true,
+    KHR_gaussian_splatting_compression_spz_2: true,
+    WEB3D_quantized_attributes: true,
 };
 
 /**
@@ -383,13 +393,13 @@ ModelUtility.supportedExtensions = {
  * @exception {RuntimeError} Unsupported glTF Extension
  */
 ModelUtility.checkSupportedExtensions = function (extensionsRequired) {
-  const length = extensionsRequired.length;
-  for (let i = 0; i < length; i++) {
-    const extension = extensionsRequired[i];
-    if (!ModelUtility.supportedExtensions[extension]) {
-      throw new RuntimeError(`Unsupported glTF Extension: ${extension}`);
+    const length = extensionsRequired.length;
+    for (let i = 0; i < length; i++) {
+        const extension = extensionsRequired[i];
+        if (!ModelUtility.supportedExtensions[extension]) {
+            throw new RuntimeError(`Unsupported glTF Extension: ${extension}`);
+        }
     }
-  }
 };
 
 export default ModelUtility;

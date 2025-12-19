@@ -10,25 +10,25 @@ import Check from "../Core/Check.js";
  * @private
  */
 function getClipAndStyleCode(
-  samplerUniformName,
-  matrixUniformName,
-  styleUniformName,
+    samplerUniformName,
+    matrixUniformName,
+    styleUniformName,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("samplerUniformName", samplerUniformName);
-  Check.typeOf.string("matrixUniformName", matrixUniformName);
-  Check.typeOf.string("styleUniformName", styleUniformName);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("samplerUniformName", samplerUniformName);
+    Check.typeOf.string("matrixUniformName", matrixUniformName);
+    Check.typeOf.string("styleUniformName", styleUniformName);
+    //>>includeEnd('debug');
 
-  const shaderCode =
-    `    float clipDistance = clip(gl_FragCoord, ${samplerUniformName}, ${matrixUniformName}); \n` +
-    `    vec4 clippingPlanesEdgeColor = vec4(1.0); \n` +
-    `    clippingPlanesEdgeColor.rgb = ${styleUniformName}.rgb; \n` +
-    `    float clippingPlanesEdgeWidth = ${styleUniformName}.a; \n` +
-    `    if (clipDistance > 0.0 && clipDistance < clippingPlanesEdgeWidth) \n` +
-    `    { \n` +
-    `        out_FragColor = clippingPlanesEdgeColor;\n` +
-    `    } \n`;
-  return shaderCode;
+    const shaderCode =
+        `    float clipDistance = clip(gl_FragCoord, ${samplerUniformName}, ${matrixUniformName}); \n` +
+        `    vec4 clippingPlanesEdgeColor = vec4(1.0); \n` +
+        `    clippingPlanesEdgeColor.rgb = ${styleUniformName}.rgb; \n` +
+        `    float clippingPlanesEdgeWidth = ${styleUniformName}.a; \n` +
+        `    if (clipDistance > 0.0 && clipDistance < clippingPlanesEdgeWidth) \n` +
+        `    { \n` +
+        `        out_FragColor = clippingPlanesEdgeColor;\n` +
+        `    } \n`;
+    return shaderCode;
 }
 export default getClipAndStyleCode;

@@ -20,10 +20,10 @@ const ITwinPlatform = {};
  * @enum {string}
  */
 ITwinPlatform.ExportStatus = Object.freeze({
-  NotStarted: "NotStarted",
-  InProgress: "InProgress",
-  Complete: "Complete",
-  Invalid: "Invalid",
+    NotStarted: "NotStarted",
+    InProgress: "InProgress",
+    Complete: "Complete",
+    Invalid: "Invalid",
 });
 
 /**
@@ -32,9 +32,9 @@ ITwinPlatform.ExportStatus = Object.freeze({
  * @enum {string}
  */
 ITwinPlatform.ExportType = Object.freeze({
-  IMODEL: "IMODEL",
-  CESIUM: "CESIUM",
-  "3DTILES": "3DTILES",
+    IMODEL: "IMODEL",
+    CESIUM: "CESIUM",
+    "3DTILES": "3DTILES",
 });
 
 /**
@@ -44,13 +44,13 @@ ITwinPlatform.ExportType = Object.freeze({
  * @enum {string}
  */
 ITwinPlatform.RealityDataType = Object.freeze({
-  Cesium3DTiles: "Cesium3DTiles",
-  PNTS: "PNTS",
-  RealityMesh3DTiles: "RealityMesh3DTiles",
-  Terrain3DTiles: "Terrain3DTiles",
-  KML: "KML",
-  GeoJSON: "GeoJSON",
-  Unstructured: "Unstructured",
+    Cesium3DTiles: "Cesium3DTiles",
+    PNTS: "PNTS",
+    RealityMesh3DTiles: "RealityMesh3DTiles",
+    Terrain3DTiles: "Terrain3DTiles",
+    KML: "KML",
+    GeoJSON: "GeoJSON",
+    Unstructured: "Unstructured",
 });
 
 /**
@@ -84,21 +84,21 @@ ITwinPlatform.defaultShareKey = undefined;
  * @returns {string} full auth header with basic/bearer method
  */
 ITwinPlatform._getAuthorizationHeader = function () {
-  //>>includeStart('debug', pragmas.debug);
-  if (
-    !defined(ITwinPlatform.defaultAccessToken) &&
-    !defined(ITwinPlatform.defaultShareKey)
-  ) {
-    throw new DeveloperError(
-      "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (
+        !defined(ITwinPlatform.defaultAccessToken) &&
+        !defined(ITwinPlatform.defaultShareKey)
+    ) {
+        throw new DeveloperError(
+            "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
+        );
+    }
+    //>>includeEnd('debug');
 
-  if (defined(ITwinPlatform.defaultShareKey)) {
-    return `Basic ${ITwinPlatform.defaultShareKey}`;
-  }
-  return `Bearer ${ITwinPlatform.defaultAccessToken}`;
+    if (defined(ITwinPlatform.defaultShareKey)) {
+        return `Basic ${ITwinPlatform.defaultShareKey}`;
+    }
+    return `Bearer ${ITwinPlatform.defaultAccessToken}`;
 };
 
 /**
@@ -110,7 +110,7 @@ ITwinPlatform._getAuthorizationHeader = function () {
  * @default "https://api.bentley.com"
  */
 ITwinPlatform.apiEndpoint = new Resource({
-  url: "https://api.bentley.com",
+    url: "https://api.bentley.com",
 });
 
 /**
@@ -159,68 +159,68 @@ ITwinPlatform.apiEndpoint = new Resource({
  * @throws {RuntimeError} If the iTwin API request is not successful
  */
 ITwinPlatform.getExports = async function (iModelId, changesetId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("iModelId", iModelId);
-  if (defined(changesetId)) {
-    Check.typeOf.string("changesetId", changesetId);
-  }
-  if (
-    !defined(ITwinPlatform.defaultAccessToken) &&
-    !defined(ITwinPlatform.defaultShareKey)
-  ) {
-    throw new DeveloperError(
-      "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
-    );
-  }
-  //>>includeEnd('debug');
-
-  const resource = new Resource({
-    url: `${ITwinPlatform.apiEndpoint}mesh-export`,
-    headers: {
-      Authorization: ITwinPlatform._getAuthorizationHeader(),
-      Accept: "application/vnd.bentley.itwin-platform.v1+json",
-      Prefer: "return=representation",
-    },
-    queryParameters: {
-      iModelId: iModelId,
-      exportType: ITwinPlatform.ExportType["3DTILES"],
-      // With the export auto-generation it will auto-delete the 6th export so
-      // there should never be more than 5 results. Just request them all and parse
-      // for ones that are COMPLETE
-      $top: "5",
-      client: "CesiumJS",
-    },
-  });
-  /* global CESIUM_VERSION */
-  if (typeof CESIUM_VERSION !== "undefined") {
-    resource.appendQueryParameters({ clientVersion: CESIUM_VERSION });
-  }
-  if (defined(changesetId) && changesetId !== "") {
-    resource.appendQueryParameters({ changesetId: changesetId });
-  }
-
-  try {
-    const response = await resource.fetchJson();
-    return response;
-  } catch (error) {
-    const result = JSON.parse(error.response);
-    if (error.statusCode === 401) {
-      const code = result.error.details?.[0].code ?? "";
-      throw new RuntimeError(
-        `Unauthorized, bad token, wrong scopes or headers bad. ${code}`,
-      );
-    } else if (error.statusCode === 403) {
-      console.error(result.error.code, result.error.message);
-      throw new RuntimeError("Not allowed, forbidden");
-    } else if (error.statusCode === 422) {
-      throw new RuntimeError(
-        `Unprocessable Entity:${result.error.code} ${result.error.message}`,
-      );
-    } else if (error.statusCode === 429) {
-      throw new RuntimeError("Too many requests");
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("iModelId", iModelId);
+    if (defined(changesetId)) {
+        Check.typeOf.string("changesetId", changesetId);
     }
-    throw new RuntimeError(`Unknown request failure ${error.statusCode}`);
-  }
+    if (
+        !defined(ITwinPlatform.defaultAccessToken) &&
+        !defined(ITwinPlatform.defaultShareKey)
+    ) {
+        throw new DeveloperError(
+            "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
+        );
+    }
+    //>>includeEnd('debug');
+
+    const resource = new Resource({
+        url: `${ITwinPlatform.apiEndpoint}mesh-export`,
+        headers: {
+            Authorization: ITwinPlatform._getAuthorizationHeader(),
+            Accept: "application/vnd.bentley.itwin-platform.v1+json",
+            Prefer: "return=representation",
+        },
+        queryParameters: {
+            iModelId: iModelId,
+            exportType: ITwinPlatform.ExportType["3DTILES"],
+            // With the export auto-generation it will auto-delete the 6th export so
+            // there should never be more than 5 results. Just request them all and parse
+            // for ones that are COMPLETE
+            $top: "5",
+            client: "CesiumJS",
+        },
+    });
+    /* global CESIUM_VERSION */
+    if (typeof CESIUM_VERSION !== "undefined") {
+        resource.appendQueryParameters({ clientVersion: CESIUM_VERSION });
+    }
+    if (defined(changesetId) && changesetId !== "") {
+        resource.appendQueryParameters({ changesetId: changesetId });
+    }
+
+    try {
+        const response = await resource.fetchJson();
+        return response;
+    } catch (error) {
+        const result = JSON.parse(error.response);
+        if (error.statusCode === 401) {
+            const code = result.error.details?.[0].code ?? "";
+            throw new RuntimeError(
+                `Unauthorized, bad token, wrong scopes or headers bad. ${code}`,
+            );
+        } else if (error.statusCode === 403) {
+            console.error(result.error.code, result.error.message);
+            throw new RuntimeError("Not allowed, forbidden");
+        } else if (error.statusCode === 422) {
+            throw new RuntimeError(
+                `Unprocessable Entity:${result.error.code} ${result.error.message}`,
+            );
+        } else if (error.statusCode === 429) {
+            throw new RuntimeError("Too many requests");
+        }
+        throw new RuntimeError(`Unknown request failure ${error.statusCode}`);
+    }
 };
 
 /**
@@ -262,54 +262,54 @@ ITwinPlatform.getExports = async function (iModelId, changesetId) {
  * @returns {Promise<RealityDataRepresentation>}
  */
 ITwinPlatform.getRealityDataMetadata = async function (iTwinId, realityDataId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("iTwinId", iTwinId);
-  Check.typeOf.string("realityDataId", realityDataId);
-  if (
-    !defined(ITwinPlatform.defaultAccessToken) &&
-    !defined(ITwinPlatform.defaultShareKey)
-  ) {
-    throw new DeveloperError(
-      "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
-    );
-  }
-  //>>includeEnd('debug');
-
-  const resource = new Resource({
-    url: `${ITwinPlatform.apiEndpoint}reality-management/reality-data/${realityDataId}`,
-    headers: {
-      Authorization: ITwinPlatform._getAuthorizationHeader(),
-      Accept: "application/vnd.bentley.itwin-platform.v1+json",
-    },
-    queryParameters: { iTwinId: iTwinId },
-  });
-
-  try {
-    const response = await resource.fetchJson();
-    return response.realityData;
-  } catch (error) {
-    const result = JSON.parse(error.response);
-    if (error.statusCode === 401) {
-      const code = result.error.details?.[0].code ?? "";
-      throw new RuntimeError(
-        `Unauthorized, bad token, wrong scopes or headers bad. ${code}`,
-      );
-    } else if (error.statusCode === 403) {
-      console.error(result.error.code, result.error.message);
-      throw new RuntimeError("Not allowed, forbidden");
-    } else if (error.statusCode === 404) {
-      throw new RuntimeError(
-        `Reality data not found: ${iTwinId}, ${realityDataId}`,
-      );
-    } else if (error.statusCode === 422) {
-      throw new RuntimeError(
-        `Unprocessable Entity:${result.error.code} ${result.error.message}`,
-      );
-    } else if (error.statusCode === 429) {
-      throw new RuntimeError("Too many requests");
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("iTwinId", iTwinId);
+    Check.typeOf.string("realityDataId", realityDataId);
+    if (
+        !defined(ITwinPlatform.defaultAccessToken) &&
+        !defined(ITwinPlatform.defaultShareKey)
+    ) {
+        throw new DeveloperError(
+            "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
+        );
     }
-    throw new RuntimeError(`Unknown request failure ${error.statusCode}`);
-  }
+    //>>includeEnd('debug');
+
+    const resource = new Resource({
+        url: `${ITwinPlatform.apiEndpoint}reality-management/reality-data/${realityDataId}`,
+        headers: {
+            Authorization: ITwinPlatform._getAuthorizationHeader(),
+            Accept: "application/vnd.bentley.itwin-platform.v1+json",
+        },
+        queryParameters: { iTwinId: iTwinId },
+    });
+
+    try {
+        const response = await resource.fetchJson();
+        return response.realityData;
+    } catch (error) {
+        const result = JSON.parse(error.response);
+        if (error.statusCode === 401) {
+            const code = result.error.details?.[0].code ?? "";
+            throw new RuntimeError(
+                `Unauthorized, bad token, wrong scopes or headers bad. ${code}`,
+            );
+        } else if (error.statusCode === 403) {
+            console.error(result.error.code, result.error.message);
+            throw new RuntimeError("Not allowed, forbidden");
+        } else if (error.statusCode === 404) {
+            throw new RuntimeError(
+                `Reality data not found: ${iTwinId}, ${realityDataId}`,
+            );
+        } else if (error.statusCode === 422) {
+            throw new RuntimeError(
+                `Unprocessable Entity:${result.error.code} ${result.error.message}`,
+            );
+        } else if (error.statusCode === 429) {
+            throw new RuntimeError("Too many requests");
+        }
+        throw new RuntimeError(`Unknown request failure ${error.statusCode}`);
+    }
 };
 
 /**
@@ -325,64 +325,64 @@ ITwinPlatform.getRealityDataMetadata = async function (iTwinId, realityDataId) {
  * @returns {Promise<string>}
  */
 ITwinPlatform.getRealityDataURL = async function (
-  iTwinId,
-  realityDataId,
-  rootDocument,
+    iTwinId,
+    realityDataId,
+    rootDocument,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("iTwinId", iTwinId);
-  Check.typeOf.string("realityDataId", realityDataId);
-  Check.typeOf.string("rootDocument", rootDocument);
-  if (
-    !defined(ITwinPlatform.defaultAccessToken) &&
-    !defined(ITwinPlatform.defaultShareKey)
-  ) {
-    throw new DeveloperError(
-      "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
-    );
-  }
-  //>>includeEnd('debug');
-
-  const resource = new Resource({
-    url: `${ITwinPlatform.apiEndpoint}reality-management/reality-data/${realityDataId}/readaccess`,
-    headers: {
-      Authorization: ITwinPlatform._getAuthorizationHeader(),
-      Accept: "application/vnd.bentley.itwin-platform.v1+json",
-    },
-    queryParameters: { iTwinId: iTwinId },
-  });
-
-  try {
-    const result = await resource.fetchJson();
-
-    const containerUrl = result._links.containerUrl.href;
-    const tilesetUrl = new URL(containerUrl);
-    tilesetUrl.pathname = `${tilesetUrl.pathname}/${rootDocument}`;
-
-    return tilesetUrl.toString();
-  } catch (error) {
-    const result = JSON.parse(error.response);
-    if (error.statusCode === 401) {
-      const code = result.error.details?.[0].code ?? "";
-      throw new RuntimeError(
-        `Unauthorized, bad token, wrong scopes or headers bad. ${code}`,
-      );
-    } else if (error.statusCode === 403) {
-      console.error(result.error.code, result.error.message);
-      throw new RuntimeError("Not allowed, forbidden");
-    } else if (error.statusCode === 404) {
-      throw new RuntimeError(
-        `Reality data not found: ${iTwinId}, ${realityDataId}`,
-      );
-    } else if (error.statusCode === 422) {
-      throw new RuntimeError(
-        `Unprocessable Entity:${result.error.code} ${result.error.message}`,
-      );
-    } else if (error.statusCode === 429) {
-      throw new RuntimeError("Too many requests");
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("iTwinId", iTwinId);
+    Check.typeOf.string("realityDataId", realityDataId);
+    Check.typeOf.string("rootDocument", rootDocument);
+    if (
+        !defined(ITwinPlatform.defaultAccessToken) &&
+        !defined(ITwinPlatform.defaultShareKey)
+    ) {
+        throw new DeveloperError(
+            "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
+        );
     }
-    throw new RuntimeError(`Unknown request failure ${error.statusCode}`);
-  }
+    //>>includeEnd('debug');
+
+    const resource = new Resource({
+        url: `${ITwinPlatform.apiEndpoint}reality-management/reality-data/${realityDataId}/readaccess`,
+        headers: {
+            Authorization: ITwinPlatform._getAuthorizationHeader(),
+            Accept: "application/vnd.bentley.itwin-platform.v1+json",
+        },
+        queryParameters: { iTwinId: iTwinId },
+    });
+
+    try {
+        const result = await resource.fetchJson();
+
+        const containerUrl = result._links.containerUrl.href;
+        const tilesetUrl = new URL(containerUrl);
+        tilesetUrl.pathname = `${tilesetUrl.pathname}/${rootDocument}`;
+
+        return tilesetUrl.toString();
+    } catch (error) {
+        const result = JSON.parse(error.response);
+        if (error.statusCode === 401) {
+            const code = result.error.details?.[0].code ?? "";
+            throw new RuntimeError(
+                `Unauthorized, bad token, wrong scopes or headers bad. ${code}`,
+            );
+        } else if (error.statusCode === 403) {
+            console.error(result.error.code, result.error.message);
+            throw new RuntimeError("Not allowed, forbidden");
+        } else if (error.statusCode === 404) {
+            throw new RuntimeError(
+                `Reality data not found: ${iTwinId}, ${realityDataId}`,
+            );
+        } else if (error.statusCode === 422) {
+            throw new RuntimeError(
+                `Unprocessable Entity:${result.error.code} ${result.error.message}`,
+            );
+        } else if (error.statusCode === 429) {
+            throw new RuntimeError("Too many requests");
+        }
+        throw new RuntimeError(`Unknown request failure ${error.statusCode}`);
+    }
 };
 
 export default ITwinPlatform;

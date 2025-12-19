@@ -36,30 +36,32 @@ const AttributeCompression = {};
  * @see AttributeCompression.octDecodeInRange
  */
 AttributeCompression.octEncodeInRange = function (vector, rangeMax, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("vector", vector);
-  Check.defined("result", result);
-  const magSquared = Cartesian3.magnitudeSquared(vector);
-  if (Math.abs(magSquared - 1.0) > CesiumMath.EPSILON6) {
-    throw new DeveloperError("vector must be normalized.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("vector", vector);
+    Check.defined("result", result);
+    const magSquared = Cartesian3.magnitudeSquared(vector);
+    if (Math.abs(magSquared - 1.0) > CesiumMath.EPSILON6) {
+        throw new DeveloperError("vector must be normalized.");
+    }
+    //>>includeEnd('debug');
 
-  result.x =
-    vector.x / (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
-  result.y =
-    vector.y / (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
-  if (vector.z < 0) {
-    const x = result.x;
-    const y = result.y;
-    result.x = (1.0 - Math.abs(y)) * CesiumMath.signNotZero(x);
-    result.y = (1.0 - Math.abs(x)) * CesiumMath.signNotZero(y);
-  }
+    result.x =
+        vector.x /
+        (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
+    result.y =
+        vector.y /
+        (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
+    if (vector.z < 0) {
+        const x = result.x;
+        const y = result.y;
+        result.x = (1.0 - Math.abs(y)) * CesiumMath.signNotZero(x);
+        result.y = (1.0 - Math.abs(x)) * CesiumMath.signNotZero(y);
+    }
 
-  result.x = CesiumMath.toSNorm(result.x, rangeMax);
-  result.y = CesiumMath.toSNorm(result.y, rangeMax);
+    result.x = CesiumMath.toSNorm(result.x, rangeMax);
+    result.y = CesiumMath.toSNorm(result.y, rangeMax);
 
-  return result;
+    return result;
 };
 
 /**
@@ -75,14 +77,14 @@ AttributeCompression.octEncodeInRange = function (vector, rangeMax, result) {
  * @see AttributeCompression.octDecode
  */
 AttributeCompression.octEncode = function (vector, result) {
-  return AttributeCompression.octEncodeInRange(vector, 255, result);
+    return AttributeCompression.octEncodeInRange(vector, 255, result);
 };
 
 const octEncodeScratch = new Cartesian2();
 const uint8ForceArray = new Uint8Array(1);
 function forceUint8(value) {
-  uint8ForceArray[0] = value;
-  return uint8ForceArray[0];
+    uint8ForceArray[0] = value;
+    return uint8ForceArray[0];
 }
 /**
  * @param {Cartesian3} vector The normalized vector to be compressed into 4 byte 'oct' encoding.
@@ -95,12 +97,12 @@ function forceUint8(value) {
  * @see AttributeCompression.octDecodeFromCartesian4
  */
 AttributeCompression.octEncodeToCartesian4 = function (vector, result) {
-  AttributeCompression.octEncodeInRange(vector, 65535, octEncodeScratch);
-  result.x = forceUint8(octEncodeScratch.x * RIGHT_SHIFT);
-  result.y = forceUint8(octEncodeScratch.x);
-  result.z = forceUint8(octEncodeScratch.y * RIGHT_SHIFT);
-  result.w = forceUint8(octEncodeScratch.y);
-  return result;
+    AttributeCompression.octEncodeInRange(vector, 65535, octEncodeScratch);
+    result.x = forceUint8(octEncodeScratch.x * RIGHT_SHIFT);
+    result.y = forceUint8(octEncodeScratch.x);
+    result.z = forceUint8(octEncodeScratch.y * RIGHT_SHIFT);
+    result.w = forceUint8(octEncodeScratch.y);
+    return result;
 };
 
 /**
@@ -117,26 +119,26 @@ AttributeCompression.octEncodeToCartesian4 = function (vector, result) {
  * @see AttributeCompression.octEncodeInRange
  */
 AttributeCompression.octDecodeInRange = function (x, y, rangeMax, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("result", result);
-  if (x < 0 || x > rangeMax || y < 0 || y > rangeMax) {
-    throw new DeveloperError(
-      `x and y must be unsigned normalized integers between 0 and ${rangeMax}`,
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("result", result);
+    if (x < 0 || x > rangeMax || y < 0 || y > rangeMax) {
+        throw new DeveloperError(
+            `x and y must be unsigned normalized integers between 0 and ${rangeMax}`,
+        );
+    }
+    //>>includeEnd('debug');
 
-  result.x = CesiumMath.fromSNorm(x, rangeMax);
-  result.y = CesiumMath.fromSNorm(y, rangeMax);
-  result.z = 1.0 - (Math.abs(result.x) + Math.abs(result.y));
+    result.x = CesiumMath.fromSNorm(x, rangeMax);
+    result.y = CesiumMath.fromSNorm(y, rangeMax);
+    result.z = 1.0 - (Math.abs(result.x) + Math.abs(result.y));
 
-  if (result.z < 0.0) {
-    const oldVX = result.x;
-    result.x = (1.0 - Math.abs(result.y)) * CesiumMath.signNotZero(oldVX);
-    result.y = (1.0 - Math.abs(oldVX)) * CesiumMath.signNotZero(result.y);
-  }
+    if (result.z < 0.0) {
+        const oldVX = result.x;
+        result.x = (1.0 - Math.abs(result.y)) * CesiumMath.signNotZero(oldVX);
+        result.y = (1.0 - Math.abs(oldVX)) * CesiumMath.signNotZero(result.y);
+    }
 
-  return Cartesian3.normalize(result, result);
+    return Cartesian3.normalize(result, result);
 };
 
 /**
@@ -152,7 +154,7 @@ AttributeCompression.octDecodeInRange = function (x, y, rangeMax, result) {
  * @see AttributeCompression.octDecodeInRange
  */
 AttributeCompression.octDecode = function (x, y, result) {
-  return AttributeCompression.octDecodeInRange(x, y, 255, result);
+    return AttributeCompression.octDecodeInRange(x, y, 255, result);
 };
 
 /**
@@ -168,34 +170,34 @@ AttributeCompression.octDecode = function (x, y, result) {
  * @see AttributeCompression.octEncodeToCartesian4
  */
 AttributeCompression.octDecodeFromCartesian4 = function (encoded, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("encoded", encoded);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
-  const x = encoded.x;
-  const y = encoded.y;
-  const z = encoded.z;
-  const w = encoded.w;
-  //>>includeStart('debug', pragmas.debug);
-  if (
-    x < 0 ||
-    x > 255 ||
-    y < 0 ||
-    y > 255 ||
-    z < 0 ||
-    z > 255 ||
-    w < 0 ||
-    w > 255
-  ) {
-    throw new DeveloperError(
-      "x, y, z, and w must be unsigned normalized integers between 0 and 255",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("encoded", encoded);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
+    const x = encoded.x;
+    const y = encoded.y;
+    const z = encoded.z;
+    const w = encoded.w;
+    //>>includeStart('debug', pragmas.debug);
+    if (
+        x < 0 ||
+        x > 255 ||
+        y < 0 ||
+        y > 255 ||
+        z < 0 ||
+        z > 255 ||
+        w < 0 ||
+        w > 255
+    ) {
+        throw new DeveloperError(
+            "x, y, z, and w must be unsigned normalized integers between 0 and 255",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const xOct16 = x * LEFT_SHIFT + y;
-  const yOct16 = z * LEFT_SHIFT + w;
-  return AttributeCompression.octDecodeInRange(xOct16, yOct16, 65535, result);
+    const xOct16 = x * LEFT_SHIFT + y;
+    const yOct16 = z * LEFT_SHIFT + w;
+    return AttributeCompression.octDecodeInRange(xOct16, yOct16, 65535, result);
 };
 
 /**
@@ -206,10 +208,10 @@ AttributeCompression.octDecodeFromCartesian4 = function (encoded, result) {
  *
  */
 AttributeCompression.octPackFloat = function (encoded) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("encoded", encoded);
-  //>>includeEnd('debug');
-  return 256.0 * encoded.x + encoded.y;
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("encoded", encoded);
+    //>>includeEnd('debug');
+    return 256.0 * encoded.x + encoded.y;
 };
 
 const scratchEncodeCart2 = new Cartesian2();
@@ -224,8 +226,8 @@ const scratchEncodeCart2 = new Cartesian2();
  * @exception {DeveloperError} vector must be normalized.
  */
 AttributeCompression.octEncodeFloat = function (vector) {
-  AttributeCompression.octEncode(vector, scratchEncodeCart2);
-  return AttributeCompression.octPackFloat(scratchEncodeCart2);
+    AttributeCompression.octEncode(vector, scratchEncodeCart2);
+    return AttributeCompression.octPackFloat(scratchEncodeCart2);
 };
 
 /**
@@ -237,15 +239,15 @@ AttributeCompression.octEncodeFloat = function (vector) {
  *
  */
 AttributeCompression.octDecodeFloat = function (value, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("value", value);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("value", value);
+    //>>includeEnd('debug');
 
-  const temp = value / 256.0;
-  const x = Math.floor(temp);
-  const y = (temp - x) * 256.0;
+    const temp = value / 256.0;
+    const x = Math.floor(temp);
+    const y = (temp - x) * 256.0;
 
-  return AttributeCompression.octDecode(x, y, result);
+    return AttributeCompression.octDecode(x, y, result);
 };
 
 /**
@@ -260,20 +262,20 @@ AttributeCompression.octDecodeFloat = function (value, result) {
  *
  */
 AttributeCompression.octPack = function (v1, v2, v3, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("v1", v1);
-  Check.defined("v2", v2);
-  Check.defined("v3", v3);
-  Check.defined("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("v1", v1);
+    Check.defined("v2", v2);
+    Check.defined("v3", v3);
+    Check.defined("result", result);
+    //>>includeEnd('debug');
 
-  const encoded1 = AttributeCompression.octEncodeFloat(v1);
-  const encoded2 = AttributeCompression.octEncodeFloat(v2);
+    const encoded1 = AttributeCompression.octEncodeFloat(v1);
+    const encoded2 = AttributeCompression.octEncodeFloat(v2);
 
-  const encoded3 = AttributeCompression.octEncode(v3, scratchEncodeCart2);
-  result.x = 65536.0 * encoded3.x + encoded1;
-  result.y = 65536.0 * encoded3.y + encoded2;
-  return result;
+    const encoded3 = AttributeCompression.octEncode(v3, scratchEncodeCart2);
+    result.x = 65536.0 * encoded3.x + encoded1;
+    result.y = 65536.0 * encoded3.y + encoded2;
+    return result;
 };
 
 /**
@@ -285,24 +287,24 @@ AttributeCompression.octPack = function (v1, v2, v3, result) {
  * @param {Cartesian3} v3 One decoded and normalized vector.
  */
 AttributeCompression.octUnpack = function (packed, v1, v2, v3) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("packed", packed);
-  Check.defined("v1", v1);
-  Check.defined("v2", v2);
-  Check.defined("v3", v3);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("packed", packed);
+    Check.defined("v1", v1);
+    Check.defined("v2", v2);
+    Check.defined("v3", v3);
+    //>>includeEnd('debug');
 
-  let temp = packed.x / 65536.0;
-  const x = Math.floor(temp);
-  const encodedFloat1 = (temp - x) * 65536.0;
+    let temp = packed.x / 65536.0;
+    const x = Math.floor(temp);
+    const encodedFloat1 = (temp - x) * 65536.0;
 
-  temp = packed.y / 65536.0;
-  const y = Math.floor(temp);
-  const encodedFloat2 = (temp - y) * 65536.0;
+    temp = packed.y / 65536.0;
+    const y = Math.floor(temp);
+    const encodedFloat2 = (temp - y) * 65536.0;
 
-  AttributeCompression.octDecodeFloat(encodedFloat1, v1);
-  AttributeCompression.octDecodeFloat(encodedFloat2, v2);
-  AttributeCompression.octDecode(x, y, v3);
+    AttributeCompression.octDecodeFloat(encodedFloat1, v1);
+    AttributeCompression.octDecodeFloat(encodedFloat2, v2);
+    AttributeCompression.octDecode(x, y, v3);
 };
 
 /**
@@ -313,16 +315,16 @@ AttributeCompression.octUnpack = function (packed, v1, v2, v3) {
  *
  */
 AttributeCompression.compressTextureCoordinates = function (
-  textureCoordinates,
+    textureCoordinates,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("textureCoordinates", textureCoordinates);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("textureCoordinates", textureCoordinates);
+    //>>includeEnd('debug');
 
-  // Move x and y to the range 0-4095;
-  const x = (textureCoordinates.x * 4095.0) | 0;
-  const y = (textureCoordinates.y * 4095.0) | 0;
-  return 4096.0 * x + y;
+    // Move x and y to the range 0-4095;
+    const x = (textureCoordinates.x * 4095.0) | 0;
+    const y = (textureCoordinates.y * 4095.0) | 0;
+    return 4096.0 * x + y;
 };
 
 /**
@@ -334,23 +336,23 @@ AttributeCompression.compressTextureCoordinates = function (
  *
  */
 AttributeCompression.decompressTextureCoordinates = function (
-  compressed,
-  result,
+    compressed,
+    result,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("compressed", compressed);
-  Check.defined("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("compressed", compressed);
+    Check.defined("result", result);
+    //>>includeEnd('debug');
 
-  const temp = compressed / 4096.0;
-  const xZeroTo4095 = Math.floor(temp);
-  result.x = xZeroTo4095 / 4095.0;
-  result.y = (compressed - xZeroTo4095 * 4096) / 4095;
-  return result;
+    const temp = compressed / 4096.0;
+    const xZeroTo4095 = Math.floor(temp);
+    result.x = xZeroTo4095 / 4095.0;
+    result.y = (compressed - xZeroTo4095 * 4096) / 4095;
+    return result;
 };
 
 function zigZagDecode(value) {
-  return (value >> 1) ^ -(value & 1);
+    return (value >> 1) ^ -(value & 1);
 }
 
 /**
@@ -363,47 +365,47 @@ function zigZagDecode(value) {
  * @see {@link https://github.com/CesiumGS/quantized-mesh|quantized-mesh-1.0 terrain format}
  */
 AttributeCompression.zigZagDeltaDecode = function (
-  uBuffer,
-  vBuffer,
-  heightBuffer,
+    uBuffer,
+    vBuffer,
+    heightBuffer,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("uBuffer", uBuffer);
-  Check.defined("vBuffer", vBuffer);
-  Check.typeOf.number.equals(
-    "uBuffer.length",
-    "vBuffer.length",
-    uBuffer.length,
-    vBuffer.length,
-  );
-  if (defined(heightBuffer)) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("uBuffer", uBuffer);
+    Check.defined("vBuffer", vBuffer);
     Check.typeOf.number.equals(
-      "uBuffer.length",
-      "heightBuffer.length",
-      uBuffer.length,
-      heightBuffer.length,
+        "uBuffer.length",
+        "vBuffer.length",
+        uBuffer.length,
+        vBuffer.length,
     );
-  }
-  //>>includeEnd('debug');
-
-  const count = uBuffer.length;
-
-  let u = 0;
-  let v = 0;
-  let height = 0;
-
-  for (let i = 0; i < count; ++i) {
-    u += zigZagDecode(uBuffer[i]);
-    v += zigZagDecode(vBuffer[i]);
-
-    uBuffer[i] = u;
-    vBuffer[i] = v;
-
     if (defined(heightBuffer)) {
-      height += zigZagDecode(heightBuffer[i]);
-      heightBuffer[i] = height;
+        Check.typeOf.number.equals(
+            "uBuffer.length",
+            "heightBuffer.length",
+            uBuffer.length,
+            heightBuffer.length,
+        );
     }
-  }
+    //>>includeEnd('debug');
+
+    const count = uBuffer.length;
+
+    let u = 0;
+    let v = 0;
+    let height = 0;
+
+    for (let i = 0; i < count; ++i) {
+        u += zigZagDecode(uBuffer[i]);
+        v += zigZagDecode(vBuffer[i]);
+
+        uBuffer[i] = u;
+        vBuffer[i] = v;
+
+        if (defined(heightBuffer)) {
+            height += zigZagDecode(heightBuffer[i]);
+            heightBuffer[i] = height;
+        }
+    }
 };
 
 /**
@@ -419,63 +421,63 @@ AttributeCompression.zigZagDeltaDecode = function (
  * @returns {Float32Array} The dequantized array.
  */
 AttributeCompression.dequantize = function (
-  typedArray,
-  componentDatatype,
-  type,
-  count,
+    typedArray,
+    componentDatatype,
+    type,
+    count,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("typedArray", typedArray);
-  Check.defined("componentDatatype", componentDatatype);
-  Check.defined("type", type);
-  Check.defined("count", count);
-  //>>includeEnd('debug');
-
-  const componentsPerAttribute = AttributeType.getNumberOfComponents(type);
-
-  let divisor;
-  switch (componentDatatype) {
-    case ComponentDatatype.BYTE:
-      divisor = 127.0;
-      break;
-    case ComponentDatatype.UNSIGNED_BYTE:
-      divisor = 255.0;
-      break;
-    case ComponentDatatype.SHORT:
-      divisor = 32767.0;
-      break;
-    case ComponentDatatype.UNSIGNED_SHORT:
-      divisor = 65535.0;
-      break;
-    case ComponentDatatype.INT:
-      divisor = 2147483647.0;
-      break;
-    case ComponentDatatype.UNSIGNED_INT:
-      divisor = 4294967295.0;
-      break;
     //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError(
-        `Cannot dequantize component datatype: ${componentDatatype}`,
-      );
+    Check.defined("typedArray", typedArray);
+    Check.defined("componentDatatype", componentDatatype);
+    Check.defined("type", type);
+    Check.defined("count", count);
     //>>includeEnd('debug');
-  }
 
-  const dequantizedTypedArray = new Float32Array(
-    count * componentsPerAttribute,
-  );
+    const componentsPerAttribute = AttributeType.getNumberOfComponents(type);
 
-  for (let i = 0; i < count; i++) {
-    for (let j = 0; j < componentsPerAttribute; j++) {
-      const index = i * componentsPerAttribute + j;
-      dequantizedTypedArray[index] = Math.max(
-        typedArray[index] / divisor,
-        -1.0,
-      );
+    let divisor;
+    switch (componentDatatype) {
+        case ComponentDatatype.BYTE:
+            divisor = 127.0;
+            break;
+        case ComponentDatatype.UNSIGNED_BYTE:
+            divisor = 255.0;
+            break;
+        case ComponentDatatype.SHORT:
+            divisor = 32767.0;
+            break;
+        case ComponentDatatype.UNSIGNED_SHORT:
+            divisor = 65535.0;
+            break;
+        case ComponentDatatype.INT:
+            divisor = 2147483647.0;
+            break;
+        case ComponentDatatype.UNSIGNED_INT:
+            divisor = 4294967295.0;
+            break;
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError(
+                `Cannot dequantize component datatype: ${componentDatatype}`,
+            );
+        //>>includeEnd('debug');
     }
-  }
 
-  return dequantizedTypedArray;
+    const dequantizedTypedArray = new Float32Array(
+        count * componentsPerAttribute,
+    );
+
+    for (let i = 0; i < count; i++) {
+        for (let j = 0; j < componentsPerAttribute; j++) {
+            const index = i * componentsPerAttribute + j;
+            dequantizedTypedArray[index] = Math.max(
+                typedArray[index] / divisor,
+                -1.0,
+            );
+        }
+    }
+
+    return dequantizedTypedArray;
 };
 
 /**
@@ -486,42 +488,42 @@ AttributeCompression.dequantize = function (
  * @param {Float32Array} [result] Array to store the normalized VEC3 result
  */
 AttributeCompression.decodeRGB565 = function (typedArray, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("typedArray", typedArray);
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("typedArray", typedArray);
 
-  const expectedLength = typedArray.length * 3;
-  if (defined(result)) {
-    Check.typeOf.number.equals(
-      "result.length",
-      "typedArray.length * 3",
-      result.length,
-      expectedLength,
-    );
-  }
-  //>>includeEnd('debug');
+    const expectedLength = typedArray.length * 3;
+    if (defined(result)) {
+        Check.typeOf.number.equals(
+            "result.length",
+            "typedArray.length * 3",
+            result.length,
+            expectedLength,
+        );
+    }
+    //>>includeEnd('debug');
 
-  const count = typedArray.length;
-  if (!defined(result)) {
-    result = new Float32Array(count * 3);
-  }
+    const count = typedArray.length;
+    if (!defined(result)) {
+        result = new Float32Array(count * 3);
+    }
 
-  const mask5 = (1 << 5) - 1;
-  const mask6 = (1 << 6) - 1;
-  const normalize5 = 1.0 / 31.0;
-  const normalize6 = 1.0 / 63.0;
-  for (let i = 0; i < count; i++) {
-    const value = typedArray[i];
-    const red = value >> 11;
-    const green = (value >> 5) & mask6;
-    const blue = value & mask5;
+    const mask5 = (1 << 5) - 1;
+    const mask6 = (1 << 6) - 1;
+    const normalize5 = 1.0 / 31.0;
+    const normalize6 = 1.0 / 63.0;
+    for (let i = 0; i < count; i++) {
+        const value = typedArray[i];
+        const red = value >> 11;
+        const green = (value >> 5) & mask6;
+        const blue = value & mask5;
 
-    const offset = 3 * i;
-    result[offset] = red * normalize5;
-    result[offset + 1] = green * normalize6;
-    result[offset + 2] = blue * normalize5;
-  }
+        const offset = 3 * i;
+        result[offset] = red * normalize5;
+        result[offset + 1] = green * normalize6;
+        result[offset + 2] = blue * normalize5;
+    }
 
-  return result;
+    return result;
 };
 
 export default AttributeCompression;

@@ -21,77 +21,77 @@ import createCommand from "../createCommand.js";
  * @see TerrainProvider
  */
 function ProviderViewModel(options) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(options.name)) {
-    throw new DeveloperError("options.name is required.");
-  }
-  if (!defined(options.tooltip)) {
-    throw new DeveloperError("options.tooltip is required.");
-  }
-  if (!defined(options.iconUrl)) {
-    throw new DeveloperError("options.iconUrl is required.");
-  }
-  if (typeof options.creationFunction !== "function") {
-    throw new DeveloperError("options.creationFunction is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(options.name)) {
+        throw new DeveloperError("options.name is required.");
+    }
+    if (!defined(options.tooltip)) {
+        throw new DeveloperError("options.tooltip is required.");
+    }
+    if (!defined(options.iconUrl)) {
+        throw new DeveloperError("options.iconUrl is required.");
+    }
+    if (typeof options.creationFunction !== "function") {
+        throw new DeveloperError("options.creationFunction is required.");
+    }
+    //>>includeEnd('debug');
 
-  let creationCommand = options.creationFunction;
-  if (!defined(creationCommand.canExecute)) {
-    creationCommand = createCommand(creationCommand);
-  }
+    let creationCommand = options.creationFunction;
+    if (!defined(creationCommand.canExecute)) {
+        creationCommand = createCommand(creationCommand);
+    }
 
-  this._creationCommand = creationCommand;
+    this._creationCommand = creationCommand;
 
-  /**
-   * Gets the display name.  This property is observable.
-   * @type {string}
-   */
-  this.name = options.name;
+    /**
+     * Gets the display name.  This property is observable.
+     * @type {string}
+     */
+    this.name = options.name;
 
-  /**
-   * Gets the tooltip.  This property is observable.
-   * @type {string}
-   */
-  this.tooltip = options.tooltip;
+    /**
+     * Gets the tooltip.  This property is observable.
+     * @type {string}
+     */
+    this.tooltip = options.tooltip;
 
-  /**
-   * Gets the icon.  This property is observable.
-   * @type {string}
-   */
-  this.iconUrl = options.iconUrl;
+    /**
+     * Gets the icon.  This property is observable.
+     * @type {string}
+     */
+    this.iconUrl = options.iconUrl;
 
-  this._category = options.category ?? "";
+    this._category = options.category ?? "";
 
-  knockout.track(this, ["name", "tooltip", "iconUrl"]);
+    knockout.track(this, ["name", "tooltip", "iconUrl"]);
 }
 
 Object.defineProperties(ProviderViewModel.prototype, {
-  /**
-   * Gets the Command that creates one or more providers which will be added to
-   * the globe when this item is selected.
-   * @memberof ProviderViewModel.prototype
-   * @memberof ProviderViewModel.prototype
-   * @type {Command}
-   * @readonly
-   */
-  creationCommand: {
-    get: function () {
-      return this._creationCommand;
+    /**
+     * Gets the Command that creates one or more providers which will be added to
+     * the globe when this item is selected.
+     * @memberof ProviderViewModel.prototype
+     * @memberof ProviderViewModel.prototype
+     * @type {Command}
+     * @readonly
+     */
+    creationCommand: {
+        get: function () {
+            return this._creationCommand;
+        },
     },
-  },
 
-  /**
-   * Gets the category
-   * @type {string}
-   * @memberof ProviderViewModel.prototype
-   * @readonly
-   */
-  category: {
-    get: function () {
-      return this._category;
+    /**
+     * Gets the category
+     * @type {string}
+     * @memberof ProviderViewModel.prototype
+     * @readonly
+     */
+    category: {
+        get: function () {
+            return this._category;
+        },
     },
-  },
 });
 
 /**

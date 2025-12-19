@@ -20,20 +20,20 @@ import DeveloperError from "./DeveloperError.js";
  * @see OpenCageGeocoderService
  */
 function GeocoderService() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 Object.defineProperties(GeocoderService.prototype, {
-  /**
-   * Gets the credit to display after a geocode is performed. Typically this is used to credit
-   * the geocoder service.
-   * @memberof GeocoderService.prototype
-   * @type {Credit|undefined}
-   * @readonly
-   */
-  credit: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the credit to display after a geocode is performed. Typically this is used to credit
+     * the geocoder service.
+     * @memberof GeocoderService.prototype
+     * @type {Credit|undefined}
+     * @readonly
+     */
+    credit: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 /**
@@ -42,11 +42,11 @@ Object.defineProperties(GeocoderService.prototype, {
  * @returns {Credit[]|undefined} A list of credits if present in the result, otherwise undefined
  */
 GeocoderService.getCreditsFromResult = function (geocoderResult) {
-  if (defined(geocoderResult.attributions)) {
-    return geocoderResult.attributions.map(Credit.getIonCredit);
-  }
+    if (defined(geocoderResult.attributions)) {
+        return geocoderResult.attributions.map(Credit.getIonCredit);
+    }
 
-  return undefined;
+    return undefined;
 };
 
 /**

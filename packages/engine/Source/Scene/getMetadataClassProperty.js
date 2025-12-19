@@ -21,23 +21,23 @@ import defined from "../Core/defined.js";
  * @private
  */
 function getMetadataClassProperty(schema, schemaId, className, propertyName) {
-  if (!defined(schema)) {
-    return undefined;
-  }
-  if (defined(schemaId) && schema.id !== schemaId) {
-    return undefined;
-  }
-  const classes = schema.classes || {};
-  const metadataClass = classes[className];
-  if (!defined(metadataClass)) {
-    return undefined;
-  }
-  const properties = metadataClass.properties || {};
-  const metadataProperty = properties[propertyName];
-  if (!defined(metadataProperty)) {
-    return undefined;
-  }
-  return metadataProperty;
+    if (!defined(schema)) {
+        return undefined;
+    }
+    if (defined(schemaId) && schema.id !== schemaId) {
+        return undefined;
+    }
+    const classes = schema.classes || {};
+    const metadataClass = classes[className];
+    if (!defined(metadataClass)) {
+        return undefined;
+    }
+    const properties = metadataClass.properties || {};
+    const metadataProperty = properties[propertyName];
+    if (!defined(metadataProperty)) {
+        return undefined;
+    }
+    return metadataProperty;
 }
 
 export default getMetadataClassProperty;

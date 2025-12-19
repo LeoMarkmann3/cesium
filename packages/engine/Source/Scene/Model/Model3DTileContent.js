@@ -22,134 +22,141 @@ import Model from "./Model.js";
  * @private
  */
 function Model3DTileContent(tileset, tile, resource) {
-  this._tileset = tileset;
-  this._tile = tile;
-  this._resource = resource;
+    this._tileset = tileset;
+    this._tile = tile;
+    this._resource = resource;
 
-  this._model = undefined;
-  this._metadata = undefined;
-  this._group = undefined;
-  this._ready = false;
+    this._model = undefined;
+    this._metadata = undefined;
+    this._group = undefined;
+    this._ready = false;
 }
 
 Object.defineProperties(Model3DTileContent.prototype, {
-  featuresLength: {
-    get: function () {
-      const model = this._model;
-      const featureTables = model.featureTables;
-      const featureTableId = model.featureTableId;
+    featuresLength: {
+        get: function () {
+            const model = this._model;
+            const featureTables = model.featureTables;
+            const featureTableId = model.featureTableId;
 
-      if (defined(featureTables) && defined(featureTables[featureTableId])) {
-        return featureTables[featureTableId].featuresLength;
-      }
+            if (
+                defined(featureTables) &&
+                defined(featureTables[featureTableId])
+            ) {
+                return featureTables[featureTableId].featuresLength;
+            }
 
-      return 0;
+            return 0;
+        },
     },
-  },
 
-  pointsLength: {
-    get: function () {
-      return this._model.statistics.pointsLength;
+    pointsLength: {
+        get: function () {
+            return this._model.statistics.pointsLength;
+        },
     },
-  },
 
-  trianglesLength: {
-    get: function () {
-      return this._model.statistics.trianglesLength;
+    trianglesLength: {
+        get: function () {
+            return this._model.statistics.trianglesLength;
+        },
     },
-  },
 
-  geometryByteLength: {
-    get: function () {
-      return this._model.statistics.geometryByteLength;
+    geometryByteLength: {
+        get: function () {
+            return this._model.statistics.geometryByteLength;
+        },
     },
-  },
 
-  texturesByteLength: {
-    get: function () {
-      return this._model.statistics.texturesByteLength;
+    texturesByteLength: {
+        get: function () {
+            return this._model.statistics.texturesByteLength;
+        },
     },
-  },
 
-  batchTableByteLength: {
-    get: function () {
-      const statistics = this._model.statistics;
-      return (
-        statistics.propertyTablesByteLength + statistics.batchTexturesByteLength
-      );
+    batchTableByteLength: {
+        get: function () {
+            const statistics = this._model.statistics;
+            return (
+                statistics.propertyTablesByteLength +
+                statistics.batchTexturesByteLength
+            );
+        },
     },
-  },
 
-  innerContents: {
-    get: function () {
-      return undefined;
+    innerContents: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  /**
-   * Returns true when the tile's content is ready to render; otherwise false
-   *
-   * @memberof Model3DTileContent.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @private
-   */
-  ready: {
-    get: function () {
-      return this._ready;
+    /**
+     * Returns true when the tile's content is ready to render; otherwise false
+     *
+     * @memberof Model3DTileContent.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @private
+     */
+    ready: {
+        get: function () {
+            return this._ready;
+        },
     },
-  },
 
-  tileset: {
-    get: function () {
-      return this._tileset;
+    tileset: {
+        get: function () {
+            return this._tileset;
+        },
     },
-  },
 
-  tile: {
-    get: function () {
-      return this._tile;
+    tile: {
+        get: function () {
+            return this._tile;
+        },
     },
-  },
 
-  url: {
-    get: function () {
-      return this._resource.getUrlComponent(true);
+    url: {
+        get: function () {
+            return this._resource.getUrlComponent(true);
+        },
     },
-  },
 
-  batchTable: {
-    get: function () {
-      const model = this._model;
-      const featureTables = model.featureTables;
-      const featureTableId = model.featureTableId;
+    batchTable: {
+        get: function () {
+            const model = this._model;
+            const featureTables = model.featureTables;
+            const featureTableId = model.featureTableId;
 
-      if (defined(featureTables) && defined(featureTables[featureTableId])) {
-        return featureTables[featureTableId];
-      }
+            if (
+                defined(featureTables) &&
+                defined(featureTables[featureTableId])
+            ) {
+                return featureTables[featureTableId];
+            }
 
-      return undefined;
+            return undefined;
+        },
     },
-  },
 
-  metadata: {
-    get: function () {
-      return this._metadata;
+    metadata: {
+        get: function () {
+            return this._metadata;
+        },
+        set: function (value) {
+            this._metadata = value;
+        },
     },
-    set: function (value) {
-      this._metadata = value;
-    },
-  },
 
-  group: {
-    get: function () {
-      return this._group;
+    group: {
+        get: function () {
+            return this._group;
+        },
+        set: function (value) {
+            this._group = value;
+        },
     },
-    set: function (value) {
-      this._group = value;
-    },
-  },
 });
 
 /**
@@ -159,7 +166,7 @@ Object.defineProperties(Model3DTileContent.prototype, {
  * @returns {string[]} The texture IDs
  */
 Model3DTileContent.prototype.getTextureIds = function () {
-  return this._model.statistics.getTextureIds();
+    return this._model.statistics.getTextureIds();
 };
 
 /**
@@ -171,7 +178,7 @@ Model3DTileContent.prototype.getTextureIds = function () {
  * @returns {number|undefined} The texture byte length
  */
 Model3DTileContent.prototype.getTextureByteLengthById = function (textureId) {
-  return this._model.statistics.getTextureByteLengthById(textureId);
+    return this._model.statistics.getTextureByteLengthById(textureId);
 };
 
 /**
@@ -188,300 +195,300 @@ Model3DTileContent.prototype.getTextureByteLengthById = function (textureId) {
  * @private
  */
 Model3DTileContent.prototype.getExtension = function (extensionName) {
-  const model = this._model;
-  const extension = model.getExtension(extensionName);
-  return extension;
+    const model = this._model;
+    const extension = model.getExtension(extensionName);
+    return extension;
 };
 
 Model3DTileContent.prototype.getFeature = function (featureId) {
-  const model = this._model;
-  const featureTableId = model.featureTableId;
+    const model = this._model;
+    const featureTableId = model.featureTableId;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(featureTableId)) {
-    throw new DeveloperError(
-      "No feature ID set is selected. Make sure Cesium3DTileset.featureIdLabel or Cesium3DTileset.instanceFeatureIdLabel is defined",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(featureTableId)) {
+        throw new DeveloperError(
+            "No feature ID set is selected. Make sure Cesium3DTileset.featureIdLabel or Cesium3DTileset.instanceFeatureIdLabel is defined",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const featureTable = model.featureTables[featureTableId];
+    const featureTable = model.featureTables[featureTableId];
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(featureTable)) {
-    throw new DeveloperError(
-      "No feature table found for the selected feature ID set",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(featureTable)) {
+        throw new DeveloperError(
+            "No feature table found for the selected feature ID set",
+        );
+    }
+    //>>includeEnd('debug');
 
-  //>>includeStart('debug', pragmas.debug);
-  const featuresLength = featureTable.featuresLength;
-  if (!defined(featureId) || featureId < 0 || featureId >= featuresLength) {
-    throw new DeveloperError(
-      `featureId is required and must be between 0 and featuresLength - 1 (${
-        featuresLength - 1
-      }).`,
-    );
-  }
-  //>>includeEnd('debug');
-  return featureTable.getFeature(featureId);
+    //>>includeStart('debug', pragmas.debug);
+    const featuresLength = featureTable.featuresLength;
+    if (!defined(featureId) || featureId < 0 || featureId >= featuresLength) {
+        throw new DeveloperError(
+            `featureId is required and must be between 0 and featuresLength - 1 (${
+                featuresLength - 1
+            }).`,
+        );
+    }
+    //>>includeEnd('debug');
+    return featureTable.getFeature(featureId);
 };
 
 Model3DTileContent.prototype.hasProperty = function (featureId, name) {
-  const model = this._model;
-  const featureTableId = model.featureTableId;
-  if (!defined(featureTableId)) {
-    return false;
-  }
+    const model = this._model;
+    const featureTableId = model.featureTableId;
+    if (!defined(featureTableId)) {
+        return false;
+    }
 
-  const featureTable = model.featureTables[featureTableId];
-  return featureTable.hasProperty(featureId, name);
+    const featureTable = model.featureTables[featureTableId];
+    return featureTable.hasProperty(featureId, name);
 };
 
 Model3DTileContent.prototype.applyDebugSettings = function (enabled, color) {
-  color = enabled ? color : Color.WHITE;
-  if (this.featuresLength === 0) {
-    this._model.color = color;
-  } else if (defined(this.batchTable)) {
-    this.batchTable.setAllColor(color);
-  }
+    color = enabled ? color : Color.WHITE;
+    if (this.featuresLength === 0) {
+        this._model.color = color;
+    } else if (defined(this.batchTable)) {
+        this.batchTable.setAllColor(color);
+    }
 };
 
 Model3DTileContent.prototype.applyStyle = function (style) {
-  // the setter will call model.applyStyle()
-  this._model.style = style;
+    // the setter will call model.applyStyle()
+    this._model.style = style;
 };
 
 Model3DTileContent.prototype.update = function (tileset, frameState) {
-  const model = this._model;
-  const tile = this._tile;
+    const model = this._model;
+    const tile = this._tile;
 
-  model.colorBlendAmount = tileset.colorBlendAmount;
-  model.colorBlendMode = tileset.colorBlendMode;
-  model.modelMatrix = tile.computedTransform;
-  model.customShader = tileset.customShader;
-  model.featureIdLabel = tileset.featureIdLabel;
-  model.instanceFeatureIdLabel = tileset.instanceFeatureIdLabel;
-  model.lightColor = tileset.lightColor;
-  model.imageBasedLighting = tileset.imageBasedLighting;
-  model.backFaceCulling = tileset.backFaceCulling;
-  model.shadows = tileset.shadows;
-  model.showCreditsOnScreen = tileset.showCreditsOnScreen;
-  model.splitDirection = tileset.splitDirection;
-  model.debugWireframe = tileset.debugWireframe;
-  model.showOutline = tileset.showOutline;
-  model.outlineColor = tileset.outlineColor;
-  model.pointCloudShading = tileset.pointCloudShading;
+    model.colorBlendAmount = tileset.colorBlendAmount;
+    model.colorBlendMode = tileset.colorBlendMode;
+    model.modelMatrix = tile.computedTransform;
+    model.customShader = tileset.customShader;
+    model.featureIdLabel = tileset.featureIdLabel;
+    model.instanceFeatureIdLabel = tileset.instanceFeatureIdLabel;
+    model.lightColor = tileset.lightColor;
+    model.imageBasedLighting = tileset.imageBasedLighting;
+    model.backFaceCulling = tileset.backFaceCulling;
+    model.shadows = tileset.shadows;
+    model.showCreditsOnScreen = tileset.showCreditsOnScreen;
+    model.splitDirection = tileset.splitDirection;
+    model.debugWireframe = tileset.debugWireframe;
+    model.showOutline = tileset.showOutline;
+    model.outlineColor = tileset.outlineColor;
+    model.pointCloudShading = tileset.pointCloudShading;
 
-  // Updating clipping planes requires more effort because of ownership checks
-  const tilesetClippingPlanes = tileset.clippingPlanes;
-  model.referenceMatrix = tileset.clippingPlanesOriginMatrix;
-  if (defined(tilesetClippingPlanes) && tile.clippingPlanesDirty) {
-    // Dereference the clipping planes from the model if they are irrelevant.
-    model._clippingPlanes =
-      tilesetClippingPlanes.enabled && tile._isClipped
-        ? tilesetClippingPlanes
-        : undefined;
-  }
+    // Updating clipping planes requires more effort because of ownership checks
+    const tilesetClippingPlanes = tileset.clippingPlanes;
+    model.referenceMatrix = tileset.clippingPlanesOriginMatrix;
+    if (defined(tilesetClippingPlanes) && tile.clippingPlanesDirty) {
+        // Dereference the clipping planes from the model if they are irrelevant.
+        model._clippingPlanes =
+            tilesetClippingPlanes.enabled && tile._isClipped
+                ? tilesetClippingPlanes
+                : undefined;
+    }
 
-  const tilesetEnvironmentMapManager = tileset.environmentMapManager;
-  if (model.environmentMapManager !== tilesetClippingPlanes) {
-    model._environmentMapManager = tilesetEnvironmentMapManager;
-  }
+    const tilesetEnvironmentMapManager = tileset.environmentMapManager;
+    if (model.environmentMapManager !== tilesetClippingPlanes) {
+        model._environmentMapManager = tilesetEnvironmentMapManager;
+    }
 
-  // If the model references a different ClippingPlaneCollection from the tileset,
-  // update the model to use the new ClippingPlaneCollection.
-  if (
-    defined(tilesetClippingPlanes) &&
-    defined(model._clippingPlanes) &&
-    model._clippingPlanes !== tilesetClippingPlanes
-  ) {
-    model._clippingPlanes = tilesetClippingPlanes;
-    model._clippingPlanesState = 0;
-  }
+    // If the model references a different ClippingPlaneCollection from the tileset,
+    // update the model to use the new ClippingPlaneCollection.
+    if (
+        defined(tilesetClippingPlanes) &&
+        defined(model._clippingPlanes) &&
+        model._clippingPlanes !== tilesetClippingPlanes
+    ) {
+        model._clippingPlanes = tilesetClippingPlanes;
+        model._clippingPlanesState = 0;
+    }
 
-  // Updating clipping polygons requires more effort because of ownership checks
-  const tilesetClippingPolygons = tileset.clippingPolygons;
-  if (defined(tilesetClippingPolygons) && tile.clippingPolygonsDirty) {
-    // Dereference the clipping polygons from the model if they are irrelevant.
-    model._clippingPolygons =
-      tilesetClippingPolygons.enabled && tile._isClippedByPolygon
-        ? tilesetClippingPolygons
-        : undefined;
-  }
+    // Updating clipping polygons requires more effort because of ownership checks
+    const tilesetClippingPolygons = tileset.clippingPolygons;
+    if (defined(tilesetClippingPolygons) && tile.clippingPolygonsDirty) {
+        // Dereference the clipping polygons from the model if they are irrelevant.
+        model._clippingPolygons =
+            tilesetClippingPolygons.enabled && tile._isClippedByPolygon
+                ? tilesetClippingPolygons
+                : undefined;
+    }
 
-  // If the model references a different ClippingPolygonCollection from the tileset,
-  // update the model to use the new ClippingPolygonCollection.
-  if (
-    defined(tilesetClippingPolygons) &&
-    defined(model._clippingPolygons) &&
-    model._clippingPolygons !== tilesetClippingPolygons
-  ) {
-    model._clippingPolygons = tilesetClippingPolygons;
-    model._clippingPolygonsState = 0;
-  }
+    // If the model references a different ClippingPolygonCollection from the tileset,
+    // update the model to use the new ClippingPolygonCollection.
+    if (
+        defined(tilesetClippingPolygons) &&
+        defined(model._clippingPolygons) &&
+        model._clippingPolygons !== tilesetClippingPolygons
+    ) {
+        model._clippingPolygons = tilesetClippingPolygons;
+        model._clippingPolygonsState = 0;
+    }
 
-  model.update(frameState);
+    model.update(frameState);
 
-  if (!this._ready && model.ready) {
-    // Animation can only be added once the model is ready
-    model.activeAnimations.addAll({
-      loop: ModelAnimationLoop.REPEAT,
-    });
+    if (!this._ready && model.ready) {
+        // Animation can only be added once the model is ready
+        model.activeAnimations.addAll({
+            loop: ModelAnimationLoop.REPEAT,
+        });
 
-    this._ready = true;
-  }
+        this._ready = true;
+    }
 };
 
 Model3DTileContent.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 Model3DTileContent.prototype.destroy = function () {
-  this._model = this._model && this._model.destroy();
-  return destroyObject(this);
+    this._model = this._model && this._model.destroy();
+    return destroyObject(this);
 };
 
 Model3DTileContent.fromGltf = async function (tileset, tile, resource, gltf) {
-  const content = new Model3DTileContent(tileset, tile, resource);
+    const content = new Model3DTileContent(tileset, tile, resource);
 
-  const additionalOptions = {
-    gltf: gltf,
-    basePath: resource,
-  };
+    const additionalOptions = {
+        gltf: gltf,
+        basePath: resource,
+    };
 
-  const modelOptions = makeModelOptions(
-    tileset,
-    tile,
-    content,
-    additionalOptions,
-  );
+    const modelOptions = makeModelOptions(
+        tileset,
+        tile,
+        content,
+        additionalOptions,
+    );
 
-  const classificationType = tileset.vectorClassificationOnly
-    ? undefined
-    : tileset.classificationType;
+    const classificationType = tileset.vectorClassificationOnly
+        ? undefined
+        : tileset.classificationType;
 
-  modelOptions.classificationType = classificationType;
+    modelOptions.classificationType = classificationType;
 
-  const model = await Model.fromGltfAsync(modelOptions);
-  content._model = model;
+    const model = await Model.fromGltfAsync(modelOptions);
+    content._model = model;
 
-  return content;
+    return content;
 };
 
 Model3DTileContent.fromB3dm = async function (
-  tileset,
-  tile,
-  resource,
-  arrayBuffer,
-  byteOffset,
-) {
-  const content = new Model3DTileContent(tileset, tile, resource);
-
-  const additionalOptions = {
-    arrayBuffer: arrayBuffer,
-    byteOffset: byteOffset,
-    resource: resource,
-  };
-
-  const modelOptions = makeModelOptions(
     tileset,
     tile,
-    content,
-    additionalOptions,
-  );
+    resource,
+    arrayBuffer,
+    byteOffset,
+) {
+    const content = new Model3DTileContent(tileset, tile, resource);
 
-  const classificationType = tileset.vectorClassificationOnly
-    ? undefined
-    : tileset.classificationType;
+    const additionalOptions = {
+        arrayBuffer: arrayBuffer,
+        byteOffset: byteOffset,
+        resource: resource,
+    };
 
-  modelOptions.classificationType = classificationType;
+    const modelOptions = makeModelOptions(
+        tileset,
+        tile,
+        content,
+        additionalOptions,
+    );
 
-  const model = await Model.fromB3dm(modelOptions);
-  content._model = model;
+    const classificationType = tileset.vectorClassificationOnly
+        ? undefined
+        : tileset.classificationType;
 
-  return content;
+    modelOptions.classificationType = classificationType;
+
+    const model = await Model.fromB3dm(modelOptions);
+    content._model = model;
+
+    return content;
 };
 
 Model3DTileContent.fromI3dm = async function (
-  tileset,
-  tile,
-  resource,
-  arrayBuffer,
-  byteOffset,
-) {
-  const content = new Model3DTileContent(tileset, tile, resource);
-
-  const additionalOptions = {
-    arrayBuffer: arrayBuffer,
-    byteOffset: byteOffset,
-    resource: resource,
-  };
-
-  const modelOptions = makeModelOptions(
     tileset,
     tile,
-    content,
-    additionalOptions,
-  );
+    resource,
+    arrayBuffer,
+    byteOffset,
+) {
+    const content = new Model3DTileContent(tileset, tile, resource);
 
-  const model = await Model.fromI3dm(modelOptions);
-  content._model = model;
+    const additionalOptions = {
+        arrayBuffer: arrayBuffer,
+        byteOffset: byteOffset,
+        resource: resource,
+    };
 
-  return content;
+    const modelOptions = makeModelOptions(
+        tileset,
+        tile,
+        content,
+        additionalOptions,
+    );
+
+    const model = await Model.fromI3dm(modelOptions);
+    content._model = model;
+
+    return content;
 };
 
 Model3DTileContent.fromPnts = async function (
-  tileset,
-  tile,
-  resource,
-  arrayBuffer,
-  byteOffset,
-) {
-  const content = new Model3DTileContent(tileset, tile, resource);
-
-  const additionalOptions = {
-    arrayBuffer: arrayBuffer,
-    byteOffset: byteOffset,
-    resource: resource,
-  };
-
-  const modelOptions = makeModelOptions(
     tileset,
     tile,
-    content,
-    additionalOptions,
-  );
-  const model = await Model.fromPnts(modelOptions);
-  content._model = model;
+    resource,
+    arrayBuffer,
+    byteOffset,
+) {
+    const content = new Model3DTileContent(tileset, tile, resource);
 
-  return content;
+    const additionalOptions = {
+        arrayBuffer: arrayBuffer,
+        byteOffset: byteOffset,
+        resource: resource,
+    };
+
+    const modelOptions = makeModelOptions(
+        tileset,
+        tile,
+        content,
+        additionalOptions,
+    );
+    const model = await Model.fromPnts(modelOptions);
+    content._model = model;
+
+    return content;
 };
 
 Model3DTileContent.fromGeoJson = async function (
-  tileset,
-  tile,
-  resource,
-  geoJson,
-) {
-  const content = new Model3DTileContent(tileset, tile, resource);
-
-  const additionalOptions = {
-    geoJson: geoJson,
-    resource: resource,
-  };
-
-  const modelOptions = makeModelOptions(
     tileset,
     tile,
-    content,
-    additionalOptions,
-  );
-  const model = await Model.fromGeoJson(modelOptions);
-  content._model = model;
+    resource,
+    geoJson,
+) {
+    const content = new Model3DTileContent(tileset, tile, resource);
 
-  return content;
+    const additionalOptions = {
+        geoJson: geoJson,
+        resource: resource,
+    };
+
+    const modelOptions = makeModelOptions(
+        tileset,
+        tile,
+        content,
+        additionalOptions,
+    );
+    const model = await Model.fromGeoJson(modelOptions);
+    content._model = model;
+
+    return content;
 };
 
 /**
@@ -495,57 +502,57 @@ Model3DTileContent.fromGeoJson = async function (
  * @private
  */
 Model3DTileContent.prototype.pick = function (ray, frameState, result) {
-  if (!defined(this._model) || !this._ready) {
-    return undefined;
-  }
+    if (!defined(this._model) || !this._ready) {
+        return undefined;
+    }
 
-  const verticalExaggeration = frameState.verticalExaggeration;
-  const relativeHeight = frameState.verticalExaggerationRelativeHeight;
+    const verticalExaggeration = frameState.verticalExaggeration;
+    const relativeHeight = frameState.verticalExaggerationRelativeHeight;
 
-  // All tilesets assume a WGS84 ellipsoid
-  return this._model.pick(
-    ray,
-    frameState,
-    verticalExaggeration,
-    relativeHeight,
-    Ellipsoid.WGS84,
-    result,
-  );
+    // All tilesets assume a WGS84 ellipsoid
+    return this._model.pick(
+        ray,
+        frameState,
+        verticalExaggeration,
+        relativeHeight,
+        Ellipsoid.WGS84,
+        result,
+    );
 };
 
 function makeModelOptions(tileset, tile, content, additionalOptions) {
-  const mainOptions = {
-    cull: false, // The model is already culled by 3D Tiles
-    releaseGltfJson: true, // Models are unique and will not benefit from caching so save memory
-    opaquePass: Pass.CESIUM_3D_TILE, // Draw opaque portions of the model during the 3D Tiles pass
-    modelMatrix: tile.computedTransform,
-    upAxis: tileset._modelUpAxis,
-    forwardAxis: tileset._modelForwardAxis,
-    incrementallyLoadTextures: false,
-    customShader: tileset.customShader,
-    content: content,
-    colorBlendMode: tileset.colorBlendMode,
-    colorBlendAmount: tileset.colorBlendAmount,
-    lightColor: tileset.lightColor,
-    imageBasedLighting: tileset.imageBasedLighting,
-    featureIdLabel: tileset.featureIdLabel,
-    instanceFeatureIdLabel: tileset.instanceFeatureIdLabel,
-    pointCloudShading: tileset.pointCloudShading,
-    clippingPlanes: tileset.clippingPlanes,
-    backFaceCulling: tileset.backFaceCulling,
-    shadows: tileset.shadows,
-    showCreditsOnScreen: tileset.showCreditsOnScreen,
-    splitDirection: tileset.splitDirection,
-    enableDebugWireframe: tileset._enableDebugWireframe,
-    debugWireframe: tileset.debugWireframe,
-    projectTo2D: tileset._projectTo2D,
-    enablePick: tileset._enablePick,
-    enableShowOutline: tileset._enableShowOutline,
-    showOutline: tileset.showOutline,
-    outlineColor: tileset.outlineColor,
-  };
+    const mainOptions = {
+        cull: false, // The model is already culled by 3D Tiles
+        releaseGltfJson: true, // Models are unique and will not benefit from caching so save memory
+        opaquePass: Pass.CESIUM_3D_TILE, // Draw opaque portions of the model during the 3D Tiles pass
+        modelMatrix: tile.computedTransform,
+        upAxis: tileset._modelUpAxis,
+        forwardAxis: tileset._modelForwardAxis,
+        incrementallyLoadTextures: false,
+        customShader: tileset.customShader,
+        content: content,
+        colorBlendMode: tileset.colorBlendMode,
+        colorBlendAmount: tileset.colorBlendAmount,
+        lightColor: tileset.lightColor,
+        imageBasedLighting: tileset.imageBasedLighting,
+        featureIdLabel: tileset.featureIdLabel,
+        instanceFeatureIdLabel: tileset.instanceFeatureIdLabel,
+        pointCloudShading: tileset.pointCloudShading,
+        clippingPlanes: tileset.clippingPlanes,
+        backFaceCulling: tileset.backFaceCulling,
+        shadows: tileset.shadows,
+        showCreditsOnScreen: tileset.showCreditsOnScreen,
+        splitDirection: tileset.splitDirection,
+        enableDebugWireframe: tileset._enableDebugWireframe,
+        debugWireframe: tileset.debugWireframe,
+        projectTo2D: tileset._projectTo2D,
+        enablePick: tileset._enablePick,
+        enableShowOutline: tileset._enableShowOutline,
+        showOutline: tileset.showOutline,
+        outlineColor: tileset.outlineColor,
+    };
 
-  return combine(additionalOptions, mainOptions);
+    return combine(additionalOptions, mainOptions);
 }
 
 export default Model3DTileContent;

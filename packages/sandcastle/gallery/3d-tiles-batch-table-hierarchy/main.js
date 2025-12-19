@@ -58,105 +58,105 @@ viewer.clock.currentTime = new Cesium.JulianDate(2457522.154792);
 
 let tileset;
 try {
-  tileset = await Cesium.Cesium3DTileset.fromUrl(
-    "../../SampleData/Cesium3DTiles/Hierarchy/BatchTableHierarchy/tileset.json",
-  );
+    tileset = await Cesium.Cesium3DTileset.fromUrl(
+        "../../SampleData/Cesium3DTiles/Hierarchy/BatchTableHierarchy/tileset.json",
+    );
 
-  viewer.scene.primitives.add(tileset);
-  viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(0.0, -0.3, 0.0));
-  tileset.style = new Cesium.Cesium3DTileStyle({
-    color: {
-      conditions: [
-        ["isExactClass('door')", "color('orange')"],
-        ["true", "color('white')"],
-      ],
-    },
-  });
+    viewer.scene.primitives.add(tileset);
+    viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(0.0, -0.3, 0.0));
+    tileset.style = new Cesium.Cesium3DTileStyle({
+        color: {
+            conditions: [
+                ["isExactClass('door')", "color('orange')"],
+                ["true", "color('white')"],
+            ],
+        },
+    });
 } catch (error) {
-  console.log(`Error loading tileset: ${error}`);
+    console.log(`Error loading tileset: ${error}`);
 }
 
 function setStyle(style) {
-  return function () {
-    if (!Cesium.defined(tileset)) {
-      return;
-    }
+    return function () {
+        if (!Cesium.defined(tileset)) {
+            return;
+        }
 
-    tileset.style = new Cesium.Cesium3DTileStyle(style);
-  };
+        tileset.style = new Cesium.Cesium3DTileStyle(style);
+    };
 }
 
 const styles = [];
 function addStyle(name, style) {
-  styles.push({
-    name: name,
-    style: style,
-  });
+    styles.push({
+        name: name,
+        style: style,
+    });
 }
 
 addStyle("Color all doors", {
-  color: {
-    conditions: [
-      ["isExactClass('door')", "color('orange')"],
-      ["true", "color('white')"],
-    ],
-  },
+    color: {
+        conditions: [
+            ["isExactClass('door')", "color('orange')"],
+            ["true", "color('white')"],
+        ],
+    },
 });
 
 addStyle("Color all features derived from door", {
-  color: {
-    conditions: [
-      ["isClass('door')", "color('orange')"],
-      ["true", "color('white')"],
-    ],
-  },
+    color: {
+        conditions: [
+            ["isClass('door')", "color('orange')"],
+            ["true", "color('white')"],
+        ],
+    },
 });
 
 addStyle("Color by building", {
-  color: {
-    conditions: [
-      ["${building_name} === 'building0'", "color('purple')"],
-      ["${building_name} === 'building1'", "color('red')"],
-      ["${building_name} === 'building2'", "color('orange')"],
-      ["true", "color('blue')"],
-    ],
-  },
+    color: {
+        conditions: [
+            ["${building_name} === 'building0'", "color('purple')"],
+            ["${building_name} === 'building1'", "color('red')"],
+            ["${building_name} === 'building2'", "color('orange')"],
+            ["true", "color('blue')"],
+        ],
+    },
 });
 
 addStyle("Color features by class name", {
-  defines: {
-    suffix: "regExp('door(.*)').exec(getExactClassName())",
-  },
-  color: {
-    conditions: [
-      ["${suffix} === 'knob'", "color('yellow')"],
-      ["${suffix} === ''", "color('lime')"],
-      ["${suffix} === null", "color('gray')"],
-      ["true", "color('blue')"],
-    ],
-  },
+    defines: {
+        suffix: "regExp('door(.*)').exec(getExactClassName())",
+    },
+    color: {
+        conditions: [
+            ["${suffix} === 'knob'", "color('yellow')"],
+            ["${suffix} === ''", "color('lime')"],
+            ["${suffix} === null", "color('gray')"],
+            ["true", "color('blue')"],
+        ],
+    },
 });
 
 addStyle("Style by height", {
-  color: {
-    conditions: [
-      ["${height} >= 10", "color('purple')"],
-      ["${height} >= 6", "color('red')"],
-      ["${height} >= 5", "color('orange')"],
-      ["true", "color('blue')"],
-    ],
-  },
+    color: {
+        conditions: [
+            ["${height} >= 10", "color('purple')"],
+            ["${height} >= 6", "color('red')"],
+            ["${height} >= 5", "color('orange')"],
+            ["true", "color('blue')"],
+        ],
+    },
 });
 
 addStyle("No style", {});
 
 const styleOptions = [];
 for (let i = 0; i < styles.length; ++i) {
-  const style = styles[i];
-  styleOptions.push({
-    text: style.name,
-    onselect: setStyle(style.style),
-  });
+    const style = styles[i];
+    styleOptions.push({
+        text: style.name,
+        onselect: setStyle(style.style),
+    });
 }
 
 Sandcastle.addToolbarMenu(styleOptions);
@@ -165,26 +165,26 @@ const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 
 // When a feature is left clicked, print its class name and properties
 handler.setInputAction(function (movement) {
-  const feature = viewer.scene.pick(movement.position);
-  if (!Cesium.defined(feature)) {
-    return;
-  }
-  console.log(`Class: ${feature.getExactClassName()}`);
-  console.log("Properties:");
-  const propertyIds = feature.getPropertyIds();
-  const length = propertyIds.length;
-  for (let i = 0; i < length; ++i) {
-    const propertyId = propertyIds[i];
-    const value = feature.getProperty(propertyId);
-    console.log(`  ${propertyId}: ${value}`);
-  }
+    const feature = viewer.scene.pick(movement.position);
+    if (!Cesium.defined(feature)) {
+        return;
+    }
+    console.log(`Class: ${feature.getExactClassName()}`);
+    console.log("Properties:");
+    const propertyIds = feature.getPropertyIds();
+    const length = propertyIds.length;
+    for (let i = 0; i < length; ++i) {
+        const propertyId = propertyIds[i];
+        const value = feature.getProperty(propertyId);
+        console.log(`  ${propertyId}: ${value}`);
+    }
 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
 // When a feature is middle clicked, hide it
 handler.setInputAction(function (movement) {
-  const feature = viewer.scene.pick(movement.position);
-  if (!Cesium.defined(feature)) {
-    return;
-  }
-  feature.show = false;
+    const feature = viewer.scene.pick(movement.position);
+    if (!Cesium.defined(feature)) {
+        return;
+    }
+    feature.show = false;
 }, Cesium.ScreenSpaceEventType.MIDDLE_CLICK);

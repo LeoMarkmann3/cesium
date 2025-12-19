@@ -49,70 +49,70 @@ import Matrix4 from "./Matrix4.js";
  * @see Geometry
  */
 function GeometryInstance(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(options.geometry)) {
-    throw new DeveloperError("options.geometry is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(options.geometry)) {
+        throw new DeveloperError("options.geometry is required.");
+    }
+    //>>includeEnd('debug');
 
-  /**
-   * The geometry being instanced.
-   *
-   * @type Geometry
-   *
-   */
-  this.geometry = options.geometry;
+    /**
+     * The geometry being instanced.
+     *
+     * @type Geometry
+     *
+     */
+    this.geometry = options.geometry;
 
-  /**
-   * The 4x4 transformation matrix that transforms the geometry from model to world coordinates.
-   * When this is the identity matrix, the geometry is drawn in world coordinates, i.e., Earth's WGS84 coordinates.
-   * Local reference frames can be used by providing a different transformation matrix, like that returned
-   * by {@link Transforms.eastNorthUpToFixedFrame}.
-   *
-   * @type Matrix4
-   *
-   * @default Matrix4.IDENTITY
-   */
-  this.modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
+    /**
+     * The 4x4 transformation matrix that transforms the geometry from model to world coordinates.
+     * When this is the identity matrix, the geometry is drawn in world coordinates, i.e., Earth's WGS84 coordinates.
+     * Local reference frames can be used by providing a different transformation matrix, like that returned
+     * by {@link Transforms.eastNorthUpToFixedFrame}.
+     *
+     * @type Matrix4
+     *
+     * @default Matrix4.IDENTITY
+     */
+    this.modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
 
-  /**
-   * User-defined object returned when the instance is picked or used to get/set per-instance attributes.
-   *
-   * @type {object|undefined}
-   *
-   * @default undefined
-   *
-   * @see Scene#pick
-   * @see Primitive#getGeometryInstanceAttributes
-   */
-  this.id = options.id;
+    /**
+     * User-defined object returned when the instance is picked or used to get/set per-instance attributes.
+     *
+     * @type {object|undefined}
+     *
+     * @default undefined
+     *
+     * @see Scene#pick
+     * @see Primitive#getGeometryInstanceAttributes
+     */
+    this.id = options.id;
 
-  /**
-   * Used for picking primitives that wrap geometry instances.
-   *
-   * @private
-   */
-  this.pickPrimitive = options.pickPrimitive;
+    /**
+     * Used for picking primitives that wrap geometry instances.
+     *
+     * @private
+     */
+    this.pickPrimitive = options.pickPrimitive;
 
-  /**
-   * Per-instance attributes like {@link ColorGeometryInstanceAttribute} or {@link ShowGeometryInstanceAttribute}.
-   * {@link Geometry} attributes varying per vertex; these attributes are constant for the entire instance.
-   *
-   * @type {object}
-   *
-   * @default {}
-   */
-  this.attributes = options.attributes ?? {};
+    /**
+     * Per-instance attributes like {@link ColorGeometryInstanceAttribute} or {@link ShowGeometryInstanceAttribute}.
+     * {@link Geometry} attributes varying per vertex; these attributes are constant for the entire instance.
+     *
+     * @type {object}
+     *
+     * @default {}
+     */
+    this.attributes = options.attributes ?? {};
 
-  /**
-   * @private
-   */
-  this.westHemisphereGeometry = undefined;
-  /**
-   * @private
-   */
-  this.eastHemisphereGeometry = undefined;
+    /**
+     * @private
+     */
+    this.westHemisphereGeometry = undefined;
+    /**
+     * @private
+     */
+    this.eastHemisphereGeometry = undefined;
 }
 export default GeometryInstance;

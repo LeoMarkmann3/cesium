@@ -12,23 +12,23 @@ import DeveloperError from "../Core/DeveloperError.js";
 function Light() {}
 
 Object.defineProperties(Light.prototype, {
-  /**
-   * The color of the light.
-   * @memberof Light.prototype
-   * @type {Color}
-   */
-  color: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * The color of the light.
+     * @memberof Light.prototype
+     * @type {Color}
+     */
+    color: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * The intensity controls the strength of the light. <code>intensity</code> has a minimum value of 0.0 and no maximum value.
-   * @memberof Light.prototype
-   * @type {number}
-   */
-  intensity: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * The intensity controls the strength of the light. <code>intensity</code> has a minimum value of 0.0 and no maximum value.
+     * @memberof Light.prototype
+     * @type {number}
+     */
+    intensity: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 export default Light;

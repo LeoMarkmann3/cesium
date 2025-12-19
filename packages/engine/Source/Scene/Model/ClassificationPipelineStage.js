@@ -13,7 +13,7 @@ import ModelUtility from "./ModelUtility.js";
  * @private
  */
 const ClassificationPipelineStage = {
-  name: "ClassificationPipelineStage", // Helps with debugging
+    name: "ClassificationPipelineStage", // Helps with debugging
 };
 
 /**
@@ -35,98 +35,98 @@ const ClassificationPipelineStage = {
  * @private
  */
 ClassificationPipelineStage.process = function (
-  renderResources,
-  primitive,
-  frameState,
+    renderResources,
+    primitive,
+    frameState,
 ) {
-  const shaderBuilder = renderResources.shaderBuilder;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addDefine(
-    "HAS_CLASSIFICATION",
-    undefined,
-    ShaderDestination.BOTH,
-  );
+    shaderBuilder.addDefine(
+        "HAS_CLASSIFICATION",
+        undefined,
+        ShaderDestination.BOTH,
+    );
 
-  const runtimePrimitive = renderResources.runtimePrimitive;
+    const runtimePrimitive = renderResources.runtimePrimitive;
 
-  if (!defined(runtimePrimitive.batchLengths)) {
-    createClassificationBatches(primitive, runtimePrimitive);
-  }
+    if (!defined(runtimePrimitive.batchLengths)) {
+        createClassificationBatches(primitive, runtimePrimitive);
+    }
 };
 
 function createClassificationBatches(primitive, runtimePrimitive) {
-  const positionAttribute = ModelUtility.getAttributeBySemantic(
-    primitive,
-    VertexAttributeSemantic.POSITION,
-  );
-
-  if (!defined(positionAttribute)) {
-    throw new RuntimeError(
-      "Primitives must have a position attribute to be used for classification.",
+    const positionAttribute = ModelUtility.getAttributeBySemantic(
+        primitive,
+        VertexAttributeSemantic.POSITION,
     );
-  }
 
-  let indicesArray;
-  const indices = primitive.indices;
-  const hasIndices = defined(indices);
-  if (hasIndices) {
-    indicesArray = indices.typedArray;
-    // Unload the typed array. This is just a pointer to the array in
-    // the index buffer loader.
-    indices.typedArray = undefined;
-  }
-
-  const count = hasIndices ? indices.count : positionAttribute.count;
-  const featureIdAttribute = ModelUtility.getAttributeBySemantic(
-    primitive,
-    VertexAttributeSemantic.FEATURE_ID,
-    0,
-  );
-
-  // If there are no feature IDs, render the primitive in a single batch.
-  if (!defined(featureIdAttribute)) {
-    runtimePrimitive.batchLengths = [count];
-    runtimePrimitive.batchOffsets = [0];
-
-    return;
-  }
-
-  const featureIds = featureIdAttribute.typedArray;
-  // Unload the typed array. This is just a pointer to the array in
-  // the vertex buffer loader, so if the typed array is shared by
-  // multiple primitives (i.e. multiple instances of the same mesh),
-  // this will not affect the other primitives.
-  featureIdAttribute.typedArray = undefined;
-
-  const batchLengths = [];
-  const batchOffsets = [0];
-
-  const firstIndex = hasIndices ? indicesArray[0] : 0;
-  let currentBatchId = featureIds[firstIndex];
-  let currentOffset = 0;
-
-  for (let i = 1; i < count; i++) {
-    const index = hasIndices ? indicesArray[i] : i;
-    const batchId = featureIds[index];
-
-    if (batchId !== currentBatchId) {
-      // Store the length of this batch and begin counting the next one.
-      const batchLength = i - currentOffset;
-      const newOffset = i;
-
-      batchLengths.push(batchLength);
-      batchOffsets.push(newOffset);
-
-      currentOffset = newOffset;
-      currentBatchId = batchId;
+    if (!defined(positionAttribute)) {
+        throw new RuntimeError(
+            "Primitives must have a position attribute to be used for classification.",
+        );
     }
-  }
 
-  const finalBatchLength = count - currentOffset;
-  batchLengths.push(finalBatchLength);
+    let indicesArray;
+    const indices = primitive.indices;
+    const hasIndices = defined(indices);
+    if (hasIndices) {
+        indicesArray = indices.typedArray;
+        // Unload the typed array. This is just a pointer to the array in
+        // the index buffer loader.
+        indices.typedArray = undefined;
+    }
 
-  runtimePrimitive.batchLengths = batchLengths;
-  runtimePrimitive.batchOffsets = batchOffsets;
+    const count = hasIndices ? indices.count : positionAttribute.count;
+    const featureIdAttribute = ModelUtility.getAttributeBySemantic(
+        primitive,
+        VertexAttributeSemantic.FEATURE_ID,
+        0,
+    );
+
+    // If there are no feature IDs, render the primitive in a single batch.
+    if (!defined(featureIdAttribute)) {
+        runtimePrimitive.batchLengths = [count];
+        runtimePrimitive.batchOffsets = [0];
+
+        return;
+    }
+
+    const featureIds = featureIdAttribute.typedArray;
+    // Unload the typed array. This is just a pointer to the array in
+    // the vertex buffer loader, so if the typed array is shared by
+    // multiple primitives (i.e. multiple instances of the same mesh),
+    // this will not affect the other primitives.
+    featureIdAttribute.typedArray = undefined;
+
+    const batchLengths = [];
+    const batchOffsets = [0];
+
+    const firstIndex = hasIndices ? indicesArray[0] : 0;
+    let currentBatchId = featureIds[firstIndex];
+    let currentOffset = 0;
+
+    for (let i = 1; i < count; i++) {
+        const index = hasIndices ? indicesArray[i] : i;
+        const batchId = featureIds[index];
+
+        if (batchId !== currentBatchId) {
+            // Store the length of this batch and begin counting the next one.
+            const batchLength = i - currentOffset;
+            const newOffset = i;
+
+            batchLengths.push(batchLength);
+            batchOffsets.push(newOffset);
+
+            currentOffset = newOffset;
+            currentBatchId = batchId;
+        }
+    }
+
+    const finalBatchLength = count - currentOffset;
+    batchLengths.push(finalBatchLength);
+
+    runtimePrimitive.batchLengths = batchLengths;
+    runtimePrimitive.batchOffsets = batchOffsets;
 }
 
 export default ClassificationPipelineStage;

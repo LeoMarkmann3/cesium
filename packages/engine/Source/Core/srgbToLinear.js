@@ -15,18 +15,18 @@ import Check from "./Check.js";
  * });
  */
 function srgbToLinear(value) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("value", value);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("value", value);
+    //>>includeEnd('debug');
 
-  if (value <= 0.04045) {
-    // eslint-disable-next-line no-loss-of-precision
-    return value * 0.07739938080495356037151702786378;
-  }
-  return Math.pow(
-    // eslint-disable-next-line no-loss-of-precision
-    (value + 0.055) * 0.94786729857819905213270142180095,
-    2.4,
-  );
+    if (value <= 0.04045) {
+        // eslint-disable-next-line no-loss-of-precision
+        return value * 0.07739938080495356037151702786378;
+    }
+    return Math.pow(
+        // eslint-disable-next-line no-loss-of-precision
+        (value + 0.055) * 0.94786729857819905213270142180095,
+        2.4,
+    );
 }
 export default srgbToLinear;

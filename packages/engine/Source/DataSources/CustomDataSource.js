@@ -26,135 +26,135 @@ import EntityCollection from "./EntityCollection.js";
  * viewer.dataSources.add(dataSource);
  */
 function CustomDataSource(name) {
-  this._name = name;
-  this._clock = undefined;
-  this._changed = new Event();
-  this._error = new Event();
-  this._isLoading = false;
-  this._loading = new Event();
-  this._entityCollection = new EntityCollection(this);
-  this._entityCluster = new EntityCluster();
+    this._name = name;
+    this._clock = undefined;
+    this._changed = new Event();
+    this._error = new Event();
+    this._isLoading = false;
+    this._loading = new Event();
+    this._entityCollection = new EntityCollection(this);
+    this._entityCluster = new EntityCluster();
 }
 
 Object.defineProperties(CustomDataSource.prototype, {
-  /**
-   * Gets or sets a human-readable name for this instance.
-   * @memberof CustomDataSource.prototype
-   * @type {string}
-   */
-  name: {
-    get: function () {
-      return this._name;
+    /**
+     * Gets or sets a human-readable name for this instance.
+     * @memberof CustomDataSource.prototype
+     * @type {string}
+     */
+    name: {
+        get: function () {
+            return this._name;
+        },
+        set: function (value) {
+            if (this._name !== value) {
+                this._name = value;
+                this._changed.raiseEvent(this);
+            }
+        },
     },
-    set: function (value) {
-      if (this._name !== value) {
-        this._name = value;
-        this._changed.raiseEvent(this);
-      }
+    /**
+     * Gets or sets the clock for this instance.
+     * @memberof CustomDataSource.prototype
+     * @type {DataSourceClock}
+     */
+    clock: {
+        get: function () {
+            return this._clock;
+        },
+        set: function (value) {
+            if (this._clock !== value) {
+                this._clock = value;
+                this._changed.raiseEvent(this);
+            }
+        },
     },
-  },
-  /**
-   * Gets or sets the clock for this instance.
-   * @memberof CustomDataSource.prototype
-   * @type {DataSourceClock}
-   */
-  clock: {
-    get: function () {
-      return this._clock;
+    /**
+     * Gets the collection of {@link Entity} instances.
+     * @memberof CustomDataSource.prototype
+     * @type {EntityCollection}
+     */
+    entities: {
+        get: function () {
+            return this._entityCollection;
+        },
     },
-    set: function (value) {
-      if (this._clock !== value) {
-        this._clock = value;
-        this._changed.raiseEvent(this);
-      }
+    /**
+     * Gets or sets whether the data source is currently loading data.
+     * @memberof CustomDataSource.prototype
+     * @type {boolean}
+     */
+    isLoading: {
+        get: function () {
+            return this._isLoading;
+        },
+        set: function (value) {
+            DataSource.setLoading(this, value);
+        },
     },
-  },
-  /**
-   * Gets the collection of {@link Entity} instances.
-   * @memberof CustomDataSource.prototype
-   * @type {EntityCollection}
-   */
-  entities: {
-    get: function () {
-      return this._entityCollection;
+    /**
+     * Gets an event that will be raised when the underlying data changes.
+     * @memberof CustomDataSource.prototype
+     * @type {Event}
+     */
+    changedEvent: {
+        get: function () {
+            return this._changed;
+        },
     },
-  },
-  /**
-   * Gets or sets whether the data source is currently loading data.
-   * @memberof CustomDataSource.prototype
-   * @type {boolean}
-   */
-  isLoading: {
-    get: function () {
-      return this._isLoading;
+    /**
+     * Gets an event that will be raised if an error is encountered during processing.
+     * @memberof CustomDataSource.prototype
+     * @type {Event}
+     */
+    errorEvent: {
+        get: function () {
+            return this._error;
+        },
     },
-    set: function (value) {
-      DataSource.setLoading(this, value);
+    /**
+     * Gets an event that will be raised when the data source either starts or stops loading.
+     * @memberof CustomDataSource.prototype
+     * @type {Event}
+     */
+    loadingEvent: {
+        get: function () {
+            return this._loading;
+        },
     },
-  },
-  /**
-   * Gets an event that will be raised when the underlying data changes.
-   * @memberof CustomDataSource.prototype
-   * @type {Event}
-   */
-  changedEvent: {
-    get: function () {
-      return this._changed;
+    /**
+     * Gets whether or not this data source should be displayed.
+     * @memberof CustomDataSource.prototype
+     * @type {boolean}
+     */
+    show: {
+        get: function () {
+            return this._entityCollection.show;
+        },
+        set: function (value) {
+            this._entityCollection.show = value;
+        },
     },
-  },
-  /**
-   * Gets an event that will be raised if an error is encountered during processing.
-   * @memberof CustomDataSource.prototype
-   * @type {Event}
-   */
-  errorEvent: {
-    get: function () {
-      return this._error;
-    },
-  },
-  /**
-   * Gets an event that will be raised when the data source either starts or stops loading.
-   * @memberof CustomDataSource.prototype
-   * @type {Event}
-   */
-  loadingEvent: {
-    get: function () {
-      return this._loading;
-    },
-  },
-  /**
-   * Gets whether or not this data source should be displayed.
-   * @memberof CustomDataSource.prototype
-   * @type {boolean}
-   */
-  show: {
-    get: function () {
-      return this._entityCollection.show;
-    },
-    set: function (value) {
-      this._entityCollection.show = value;
-    },
-  },
 
-  /**
-   * Gets or sets the clustering options for this data source. This object can be shared between multiple data sources.
-   *
-   * @memberof CustomDataSource.prototype
-   * @type {EntityCluster}
-   */
-  clustering: {
-    get: function () {
-      return this._entityCluster;
+    /**
+     * Gets or sets the clustering options for this data source. This object can be shared between multiple data sources.
+     *
+     * @memberof CustomDataSource.prototype
+     * @type {EntityCluster}
+     */
+    clustering: {
+        get: function () {
+            return this._entityCluster;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            if (!defined(value)) {
+                throw new DeveloperError("value must be defined.");
+            }
+            //>>includeEnd('debug');
+            this._entityCluster = value;
+        },
     },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      if (!defined(value)) {
-        throw new DeveloperError("value must be defined.");
-      }
-      //>>includeEnd('debug');
-      this._entityCluster = value;
-    },
-  },
 });
 
 /**
@@ -167,7 +167,7 @@ Object.defineProperties(CustomDataSource.prototype, {
  * @returns {boolean} True if this data source is ready to be displayed at the provided time, false otherwise.
  */
 CustomDataSource.prototype.update = function (time) {
-  return true;
+    return true;
 };
 
 export default CustomDataSource;

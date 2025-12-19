@@ -22,86 +22,86 @@ import ModelAnimationState from ".././ModelAnimationState.js";
  * @see Model#activeAnimations
  */
 function ModelAnimationCollection(model) {
-  /**
-   * The event fired when an animation is added to the collection.  This can be used, for
-   * example, to keep a UI in sync.
-   *
-   * @type {Event}
-   * @default new Event()
-   *
-   * @example
-   * model.activeAnimations.animationAdded.addEventListener(function(model, animation) {
-   *   console.log(`Animation added: ${animation.name}`);
-   * });
-   */
-  this.animationAdded = new Event();
+    /**
+     * The event fired when an animation is added to the collection.  This can be used, for
+     * example, to keep a UI in sync.
+     *
+     * @type {Event}
+     * @default new Event()
+     *
+     * @example
+     * model.activeAnimations.animationAdded.addEventListener(function(model, animation) {
+     *   console.log(`Animation added: ${animation.name}`);
+     * });
+     */
+    this.animationAdded = new Event();
 
-  /**
-   * The event fired when an animation is removed from the collection.  This can be used, for
-   * example, to keep a UI in sync.
-   *
-   * @type {Event}
-   * @default new Event()
-   *
-   * @example
-   * model.activeAnimations.animationRemoved.addEventListener(function(model, animation) {
-   *   console.log(`Animation removed: ${animation.name}`);
-   * });
-   */
-  this.animationRemoved = new Event();
+    /**
+     * The event fired when an animation is removed from the collection.  This can be used, for
+     * example, to keep a UI in sync.
+     *
+     * @type {Event}
+     * @default new Event()
+     *
+     * @example
+     * model.activeAnimations.animationRemoved.addEventListener(function(model, animation) {
+     *   console.log(`Animation removed: ${animation.name}`);
+     * });
+     */
+    this.animationRemoved = new Event();
 
-  /**
-   * When true, the animation will play even when the scene time is paused. However,
-   * whether animation takes place will depend on the animationTime functions assigned
-   * to the model's animations. By default, this is based on scene time, so models using
-   * the default will not animate regardless of this setting.
-   *
-   * @type {boolean}
-   * @default false
-   */
-  this.animateWhilePaused = false;
+    /**
+     * When true, the animation will play even when the scene time is paused. However,
+     * whether animation takes place will depend on the animationTime functions assigned
+     * to the model's animations. By default, this is based on scene time, so models using
+     * the default will not animate regardless of this setting.
+     *
+     * @type {boolean}
+     * @default false
+     */
+    this.animateWhilePaused = false;
 
-  this._model = model;
-  this._runtimeAnimations = [];
-  this._previousTime = undefined;
+    this._model = model;
+    this._runtimeAnimations = [];
+    this._previousTime = undefined;
 }
 
 Object.defineProperties(ModelAnimationCollection.prototype, {
-  /**
-   * The number of animations in the collection.
-   *
-   * @memberof ModelAnimationCollection.prototype
-   *
-   * @type {number}
-   * @readonly
-   */
-  length: {
-    get: function () {
-      return this._runtimeAnimations.length;
+    /**
+     * The number of animations in the collection.
+     *
+     * @memberof ModelAnimationCollection.prototype
+     *
+     * @type {number}
+     * @readonly
+     */
+    length: {
+        get: function () {
+            return this._runtimeAnimations.length;
+        },
     },
-  },
 
-  /**
-   * The model that owns this animation collection.
-   *
-   * @memberof ModelAnimationCollection.prototype
-   *
-   * @type {Model}
-   * @readonly
-   */
-  model: {
-    get: function () {
-      return this._model;
+    /**
+     * The model that owns this animation collection.
+     *
+     * @memberof ModelAnimationCollection.prototype
+     *
+     * @type {Model}
+     * @readonly
+     */
+    model: {
+        get: function () {
+            return this._model;
+        },
     },
-  },
 });
 
 function addAnimation(collection, animation, options) {
-  const model = collection._model;
-  const runtimeAnimation = new ModelAnimation(model, animation, options);
-  collection._runtimeAnimations.push(runtimeAnimation);
-  collection.animationAdded.raiseEvent(model, runtimeAnimation);
-  return runtimeAnimation;
+    const model = collection._model;
+    const runtimeAnimation = new ModelAnimation(model, animation, options);
+    collection._runtimeAnimations.push(runtimeAnimation);
+    collection.animationAdded.raiseEvent(model, runtimeAnimation);
+    return runtimeAnimation;
 }
 
 /**
@@ -167,60 +167,66 @@ function addAnimation(collection, animation, options) {
  * });
  */
 ModelAnimationCollection.prototype.add = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const model = this._model;
+    const model = this._model;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!model.ready) {
-    throw new DeveloperError(
-      "Animations are not loaded.  Wait for Model.ready to be true.",
-    );
-  }
-  //>>includeEnd('debug');
-
-  const animations = model.sceneGraph.components.animations;
-
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(options.name) && !defined(options.index)) {
-    throw new DeveloperError(
-      "Either options.name or options.index must be defined.",
-    );
-  }
-
-  if (defined(options.multiplier) && options.multiplier <= 0.0) {
-    throw new DeveloperError("options.multiplier must be greater than zero.");
-  }
-
-  if (
-    defined(options.index) &&
-    (options.index >= animations.length || options.index < 0)
-  ) {
-    throw new DeveloperError("options.index must be a valid animation index.");
-  }
-  //>>includeEnd('debug');
-
-  let index = options.index;
-  if (defined(index)) {
-    return addAnimation(this, animations[index], options);
-  }
-
-  // Find the index of the animation with the given name
-  const length = animations.length;
-  for (let i = 0; i < length; ++i) {
-    if (animations[i].name === options.name) {
-      index = i;
-      break;
+    //>>includeStart('debug', pragmas.debug);
+    if (!model.ready) {
+        throw new DeveloperError(
+            "Animations are not loaded.  Wait for Model.ready to be true.",
+        );
     }
-  }
+    //>>includeEnd('debug');
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(index)) {
-    throw new DeveloperError("options.name must be a valid animation name.");
-  }
-  //>>includeEnd('debug');
+    const animations = model.sceneGraph.components.animations;
 
-  return addAnimation(this, animations[index], options);
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(options.name) && !defined(options.index)) {
+        throw new DeveloperError(
+            "Either options.name or options.index must be defined.",
+        );
+    }
+
+    if (defined(options.multiplier) && options.multiplier <= 0.0) {
+        throw new DeveloperError(
+            "options.multiplier must be greater than zero.",
+        );
+    }
+
+    if (
+        defined(options.index) &&
+        (options.index >= animations.length || options.index < 0)
+    ) {
+        throw new DeveloperError(
+            "options.index must be a valid animation index.",
+        );
+    }
+    //>>includeEnd('debug');
+
+    let index = options.index;
+    if (defined(index)) {
+        return addAnimation(this, animations[index], options);
+    }
+
+    // Find the index of the animation with the given name
+    const length = animations.length;
+    for (let i = 0; i < length; ++i) {
+        if (animations[i].name === options.name) {
+            index = i;
+            break;
+        }
+    }
+
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(index)) {
+        throw new DeveloperError(
+            "options.name must be a valid animation name.",
+        );
+    }
+    //>>includeEnd('debug');
+
+    return addAnimation(this, animations[index], options);
 };
 
 /**
@@ -251,31 +257,33 @@ ModelAnimationCollection.prototype.add = function (options) {
  * });
  */
 ModelAnimationCollection.prototype.addAll = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const model = this._model;
+    const model = this._model;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!model.ready) {
-    throw new DeveloperError(
-      "Animations are not loaded.  Wait for Model.ready to be true.",
-    );
-  }
+    //>>includeStart('debug', pragmas.debug);
+    if (!model.ready) {
+        throw new DeveloperError(
+            "Animations are not loaded.  Wait for Model.ready to be true.",
+        );
+    }
 
-  if (defined(options.multiplier) && options.multiplier <= 0.0) {
-    throw new DeveloperError("options.multiplier must be greater than zero.");
-  }
-  //>>includeEnd('debug');
+    if (defined(options.multiplier) && options.multiplier <= 0.0) {
+        throw new DeveloperError(
+            "options.multiplier must be greater than zero.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const animations = model.sceneGraph.components.animations;
+    const animations = model.sceneGraph.components.animations;
 
-  const addedAnimations = [];
-  const length = animations.length;
-  for (let i = 0; i < length; ++i) {
-    const animation = addAnimation(this, animations[i], options);
-    addedAnimations.push(animation);
-  }
-  return addedAnimations;
+    const addedAnimations = [];
+    const length = animations.length;
+    for (let i = 0; i < length; ++i) {
+        const animation = addAnimation(this, animations[i], options);
+        addedAnimations.push(animation);
+    }
+    return addedAnimations;
 };
 
 /**
@@ -298,19 +306,19 @@ ModelAnimationCollection.prototype.addAll = function (options) {
  * model.activeAnimations.remove(a); // Returns true
  */
 ModelAnimationCollection.prototype.remove = function (runtimeAnimation) {
-  if (!defined(runtimeAnimation)) {
+    if (!defined(runtimeAnimation)) {
+        return false;
+    }
+
+    const animations = this._runtimeAnimations;
+    const i = animations.indexOf(runtimeAnimation);
+    if (i !== -1) {
+        animations.splice(i, 1);
+        this.animationRemoved.raiseEvent(this._model, runtimeAnimation);
+        return true;
+    }
+
     return false;
-  }
-
-  const animations = this._runtimeAnimations;
-  const i = animations.indexOf(runtimeAnimation);
-  if (i !== -1) {
-    animations.splice(i, 1);
-    this.animationRemoved.raiseEvent(this._model, runtimeAnimation);
-    return true;
-  }
-
-  return false;
 };
 
 /**
@@ -321,15 +329,15 @@ ModelAnimationCollection.prototype.remove = function (runtimeAnimation) {
  * </p>
  */
 ModelAnimationCollection.prototype.removeAll = function () {
-  const model = this._model;
-  const animations = this._runtimeAnimations;
-  const length = animations.length;
+    const model = this._model;
+    const animations = this._runtimeAnimations;
+    const length = animations.length;
 
-  this._runtimeAnimations.length = 0;
+    this._runtimeAnimations.length = 0;
 
-  for (let i = 0; i < length; ++i) {
-    this.animationRemoved.raiseEvent(model, animations[i]);
-  }
+    for (let i = 0; i < length; ++i) {
+        this.animationRemoved.raiseEvent(model, animations[i]);
+    }
 };
 
 /**
@@ -339,11 +347,11 @@ ModelAnimationCollection.prototype.removeAll = function () {
  * @returns {boolean} <code>true</code> if this collection contains the animation, <code>false</code> otherwise.
  */
 ModelAnimationCollection.prototype.contains = function (runtimeAnimation) {
-  if (defined(runtimeAnimation)) {
-    return this._runtimeAnimations.indexOf(runtimeAnimation) !== -1;
-  }
+    if (defined(runtimeAnimation)) {
+        return this._runtimeAnimations.indexOf(runtimeAnimation) !== -1;
+    }
 
-  return false;
+    return false;
 };
 
 /**
@@ -364,31 +372,31 @@ ModelAnimationCollection.prototype.contains = function (runtimeAnimation) {
  * }
  */
 ModelAnimationCollection.prototype.get = function (index) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(index)) {
-    throw new DeveloperError("index is required.");
-  }
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(index)) {
+        throw new DeveloperError("index is required.");
+    }
 
-  if (index >= this._runtimeAnimations.length || index < 0) {
-    throw new DeveloperError(
-      "index must be valid within the range of the collection",
-    );
-  }
-  //>>includeEnd('debug');
+    if (index >= this._runtimeAnimations.length || index < 0) {
+        throw new DeveloperError(
+            "index must be valid within the range of the collection",
+        );
+    }
+    //>>includeEnd('debug');
 
-  return this._runtimeAnimations[index];
+    return this._runtimeAnimations[index];
 };
 
 const animationsToRemove = [];
 
 function createAnimationRemovedFunction(
-  modelAnimationCollection,
-  model,
-  animation,
+    modelAnimationCollection,
+    model,
+    animation,
 ) {
-  return function () {
-    modelAnimationCollection.animationRemoved.raiseEvent(model, animation);
-  };
+    return function () {
+        modelAnimationCollection.animationRemoved.raiseEvent(model, animation);
+    };
 }
 
 /**
@@ -401,153 +409,168 @@ function createAnimationRemovedFunction(
  * @private
  */
 ModelAnimationCollection.prototype.update = function (frameState) {
-  const runtimeAnimations = this._runtimeAnimations;
-  let length = runtimeAnimations.length;
+    const runtimeAnimations = this._runtimeAnimations;
+    let length = runtimeAnimations.length;
 
-  if (length === 0) {
-    this._previousTime = undefined;
-    return false;
-  }
-
-  if (
-    !this.animateWhilePaused &&
-    JulianDate.equals(frameState.time, this._previousTime)
-  ) {
-    return false;
-  }
-  this._previousTime = JulianDate.clone(frameState.time, this._previousTime);
-
-  let animationOccurred = false;
-  const sceneTime = frameState.time;
-  const model = this._model;
-
-  for (let i = 0; i < length; ++i) {
-    const runtimeAnimation = runtimeAnimations[i];
-
-    if (!defined(runtimeAnimation._computedStartTime)) {
-      runtimeAnimation._computedStartTime = JulianDate.addSeconds(
-        runtimeAnimation.startTime ?? sceneTime,
-        runtimeAnimation.delay,
-        new JulianDate(),
-      );
+    if (length === 0) {
+        this._previousTime = undefined;
+        return false;
     }
 
-    if (!defined(runtimeAnimation._duration)) {
-      runtimeAnimation._duration =
-        runtimeAnimation.localStopTime * (1.0 / runtimeAnimation.multiplier);
+    if (
+        !this.animateWhilePaused &&
+        JulianDate.equals(frameState.time, this._previousTime)
+    ) {
+        return false;
     }
+    this._previousTime = JulianDate.clone(frameState.time, this._previousTime);
 
-    const startTime = runtimeAnimation._computedStartTime;
-    const duration = runtimeAnimation._duration;
-    const stopTime = runtimeAnimation.stopTime;
+    let animationOccurred = false;
+    const sceneTime = frameState.time;
+    const model = this._model;
 
-    const pastStartTime = JulianDate.lessThanOrEquals(startTime, sceneTime);
-    const reachedStopTime =
-      defined(stopTime) && JulianDate.greaterThan(sceneTime, stopTime);
+    for (let i = 0; i < length; ++i) {
+        const runtimeAnimation = runtimeAnimations[i];
 
-    // [0.0, 1.0] normalized local animation time
-    let delta = 0.0;
-    if (duration !== 0.0) {
-      const seconds = JulianDate.secondsDifference(
-        reachedStopTime ? stopTime : sceneTime,
-        startTime,
-      );
-      delta = defined(runtimeAnimation._animationTime)
-        ? runtimeAnimation._animationTime(duration, seconds)
-        : seconds / duration;
-    }
-
-    // Play animation if
-    // * we are after the start time or the animation is being repeated, and
-    // * before the end of the animation's duration or the animation is being repeated, and
-    // * we did not reach a user-provided stop time.
-
-    const repeat =
-      runtimeAnimation.loop === ModelAnimationLoop.REPEAT ||
-      runtimeAnimation.loop === ModelAnimationLoop.MIRRORED_REPEAT;
-
-    const play =
-      (pastStartTime || (repeat && !defined(runtimeAnimation.startTime))) &&
-      (delta <= 1.0 || repeat) &&
-      !reachedStopTime;
-
-    if (delta === runtimeAnimation._prevAnimationDelta) {
-      const animationStopped =
-        runtimeAnimation._state === ModelAnimationState.STOPPED;
-      // no change to delta, and no change to the animation state means we can
-      // skip the update this time around.
-      if (play !== animationStopped) {
-        continue;
-      }
-    }
-    runtimeAnimation._prevAnimationDelta = delta;
-
-    // If it IS, or WAS, animating...
-    if (play || runtimeAnimation._state === ModelAnimationState.ANIMATING) {
-      // ...transition from STOPPED to ANIMATING
-      if (play && runtimeAnimation._state === ModelAnimationState.STOPPED) {
-        runtimeAnimation._state = ModelAnimationState.ANIMATING;
-        if (runtimeAnimation.start.numberOfListeners > 0) {
-          frameState.afterRender.push(runtimeAnimation._raiseStartEvent);
-        }
-      }
-
-      // Truncate to [0.0, 1.0] for repeating animations
-      if (runtimeAnimation.loop === ModelAnimationLoop.REPEAT) {
-        delta = delta - Math.floor(delta);
-      } else if (runtimeAnimation.loop === ModelAnimationLoop.MIRRORED_REPEAT) {
-        const floor = Math.floor(delta);
-        const fract = delta - floor;
-        // When odd use (1.0 - fract) to mirror repeat
-        delta = floor % 2 === 1.0 ? 1.0 - fract : fract;
-      }
-
-      if (runtimeAnimation.reverse) {
-        delta = 1.0 - delta;
-      }
-
-      let localAnimationTime = delta * duration * runtimeAnimation.multiplier;
-      // Clamp in case floating-point roundoff goes outside the animation's first or last keyframe
-      localAnimationTime = CesiumMath.clamp(
-        localAnimationTime,
-        runtimeAnimation.localStartTime,
-        runtimeAnimation.localStopTime,
-      );
-
-      runtimeAnimation.animate(localAnimationTime);
-
-      if (runtimeAnimation.update.numberOfListeners > 0) {
-        runtimeAnimation._updateEventTime = localAnimationTime;
-        frameState.afterRender.push(runtimeAnimation._raiseUpdateEvent);
-      }
-      animationOccurred = true;
-
-      if (!play) {
-        // transition from ANIMATING to STOPPED
-        runtimeAnimation._state = ModelAnimationState.STOPPED;
-        if (runtimeAnimation.stop.numberOfListeners > 0) {
-          frameState.afterRender.push(runtimeAnimation._raiseStopEvent);
+        if (!defined(runtimeAnimation._computedStartTime)) {
+            runtimeAnimation._computedStartTime = JulianDate.addSeconds(
+                runtimeAnimation.startTime ?? sceneTime,
+                runtimeAnimation.delay,
+                new JulianDate(),
+            );
         }
 
-        if (runtimeAnimation.removeOnStop) {
-          animationsToRemove.push(runtimeAnimation);
+        if (!defined(runtimeAnimation._duration)) {
+            runtimeAnimation._duration =
+                runtimeAnimation.localStopTime *
+                (1.0 / runtimeAnimation.multiplier);
         }
-      }
+
+        const startTime = runtimeAnimation._computedStartTime;
+        const duration = runtimeAnimation._duration;
+        const stopTime = runtimeAnimation.stopTime;
+
+        const pastStartTime = JulianDate.lessThanOrEquals(startTime, sceneTime);
+        const reachedStopTime =
+            defined(stopTime) && JulianDate.greaterThan(sceneTime, stopTime);
+
+        // [0.0, 1.0] normalized local animation time
+        let delta = 0.0;
+        if (duration !== 0.0) {
+            const seconds = JulianDate.secondsDifference(
+                reachedStopTime ? stopTime : sceneTime,
+                startTime,
+            );
+            delta = defined(runtimeAnimation._animationTime)
+                ? runtimeAnimation._animationTime(duration, seconds)
+                : seconds / duration;
+        }
+
+        // Play animation if
+        // * we are after the start time or the animation is being repeated, and
+        // * before the end of the animation's duration or the animation is being repeated, and
+        // * we did not reach a user-provided stop time.
+
+        const repeat =
+            runtimeAnimation.loop === ModelAnimationLoop.REPEAT ||
+            runtimeAnimation.loop === ModelAnimationLoop.MIRRORED_REPEAT;
+
+        const play =
+            (pastStartTime ||
+                (repeat && !defined(runtimeAnimation.startTime))) &&
+            (delta <= 1.0 || repeat) &&
+            !reachedStopTime;
+
+        if (delta === runtimeAnimation._prevAnimationDelta) {
+            const animationStopped =
+                runtimeAnimation._state === ModelAnimationState.STOPPED;
+            // no change to delta, and no change to the animation state means we can
+            // skip the update this time around.
+            if (play !== animationStopped) {
+                continue;
+            }
+        }
+        runtimeAnimation._prevAnimationDelta = delta;
+
+        // If it IS, or WAS, animating...
+        if (play || runtimeAnimation._state === ModelAnimationState.ANIMATING) {
+            // ...transition from STOPPED to ANIMATING
+            if (
+                play &&
+                runtimeAnimation._state === ModelAnimationState.STOPPED
+            ) {
+                runtimeAnimation._state = ModelAnimationState.ANIMATING;
+                if (runtimeAnimation.start.numberOfListeners > 0) {
+                    frameState.afterRender.push(
+                        runtimeAnimation._raiseStartEvent,
+                    );
+                }
+            }
+
+            // Truncate to [0.0, 1.0] for repeating animations
+            if (runtimeAnimation.loop === ModelAnimationLoop.REPEAT) {
+                delta = delta - Math.floor(delta);
+            } else if (
+                runtimeAnimation.loop === ModelAnimationLoop.MIRRORED_REPEAT
+            ) {
+                const floor = Math.floor(delta);
+                const fract = delta - floor;
+                // When odd use (1.0 - fract) to mirror repeat
+                delta = floor % 2 === 1.0 ? 1.0 - fract : fract;
+            }
+
+            if (runtimeAnimation.reverse) {
+                delta = 1.0 - delta;
+            }
+
+            let localAnimationTime =
+                delta * duration * runtimeAnimation.multiplier;
+            // Clamp in case floating-point roundoff goes outside the animation's first or last keyframe
+            localAnimationTime = CesiumMath.clamp(
+                localAnimationTime,
+                runtimeAnimation.localStartTime,
+                runtimeAnimation.localStopTime,
+            );
+
+            runtimeAnimation.animate(localAnimationTime);
+
+            if (runtimeAnimation.update.numberOfListeners > 0) {
+                runtimeAnimation._updateEventTime = localAnimationTime;
+                frameState.afterRender.push(runtimeAnimation._raiseUpdateEvent);
+            }
+            animationOccurred = true;
+
+            if (!play) {
+                // transition from ANIMATING to STOPPED
+                runtimeAnimation._state = ModelAnimationState.STOPPED;
+                if (runtimeAnimation.stop.numberOfListeners > 0) {
+                    frameState.afterRender.push(
+                        runtimeAnimation._raiseStopEvent,
+                    );
+                }
+
+                if (runtimeAnimation.removeOnStop) {
+                    animationsToRemove.push(runtimeAnimation);
+                }
+            }
+        }
     }
-  }
 
-  // Remove animations that stopped
-  length = animationsToRemove.length;
-  for (let j = 0; j < length; ++j) {
-    const animationToRemove = animationsToRemove[j];
-    runtimeAnimations.splice(runtimeAnimations.indexOf(animationToRemove), 1);
-    frameState.afterRender.push(
-      createAnimationRemovedFunction(this, model, animationToRemove),
-    );
-  }
-  animationsToRemove.length = 0;
+    // Remove animations that stopped
+    length = animationsToRemove.length;
+    for (let j = 0; j < length; ++j) {
+        const animationToRemove = animationsToRemove[j];
+        runtimeAnimations.splice(
+            runtimeAnimations.indexOf(animationToRemove),
+            1,
+        );
+        frameState.afterRender.push(
+            createAnimationRemovedFunction(this, model, animationToRemove),
+        );
+    }
+    animationsToRemove.length = 0;
 
-  return animationOccurred;
+    return animationOccurred;
 };
 
 export default ModelAnimationCollection;

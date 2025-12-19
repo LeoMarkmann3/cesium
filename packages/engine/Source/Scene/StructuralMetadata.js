@@ -25,163 +25,163 @@ import defined from "../Core/defined.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function StructuralMetadata(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.schema", options.schema);
-  //>>includeEnd('debug');
+    options = options ?? Frozen.EMPTY_OBJECT;
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.schema", options.schema);
+    //>>includeEnd('debug');
 
-  this._schema = options.schema;
-  const propertyTables = options.propertyTables;
-  this._propertyTableCount = defined(propertyTables)
-    ? propertyTables.length
-    : 0;
-  this._propertyTables = propertyTables;
-  this._propertyTextures = options.propertyTextures;
-  this._propertyAttributes = options.propertyAttributes;
-  this._statistics = options.statistics;
-  this._extras = options.extras;
-  this._extensions = options.extensions;
+    this._schema = options.schema;
+    const propertyTables = options.propertyTables;
+    this._propertyTableCount = defined(propertyTables)
+        ? propertyTables.length
+        : 0;
+    this._propertyTables = propertyTables;
+    this._propertyTextures = options.propertyTextures;
+    this._propertyAttributes = options.propertyAttributes;
+    this._statistics = options.statistics;
+    this._extras = options.extras;
+    this._extensions = options.extensions;
 }
 
 Object.defineProperties(StructuralMetadata.prototype, {
-  /**
-   * Schema containing classes and enums.
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {MetadataSchema}
-   * @readonly
-   * @private
-   */
-  schema: {
-    get: function () {
-      return this._schema;
+    /**
+     * Schema containing classes and enums.
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {MetadataSchema}
+     * @readonly
+     * @private
+     */
+    schema: {
+        get: function () {
+            return this._schema;
+        },
     },
-  },
 
-  /**
-   * Statistics about the metadata.
-   * <p>
-   * See the {@link https://github.com/CesiumGS/glTF/blob/3d-tiles-next/extensions/2.0/Vendor/EXT_feature_metadata/schema/statistics.schema.json|statistics schema reference} for the full set of properties.
-   * </p>
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  statistics: {
-    get: function () {
-      return this._statistics;
+    /**
+     * Statistics about the metadata.
+     * <p>
+     * See the {@link https://github.com/CesiumGS/glTF/blob/3d-tiles-next/extensions/2.0/Vendor/EXT_feature_metadata/schema/statistics.schema.json|statistics schema reference} for the full set of properties.
+     * </p>
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    statistics: {
+        get: function () {
+            return this._statistics;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {*}
-   * @readonly
-   * @private
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {*}
+     * @readonly
+     * @private
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 
-  /**
-   * Number of property tables in the metadata.
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  propertyTableCount: {
-    get: function () {
-      return this._propertyTableCount;
+    /**
+     * Number of property tables in the metadata.
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    propertyTableCount: {
+        get: function () {
+            return this._propertyTableCount;
+        },
     },
-  },
 
-  /**
-   * The property tables in the metadata.
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {PropertyTable[]}
-   * @readonly
-   * @private
-   */
-  propertyTables: {
-    get: function () {
-      return this._propertyTables;
+    /**
+     * The property tables in the metadata.
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {PropertyTable[]}
+     * @readonly
+     * @private
+     */
+    propertyTables: {
+        get: function () {
+            return this._propertyTables;
+        },
     },
-  },
 
-  /**
-   * The property textures in the metadata.
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {PropertyTexture[]}
-   * @readonly
-   * @private
-   */
-  propertyTextures: {
-    get: function () {
-      return this._propertyTextures;
+    /**
+     * The property textures in the metadata.
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {PropertyTexture[]}
+     * @readonly
+     * @private
+     */
+    propertyTextures: {
+        get: function () {
+            return this._propertyTextures;
+        },
     },
-  },
 
-  /**
-   * The property attributes from the structural metadata extension
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {PropertyAttribute[]}
-   * @readonly
-   * @private
-   */
-  propertyAttributes: {
-    get: function () {
-      return this._propertyAttributes;
+    /**
+     * The property attributes from the structural metadata extension
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {PropertyAttribute[]}
+     * @readonly
+     * @private
+     */
+    propertyAttributes: {
+        get: function () {
+            return this._propertyAttributes;
+        },
     },
-  },
 
-  /**
-   * Total size in bytes across all property tables
-   *
-   * @memberof StructuralMetadata.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  propertyTablesByteLength: {
-    get: function () {
-      if (!defined(this._propertyTables)) {
-        return 0;
-      }
+    /**
+     * Total size in bytes across all property tables
+     *
+     * @memberof StructuralMetadata.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    propertyTablesByteLength: {
+        get: function () {
+            if (!defined(this._propertyTables)) {
+                return 0;
+            }
 
-      let totalByteLength = 0;
-      const length = this._propertyTables.length;
-      for (let i = 0; i < length; i++) {
-        totalByteLength += this._propertyTables[i].byteLength;
-      }
+            let totalByteLength = 0;
+            const length = this._propertyTables.length;
+            for (let i = 0; i < length; i++) {
+                totalByteLength += this._propertyTables[i].byteLength;
+            }
 
-      return totalByteLength;
+            return totalByteLength;
+        },
     },
-  },
 });
 
 /**
@@ -196,11 +196,11 @@ Object.defineProperties(StructuralMetadata.prototype, {
  * @private
  */
 StructuralMetadata.prototype.getPropertyTable = function (propertyTableId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("propertyTableId", propertyTableId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("propertyTableId", propertyTableId);
+    //>>includeEnd('debug');
 
-  return this._propertyTables[propertyTableId];
+    return this._propertyTables[propertyTableId];
 };
 
 /**
@@ -215,11 +215,11 @@ StructuralMetadata.prototype.getPropertyTable = function (propertyTableId) {
  * @private
  */
 StructuralMetadata.prototype.getPropertyTexture = function (propertyTextureId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("propertyTextureId", propertyTextureId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("propertyTextureId", propertyTextureId);
+    //>>includeEnd('debug');
 
-  return this._propertyTextures[propertyTextureId];
+    return this._propertyTextures[propertyTextureId];
 };
 
 /**
@@ -231,13 +231,13 @@ StructuralMetadata.prototype.getPropertyTexture = function (propertyTextureId) {
  * @private
  */
 StructuralMetadata.prototype.getPropertyAttribute = function (
-  propertyAttributeId,
+    propertyAttributeId,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("propertyAttributeId", propertyAttributeId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("propertyAttributeId", propertyAttributeId);
+    //>>includeEnd('debug');
 
-  return this._propertyAttributes[propertyAttributeId];
+    return this._propertyAttributes[propertyAttributeId];
 };
 
 export default StructuralMetadata;

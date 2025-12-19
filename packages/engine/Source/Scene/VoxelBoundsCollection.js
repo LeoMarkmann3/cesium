@@ -30,139 +30,139 @@ import Texture from "../Renderer/Texture.js";
  * @private
  */
 function VoxelBoundsCollection(options) {
-  const {
-    planes,
-    modelMatrix = Matrix4.IDENTITY,
-    unionClippingRegions = false,
-  } = options ?? Frozen.EMPTY_OBJECT;
+    const {
+        planes,
+        modelMatrix = Matrix4.IDENTITY,
+        unionClippingRegions = false,
+    } = options ?? Frozen.EMPTY_OBJECT;
 
-  this._planes = [];
+    this._planes = [];
 
-  /**
-   * The 4x4 transformation matrix specifying an additional transform relative to the clipping planes
-   * original coordinate system.
-   *
-   * @type {Matrix4}
-   * @default Matrix4.IDENTITY
-   */
-  this.modelMatrix = Matrix4.clone(modelMatrix);
+    /**
+     * The 4x4 transformation matrix specifying an additional transform relative to the clipping planes
+     * original coordinate system.
+     *
+     * @type {Matrix4}
+     * @default Matrix4.IDENTITY
+     */
+    this.modelMatrix = Matrix4.clone(modelMatrix);
 
-  /**
-   * An event triggered when a new clipping plane is added to the collection.  Event handlers
-   * are passed the new plane and the index at which it was added.
-   * @type {Event}
-   * @readonly
-   */
-  this.planeAdded = new Event();
+    /**
+     * An event triggered when a new clipping plane is added to the collection.  Event handlers
+     * are passed the new plane and the index at which it was added.
+     * @type {Event}
+     * @readonly
+     */
+    this.planeAdded = new Event();
 
-  /**
-   * An event triggered when a new clipping plane is removed from the collection.  Event handlers
-   * are passed the new plane and the index from which it was removed.
-   * @type {Event}
-   * @readonly
-   */
-  this.planeRemoved = new Event();
+    /**
+     * An event triggered when a new clipping plane is removed from the collection.  Event handlers
+     * are passed the new plane and the index from which it was removed.
+     * @type {Event}
+     * @readonly
+     */
+    this.planeRemoved = new Event();
 
-  this._unionClippingRegions = unionClippingRegions;
-  this._testIntersection = unionClippingRegions
-    ? unionIntersectFunction
-    : defaultIntersectFunction;
+    this._unionClippingRegions = unionClippingRegions;
+    this._testIntersection = unionClippingRegions
+        ? unionIntersectFunction
+        : defaultIntersectFunction;
 
-  this._float32View = undefined;
+    this._float32View = undefined;
 
-  this._clippingPlanesTexture = undefined;
+    this._clippingPlanesTexture = undefined;
 
-  // Add each ClippingPlane object.
-  if (defined(planes)) {
-    for (let i = 0; i < planes.length; ++i) {
-      this.add(planes[i]);
+    // Add each ClippingPlane object.
+    if (defined(planes)) {
+        for (let i = 0; i < planes.length; ++i) {
+            this.add(planes[i]);
+        }
     }
-  }
 }
 
 function unionIntersectFunction(value) {
-  return value === Intersect.OUTSIDE;
+    return value === Intersect.OUTSIDE;
 }
 
 function defaultIntersectFunction(value) {
-  return value === Intersect.INSIDE;
+    return value === Intersect.INSIDE;
 }
 
 Object.defineProperties(VoxelBoundsCollection.prototype, {
-  /**
-   * Returns the number of planes in this collection.  This is commonly used with
-   * {@link VoxelBoundsCollection#get} to iterate over all the planes
-   * in the collection.
-   *
-   * @memberof VoxelBoundsCollection.prototype
-   * @type {number}
-   * @readonly
-   */
-  length: {
-    get: function () {
-      return this._planes.length;
+    /**
+     * Returns the number of planes in this collection.  This is commonly used with
+     * {@link VoxelBoundsCollection#get} to iterate over all the planes
+     * in the collection.
+     *
+     * @memberof VoxelBoundsCollection.prototype
+     * @type {number}
+     * @readonly
+     */
+    length: {
+        get: function () {
+            return this._planes.length;
+        },
     },
-  },
 
-  /**
-   * If true, a region will be clipped if it is on the outside of any plane in the
-   * collection. Otherwise, a region will only be clipped if it is on the
-   * outside of every plane.
-   *
-   * @memberof VoxelBoundsCollection.prototype
-   * @type {boolean}
-   * @default false
-   */
-  unionClippingRegions: {
-    get: function () {
-      return this._unionClippingRegions;
+    /**
+     * If true, a region will be clipped if it is on the outside of any plane in the
+     * collection. Otherwise, a region will only be clipped if it is on the
+     * outside of every plane.
+     *
+     * @memberof VoxelBoundsCollection.prototype
+     * @type {boolean}
+     * @default false
+     */
+    unionClippingRegions: {
+        get: function () {
+            return this._unionClippingRegions;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            Check.typeOf.bool("value", value);
+            //>>includeEnd('debug');
+            if (this._unionClippingRegions === value) {
+                return;
+            }
+            this._unionClippingRegions = value;
+            this._testIntersection = value
+                ? unionIntersectFunction
+                : defaultIntersectFunction;
+        },
     },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      Check.typeOf.bool("value", value);
-      //>>includeEnd('debug');
-      if (this._unionClippingRegions === value) {
-        return;
-      }
-      this._unionClippingRegions = value;
-      this._testIntersection = value
-        ? unionIntersectFunction
-        : defaultIntersectFunction;
-    },
-  },
 
-  /**
-   * Returns a texture containing packed, untransformed clipping planes.
-   *
-   * @memberof VoxelBoundsCollection.prototype
-   * @type {Texture}
-   * @readonly
-   * @private
-   */
-  texture: {
-    get: function () {
-      return this._clippingPlanesTexture;
+    /**
+     * Returns a texture containing packed, untransformed clipping planes.
+     *
+     * @memberof VoxelBoundsCollection.prototype
+     * @type {Texture}
+     * @readonly
+     * @private
+     */
+    texture: {
+        get: function () {
+            return this._clippingPlanesTexture;
+        },
     },
-  },
 
-  /**
-   * Returns a Number encapsulating the state for this VoxelBoundsCollection.
-   *
-   * Clipping mode is encoded in the sign of the number, which is just the plane count.
-   * If this value changes, then shader regeneration is necessary.
-   *
-   * @memberof VoxelBoundsCollection.prototype
-   * @returns {number} A Number that describes the VoxelBoundsCollection's state.
-   * @readonly
-   * @private
-   */
-  clippingPlanesState: {
-    get: function () {
-      return this._unionClippingRegions
-        ? this._planes.length
-        : -this._planes.length;
+    /**
+     * Returns a Number encapsulating the state for this VoxelBoundsCollection.
+     *
+     * Clipping mode is encoded in the sign of the number, which is just the plane count.
+     * If this value changes, then shader regeneration is necessary.
+     *
+     * @memberof VoxelBoundsCollection.prototype
+     * @returns {number} A Number that describes the VoxelBoundsCollection's state.
+     * @readonly
+     * @private
+     */
+    clippingPlanesState: {
+        get: function () {
+            return this._unionClippingRegions
+                ? this._planes.length
+                : -this._planes.length;
+        },
     },
-  },
 });
 
 /**
@@ -177,10 +177,10 @@ Object.defineProperties(VoxelBoundsCollection.prototype, {
  * @see VoxelBoundsCollection#removeAll
  */
 VoxelBoundsCollection.prototype.add = function (plane) {
-  const newPlaneIndex = this._planes.length;
-  plane.index = newPlaneIndex;
-  this._planes.push(plane);
-  this.planeAdded.raiseEvent(plane, newPlaneIndex);
+    const newPlaneIndex = this._planes.length;
+    plane.index = newPlaneIndex;
+    this._planes.push(plane);
+    this.planeAdded.raiseEvent(plane, newPlaneIndex);
 };
 
 /**
@@ -196,20 +196,20 @@ VoxelBoundsCollection.prototype.add = function (plane) {
  * @see VoxelBoundsCollection#length
  */
 VoxelBoundsCollection.prototype.get = function (index) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("index", index);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("index", index);
+    //>>includeEnd('debug');
 
-  return this._planes[index];
+    return this._planes[index];
 };
 
 function indexOf(planes, plane) {
-  for (let i = 0; i < planes.length; ++i) {
-    if (Plane.equals(planes[i], plane)) {
-      return i;
+    for (let i = 0; i < planes.length; ++i) {
+        if (Plane.equals(planes[i], plane)) {
+            return i;
+        }
     }
-  }
-  return -1;
+    return -1;
 }
 
 /**
@@ -221,7 +221,7 @@ function indexOf(planes, plane) {
  * @see VoxelBoundsCollection#get
  */
 VoxelBoundsCollection.prototype.contains = function (clippingPlane) {
-  return indexOf(this._planes, clippingPlane) !== -1;
+    return indexOf(this._planes, clippingPlane) !== -1;
 };
 
 /**
@@ -235,34 +235,34 @@ VoxelBoundsCollection.prototype.contains = function (clippingPlane) {
  * @see VoxelBoundsCollection#removeAll
  */
 VoxelBoundsCollection.prototype.remove = function (clippingPlane) {
-  const planes = this._planes;
-  const index = indexOf(planes, clippingPlane);
+    const planes = this._planes;
+    const index = indexOf(planes, clippingPlane);
 
-  if (index === -1) {
-    return false;
-  }
-
-  // Unlink this VoxelBoundsCollection from the ClippingPlane
-  if (clippingPlane instanceof ClippingPlane) {
-    clippingPlane.onChangeCallback = undefined;
-    clippingPlane.index = -1;
-  }
-
-  // Shift and update indices
-  const length = planes.length - 1;
-  for (let i = index; i < length; ++i) {
-    const planeToKeep = planes[i + 1];
-    planes[i] = planeToKeep;
-    if (planeToKeep instanceof ClippingPlane) {
-      planeToKeep.index = i;
+    if (index === -1) {
+        return false;
     }
-  }
 
-  planes.length = length;
+    // Unlink this VoxelBoundsCollection from the ClippingPlane
+    if (clippingPlane instanceof ClippingPlane) {
+        clippingPlane.onChangeCallback = undefined;
+        clippingPlane.index = -1;
+    }
 
-  this.planeRemoved.raiseEvent(clippingPlane, index);
+    // Shift and update indices
+    const length = planes.length - 1;
+    for (let i = index; i < length; ++i) {
+        const planeToKeep = planes[i + 1];
+        planes[i] = planeToKeep;
+        if (planeToKeep instanceof ClippingPlane) {
+            planeToKeep.index = i;
+        }
+    }
 
-  return true;
+    planes.length = length;
+
+    this.planeRemoved.raiseEvent(clippingPlane, index);
+
+    return true;
 };
 
 /**
@@ -272,84 +272,84 @@ VoxelBoundsCollection.prototype.remove = function (clippingPlane) {
  * @see VoxelBoundsCollection#remove
  */
 VoxelBoundsCollection.prototype.removeAll = function () {
-  // Dereference this VoxelBoundsCollection from all ClippingPlanes
-  const planes = this._planes;
-  for (let i = 0; i < planes.length; ++i) {
-    const plane = planes[i];
-    if (plane instanceof ClippingPlane) {
-      plane.onChangeCallback = undefined;
-      plane.index = -1;
+    // Dereference this VoxelBoundsCollection from all ClippingPlanes
+    const planes = this._planes;
+    for (let i = 0; i < planes.length; ++i) {
+        const plane = planes[i];
+        if (plane instanceof ClippingPlane) {
+            plane.onChangeCallback = undefined;
+            plane.index = -1;
+        }
+        this.planeRemoved.raiseEvent(plane, i);
     }
-    this.planeRemoved.raiseEvent(plane, i);
-  }
-  this._planes = [];
+    this._planes = [];
 };
 
 const scratchPlane = new Plane(Cartesian3.fromElements(1.0, 0.0, 0.0), 0.0);
 
 // Pack starting at the beginning of the buffer to allow partial update
 function transformAndPackPlanes(clippingPlaneCollection, transform) {
-  const float32View = clippingPlaneCollection._float32View;
-  const planes = clippingPlaneCollection._planes;
+    const float32View = clippingPlaneCollection._float32View;
+    const planes = clippingPlaneCollection._planes;
 
-  let floatIndex = 0;
-  for (let i = 0; i < planes.length; ++i) {
-    const { normal, distance } = transformPlane(
-      planes[i],
-      transform,
-      scratchPlane,
-    );
+    let floatIndex = 0;
+    for (let i = 0; i < planes.length; ++i) {
+        const { normal, distance } = transformPlane(
+            planes[i],
+            transform,
+            scratchPlane,
+        );
 
-    float32View[floatIndex] = normal.x;
-    float32View[floatIndex + 1] = normal.y;
-    float32View[floatIndex + 2] = normal.z;
-    float32View[floatIndex + 3] = distance;
+        float32View[floatIndex] = normal.x;
+        float32View[floatIndex + 1] = normal.y;
+        float32View[floatIndex + 2] = normal.z;
+        float32View[floatIndex + 3] = distance;
 
-    floatIndex += 4; // each plane is 4 floats
-  }
+        floatIndex += 4; // each plane is 4 floats
+    }
 }
 
 const scratchPlaneCartesian4 = new Cartesian4();
 const scratchTransformedNormal = new Cartesian3();
 
 function transformPlane(plane, transform, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("plane", plane);
-  Check.typeOf.object("transform", transform);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("plane", plane);
+    Check.typeOf.object("transform", transform);
+    //>>includeEnd('debug');
 
-  const { normal, distance } = plane;
-  const planeAsCartesian4 = Cartesian4.fromElements(
-    normal.x,
-    normal.y,
-    normal.z,
-    distance,
-    scratchPlaneCartesian4,
-  );
-  let transformedPlane = Matrix4.multiplyByVector(
-    transform,
-    planeAsCartesian4,
-    scratchPlaneCartesian4,
-  );
+    const { normal, distance } = plane;
+    const planeAsCartesian4 = Cartesian4.fromElements(
+        normal.x,
+        normal.y,
+        normal.z,
+        distance,
+        scratchPlaneCartesian4,
+    );
+    let transformedPlane = Matrix4.multiplyByVector(
+        transform,
+        planeAsCartesian4,
+        scratchPlaneCartesian4,
+    );
 
-  // Convert the transformed plane to Hessian Normal Form
-  const transformedNormal = Cartesian3.fromCartesian4(
-    transformedPlane,
-    scratchTransformedNormal,
-  );
-  transformedPlane = Cartesian4.divideByScalar(
-    transformedPlane,
-    Cartesian3.magnitude(transformedNormal),
-    scratchPlaneCartesian4,
-  );
+    // Convert the transformed plane to Hessian Normal Form
+    const transformedNormal = Cartesian3.fromCartesian4(
+        transformedPlane,
+        scratchTransformedNormal,
+    );
+    transformedPlane = Cartesian4.divideByScalar(
+        transformedPlane,
+        Cartesian3.magnitude(transformedNormal),
+        scratchPlaneCartesian4,
+    );
 
-  return Plane.fromCartesian4(transformedPlane, result);
+    return Plane.fromCartesian4(transformedPlane, result);
 }
 
 function computeTextureResolution(pixelsNeeded, result) {
-  result.x = Math.min(pixelsNeeded, ContextLimits.maximumTextureSize);
-  result.y = Math.ceil(pixelsNeeded / result.x);
-  return result;
+    result.x = Math.min(pixelsNeeded, ContextLimits.maximumTextureSize);
+    result.y = Math.ceil(pixelsNeeded / result.x);
+    return result;
 }
 
 const textureResolutionScratch = new Cartesian2();
@@ -361,69 +361,69 @@ const textureResolutionScratch = new Cartesian2();
  * </p>
  */
 VoxelBoundsCollection.prototype.update = function (frameState, transform) {
-  let clippingPlanesTexture = this._clippingPlanesTexture;
+    let clippingPlanesTexture = this._clippingPlanesTexture;
 
-  // Compute texture requirements for current planes
-  // In RGBA FLOAT, a plane is 4 floats packed to a single RGBA pixel.
-  const pixelsNeeded = this.length;
+    // Compute texture requirements for current planes
+    // In RGBA FLOAT, a plane is 4 floats packed to a single RGBA pixel.
+    const pixelsNeeded = this.length;
 
-  if (defined(clippingPlanesTexture)) {
-    const currentPixelCount =
-      clippingPlanesTexture.width * clippingPlanesTexture.height;
-    // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
-    // Optimization note: this isn't exactly the classic resizeable array algorithm
-    // * not necessarily checking for resize after each add/remove operation
-    // * random-access deletes instead of just pops
-    // * alloc ops likely more expensive than demonstrable via big-O analysis
-    if (
-      currentPixelCount < pixelsNeeded ||
-      pixelsNeeded < 0.25 * currentPixelCount
-    ) {
-      clippingPlanesTexture.destroy();
-      clippingPlanesTexture = undefined;
-      this._clippingPlanesTexture = undefined;
+    if (defined(clippingPlanesTexture)) {
+        const currentPixelCount =
+            clippingPlanesTexture.width * clippingPlanesTexture.height;
+        // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
+        // Optimization note: this isn't exactly the classic resizeable array algorithm
+        // * not necessarily checking for resize after each add/remove operation
+        // * random-access deletes instead of just pops
+        // * alloc ops likely more expensive than demonstrable via big-O analysis
+        if (
+            currentPixelCount < pixelsNeeded ||
+            pixelsNeeded < 0.25 * currentPixelCount
+        ) {
+            clippingPlanesTexture.destroy();
+            clippingPlanesTexture = undefined;
+            this._clippingPlanesTexture = undefined;
+        }
     }
-  }
 
-  // If there are no bound planes, there's nothing to update.
-  if (this.length === 0) {
-    return;
-  }
+    // If there are no bound planes, there's nothing to update.
+    if (this.length === 0) {
+        return;
+    }
 
-  if (!defined(clippingPlanesTexture)) {
-    const requiredResolution = computeTextureResolution(
-      pixelsNeeded,
-      textureResolutionScratch,
-    );
-    // Allocate twice as much space as needed to avoid frequent texture reallocation.
-    // Allocate in the Y direction, since texture may be as wide as context texture support.
-    requiredResolution.y *= 2;
+    if (!defined(clippingPlanesTexture)) {
+        const requiredResolution = computeTextureResolution(
+            pixelsNeeded,
+            textureResolutionScratch,
+        );
+        // Allocate twice as much space as needed to avoid frequent texture reallocation.
+        // Allocate in the Y direction, since texture may be as wide as context texture support.
+        requiredResolution.y *= 2;
 
-    clippingPlanesTexture = new Texture({
-      context: frameState.context,
-      width: requiredResolution.x,
-      height: requiredResolution.y,
-      pixelFormat: PixelFormat.RGBA,
-      pixelDatatype: PixelDatatype.FLOAT,
-      sampler: Sampler.NEAREST,
-      flipY: false,
+        clippingPlanesTexture = new Texture({
+            context: frameState.context,
+            width: requiredResolution.x,
+            height: requiredResolution.y,
+            pixelFormat: PixelFormat.RGBA,
+            pixelDatatype: PixelDatatype.FLOAT,
+            sampler: Sampler.NEAREST,
+            flipY: false,
+        });
+        this._float32View = new Float32Array(
+            requiredResolution.x * requiredResolution.y * 4,
+        );
+
+        this._clippingPlanesTexture = clippingPlanesTexture;
+    }
+
+    const { width, height } = clippingPlanesTexture;
+    transformAndPackPlanes(this, transform);
+    clippingPlanesTexture.copyFrom({
+        source: {
+            width: width,
+            height: height,
+            arrayBufferView: this._float32View,
+        },
     });
-    this._float32View = new Float32Array(
-      requiredResolution.x * requiredResolution.y * 4,
-    );
-
-    this._clippingPlanesTexture = clippingPlanesTexture;
-  }
-
-  const { width, height } = clippingPlanesTexture;
-  transformAndPackPlanes(this, transform);
-  clippingPlanesTexture.copyFrom({
-    source: {
-      width: width,
-      height: height,
-      arrayBufferView: this._float32View,
-    },
-  });
 };
 
 /**
@@ -438,23 +438,23 @@ VoxelBoundsCollection.prototype.update = function (frameState, transform) {
  * @private
  */
 VoxelBoundsCollection.getTextureResolution = function (
-  clippingPlaneCollection,
-  context,
-  result,
+    clippingPlaneCollection,
+    context,
+    result,
 ) {
-  const texture = clippingPlaneCollection.texture;
-  if (defined(texture)) {
-    result.x = texture.width;
-    result.y = texture.height;
-    return result;
-  }
+    const texture = clippingPlaneCollection.texture;
+    if (defined(texture)) {
+        result.x = texture.width;
+        result.y = texture.height;
+        return result;
+    }
 
-  const pixelsNeeded = clippingPlaneCollection.length;
-  const requiredResolution = computeTextureResolution(pixelsNeeded, result);
+    const pixelsNeeded = clippingPlaneCollection.length;
+    const requiredResolution = computeTextureResolution(pixelsNeeded, result);
 
-  // Allocate twice as much space as needed to avoid frequent texture reallocation.
-  requiredResolution.y *= 2;
-  return requiredResolution;
+    // Allocate twice as much space as needed to avoid frequent texture reallocation.
+    requiredResolution.y *= 2;
+    return requiredResolution;
 };
 
 /**
@@ -468,7 +468,7 @@ VoxelBoundsCollection.getTextureResolution = function (
  * @see VoxelBoundsCollection#destroy
  */
 VoxelBoundsCollection.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -487,8 +487,8 @@ VoxelBoundsCollection.prototype.isDestroyed = function () {
  * @see VoxelBoundsCollection#isDestroyed
  */
 VoxelBoundsCollection.prototype.destroy = function () {
-  this._clippingPlanesTexture =
-    this._clippingPlanesTexture && this._clippingPlanesTexture.destroy();
-  return destroyObject(this);
+    this._clippingPlanesTexture =
+        this._clippingPlanesTexture && this._clippingPlanesTexture.destroy();
+    return destroyObject(this);
 };
 export default VoxelBoundsCollection;

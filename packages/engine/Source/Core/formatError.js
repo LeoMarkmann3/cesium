@@ -10,21 +10,21 @@ import defined from "./defined.js";
  * @returns {string} A string containing the formatted error.
  */
 function formatError(object) {
-  let result;
+    let result;
 
-  const name = object.name;
-  const message = object.message;
-  if (defined(name) && defined(message)) {
-    result = `${name}: ${message}`;
-  } else {
-    result = object.toString();
-  }
+    const name = object.name;
+    const message = object.message;
+    if (defined(name) && defined(message)) {
+        result = `${name}: ${message}`;
+    } else {
+        result = object.toString();
+    }
 
-  const stack = object.stack;
-  if (defined(stack)) {
-    result += `\n${stack}`;
-  }
+    const stack = object.stack;
+    if (defined(stack)) {
+        result += `\n${stack}`;
+    }
 
-  return result;
+    return result;
 }
 export default formatError;

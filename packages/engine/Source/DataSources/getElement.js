@@ -8,19 +8,19 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @exception {DeveloperError} Element with id "id" does not exist in the document.
  */
 function getElement(element) {
-  if (typeof element === "string") {
-    const foundElement = document.getElementById(element);
+    if (typeof element === "string") {
+        const foundElement = document.getElementById(element);
 
-    //>>includeStart('debug', pragmas.debug);
-    if (foundElement === null) {
-      throw new DeveloperError(
-        `Element with id "${element}" does not exist in the document.`,
-      );
+        //>>includeStart('debug', pragmas.debug);
+        if (foundElement === null) {
+            throw new DeveloperError(
+                `Element with id "${element}" does not exist in the document.`,
+            );
+        }
+        //>>includeEnd('debug');
+
+        element = foundElement;
     }
-    //>>includeEnd('debug');
-
-    element = foundElement;
-  }
-  return element;
+    return element;
 }
 export default getElement;

@@ -41,71 +41,71 @@ import createWorldTerrainAsync from "../Core/createWorldTerrainAsync.js";
  * @param {Promise<TerrainProvider>} terrainProviderPromise A promise which resolves to a terrain provider
  */
 function Terrain(terrainProviderPromise) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("terrainProviderPromise", terrainProviderPromise);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("terrainProviderPromise", terrainProviderPromise);
+    //>>includeEnd('debug');
 
-  this._ready = false;
-  this._provider = undefined;
-  this._errorEvent = new Event();
-  this._readyEvent = new Event();
+    this._ready = false;
+    this._provider = undefined;
+    this._errorEvent = new Event();
+    this._readyEvent = new Event();
 
-  handlePromise(this, terrainProviderPromise);
+    handlePromise(this, terrainProviderPromise);
 }
 
 Object.defineProperties(Terrain.prototype, {
-  /**
-   * Gets an event that is raised when the terrain provider encounters an asynchronous error.  By subscribing
-   * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
-   * are passed an instance of the thrown error.
-   * @memberof Terrain.prototype
-   * @type {Event<Terrain.ErrorEventCallback>}
-   * @readonly
-   */
-  errorEvent: {
-    get: function () {
-      return this._errorEvent;
+    /**
+     * Gets an event that is raised when the terrain provider encounters an asynchronous error.  By subscribing
+     * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
+     * are passed an instance of the thrown error.
+     * @memberof Terrain.prototype
+     * @type {Event<Terrain.ErrorEventCallback>}
+     * @readonly
+     */
+    errorEvent: {
+        get: function () {
+            return this._errorEvent;
+        },
     },
-  },
 
-  /**
-   * Gets an event that is raised when the terrain provider has been successfully created. Event listeners
-   * are passed the created instance of {@link TerrainProvider}.
-   * @memberof Terrain.prototype
-   * @type {Event<Terrain.ReadyEventCallback>}
-   * @readonly
-   */
-  readyEvent: {
-    get: function () {
-      return this._readyEvent;
+    /**
+     * Gets an event that is raised when the terrain provider has been successfully created. Event listeners
+     * are passed the created instance of {@link TerrainProvider}.
+     * @memberof Terrain.prototype
+     * @type {Event<Terrain.ReadyEventCallback>}
+     * @readonly
+     */
+    readyEvent: {
+        get: function () {
+            return this._readyEvent;
+        },
     },
-  },
 
-  /**
-   * Returns true when the terrain provider has been successfully created. Otherwise, returns false.
-   * @memberof Terrain.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   */
-  ready: {
-    get: function () {
-      return this._ready;
+    /**
+     * Returns true when the terrain provider has been successfully created. Otherwise, returns false.
+     * @memberof Terrain.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     */
+    ready: {
+        get: function () {
+            return this._ready;
+        },
     },
-  },
 
-  /**
-   * The terrain provider providing surface geometry to a globe. Do not use until {@link Terrain.readyEvent} is raised.
-   * @memberof Terrain.prototype
-   *
-   * @type {TerrainProvider}
-   * @readonly
-   */
-  provider: {
-    get: function () {
-      return this._provider;
+    /**
+     * The terrain provider providing surface geometry to a globe. Do not use until {@link Terrain.readyEvent} is raised.
+     * @memberof Terrain.prototype
+     *
+     * @type {TerrainProvider}
+     * @readonly
+     */
+    provider: {
+        get: function () {
+            return this._provider;
+        },
     },
-  },
 });
 /**
  * Creates a {@link Terrain} instance for {@link https://cesium.com/content/#cesium-world-terrain|Cesium World Terrain}.
@@ -154,7 +154,7 @@ Object.defineProperties(Terrain.prototype, {
  * });
  */
 Terrain.fromWorldTerrain = function (options) {
-  return new Terrain(createWorldTerrainAsync(options));
+    return new Terrain(createWorldTerrainAsync(options));
 };
 
 /**
@@ -202,28 +202,28 @@ Terrain.fromWorldTerrain = function (options) {
  * });
  */
 Terrain.fromWorldBathymetry = function (options) {
-  return new Terrain(createWorldBathymetryAsync(options));
+    return new Terrain(createWorldBathymetryAsync(options));
 };
 
 function handleError(errorEvent, error) {
-  if (errorEvent.numberOfListeners > 0) {
-    errorEvent.raiseEvent(error);
-  } else {
-    // Default handler is to log to the console
-    console.error(error);
-  }
+    if (errorEvent.numberOfListeners > 0) {
+        errorEvent.raiseEvent(error);
+    } else {
+        // Default handler is to log to the console
+        console.error(error);
+    }
 }
 
 async function handlePromise(instance, promise) {
-  let provider;
-  try {
-    provider = await Promise.resolve(promise);
-    instance._provider = provider;
-    instance._ready = true;
-    instance._readyEvent.raiseEvent(provider);
-  } catch (error) {
-    handleError(instance._errorEvent, error);
-  }
+    let provider;
+    try {
+        provider = await Promise.resolve(promise);
+        instance._provider = provider;
+        instance._ready = true;
+        instance._readyEvent.raiseEvent(provider);
+    } catch (error) {
+        handleError(instance._errorEvent, error);
+    }
 }
 
 export default Terrain;

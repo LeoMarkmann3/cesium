@@ -20,32 +20,32 @@ import oneTimeWarning from "../Core/oneTimeWarning.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function findTileMetadata(tileset, tileHeader) {
-  const metadataJson = hasExtension(tileHeader, "3DTILES_metadata")
-    ? tileHeader.extensions["3DTILES_metadata"]
-    : tileHeader.metadata;
+    const metadataJson = hasExtension(tileHeader, "3DTILES_metadata")
+        ? tileHeader.extensions["3DTILES_metadata"]
+        : tileHeader.metadata;
 
-  if (!defined(metadataJson)) {
+    if (!defined(metadataJson)) {
+        return undefined;
+    }
+
+    if (!defined(tileset.schema)) {
+        findTileMetadata._oneTimeWarning(
+            "findTileMetadata-missing-root-schema",
+            "Could not find a metadata schema for tile metadata. For tilesets that contain external tilesets, make sure the schema is added to the root tileset.json.",
+        );
+        return undefined;
+    }
+
+    const classes = tileset.schema.classes ?? Frozen.EMPTY_OBJECT;
+    if (defined(metadataJson.class)) {
+        const tileClass = classes[metadataJson.class];
+        return new TileMetadata({
+            tile: metadataJson,
+            class: tileClass,
+        });
+    }
+
     return undefined;
-  }
-
-  if (!defined(tileset.schema)) {
-    findTileMetadata._oneTimeWarning(
-      "findTileMetadata-missing-root-schema",
-      "Could not find a metadata schema for tile metadata. For tilesets that contain external tilesets, make sure the schema is added to the root tileset.json.",
-    );
-    return undefined;
-  }
-
-  const classes = tileset.schema.classes ?? Frozen.EMPTY_OBJECT;
-  if (defined(metadataJson.class)) {
-    const tileClass = classes[metadataJson.class];
-    return new TileMetadata({
-      tile: metadataJson,
-      class: tileClass,
-    });
-  }
-
-  return undefined;
 }
 
 // Exposed for testing

@@ -21,13 +21,13 @@ import MetadataEntity from "./MetadataEntity.js";
 const emptyClass = {};
 
 function JsonMetadataTable(options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number.greaterThan("options.count", options.count, 0);
-  Check.typeOf.object("options.properties", options.properties);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number.greaterThan("options.count", options.count, 0);
+    Check.typeOf.object("options.properties", options.properties);
+    //>>includeEnd('debug');
 
-  this._count = options.count;
-  this._properties = clone(options.properties, true);
+    this._count = options.count;
+    this._properties = clone(options.properties, true);
 }
 
 /**
@@ -38,7 +38,7 @@ function JsonMetadataTable(options) {
  * @private
  */
 JsonMetadataTable.prototype.hasProperty = function (propertyId) {
-  return MetadataEntity.hasProperty(propertyId, this._properties, emptyClass);
+    return MetadataEntity.hasProperty(propertyId, this._properties, emptyClass);
 };
 
 /**
@@ -49,7 +49,7 @@ JsonMetadataTable.prototype.hasProperty = function (propertyId) {
  * @private
  */
 JsonMetadataTable.prototype.getPropertyIds = function (results) {
-  return MetadataEntity.getPropertyIds(this._properties, emptyClass, results);
+    return MetadataEntity.getPropertyIds(this._properties, emptyClass, results);
 };
 
 /**
@@ -63,21 +63,23 @@ JsonMetadataTable.prototype.getPropertyIds = function (results) {
  * @private
  */
 JsonMetadataTable.prototype.getProperty = function (index, propertyId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("index", index);
-  Check.typeOf.string("propertyId", propertyId);
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("index", index);
+    Check.typeOf.string("propertyId", propertyId);
 
-  if (index < 0 || index >= this._count) {
-    throw new DeveloperError(`index must be in the range [0, ${this._count})`);
-  }
-  //>>includeEnd('debug');
+    if (index < 0 || index >= this._count) {
+        throw new DeveloperError(
+            `index must be in the range [0, ${this._count})`,
+        );
+    }
+    //>>includeEnd('debug');
 
-  const property = this._properties[propertyId];
-  if (defined(property)) {
-    return clone(property[index], true);
-  }
+    const property = this._properties[propertyId];
+    if (defined(property)) {
+        return clone(property[index], true);
+    }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -92,23 +94,25 @@ JsonMetadataTable.prototype.getProperty = function (index, propertyId) {
  * @private
  */
 JsonMetadataTable.prototype.setProperty = function (index, propertyId, value) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("index", index);
-  Check.typeOf.string("propertyId", propertyId);
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("index", index);
+    Check.typeOf.string("propertyId", propertyId);
 
-  if (index < 0 || index >= this._count) {
-    throw new DeveloperError(`index must be in the range [0, ${this._count})`);
-  }
-  //>>includeEnd('debug');
+    if (index < 0 || index >= this._count) {
+        throw new DeveloperError(
+            `index must be in the range [0, ${this._count})`,
+        );
+    }
+    //>>includeEnd('debug');
 
-  let property = this._properties[propertyId];
-  if (!defined(property)) {
-    // Property does not exist. Create it.
-    property = new Array(this._count);
-    this._properties[propertyId] = property;
-  }
+    let property = this._properties[propertyId];
+    if (!defined(property)) {
+        // Property does not exist. Create it.
+        property = new Array(this._count);
+        this._properties[propertyId] = property;
+    }
 
-  property[index] = clone(value, true);
+    property[index] = clone(value, true);
 };
 
 export default JsonMetadataTable;

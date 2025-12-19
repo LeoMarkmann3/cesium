@@ -1,18 +1,18 @@
 import * as Cesium from "cesium";
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  shouldAnimate: true,
+    shouldAnimate: true,
 });
 const scene = viewer.scene;
 
 const position = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706);
 const url = "../../SampleData/models/CesiumMan/Cesium_Man.glb";
 const entity = viewer.entities.add({
-  name: url,
-  position: position,
-  model: {
-    uri: url,
-  },
+    name: url,
+    position: position,
+    model: {
+        uri: url,
+    },
 });
 viewer.trackedEntity = entity;
 
@@ -33,23 +33,23 @@ const fragmentShaderSource = `
           `;
 
 const stage = scene.postProcessStages.add(
-  new Cesium.PostProcessStage({
-    fragmentShader: fragmentShaderSource,
-    uniforms: {
-      highlight: function () {
-        return new Cesium.Color(1.0, 0.0, 0.0, 0.5);
-      },
-    },
-  }),
+    new Cesium.PostProcessStage({
+        fragmentShader: fragmentShaderSource,
+        uniforms: {
+            highlight: function () {
+                return new Cesium.Color(1.0, 0.0, 0.0, 0.5);
+            },
+        },
+    }),
 );
 stage.selected = [];
 
 const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 handler.setInputAction(function (movement) {
-  const pickedObject = viewer.scene.pick(movement.endPosition);
-  if (Cesium.defined(pickedObject)) {
-    stage.selected = [pickedObject.primitive];
-  } else {
-    stage.selected = [];
-  }
+    const pickedObject = viewer.scene.pick(movement.endPosition);
+    if (Cesium.defined(pickedObject)) {
+        stage.selected = [pickedObject.primitive];
+    } else {
+        stage.selected = [];
+    }
 }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);

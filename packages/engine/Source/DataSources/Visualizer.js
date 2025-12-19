@@ -17,7 +17,7 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @see GeometryVisualizer
  */
 function Visualizer() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 /**

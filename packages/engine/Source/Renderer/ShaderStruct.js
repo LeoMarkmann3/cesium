@@ -24,8 +24,8 @@
  * @private
  */
 function ShaderStruct(name) {
-  this.name = name;
-  this.fields = [];
+    this.name = name;
+    this.fields = [];
 }
 
 /**
@@ -34,8 +34,8 @@ function ShaderStruct(name) {
  * @param {string} identifier The identifier of the struct field
  */
 ShaderStruct.prototype.addField = function (type, identifier) {
-  const field = `    ${type} ${identifier};`;
-  this.fields.push(field);
+    const field = `    ${type} ${identifier};`;
+    this.fields.push(field);
 };
 
 /**
@@ -43,13 +43,13 @@ ShaderStruct.prototype.addField = function (type, identifier) {
  * @return {string[]} The generated GLSL code.
  */
 ShaderStruct.prototype.generateGlslLines = function () {
-  let fields = this.fields;
-  if (fields.length === 0) {
-    // GLSL requires structs to have at least one field
-    fields = ["    float _empty;"];
-  }
+    let fields = this.fields;
+    if (fields.length === 0) {
+        // GLSL requires structs to have at least one field
+        fields = ["    float _empty;"];
+    }
 
-  return [].concat(`struct ${this.name}`, "{", fields, "};");
+    return [].concat(`struct ${this.name}`, "{", fields, "};");
 };
 
 export default ShaderStruct;

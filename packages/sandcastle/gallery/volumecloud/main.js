@@ -6,37 +6,37 @@ import * as Cesium from "cesium";
 const lerp = Cesium.Math.lerp;
 
 const _p = [
-  151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140,
-  36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234,
-  75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33, 88, 237,
-  149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 74, 165, 71, 134, 139, 48,
-  27, 166, 77, 146, 158, 231, 83, 111, 229, 122, 60, 211, 133, 230, 220, 105,
-  92, 41, 55, 46, 245, 40, 244, 102, 143, 54, 65, 25, 63, 161, 1, 216, 80, 73,
-  209, 76, 132, 187, 208, 89, 18, 169, 200, 196, 135, 130, 116, 188, 159, 86,
-  164, 100, 109, 198, 173, 186, 3, 64, 52, 217, 226, 250, 124, 123, 5, 202, 38,
-  147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227, 47, 16, 58, 17, 182, 189,
-  28, 42, 223, 183, 170, 213, 119, 248, 152, 2, 44, 154, 163, 70, 221, 153, 101,
-  155, 167, 43, 172, 9, 129, 22, 39, 253, 19, 98, 108, 110, 79, 113, 224, 232,
-  178, 185, 112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12,
-  191, 179, 162, 241, 81, 51, 145, 235, 249, 14, 239, 107, 49, 192, 214, 31,
-  181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
-  138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215,
-  61, 156, 180,
+    151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140,
+    36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120,
+    234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33,
+    88, 237, 149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 74, 165, 71,
+    134, 139, 48, 27, 166, 77, 146, 158, 231, 83, 111, 229, 122, 60, 211, 133,
+    230, 220, 105, 92, 41, 55, 46, 245, 40, 244, 102, 143, 54, 65, 25, 63, 161,
+    1, 216, 80, 73, 209, 76, 132, 187, 208, 89, 18, 169, 200, 196, 135, 130,
+    116, 188, 159, 86, 164, 100, 109, 198, 173, 186, 3, 64, 52, 217, 226, 250,
+    124, 123, 5, 202, 38, 147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227,
+    47, 16, 58, 17, 182, 189, 28, 42, 223, 183, 170, 213, 119, 248, 152, 2, 44,
+    154, 163, 70, 221, 153, 101, 155, 167, 43, 172, 9, 129, 22, 39, 253, 19, 98,
+    108, 110, 79, 113, 224, 232, 178, 185, 112, 104, 218, 246, 97, 228, 251, 34,
+    242, 193, 238, 210, 144, 12, 191, 179, 162, 241, 81, 51, 145, 235, 249, 14,
+    239, 107, 49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121,
+    50, 45, 127, 4, 150, 254, 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243,
+    141, 128, 195, 78, 66, 215, 61, 156, 180,
 ];
 
 for (let i = 0; i < 256; i++) {
-  _p[256 + i] = _p[i];
+    _p[256 + i] = _p[i];
 }
 
 function fade(t) {
-  return t * t * t * (t * (t * 6 - 15) + 10);
+    return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
 function grad(hash, x, y, z) {
-  const h = hash & 15;
-  const u = h < 8 ? x : y,
-    v = h < 4 ? y : h === 12 || h === 14 ? x : z;
-  return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+    const h = hash & 15;
+    const u = h < 8 ? x : y,
+        v = h < 4 ? y : h === 12 || h === 14 ? x : z;
+    return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
 }
 
 /**
@@ -48,214 +48,224 @@ function grad(hash, x, y, z) {
  * @three_import import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
  */
 class ImprovedNoise {
-  /**
-   * Returns a noise value for the given parameters.
-   *
-   * @param {number} x - The x coordinate.
-   * @param {number} y - The y coordinate.
-   * @param {number} z - The z coordinate.
-   * @return {number} The noise value.
-   */
-  noise(x, y, z) {
-    const floorX = Math.floor(x),
-      floorY = Math.floor(y),
-      floorZ = Math.floor(z);
+    /**
+     * Returns a noise value for the given parameters.
+     *
+     * @param {number} x - The x coordinate.
+     * @param {number} y - The y coordinate.
+     * @param {number} z - The z coordinate.
+     * @return {number} The noise value.
+     */
+    noise(x, y, z) {
+        const floorX = Math.floor(x),
+            floorY = Math.floor(y),
+            floorZ = Math.floor(z);
 
-    const X = floorX & 255,
-      Y = floorY & 255,
-      Z = floorZ & 255;
+        const X = floorX & 255,
+            Y = floorY & 255,
+            Z = floorZ & 255;
 
-    x -= floorX;
-    y -= floorY;
-    z -= floorZ;
+        x -= floorX;
+        y -= floorY;
+        z -= floorZ;
 
-    const xMinus1 = x - 1,
-      yMinus1 = y - 1,
-      zMinus1 = z - 1;
+        const xMinus1 = x - 1,
+            yMinus1 = y - 1,
+            zMinus1 = z - 1;
 
-    const u = fade(x),
-      v = fade(y),
-      w = fade(z);
+        const u = fade(x),
+            v = fade(y),
+            w = fade(z);
 
-    const A = _p[X] + Y,
-      AA = _p[A] + Z,
-      AB = _p[A + 1] + Z,
-      B = _p[X + 1] + Y,
-      BA = _p[B] + Z,
-      BB = _p[B + 1] + Z;
+        const A = _p[X] + Y,
+            AA = _p[A] + Z,
+            AB = _p[A + 1] + Z,
+            B = _p[X + 1] + Y,
+            BA = _p[B] + Z,
+            BB = _p[B + 1] + Z;
 
-    return lerp(
-      lerp(
-        lerp(grad(_p[AA], x, y, z), grad(_p[BA], xMinus1, y, z), u),
-        lerp(grad(_p[AB], x, yMinus1, z), grad(_p[BB], xMinus1, yMinus1, z), u),
-        v,
-      ),
-      lerp(
-        lerp(
-          grad(_p[AA + 1], x, y, zMinus1),
-          grad(_p[BA + 1], xMinus1, y, zMinus1),
-          u,
-        ),
-        lerp(
-          grad(_p[AB + 1], x, yMinus1, zMinus1),
-          grad(_p[BB + 1], xMinus1, yMinus1, zMinus1),
-          u,
-        ),
-        v,
-      ),
-      w,
-    );
-  }
+        return lerp(
+            lerp(
+                lerp(grad(_p[AA], x, y, z), grad(_p[BA], xMinus1, y, z), u),
+                lerp(
+                    grad(_p[AB], x, yMinus1, z),
+                    grad(_p[BB], xMinus1, yMinus1, z),
+                    u,
+                ),
+                v,
+            ),
+            lerp(
+                lerp(
+                    grad(_p[AA + 1], x, y, zMinus1),
+                    grad(_p[BA + 1], xMinus1, y, zMinus1),
+                    u,
+                ),
+                lerp(
+                    grad(_p[AB + 1], x, yMinus1, zMinus1),
+                    grad(_p[BB + 1], xMinus1, yMinus1, zMinus1),
+                    u,
+                ),
+                v,
+            ),
+            w,
+        );
+    }
 }
 
 // End ImprovedNoise from Three.js
 
 // GeometryPrimitive
 const {
-  Cartesian3,
-  destroyObject,
-  DrawCommand,
-  VertexArray,
-  GeometryPipeline,
-  Matrix4,
+    Cartesian3,
+    destroyObject,
+    DrawCommand,
+    VertexArray,
+    GeometryPipeline,
+    Matrix4,
 } = Cesium;
 
 /**
  * Custom Primitive for Geometry
  */
 class GeometryPrimitive {
-  /**
-   *
-   * @param {*} options
-   * @param {*} options.modelMatrix
-   * @param {*} options.vertexShaderSource
-   * @param {*} options.fragmentShaderSource
-   * @param {*} options.uniformMap
-   * @param {*} options.renderState
-   * @param {*} options.pass
-   */
-  constructor(geometry, options) {
-    this.options = options;
-    this.geometry = geometry;
-  }
-
-  /**
-   *
-   * @param {*} frameState
-   */
-  update(frameState) {
-    if (Cesium.defined(this._drawCommand)) {
-      frameState.commandList.push(this._drawCommand);
-      return;
-    }
-    if (this.geometry.constructor.createGeometry) {
-      this.geometry = this.geometry.constructor.createGeometry(this.geometry);
+    /**
+     *
+     * @param {*} options
+     * @param {*} options.modelMatrix
+     * @param {*} options.vertexShaderSource
+     * @param {*} options.fragmentShaderSource
+     * @param {*} options.uniformMap
+     * @param {*} options.renderState
+     * @param {*} options.pass
+     */
+    constructor(geometry, options) {
+        this.options = options;
+        this.geometry = geometry;
     }
 
-    const context = frameState.context;
+    /**
+     *
+     * @param {*} frameState
+     */
+    update(frameState) {
+        if (Cesium.defined(this._drawCommand)) {
+            frameState.commandList.push(this._drawCommand);
+            return;
+        }
+        if (this.geometry.constructor.createGeometry) {
+            this.geometry = this.geometry.constructor.createGeometry(
+                this.geometry,
+            );
+        }
 
-    const attributeLocations = GeometryPipeline.createAttributeLocations(
-      this.geometry,
-    );
-    const vertexArray = VertexArray.fromGeometry({
-      context: context,
-      geometry: this.geometry,
-      attributeLocations,
-    });
+        const context = frameState.context;
 
-    // calculate boundingSphere
-    const boundingSphere = this.geometry.boundingSphere;
-    boundingSphere.center = Matrix4.multiplyByPoint(
-      this.options.modelMatrix,
-      boundingSphere.center,
-      new Cartesian3(),
-    );
-    boundingSphere.radius = 1000000;
+        const attributeLocations = GeometryPipeline.createAttributeLocations(
+            this.geometry,
+        );
+        const vertexArray = VertexArray.fromGeometry({
+            context: context,
+            geometry: this.geometry,
+            attributeLocations,
+        });
 
-    this._boundingSphereWC = [boundingSphere];
+        // calculate boundingSphere
+        const boundingSphere = this.geometry.boundingSphere;
+        boundingSphere.center = Matrix4.multiplyByPoint(
+            this.options.modelMatrix,
+            boundingSphere.center,
+            new Cartesian3(),
+        );
+        boundingSphere.radius = 1000000;
 
-    const shaderProgram = Cesium.ShaderProgram.fromCache({
-      context: context,
-      attributeLocations,
-      vertexShaderSource: this.options.vertexShaderSource,
-      fragmentShaderSource: this.options.fragmentShaderSource,
-    });
+        this._boundingSphereWC = [boundingSphere];
 
-    this._drawCommand = new DrawCommand({
-      owner: this,
-      boundingVolume: boundingSphere,
-      primitiveType: this.geometry.primitiveType,
-      vertexArray: vertexArray,
-      shaderProgram,
-      ...this.options,
-    });
-  }
+        const shaderProgram = Cesium.ShaderProgram.fromCache({
+            context: context,
+            attributeLocations,
+            vertexShaderSource: this.options.vertexShaderSource,
+            fragmentShaderSource: this.options.fragmentShaderSource,
+        });
 
-  destroy() {
-    return destroyObject(this);
-  }
+        this._drawCommand = new DrawCommand({
+            owner: this,
+            boundingVolume: boundingSphere,
+            primitiveType: this.geometry.primitiveType,
+            vertexArray: vertexArray,
+            shaderProgram,
+            ...this.options,
+        });
+    }
 
-  isDestroyed() {
-    return false;
-  }
+    destroy() {
+        return destroyObject(this);
+    }
+
+    isDestroyed() {
+        return false;
+    }
 }
 // GeometryPrimitive end
 
 function makeTexture3D(context) {
-  const size = 100;
-  const dataLength = size * size * size;
-  const data = new Uint8Array(dataLength);
-  let i = 0;
-  const scale = 0.05;
-  const perlin = new ImprovedNoise();
-  let vector = new Cesium.Cartesian3();
-  const halfSize = Cesium.Cartesian3.fromElements(
-    size / 2,
-    size / 2,
-    size / 2,
-    new Cesium.Cartesian3(),
-  );
+    const size = 100;
+    const dataLength = size * size * size;
+    const data = new Uint8Array(dataLength);
+    let i = 0;
+    const scale = 0.05;
+    const perlin = new ImprovedNoise();
+    let vector = new Cesium.Cartesian3();
+    const halfSize = Cesium.Cartesian3.fromElements(
+        size / 2,
+        size / 2,
+        size / 2,
+        new Cesium.Cartesian3(),
+    );
 
-  for (let z = 0; z < size; z++) {
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        vector = Cesium.Cartesian3.fromElements(x, y, z, vector);
-        vector = Cesium.Cartesian3.subtract(vector, halfSize, vector);
-        vector = Cesium.Cartesian3.divideByScalar(vector, size, vector);
+    for (let z = 0; z < size; z++) {
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                vector = Cesium.Cartesian3.fromElements(x, y, z, vector);
+                vector = Cesium.Cartesian3.subtract(vector, halfSize, vector);
+                vector = Cesium.Cartesian3.divideByScalar(vector, size, vector);
 
-        const d = 1.0 - Cesium.Cartesian3.magnitude(vector);
-        const tv =
-          (128 +
-            128 *
-              perlin.noise((x * scale) / 1.5, y * scale, (z * scale) / 1.5)) *
-          d *
-          d;
+                const d = 1.0 - Cesium.Cartesian3.magnitude(vector);
+                const tv =
+                    (128 +
+                        128 *
+                            perlin.noise(
+                                (x * scale) / 1.5,
+                                y * scale,
+                                (z * scale) / 1.5,
+                            )) *
+                    d *
+                    d;
 
-        data[i] = tv;
-        i++;
-      }
+                data[i] = tv;
+                i++;
+            }
+        }
     }
-  }
 
-  return new Cesium.Texture3D({
-    context: context,
-    width: size,
-    height: size,
-    depth: size,
-    flipY: false,
-    pixelFormat: Cesium.PixelFormat.RED,
-    pixelDatatype: Cesium.PixelDatatype.UNSIGNED_BYTE,
-    source: {
-      arrayBufferView: data,
-      width: size,
-      height: size,
-      depth: size,
-    },
-    sampler: new Cesium.Sampler({
-      minificationFilter: Cesium.TextureMinificationFilter.LINEAR,
-      magnificationFilter: Cesium.TextureMagnificationFilter.LINEAR,
-    }),
-  });
+    return new Cesium.Texture3D({
+        context: context,
+        width: size,
+        height: size,
+        depth: size,
+        flipY: false,
+        pixelFormat: Cesium.PixelFormat.RED,
+        pixelDatatype: Cesium.PixelDatatype.UNSIGNED_BYTE,
+        source: {
+            arrayBufferView: data,
+            width: size,
+            height: size,
+            depth: size,
+        },
+        sampler: new Cesium.Sampler({
+            minificationFilter: Cesium.TextureMinificationFilter.LINEAR,
+            magnificationFilter: Cesium.TextureMagnificationFilter.LINEAR,
+        }),
+    });
 }
 
 const vertexShader = /* glsl */ `
@@ -384,7 +394,7 @@ const fragmentShader = /* glsl */ `
       `;
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  orderIndependentTranslucency: true,
+    orderIndependentTranslucency: true,
 });
 const texture3D = makeTexture3D(viewer.scene.context);
 texture3D.generateMipmap();
@@ -392,166 +402,166 @@ texture3D.generateMipmap();
 const boxSideLength = 1.0;
 const zoomScale = 10000;
 const centerPoint = Cesium.Cartesian3.fromDegrees(
-  113,
-  33,
-  (boxSideLength / 0.5) * zoomScale,
+    113,
+    33,
+    (boxSideLength / 0.5) * zoomScale,
 );
 
 const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(centerPoint);
 
 const boxSize = new Cesium.Cartesian3(
-  boxSideLength,
-  boxSideLength,
-  boxSideLength,
+    boxSideLength,
+    boxSideLength,
+    boxSideLength,
 );
 
 const renderState = Cesium.RenderState.fromCache({
-  depthMask: false,
-  blending: {
-    enabled: true,
-    color: {
-      red: 0.0,
-      green: 0.0,
-      blue: 0.0,
-      alpha: 0.0,
+    depthMask: false,
+    blending: {
+        enabled: true,
+        color: {
+            red: 0.0,
+            green: 0.0,
+            blue: 0.0,
+            alpha: 0.0,
+        },
     },
-  },
-  depthTest: {
-    enabled: true,
-    func: Cesium.DepthFunction.LESS_OR_EQUAL,
-  },
-  cull: {
-    enabled: true,
-    face: Cesium.CullFace.FRONT,
-  },
+    depthTest: {
+        enabled: true,
+        func: Cesium.DepthFunction.LESS_OR_EQUAL,
+    },
+    cull: {
+        enabled: true,
+        face: Cesium.CullFace.FRONT,
+    },
 });
 
 const zoomMat = Cesium.Matrix4.fromScale(
-  new Cesium.Cartesian3(zoomScale, zoomScale, zoomScale),
-  new Cesium.Matrix4(),
+    new Cesium.Cartesian3(zoomScale, zoomScale, zoomScale),
+    new Cesium.Matrix4(),
 );
 
 Cesium.Matrix4.multiply(modelMatrix, zoomMat, modelMatrix);
 
 const halfBox = Cesium.Cartesian3.multiplyByScalar(
-  boxSize,
-  0.5,
-  new Cesium.Cartesian3(),
+    boxSize,
+    0.5,
+    new Cesium.Cartesian3(),
 );
 const negHalfBox = Cesium.Cartesian3.negate(halfBox, new Cesium.Cartesian3());
 
 const boxGeometry = new Cesium.BoxGeometry({
-  minimum: negHalfBox,
-  maximum: halfBox,
+    minimum: negHalfBox,
+    maximum: halfBox,
 });
 
 const uniforms = {
-  base: new Cesium.Color(0.1912, 0.2542, 0.3515, 0),
-  map: texture3D,
-  opacity: 0.25,
-  range: 0.1,
-  steps: 100,
-  frame: 0,
-  threshold: 0.25,
+    base: new Cesium.Color(0.1912, 0.2542, 0.3515, 0),
+    map: texture3D,
+    opacity: 0.25,
+    range: 0.1,
+    steps: 100,
+    frame: 0,
+    threshold: 0.25,
 };
 
 window.uniforms = uniforms;
 
 const cmdUniforms = {};
 for (const key in uniforms) {
-  if (key) {
-    cmdUniforms[key] = function () {
-      return uniforms[key];
-    };
-  }
+    if (key) {
+        cmdUniforms[key] = function () {
+            return uniforms[key];
+        };
+    }
 }
 
 const primitive = new GeometryPrimitive(boxGeometry, {
-  uniformMap: cmdUniforms,
-  vertexShaderSource: vertexShader,
-  fragmentShaderSource: fragmentShader,
-  renderState: renderState,
-  modelMatrix,
-  pass: Cesium.Pass.TRANSLUCENT,
+    uniformMap: cmdUniforms,
+    vertexShaderSource: vertexShader,
+    fragmentShaderSource: fragmentShader,
+    renderState: renderState,
+    modelMatrix,
+    pass: Cesium.Pass.TRANSLUCENT,
 });
 
 viewer.scene.primitives.add(primitive);
 
 const cameraState = {
-  destination: centerPoint,
-  orientation: {
-    heading: 4.159717744111784,
-    pitch: -0.4648127266675117,
-    roll: boxSideLength * zoomScale * 2,
-  },
-  duration: 0,
+    destination: centerPoint,
+    orientation: {
+        heading: 4.159717744111784,
+        pitch: -0.4648127266675117,
+        roll: boxSideLength * zoomScale * 2,
+    },
+    duration: 0,
 };
 // viewer.camera.flyTo(camState);
 const hpr = new Cesium.HeadingPitchRange(
-  cameraState.orientation.heading,
-  cameraState.orientation.pitch,
-  boxSideLength * zoomScale * 2,
+    cameraState.orientation.heading,
+    cameraState.orientation.pitch,
+    boxSideLength * zoomScale * 2,
 );
 viewer.camera.lookAt(cameraState.destination, hpr);
 
 // create params control UI
 function createSlider(
-  toolbar,
-  { labelText, min, max, step, defaultValue, callback },
+    toolbar,
+    { labelText, min, max, step, defaultValue, callback },
 ) {
-  const container = document.createElement("div");
-  container.style.cssText = `
+    const container = document.createElement("div");
+    container.style.cssText = `
           display: flex;
           align-items: center;
           gap: 10px;
           margin-bottom: 8px;
         `;
 
-  const label = document.createElement("label");
-  label.textContent = labelText;
-  label.style.cssText = `
+    const label = document.createElement("label");
+    label.textContent = labelText;
+    label.style.cssText = `
           color: #ffffff;
           font-family: Arial, sans-serif;
           min-width: 60px;
           font-size: 14px;
         `;
 
-  const slider = document.createElement("input");
-  slider.type = "range";
-  slider.min = min;
-  slider.max = max;
-  slider.step = step;
-  slider.value = defaultValue;
-  slider.style.cssText = `
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = min;
+    slider.max = max;
+    slider.step = step;
+    slider.value = defaultValue;
+    slider.style.cssText = `
           width: 100px;
           cursor: pointer;
         `;
-  slider.addEventListener("input", (e) => callback(e.target.value));
+    slider.addEventListener("input", (e) => callback(e.target.value));
 
-  const valueDisplay = document.createElement("span");
-  valueDisplay.textContent = defaultValue;
-  valueDisplay.style.cssText = `
+    const valueDisplay = document.createElement("span");
+    valueDisplay.textContent = defaultValue;
+    valueDisplay.style.cssText = `
           color: #ffffff;
           font-family: monospace;
           width: 30px;
           text-align: right;
         `;
-  slider.addEventListener("input", (e) => {
-    valueDisplay.textContent = parseFloat(e.target.value).toFixed(2);
-  });
+    slider.addEventListener("input", (e) => {
+        valueDisplay.textContent = parseFloat(e.target.value).toFixed(2);
+    });
 
-  container.appendChild(label);
-  container.appendChild(slider);
-  container.appendChild(valueDisplay);
-  toolbar.appendChild(container);
+    container.appendChild(label);
+    container.appendChild(slider);
+    container.appendChild(valueDisplay);
+    toolbar.appendChild(container);
 
-  return slider;
+    return slider;
 }
 
 function createUi() {
-  const toolbar = document.getElementById("toolbar");
+    const toolbar = document.getElementById("toolbar");
 
-  toolbar.style.cssText = `
+    toolbar.style.cssText = `
           position: fixed;
           top: 10px;
           left: 10px;
@@ -563,47 +573,47 @@ function createUi() {
           z-index: 1000;
         `;
 
-  createSlider(toolbar, {
-    labelText: "opacity",
-    min: 0,
-    max: 1,
-    step: 0.01,
-    defaultValue: uniforms.opacity,
-    callback: (val) => {
-      uniforms.opacity = parseFloat(val);
-    },
-  });
+    createSlider(toolbar, {
+        labelText: "opacity",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        defaultValue: uniforms.opacity,
+        callback: (val) => {
+            uniforms.opacity = parseFloat(val);
+        },
+    });
 
-  createSlider(toolbar, {
-    labelText: "range",
-    min: 0,
-    max: 1,
-    step: 0.01,
-    defaultValue: uniforms.range,
-    callback: (val) => {
-      uniforms.range = parseFloat(val);
-    },
-  });
-  createSlider(toolbar, {
-    labelText: "steps",
-    min: 20,
-    max: 200,
-    step: 1,
-    defaultValue: uniforms.steps,
-    callback: (val) => {
-      uniforms.steps = parseFloat(val);
-    },
-  });
-  createSlider(toolbar, {
-    labelText: "threshold",
-    min: 0,
-    max: 1,
-    step: 0.01,
-    defaultValue: uniforms.threshold,
-    callback: (val) => {
-      uniforms.threshold = parseFloat(val);
-    },
-  });
+    createSlider(toolbar, {
+        labelText: "range",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        defaultValue: uniforms.range,
+        callback: (val) => {
+            uniforms.range = parseFloat(val);
+        },
+    });
+    createSlider(toolbar, {
+        labelText: "steps",
+        min: 20,
+        max: 200,
+        step: 1,
+        defaultValue: uniforms.steps,
+        callback: (val) => {
+            uniforms.steps = parseFloat(val);
+        },
+    });
+    createSlider(toolbar, {
+        labelText: "threshold",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        defaultValue: uniforms.threshold,
+        callback: (val) => {
+            uniforms.threshold = parseFloat(val);
+        },
+    });
 }
 
 createUi();

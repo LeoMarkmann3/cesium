@@ -35,169 +35,169 @@ import IonImageryProviderFactory from "./IonImageryProviderFactory.js";
  * @see IonImageryProvider.fromAssetId
  */
 function IonImageryProvider(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._defaultAlpha = undefined;
-  this._defaultNightAlpha = undefined;
-  this._defaultDayAlpha = undefined;
-  this._defaultBrightness = undefined;
-  this._defaultContrast = undefined;
-  this._defaultHue = undefined;
-  this._defaultSaturation = undefined;
-  this._defaultGamma = undefined;
-  this._defaultMinificationFilter = undefined;
-  this._defaultMagnificationFilter = undefined;
+    this._defaultAlpha = undefined;
+    this._defaultNightAlpha = undefined;
+    this._defaultDayAlpha = undefined;
+    this._defaultBrightness = undefined;
+    this._defaultContrast = undefined;
+    this._defaultHue = undefined;
+    this._defaultSaturation = undefined;
+    this._defaultGamma = undefined;
+    this._defaultMinificationFilter = undefined;
+    this._defaultMagnificationFilter = undefined;
 
-  this._tileCredits = undefined;
-  this._errorEvent = new Event();
+    this._tileCredits = undefined;
+    this._errorEvent = new Event();
 }
 
 Object.defineProperties(IonImageryProvider.prototype, {
-  /**
-   * Gets the rectangle, in radians, of the imagery provided by the instance.
-   * @memberof IonImageryProvider.prototype
-   * @type {Rectangle}
-   * @readonly
-   */
-  rectangle: {
-    get: function () {
-      return this._imageryProvider.rectangle;
+    /**
+     * Gets the rectangle, in radians, of the imagery provided by the instance.
+     * @memberof IonImageryProvider.prototype
+     * @type {Rectangle}
+     * @readonly
+     */
+    rectangle: {
+        get: function () {
+            return this._imageryProvider.rectangle;
+        },
     },
-  },
 
-  /**
-   * Gets the width of each tile, in pixels.
-   * @memberof IonImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  tileWidth: {
-    get: function () {
-      return this._imageryProvider.tileWidth;
+    /**
+     * Gets the width of each tile, in pixels.
+     * @memberof IonImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    tileWidth: {
+        get: function () {
+            return this._imageryProvider.tileWidth;
+        },
     },
-  },
 
-  /**
-   * Gets the height of each tile, in pixels.
-   * @memberof IonImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  tileHeight: {
-    get: function () {
-      return this._imageryProvider.tileHeight;
+    /**
+     * Gets the height of each tile, in pixels.
+     * @memberof IonImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    tileHeight: {
+        get: function () {
+            return this._imageryProvider.tileHeight;
+        },
     },
-  },
 
-  /**
-   * Gets the maximum level-of-detail that can be requested.
-   * @memberof IonImageryProvider.prototype
-   * @type {number|undefined}
-   * @readonly
-   */
-  maximumLevel: {
-    get: function () {
-      return this._imageryProvider.maximumLevel;
+    /**
+     * Gets the maximum level-of-detail that can be requested.
+     * @memberof IonImageryProvider.prototype
+     * @type {number|undefined}
+     * @readonly
+     */
+    maximumLevel: {
+        get: function () {
+            return this._imageryProvider.maximumLevel;
+        },
     },
-  },
 
-  /**
-   * Gets the minimum level-of-detail that can be requested. Generally,
-   * a minimum level should only be used when the rectangle of the imagery is small
-   * enough that the number of tiles at the minimum level is small.  An imagery
-   * provider with more than a few tiles at the minimum level will lead to
-   * rendering problems.
-   * @memberof IonImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  minimumLevel: {
-    get: function () {
-      return this._imageryProvider.minimumLevel;
+    /**
+     * Gets the minimum level-of-detail that can be requested. Generally,
+     * a minimum level should only be used when the rectangle of the imagery is small
+     * enough that the number of tiles at the minimum level is small.  An imagery
+     * provider with more than a few tiles at the minimum level will lead to
+     * rendering problems.
+     * @memberof IonImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    minimumLevel: {
+        get: function () {
+            return this._imageryProvider.minimumLevel;
+        },
     },
-  },
 
-  /**
-   * Gets the tiling scheme used by the provider.
-   * @memberof IonImageryProvider.prototype
-   * @type {TilingScheme}
-   * @readonly
-   */
-  tilingScheme: {
-    get: function () {
-      return this._imageryProvider.tilingScheme;
+    /**
+     * Gets the tiling scheme used by the provider.
+     * @memberof IonImageryProvider.prototype
+     * @type {TilingScheme}
+     * @readonly
+     */
+    tilingScheme: {
+        get: function () {
+            return this._imageryProvider.tilingScheme;
+        },
     },
-  },
 
-  /**
-   * Gets the tile discard policy.  If not undefined, the discard policy is responsible
-   * for filtering out "missing" tiles via its shouldDiscardImage function.  If this function
-   * returns undefined, no tiles are filtered.
-   * @memberof IonImageryProvider.prototype
-   * @type {TileDiscardPolicy}
-   * @readonly
-   */
-  tileDiscardPolicy: {
-    get: function () {
-      return this._imageryProvider.tileDiscardPolicy;
+    /**
+     * Gets the tile discard policy.  If not undefined, the discard policy is responsible
+     * for filtering out "missing" tiles via its shouldDiscardImage function.  If this function
+     * returns undefined, no tiles are filtered.
+     * @memberof IonImageryProvider.prototype
+     * @type {TileDiscardPolicy}
+     * @readonly
+     */
+    tileDiscardPolicy: {
+        get: function () {
+            return this._imageryProvider.tileDiscardPolicy;
+        },
     },
-  },
 
-  /**
-   * Gets an event that is raised when the imagery provider encounters an asynchronous error.  By subscribing
-   * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
-   * are passed an instance of {@link TileProviderError}.
-   * @memberof IonImageryProvider.prototype
-   * @type {Event}
-   * @readonly
-   */
-  errorEvent: {
-    get: function () {
-      return this._errorEvent;
+    /**
+     * Gets an event that is raised when the imagery provider encounters an asynchronous error.  By subscribing
+     * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
+     * are passed an instance of {@link TileProviderError}.
+     * @memberof IonImageryProvider.prototype
+     * @type {Event}
+     * @readonly
+     */
+    errorEvent: {
+        get: function () {
+            return this._errorEvent;
+        },
     },
-  },
 
-  /**
-   * Gets the credit to display when this imagery provider is active.  Typically this is used to credit
-   * the source of the imagery.
-   * @memberof IonImageryProvider.prototype
-   * @type {Credit}
-   * @readonly
-   */
-  credit: {
-    get: function () {
-      return this._imageryProvider.credit;
+    /**
+     * Gets the credit to display when this imagery provider is active.  Typically this is used to credit
+     * the source of the imagery.
+     * @memberof IonImageryProvider.prototype
+     * @type {Credit}
+     * @readonly
+     */
+    credit: {
+        get: function () {
+            return this._imageryProvider.credit;
+        },
     },
-  },
 
-  /**
-   * Gets a value indicating whether or not the images provided by this imagery provider
-   * include an alpha channel.  If this property is false, an alpha channel, if present, will
-   * be ignored.  If this property is true, any images without an alpha channel will be treated
-   * as if their alpha is 1.0 everywhere.  When this property is false, memory usage
-   * and texture upload time are reduced.
-   * @memberof IonImageryProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  hasAlphaChannel: {
-    get: function () {
-      return this._imageryProvider.hasAlphaChannel;
+    /**
+     * Gets a value indicating whether or not the images provided by this imagery provider
+     * include an alpha channel.  If this property is false, an alpha channel, if present, will
+     * be ignored.  If this property is true, any images without an alpha channel will be treated
+     * as if their alpha is 1.0 everywhere.  When this property is false, memory usage
+     * and texture upload time are reduced.
+     * @memberof IonImageryProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    hasAlphaChannel: {
+        get: function () {
+            return this._imageryProvider.hasAlphaChannel;
+        },
     },
-  },
 
-  /**
-   * Gets the proxy used by this provider.
-   * @memberof IonImageryProvider.prototype
-   * @type {Proxy}
-   * @readonly
-   * @default undefined
-   */
-  proxy: {
-    get: function () {
-      return undefined;
+    /**
+     * Gets the proxy used by this provider.
+     * @memberof IonImageryProvider.prototype
+     * @type {Proxy}
+     * @readonly
+     * @default undefined
+     */
+    proxy: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 });
 
 /**
@@ -215,71 +215,71 @@ Object.defineProperties(IonImageryProvider.prototype, {
  * @exception {RuntimeError} Unrecognized Cesium ion imagery type
  */
 IonImageryProvider.fromAssetId = async function (assetId, options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("assetId", assetId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("assetId", assetId);
+    //>>includeEnd('debug');
 
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const endpointResource = IonResource._createEndpointResource(
-    assetId,
-    options,
-  );
-
-  // A simple cache to avoid making repeated requests to ion for endpoints we've
-  // already retrieved. This exists mainly to support Bing caching to reduce
-  // world imagery sessions, but provides a small boost of performance in general
-  // if constantly reloading assets
-  const cacheKey = assetId.toString() + options.accessToken + options.server;
-  let promise = IonImageryProvider._endpointCache[cacheKey];
-  if (!defined(promise)) {
-    promise = endpointResource.fetchJson();
-    IonImageryProvider._endpointCache[cacheKey] = promise;
-  }
-
-  let endpoint = await promise;
-  if (endpoint.type !== "IMAGERY") {
-    throw new RuntimeError(
-      `Cesium ion asset ${assetId} is not an imagery asset.`,
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const endpointResource = IonResource._createEndpointResource(
+        assetId,
+        options,
     );
-  }
 
-  const externalType = endpoint.externalType;
-  let factory = IonImageryProviderFactory.defaultFactoryCallback;
-
-  // Make a copy before editing since this object reference is cached;
-  endpoint = clone(endpoint, true);
-  endpoint.options = endpoint.options ?? {};
-  const url = endpoint.options?.url;
-  delete options.url;
-
-  if (defined(externalType)) {
-    factory = IonImageryProviderFactory[externalType];
-
-    if (!defined(factory)) {
-      throw new RuntimeError(
-        `Unrecognized Cesium ion imagery type: ${externalType}`,
-      );
+    // A simple cache to avoid making repeated requests to ion for endpoints we've
+    // already retrieved. This exists mainly to support Bing caching to reduce
+    // world imagery sessions, but provides a small boost of performance in general
+    // if constantly reloading assets
+    const cacheKey = assetId.toString() + options.accessToken + options.server;
+    let promise = IonImageryProvider._endpointCache[cacheKey];
+    if (!defined(promise)) {
+        promise = endpointResource.fetchJson();
+        IonImageryProvider._endpointCache[cacheKey] = promise;
     }
-  }
 
-  const imageryProvider = await factory(url, endpoint, endpointResource);
-  const provider = new IonImageryProvider(options);
+    let endpoint = await promise;
+    if (endpoint.type !== "IMAGERY") {
+        throw new RuntimeError(
+            `Cesium ion asset ${assetId} is not an imagery asset.`,
+        );
+    }
 
-  imageryProvider.errorEvent.addEventListener(function (tileProviderError) {
-    //Propagate the errorEvent but set the provider to this instance instead
-    //of the inner instance.
-    tileProviderError.provider = provider;
-    provider._errorEvent.raiseEvent(tileProviderError);
-  });
+    const externalType = endpoint.externalType;
+    let factory = IonImageryProviderFactory.defaultFactoryCallback;
 
-  provider._tileCredits = IonResource.getCreditsFromEndpoint(
-    endpoint,
-    endpointResource,
-  );
+    // Make a copy before editing since this object reference is cached;
+    endpoint = clone(endpoint, true);
+    endpoint.options = endpoint.options ?? {};
+    const url = endpoint.options?.url;
+    delete options.url;
 
-  provider._imageryProvider = imageryProvider;
+    if (defined(externalType)) {
+        factory = IonImageryProviderFactory[externalType];
 
-  return provider;
+        if (!defined(factory)) {
+            throw new RuntimeError(
+                `Unrecognized Cesium ion imagery type: ${externalType}`,
+            );
+        }
+    }
+
+    const imageryProvider = await factory(url, endpoint, endpointResource);
+    const provider = new IonImageryProvider(options);
+
+    imageryProvider.errorEvent.addEventListener(function (tileProviderError) {
+        //Propagate the errorEvent but set the provider to this instance instead
+        //of the inner instance.
+        tileProviderError.provider = provider;
+        provider._errorEvent.raiseEvent(tileProviderError);
+    });
+
+    provider._tileCredits = IonResource.getCreditsFromEndpoint(
+        endpoint,
+        endpointResource,
+    );
+
+    provider._imageryProvider = imageryProvider;
+
+    return provider;
 };
 
 /**
@@ -292,12 +292,12 @@ IonImageryProvider.fromAssetId = async function (assetId, options) {
  * @returns {Credit[]} The credits to be displayed when the tile is displayed.
  */
 IonImageryProvider.prototype.getTileCredits = function (x, y, level) {
-  const innerCredits = this._imageryProvider.getTileCredits(x, y, level);
-  if (!defined(innerCredits)) {
-    return this._tileCredits;
-  }
+    const innerCredits = this._imageryProvider.getTileCredits(x, y, level);
+    if (!defined(innerCredits)) {
+        return this._tileCredits;
+    }
 
-  return this._tileCredits.concat(innerCredits);
+    return this._tileCredits.concat(innerCredits);
 };
 
 /**
@@ -312,7 +312,7 @@ IonImageryProvider.prototype.getTileCredits = function (x, y, level) {
  *          undefined if there are too many active requests to the server, and the request should be retried later.
  */
 IonImageryProvider.prototype.requestImage = function (x, y, level, request) {
-  return this._imageryProvider.requestImage(x, y, level, request);
+    return this._imageryProvider.requestImage(x, y, level, request);
 };
 
 /**
@@ -332,13 +332,13 @@ IonImageryProvider.prototype.requestImage = function (x, y, level, request) {
  *                   It may also be undefined if picking is not supported.
  */
 IonImageryProvider.prototype.pickFeatures = function (
-  x,
-  y,
-  level,
-  longitude,
-  latitude,
+    x,
+    y,
+    level,
+    longitude,
+    latitude,
 ) {
-  return this._imageryProvider.pickFeatures(x, y, level, longitude, latitude);
+    return this._imageryProvider.pickFeatures(x, y, level, longitude, latitude);
 };
 
 //exposed for testing

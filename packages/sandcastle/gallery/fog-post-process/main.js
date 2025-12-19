@@ -3,21 +3,21 @@ import * as Cesium from "cesium";
 const viewer = new Cesium.Viewer("cesiumContainer");
 
 viewer.scene.camera.setView({
-  destination: new Cesium.Cartesian3(
-    1216356.033078094,
-    -4736402.278325668,
-    4081270.375520902,
-  ),
-  orientation: new Cesium.HeadingPitchRoll(
-    0.08033365594766728,
-    -0.29519015695063455,
-    0.00027759141518046704,
-  ),
-  endTransform: Cesium.Matrix4.IDENTITY,
+    destination: new Cesium.Cartesian3(
+        1216356.033078094,
+        -4736402.278325668,
+        4081270.375520902,
+    ),
+    orientation: new Cesium.HeadingPitchRoll(
+        0.08033365594766728,
+        -0.29519015695063455,
+        0.00027759141518046704,
+    ),
+    endTransform: Cesium.Matrix4.IDENTITY,
 });
 
 if (!viewer.scene.context.depthTexture) {
-  window.alert("This browser does not support the fog post process.");
+    window.alert("This browser does not support the fog post process.");
 }
 
 const fragmentShaderSource = `
@@ -59,18 +59,18 @@ const fragmentShaderSource = `
           `;
 
 viewer.scene.postProcessStages.add(
-  new Cesium.PostProcessStage({
-    fragmentShader: fragmentShaderSource,
-    uniforms: {
-      fogByDistance: new Cesium.Cartesian4(10, 0.0, 200, 1.0),
-      fogColor: Cesium.Color.BLACK,
-    },
-  }),
+    new Cesium.PostProcessStage({
+        fragmentShader: fragmentShaderSource,
+        uniforms: {
+            fogByDistance: new Cesium.Cartesian4(10, 0.0, 200, 1.0),
+            fogColor: Cesium.Color.BLACK,
+        },
+    }),
 );
 
 try {
-  const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(40866);
-  viewer.scene.primitives.add(tileset);
+    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(40866);
+    viewer.scene.primitives.add(tileset);
 } catch (error) {
-  console.log(`Error loading tileset: ${error}`);
+    console.log(`Error loading tileset: ${error}`);
 }

@@ -5,8 +5,8 @@
 const { env } = process;
 
 const isCI = !!(
-  env.CI !== "false" && // Bypass all checks if CI env is explicitly set to 'false'
-  env.CI // GitHub CI
+    env.CI !== "false" && // Bypass all checks if CI env is explicitly set to 'false'
+    env.CI // GitHub CI
 );
 
 process.exit(isCI ? 0 : 1);

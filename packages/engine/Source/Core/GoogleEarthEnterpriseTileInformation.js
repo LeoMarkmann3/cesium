@@ -21,21 +21,21 @@ const terrainBitmask = 0x80;
  * @private
  */
 function GoogleEarthEnterpriseTileInformation(
-  bits,
-  cnodeVersion,
-  imageryVersion,
-  terrainVersion,
-  imageryProvider,
-  terrainProvider,
+    bits,
+    cnodeVersion,
+    imageryVersion,
+    terrainVersion,
+    imageryProvider,
+    terrainProvider,
 ) {
-  this._bits = bits;
-  this.cnodeVersion = cnodeVersion;
-  this.imageryVersion = imageryVersion;
-  this.terrainVersion = terrainVersion;
-  this.imageryProvider = imageryProvider;
-  this.terrainProvider = terrainProvider;
-  this.ancestorHasTerrain = false; // Set it later once we find its parent
-  this.terrainState = undefined;
+    this._bits = bits;
+    this.cnodeVersion = cnodeVersion;
+    this.imageryVersion = imageryVersion;
+    this.terrainVersion = terrainVersion;
+    this.imageryProvider = imageryProvider;
+    this.terrainProvider = terrainProvider;
+    this.ancestorHasTerrain = false; // Set it later once we find its parent
+    this.terrainState = undefined;
 }
 
 /**
@@ -46,27 +46,27 @@ function GoogleEarthEnterpriseTileInformation(
  * @returns {GoogleEarthEnterpriseTileInformation} The modified result parameter or a new GoogleEarthEnterpriseTileInformation instance if none was provided.
  */
 GoogleEarthEnterpriseTileInformation.clone = function (info, result) {
-  if (!defined(result)) {
-    result = new GoogleEarthEnterpriseTileInformation(
-      info._bits,
-      info.cnodeVersion,
-      info.imageryVersion,
-      info.terrainVersion,
-      info.imageryProvider,
-      info.terrainProvider,
-    );
-  } else {
-    result._bits = info._bits;
-    result.cnodeVersion = info.cnodeVersion;
-    result.imageryVersion = info.imageryVersion;
-    result.terrainVersion = info.terrainVersion;
-    result.imageryProvider = info.imageryProvider;
-    result.terrainProvider = info.terrainProvider;
-  }
-  result.ancestorHasTerrain = info.ancestorHasTerrain;
-  result.terrainState = info.terrainState;
+    if (!defined(result)) {
+        result = new GoogleEarthEnterpriseTileInformation(
+            info._bits,
+            info.cnodeVersion,
+            info.imageryVersion,
+            info.terrainVersion,
+            info.imageryProvider,
+            info.terrainProvider,
+        );
+    } else {
+        result._bits = info._bits;
+        result.cnodeVersion = info.cnodeVersion;
+        result.imageryVersion = info.imageryVersion;
+        result.terrainVersion = info.terrainVersion;
+        result.imageryProvider = info.imageryProvider;
+        result.terrainProvider = info.terrainProvider;
+    }
+    result.ancestorHasTerrain = info.ancestorHasTerrain;
+    result.terrainState = info.terrainState;
 
-  return result;
+    return result;
 };
 
 /**
@@ -75,7 +75,7 @@ GoogleEarthEnterpriseTileInformation.clone = function (info, result) {
  * @param {GoogleEarthEnterpriseTileInformation} parent Parent tile
  */
 GoogleEarthEnterpriseTileInformation.prototype.setParent = function (parent) {
-  this.ancestorHasTerrain = parent.ancestorHasTerrain || this.hasTerrain();
+    this.ancestorHasTerrain = parent.ancestorHasTerrain || this.hasTerrain();
 };
 
 /**
@@ -84,7 +84,7 @@ GoogleEarthEnterpriseTileInformation.prototype.setParent = function (parent) {
  * @returns {boolean} true if subtree is available, false otherwise.
  */
 GoogleEarthEnterpriseTileInformation.prototype.hasSubtree = function () {
-  return isBitSet(this._bits, cacheFlagBitmask);
+    return isBitSet(this._bits, cacheFlagBitmask);
 };
 
 /**
@@ -93,7 +93,7 @@ GoogleEarthEnterpriseTileInformation.prototype.hasSubtree = function () {
  * @returns {boolean} true if imagery is available, false otherwise.
  */
 GoogleEarthEnterpriseTileInformation.prototype.hasImagery = function () {
-  return isBitSet(this._bits, imageBitmask);
+    return isBitSet(this._bits, imageBitmask);
 };
 
 /**
@@ -102,7 +102,7 @@ GoogleEarthEnterpriseTileInformation.prototype.hasImagery = function () {
  * @returns {boolean} true if terrain is available, false otherwise.
  */
 GoogleEarthEnterpriseTileInformation.prototype.hasTerrain = function () {
-  return isBitSet(this._bits, terrainBitmask);
+    return isBitSet(this._bits, terrainBitmask);
 };
 
 /**
@@ -111,7 +111,7 @@ GoogleEarthEnterpriseTileInformation.prototype.hasTerrain = function () {
  * @returns {boolean} true if any children are available, false otherwise.
  */
 GoogleEarthEnterpriseTileInformation.prototype.hasChildren = function () {
-  return isBitSet(this._bits, anyChildBitmask);
+    return isBitSet(this._bits, anyChildBitmask);
 };
 
 /**
@@ -122,7 +122,7 @@ GoogleEarthEnterpriseTileInformation.prototype.hasChildren = function () {
  * @returns {boolean} true if child is available, false otherwise
  */
 GoogleEarthEnterpriseTileInformation.prototype.hasChild = function (index) {
-  return isBitSet(this._bits, childrenBitmasks[index]);
+    return isBitSet(this._bits, childrenBitmasks[index]);
 };
 
 /**
@@ -131,6 +131,6 @@ GoogleEarthEnterpriseTileInformation.prototype.hasChild = function (index) {
  * @returns {number} Children bitmask
  */
 GoogleEarthEnterpriseTileInformation.prototype.getChildBitmask = function () {
-  return this._bits & anyChildBitmask;
+    return this._bits & anyChildBitmask;
 };
 export default GoogleEarthEnterpriseTileInformation;

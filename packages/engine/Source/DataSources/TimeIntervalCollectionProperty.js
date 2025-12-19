@@ -41,54 +41,54 @@ import Property from "./Property.js";
  * }));
  */
 function TimeIntervalCollectionProperty() {
-  this._definitionChanged = new Event();
-  this._intervals = new TimeIntervalCollection();
-  this._intervals.changedEvent.addEventListener(
-    TimeIntervalCollectionProperty.prototype._intervalsChanged,
-    this,
-  );
+    this._definitionChanged = new Event();
+    this._intervals = new TimeIntervalCollection();
+    this._intervals.changedEvent.addEventListener(
+        TimeIntervalCollectionProperty.prototype._intervalsChanged,
+        this,
+    );
 }
 
 Object.defineProperties(TimeIntervalCollectionProperty.prototype, {
-  /**
-   * Gets a value indicating if this property is constant.  A property is considered
-   * constant if getValue always returns the same result for the current definition.
-   * @memberof TimeIntervalCollectionProperty.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   */
-  isConstant: {
-    get: function () {
-      return this._intervals.isEmpty;
+    /**
+     * Gets a value indicating if this property is constant.  A property is considered
+     * constant if getValue always returns the same result for the current definition.
+     * @memberof TimeIntervalCollectionProperty.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     */
+    isConstant: {
+        get: function () {
+            return this._intervals.isEmpty;
+        },
     },
-  },
-  /**
-   * Gets the event that is raised whenever the definition of this property changes.
-   * The definition is changed whenever setValue is called with data different
-   * than the current value.
-   * @memberof TimeIntervalCollectionProperty.prototype
-   *
-   * @type {Event}
-   * @readonly
-   */
-  definitionChanged: {
-    get: function () {
-      return this._definitionChanged;
+    /**
+     * Gets the event that is raised whenever the definition of this property changes.
+     * The definition is changed whenever setValue is called with data different
+     * than the current value.
+     * @memberof TimeIntervalCollectionProperty.prototype
+     *
+     * @type {Event}
+     * @readonly
+     */
+    definitionChanged: {
+        get: function () {
+            return this._definitionChanged;
+        },
     },
-  },
-  /**
-   * Gets the interval collection.
-   * @memberof TimeIntervalCollectionProperty.prototype
-   *
-   * @type {TimeIntervalCollection}
-   * @readonly
-   */
-  intervals: {
-    get: function () {
-      return this._intervals;
+    /**
+     * Gets the interval collection.
+     * @memberof TimeIntervalCollectionProperty.prototype
+     *
+     * @type {TimeIntervalCollection}
+     * @readonly
+     */
+    intervals: {
+        get: function () {
+            return this._intervals;
+        },
     },
-  },
 });
 
 const timeScratch = new JulianDate();
@@ -101,15 +101,15 @@ const timeScratch = new JulianDate();
  * @returns {object} The modified result parameter or a new instance if the result parameter was not supplied.
  */
 TimeIntervalCollectionProperty.prototype.getValue = function (time, result) {
-  if (!defined(time)) {
-    time = JulianDate.now(timeScratch);
-  }
+    if (!defined(time)) {
+        time = JulianDate.now(timeScratch);
+    }
 
-  const value = this._intervals.findDataForIntervalContainingDate(time);
-  if (defined(value) && typeof value.clone === "function") {
-    return value.clone(result);
-  }
-  return value;
+    const value = this._intervals.findDataForIntervalContainingDate(time);
+    if (defined(value) && typeof value.clone === "function") {
+        return value.clone(result);
+    }
+    return value;
 };
 
 /**
@@ -120,17 +120,17 @@ TimeIntervalCollectionProperty.prototype.getValue = function (time, result) {
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 TimeIntervalCollectionProperty.prototype.equals = function (other) {
-  return (
-    this === other || //
-    (other instanceof TimeIntervalCollectionProperty && //
-      this._intervals.equals(other._intervals, Property.equals))
-  );
+    return (
+        this === other || //
+        (other instanceof TimeIntervalCollectionProperty && //
+            this._intervals.equals(other._intervals, Property.equals))
+    );
 };
 
 /**
  * @private
  */
 TimeIntervalCollectionProperty.prototype._intervalsChanged = function () {
-  this._definitionChanged.raiseEvent(this);
+    this._definitionChanged.raiseEvent(this);
 };
 export default TimeIntervalCollectionProperty;

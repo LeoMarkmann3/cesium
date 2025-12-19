@@ -15,117 +15,119 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @private
  */
 function Empty3DTileContent(tileset, tile) {
-  this._tileset = tileset;
-  this._tile = tile;
+    this._tileset = tileset;
+    this._tile = tile;
 
-  this.featurePropertiesDirty = false;
+    this.featurePropertiesDirty = false;
 }
 
 Object.defineProperties(Empty3DTileContent.prototype, {
-  featuresLength: {
-    get: function () {
-      return 0;
+    featuresLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  pointsLength: {
-    get: function () {
-      return 0;
+    pointsLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  trianglesLength: {
-    get: function () {
-      return 0;
+    trianglesLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  geometryByteLength: {
-    get: function () {
-      return 0;
+    geometryByteLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  texturesByteLength: {
-    get: function () {
-      return 0;
+    texturesByteLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  batchTableByteLength: {
-    get: function () {
-      return 0;
+    batchTableByteLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  innerContents: {
-    get: function () {
-      return undefined;
+    innerContents: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  /**
-   * Returns true when the tile's content is ready to render; otherwise false
-   *
-   * @memberof Empty3DTileContent.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @private
-   */
-  ready: {
-    get: function () {
-      return true;
+    /**
+     * Returns true when the tile's content is ready to render; otherwise false
+     *
+     * @memberof Empty3DTileContent.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @private
+     */
+    ready: {
+        get: function () {
+            return true;
+        },
     },
-  },
 
-  tileset: {
-    get: function () {
-      return this._tileset;
+    tileset: {
+        get: function () {
+            return this._tileset;
+        },
     },
-  },
 
-  tile: {
-    get: function () {
-      return this._tile;
+    tile: {
+        get: function () {
+            return this._tile;
+        },
     },
-  },
 
-  url: {
-    get: function () {
-      return undefined;
+    url: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  metadata: {
-    get: function () {
-      return undefined;
+    metadata: {
+        get: function () {
+            return undefined;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            throw new DeveloperError(
+                "Empty3DTileContent cannot have content metadata",
+            );
+            //>>includeEnd('debug');
+        },
     },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      throw new DeveloperError(
-        "Empty3DTileContent cannot have content metadata",
-      );
-      //>>includeEnd('debug');
-    },
-  },
 
-  batchTable: {
-    get: function () {
-      return undefined;
+    batchTable: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  group: {
-    get: function () {
-      return undefined;
+    group: {
+        get: function () {
+            return undefined;
+        },
+        set: function (value) {
+            //>>includeStart('debug', pragmas.debug);
+            throw new DeveloperError(
+                "Empty3DTileContent cannot have group metadata",
+            );
+            //>>includeEnd('debug');
+        },
     },
-    set: function (value) {
-      //>>includeStart('debug', pragmas.debug);
-      throw new DeveloperError("Empty3DTileContent cannot have group metadata");
-      //>>includeEnd('debug');
-    },
-  },
 });
 
 /**
@@ -133,7 +135,7 @@ Object.defineProperties(Empty3DTileContent.prototype, {
  * always returns <code>false</code> since a tile of this type does not have any features.
  */
 Empty3DTileContent.prototype.hasProperty = function (batchId, name) {
-  return false;
+    return false;
 };
 
 /**
@@ -141,7 +143,7 @@ Empty3DTileContent.prototype.hasProperty = function (batchId, name) {
  * always returns <code>undefined</code> since a tile of this type does not have any features.
  */
 Empty3DTileContent.prototype.getFeature = function (batchId) {
-  return undefined;
+    return undefined;
 };
 
 Empty3DTileContent.prototype.applyDebugSettings = function (enabled, color) {};
@@ -151,14 +153,14 @@ Empty3DTileContent.prototype.applyStyle = function (style) {};
 Empty3DTileContent.prototype.update = function (tileset, frameState) {};
 
 Empty3DTileContent.prototype.pick = function (ray, frameState, result) {
-  return undefined;
+    return undefined;
 };
 
 Empty3DTileContent.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 Empty3DTileContent.prototype.destroy = function () {
-  return destroyObject(this);
+    return destroyObject(this);
 };
 export default Empty3DTileContent;

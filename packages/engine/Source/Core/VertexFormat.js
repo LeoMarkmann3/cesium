@@ -23,79 +23,79 @@ import DeveloperError from "./DeveloperError.js";
  * @see Packable
  */
 function VertexFormat(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  /**
-   * When <code>true</code>, the vertex has a 3D position attribute.
-   * <p>
-   * 64-bit floating-point (for precision).  3 components per attribute.
-   * </p>
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  this.position = options.position ?? false;
+    /**
+     * When <code>true</code>, the vertex has a 3D position attribute.
+     * <p>
+     * 64-bit floating-point (for precision).  3 components per attribute.
+     * </p>
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    this.position = options.position ?? false;
 
-  /**
-   * When <code>true</code>, the vertex has a normal attribute (normalized), which is commonly used for lighting.
-   * <p>
-   * 32-bit floating-point.  3 components per attribute.
-   * </p>
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  this.normal = options.normal ?? false;
+    /**
+     * When <code>true</code>, the vertex has a normal attribute (normalized), which is commonly used for lighting.
+     * <p>
+     * 32-bit floating-point.  3 components per attribute.
+     * </p>
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    this.normal = options.normal ?? false;
 
-  /**
-   * When <code>true</code>, the vertex has a 2D texture coordinate attribute.
-   * <p>
-   * 32-bit floating-point.  2 components per attribute
-   * </p>
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  this.st = options.st ?? false;
+    /**
+     * When <code>true</code>, the vertex has a 2D texture coordinate attribute.
+     * <p>
+     * 32-bit floating-point.  2 components per attribute
+     * </p>
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    this.st = options.st ?? false;
 
-  /**
-   * When <code>true</code>, the vertex has a bitangent attribute (normalized), which is used for tangent-space effects like bump mapping.
-   * <p>
-   * 32-bit floating-point.  3 components per attribute.
-   * </p>
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  this.bitangent = options.bitangent ?? false;
+    /**
+     * When <code>true</code>, the vertex has a bitangent attribute (normalized), which is used for tangent-space effects like bump mapping.
+     * <p>
+     * 32-bit floating-point.  3 components per attribute.
+     * </p>
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    this.bitangent = options.bitangent ?? false;
 
-  /**
-   * When <code>true</code>, the vertex has a tangent attribute (normalized), which is used for tangent-space effects like bump mapping.
-   * <p>
-   * 32-bit floating-point.  3 components per attribute.
-   * </p>
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  this.tangent = options.tangent ?? false;
+    /**
+     * When <code>true</code>, the vertex has a tangent attribute (normalized), which is used for tangent-space effects like bump mapping.
+     * <p>
+     * 32-bit floating-point.  3 components per attribute.
+     * </p>
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    this.tangent = options.tangent ?? false;
 
-  /**
-   * When <code>true</code>, the vertex has an RGB color attribute.
-   * <p>
-   * 8-bit unsigned byte.  3 components per attribute.
-   * </p>
-   *
-   * @type {boolean}
-   *
-   * @default false
-   */
-  this.color = options.color ?? false;
+    /**
+     * When <code>true</code>, the vertex has an RGB color attribute.
+     * <p>
+     * 8-bit unsigned byte.  3 components per attribute.
+     * </p>
+     *
+     * @type {boolean}
+     *
+     * @default false
+     */
+    this.color = options.color ?? false;
 }
 
 /**
@@ -107,9 +107,9 @@ function VertexFormat(options) {
  * @see VertexFormat#position
  */
 VertexFormat.POSITION_ONLY = Object.freeze(
-  new VertexFormat({
-    position: true,
-  }),
+    new VertexFormat({
+        position: true,
+    }),
 );
 
 /**
@@ -123,10 +123,10 @@ VertexFormat.POSITION_ONLY = Object.freeze(
  * @see VertexFormat#normal
  */
 VertexFormat.POSITION_AND_NORMAL = Object.freeze(
-  new VertexFormat({
-    position: true,
-    normal: true,
-  }),
+    new VertexFormat({
+        position: true,
+        normal: true,
+    }),
 );
 
 /**
@@ -142,11 +142,11 @@ VertexFormat.POSITION_AND_NORMAL = Object.freeze(
  * @see VertexFormat#st
  */
 VertexFormat.POSITION_NORMAL_AND_ST = Object.freeze(
-  new VertexFormat({
-    position: true,
-    normal: true,
-    st: true,
-  }),
+    new VertexFormat({
+        position: true,
+        normal: true,
+        st: true,
+    }),
 );
 
 /**
@@ -160,10 +160,10 @@ VertexFormat.POSITION_NORMAL_AND_ST = Object.freeze(
  * @see VertexFormat#st
  */
 VertexFormat.POSITION_AND_ST = Object.freeze(
-  new VertexFormat({
-    position: true,
-    st: true,
-  }),
+    new VertexFormat({
+        position: true,
+        st: true,
+    }),
 );
 
 /**
@@ -176,10 +176,10 @@ VertexFormat.POSITION_AND_ST = Object.freeze(
  * @see VertexFormat#color
  */
 VertexFormat.POSITION_AND_COLOR = Object.freeze(
-  new VertexFormat({
-    position: true,
-    color: true,
-  }),
+    new VertexFormat({
+        position: true,
+        color: true,
+    }),
 );
 
 /**
@@ -195,13 +195,13 @@ VertexFormat.POSITION_AND_COLOR = Object.freeze(
  * @see VertexFormat#bitangent
  */
 VertexFormat.ALL = Object.freeze(
-  new VertexFormat({
-    position: true,
-    normal: true,
-    st: true,
-    tangent: true,
-    bitangent: true,
-  }),
+    new VertexFormat({
+        position: true,
+        normal: true,
+        st: true,
+        tangent: true,
+        bitangent: true,
+    }),
 );
 
 /**
@@ -234,25 +234,25 @@ VertexFormat.packedLength = 6;
  * @returns {number[]} The array that was packed into
  */
 VertexFormat.pack = function (value, array, startingIndex) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(value)) {
-    throw new DeveloperError("value is required");
-  }
-  if (!defined(array)) {
-    throw new DeveloperError("array is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(value)) {
+        throw new DeveloperError("value is required");
+    }
+    if (!defined(array)) {
+        throw new DeveloperError("array is required");
+    }
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  array[startingIndex++] = value.position ? 1.0 : 0.0;
-  array[startingIndex++] = value.normal ? 1.0 : 0.0;
-  array[startingIndex++] = value.st ? 1.0 : 0.0;
-  array[startingIndex++] = value.tangent ? 1.0 : 0.0;
-  array[startingIndex++] = value.bitangent ? 1.0 : 0.0;
-  array[startingIndex] = value.color ? 1.0 : 0.0;
+    array[startingIndex++] = value.position ? 1.0 : 0.0;
+    array[startingIndex++] = value.normal ? 1.0 : 0.0;
+    array[startingIndex++] = value.st ? 1.0 : 0.0;
+    array[startingIndex++] = value.tangent ? 1.0 : 0.0;
+    array[startingIndex++] = value.bitangent ? 1.0 : 0.0;
+    array[startingIndex] = value.color ? 1.0 : 0.0;
 
-  return array;
+    return array;
 };
 
 /**
@@ -264,25 +264,25 @@ VertexFormat.pack = function (value, array, startingIndex) {
  * @returns {VertexFormat} The modified result parameter or a new VertexFormat instance if one was not provided.
  */
 VertexFormat.unpack = function (array, startingIndex, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(array)) {
-    throw new DeveloperError("array is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(array)) {
+        throw new DeveloperError("array is required");
+    }
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  if (!defined(result)) {
-    result = new VertexFormat();
-  }
+    if (!defined(result)) {
+        result = new VertexFormat();
+    }
 
-  result.position = array[startingIndex++] === 1.0;
-  result.normal = array[startingIndex++] === 1.0;
-  result.st = array[startingIndex++] === 1.0;
-  result.tangent = array[startingIndex++] === 1.0;
-  result.bitangent = array[startingIndex++] === 1.0;
-  result.color = array[startingIndex] === 1.0;
-  return result;
+    result.position = array[startingIndex++] === 1.0;
+    result.normal = array[startingIndex++] === 1.0;
+    result.st = array[startingIndex++] === 1.0;
+    result.tangent = array[startingIndex++] === 1.0;
+    result.bitangent = array[startingIndex++] === 1.0;
+    result.color = array[startingIndex] === 1.0;
+    return result;
 };
 
 /**
@@ -293,19 +293,19 @@ VertexFormat.unpack = function (array, startingIndex, result) {
  * @returns {VertexFormat} The modified result parameter or a new VertexFormat instance if one was not provided. (Returns undefined if vertexFormat is undefined)
  */
 VertexFormat.clone = function (vertexFormat, result) {
-  if (!defined(vertexFormat)) {
-    return undefined;
-  }
-  if (!defined(result)) {
-    result = new VertexFormat();
-  }
+    if (!defined(vertexFormat)) {
+        return undefined;
+    }
+    if (!defined(result)) {
+        result = new VertexFormat();
+    }
 
-  result.position = vertexFormat.position;
-  result.normal = vertexFormat.normal;
-  result.st = vertexFormat.st;
-  result.tangent = vertexFormat.tangent;
-  result.bitangent = vertexFormat.bitangent;
-  result.color = vertexFormat.color;
-  return result;
+    result.position = vertexFormat.position;
+    result.normal = vertexFormat.normal;
+    result.st = vertexFormat.st;
+    result.tangent = vertexFormat.tangent;
+    result.bitangent = vertexFormat.bitangent;
+    result.color = vertexFormat.color;
+    return result;
 };
 export default VertexFormat;

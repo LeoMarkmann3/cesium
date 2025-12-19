@@ -9,16 +9,16 @@
  * @private
  */
 function getImageFromTypedArray(typedArray, width, height) {
-  // Input typedArray is Uint8Array, ImageData needs Uint8ClampedArray
-  // To avoid copying, make a new DataView of the same buffer
-  const dataArray = new Uint8ClampedArray(typedArray.buffer);
-  const imageData = new ImageData(dataArray, width, height);
+    // Input typedArray is Uint8Array, ImageData needs Uint8ClampedArray
+    // To avoid copying, make a new DataView of the same buffer
+    const dataArray = new Uint8ClampedArray(typedArray.buffer);
+    const imageData = new ImageData(dataArray, width, height);
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  canvas.getContext("2d").putImageData(imageData, 0, 0);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext("2d").putImageData(imageData, 0, 0);
 
-  return canvas;
+    return canvas;
 }
 export default getImageFromTypedArray;

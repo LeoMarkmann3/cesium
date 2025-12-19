@@ -1,7 +1,7 @@
 import DeveloperError from "./DeveloperError.js";
 
 function returnTrue() {
-  return true;
+    return true;
 }
 
 /**
@@ -32,22 +32,23 @@ function returnTrue() {
  * @see DeveloperError
  */
 function destroyObject(object, message) {
-  message = message ?? "This object was destroyed, i.e., destroy() was called.";
+    message =
+        message ?? "This object was destroyed, i.e., destroy() was called.";
 
-  function throwOnDestroyed() {
-    //>>includeStart('debug', pragmas.debug);
-    throw new DeveloperError(message);
-    //>>includeEnd('debug');
-  }
-
-  for (const key in object) {
-    if (typeof object[key] === "function") {
-      object[key] = throwOnDestroyed;
+    function throwOnDestroyed() {
+        //>>includeStart('debug', pragmas.debug);
+        throw new DeveloperError(message);
+        //>>includeEnd('debug');
     }
-  }
 
-  object.isDestroyed = returnTrue;
+    for (const key in object) {
+        if (typeof object[key] === "function") {
+            object[key] = throwOnDestroyed;
+        }
+    }
 
-  return undefined;
+    object.isDestroyed = returnTrue;
+
+    return undefined;
 }
 export default destroyObject;

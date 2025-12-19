@@ -20,95 +20,95 @@ const creditToId = {};
  * const credit = new Cesium.Credit('<a href="https://cesium.com/" target="_blank"><img src="/images/cesium_logo.png"  style="vertical-align: -7px" title="Cesium"/></a>');
  */
 function Credit(html, showOnScreen) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("html", html);
-  //>>includeEnd('debug');
-  let id;
-  const key = html;
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("html", html);
+    //>>includeEnd('debug');
+    let id;
+    const key = html;
 
-  if (defined(creditToId[key])) {
-    id = creditToId[key];
-  } else {
-    id = nextCreditId++;
-    creditToId[key] = id;
-  }
+    if (defined(creditToId[key])) {
+        id = creditToId[key];
+    } else {
+        id = nextCreditId++;
+        creditToId[key] = id;
+    }
 
-  showOnScreen = showOnScreen ?? false;
+    showOnScreen = showOnScreen ?? false;
 
-  // Credits are immutable so generate an id to use to optimize equal()
-  this._id = id;
-  this._html = html;
-  this._showOnScreen = showOnScreen;
-  this._element = undefined;
+    // Credits are immutable so generate an id to use to optimize equal()
+    this._id = id;
+    this._html = html;
+    this._showOnScreen = showOnScreen;
+    this._element = undefined;
 }
 
 Object.defineProperties(Credit.prototype, {
-  /**
-   * The credit content
-   * @memberof Credit.prototype
-   * @type {string}
-   * @readonly
-   */
-  html: {
-    get: function () {
-      return this._html;
+    /**
+     * The credit content
+     * @memberof Credit.prototype
+     * @type {string}
+     * @readonly
+     */
+    html: {
+        get: function () {
+            return this._html;
+        },
     },
-  },
 
-  /**
-   * @memberof Credit.prototype
-   * @type {number}
-   * @readonly
-   *
-   * @private
-   */
-  id: {
-    get: function () {
-      return this._id;
+    /**
+     * @memberof Credit.prototype
+     * @type {number}
+     * @readonly
+     *
+     * @private
+     */
+    id: {
+        get: function () {
+            return this._id;
+        },
     },
-  },
 
-  /**
-   * Whether the credit should be displayed on screen or in a lightbox
-   * @memberof Credit.prototype
-   * @type {boolean}
-   */
-  showOnScreen: {
-    get: function () {
-      return this._showOnScreen;
+    /**
+     * Whether the credit should be displayed on screen or in a lightbox
+     * @memberof Credit.prototype
+     * @type {boolean}
+     */
+    showOnScreen: {
+        get: function () {
+            return this._showOnScreen;
+        },
+        set: function (value) {
+            this._showOnScreen = value;
+        },
     },
-    set: function (value) {
-      this._showOnScreen = value;
+
+    /**
+     * Gets the credit element
+     * @memberof Credit.prototype
+     * @type {HTMLElement}
+     * @readonly
+     */
+    element: {
+        get: function () {
+            if (!defined(this._element)) {
+                const html = DOMPurify.sanitize(this._html);
+
+                const div = document.createElement("div");
+                div.className = "cesium-credit-wrapper";
+                div._creditId = this._id;
+                div.style.display = "inline";
+                div.innerHTML = html;
+
+                const links = div.querySelectorAll("a");
+                for (let i = 0; i < links.length; i++) {
+                    links[i].setAttribute("target", "_blank");
+                }
+
+                this._element = div;
+            }
+            return this._element;
+        },
     },
-  },
-
-  /**
-   * Gets the credit element
-   * @memberof Credit.prototype
-   * @type {HTMLElement}
-   * @readonly
-   */
-  element: {
-    get: function () {
-      if (!defined(this._element)) {
-        const html = DOMPurify.sanitize(this._html);
-
-        const div = document.createElement("div");
-        div.className = "cesium-credit-wrapper";
-        div._creditId = this._id;
-        div.style.display = "inline";
-        div.innerHTML = html;
-
-        const links = div.querySelectorAll("a");
-        for (let i = 0; i < links.length; i++) {
-          links[i].setAttribute("target", "_blank");
-        }
-
-        this._element = div;
-      }
-      return this._element;
-    },
-  },
 });
 
 /**
@@ -119,13 +119,13 @@ Object.defineProperties(Credit.prototype, {
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 Credit.equals = function (left, right) {
-  return (
-    left === right ||
-    (defined(left) &&
-      defined(right) &&
-      left._id === right._id &&
-      left._showOnScreen === right._showOnScreen)
-  );
+    return (
+        left === right ||
+        (defined(left) &&
+            defined(right) &&
+            left._id === right._id &&
+            left._showOnScreen === right._showOnScreen)
+    );
 };
 
 /**
@@ -135,14 +135,14 @@ Credit.equals = function (left, right) {
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 Credit.prototype.equals = function (credit) {
-  return Credit.equals(this, credit);
+    return Credit.equals(this, credit);
 };
 
 /**
  * @private
  */
 Credit.prototype.isIon = function () {
-  return this.html.indexOf("ion-credit.png") !== -1;
+    return this.html.indexOf("ion-credit.png") !== -1;
 };
 
 /**
@@ -151,11 +151,11 @@ Credit.prototype.isIon = function () {
  * @return {Credit}
  */
 Credit.getIonCredit = function (attribution) {
-  const showOnScreen =
-    defined(attribution.collapsible) && !attribution.collapsible;
-  const credit = new Credit(attribution.html, showOnScreen);
+    const showOnScreen =
+        defined(attribution.collapsible) && !attribution.collapsible;
+    const credit = new Credit(attribution.html, showOnScreen);
 
-  return credit;
+    return credit;
 };
 
 /**
@@ -165,8 +165,8 @@ Credit.getIonCredit = function (attribution) {
  * @returns {Credit} A new Credit instance that is a duplicate of the one provided. (Returns undefined if the credit is undefined)
  */
 Credit.clone = function (credit) {
-  if (defined(credit)) {
-    return new Credit(credit.html, credit.showOnScreen);
-  }
+    if (defined(credit)) {
+        return new Credit(credit.html, credit.showOnScreen);
+    }
 };
 export default Credit;

@@ -8,37 +8,37 @@ import Check from "../Core/Check.js";
  * @private
  */
 const InstanceAttributeSemantic = {
-  /**
-   * Per-instance translation.
-   *
-   * @type {string}
-   * @constant
-   */
-  TRANSLATION: "TRANSLATION",
+    /**
+     * Per-instance translation.
+     *
+     * @type {string}
+     * @constant
+     */
+    TRANSLATION: "TRANSLATION",
 
-  /**
-   * Per-instance rotation.
-   *
-   * @type {string}
-   * @constant
-   */
-  ROTATION: "ROTATION",
+    /**
+     * Per-instance rotation.
+     *
+     * @type {string}
+     * @constant
+     */
+    ROTATION: "ROTATION",
 
-  /**
-   * Per-instance scale.
-   *
-   * @type {string}
-   * @constant
-   */
-  SCALE: "SCALE",
+    /**
+     * Per-instance scale.
+     *
+     * @type {string}
+     * @constant
+     */
+    SCALE: "SCALE",
 
-  /**
-   * Per-instance feature ID.
-   *
-   * @type {string}
-   * @constant
-   */
-  FEATURE_ID: "_FEATURE_ID",
+    /**
+     * Per-instance feature ID.
+     *
+     * @type {string}
+     * @constant
+     */
+    FEATURE_ID: "_FEATURE_ID",
 };
 
 /**
@@ -49,31 +49,31 @@ const InstanceAttributeSemantic = {
  * @private
  */
 InstanceAttributeSemantic.fromGltfSemantic = function (gltfSemantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("gltfSemantic", gltfSemantic);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("gltfSemantic", gltfSemantic);
+    //>>includeEnd('debug');
 
-  let semantic = gltfSemantic;
+    let semantic = gltfSemantic;
 
-  // Strip the set index from the semantic
-  const setIndexRegex = /^(\w+)_\d+$/;
-  const setIndexMatch = setIndexRegex.exec(gltfSemantic);
-  if (setIndexMatch !== null) {
-    semantic = setIndexMatch[1];
-  }
+    // Strip the set index from the semantic
+    const setIndexRegex = /^(\w+)_\d+$/;
+    const setIndexMatch = setIndexRegex.exec(gltfSemantic);
+    if (setIndexMatch !== null) {
+        semantic = setIndexMatch[1];
+    }
 
-  switch (semantic) {
-    case "TRANSLATION":
-      return InstanceAttributeSemantic.TRANSLATION;
-    case "ROTATION":
-      return InstanceAttributeSemantic.ROTATION;
-    case "SCALE":
-      return InstanceAttributeSemantic.SCALE;
-    case "_FEATURE_ID":
-      return InstanceAttributeSemantic.FEATURE_ID;
-  }
+    switch (semantic) {
+        case "TRANSLATION":
+            return InstanceAttributeSemantic.TRANSLATION;
+        case "ROTATION":
+            return InstanceAttributeSemantic.ROTATION;
+        case "SCALE":
+            return InstanceAttributeSemantic.SCALE;
+        case "_FEATURE_ID":
+            return InstanceAttributeSemantic.FEATURE_ID;
+    }
 
-  return undefined;
+    return undefined;
 };
 
 export default Object.freeze(InstanceAttributeSemantic);

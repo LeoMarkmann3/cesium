@@ -58,59 +58,59 @@ import oneTimeWarning from "../Core/oneTimeWarning.js";
  * }
  */
 async function createGooglePhotorealistic3DTileset(apiOptions, tilesetOptions) {
-  tilesetOptions = tilesetOptions ?? {};
-  tilesetOptions.cacheBytes = tilesetOptions.cacheBytes ?? 1536 * 1024 * 1024;
-  tilesetOptions.maximumCacheOverflowBytes =
-    tilesetOptions.maximumCacheOverflowBytes ?? 1024 * 1024 * 1024;
-  tilesetOptions.enableCollision = tilesetOptions.enableCollision ?? true;
+    tilesetOptions = tilesetOptions ?? {};
+    tilesetOptions.cacheBytes = tilesetOptions.cacheBytes ?? 1536 * 1024 * 1024;
+    tilesetOptions.maximumCacheOverflowBytes =
+        tilesetOptions.maximumCacheOverflowBytes ?? 1024 * 1024 * 1024;
+    tilesetOptions.enableCollision = tilesetOptions.enableCollision ?? true;
 
-  apiOptions = apiOptions ?? Frozen.EMPTY_OBJECT;
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("apiOptions", apiOptions);
-  //>>includeEnd('debug');
+    apiOptions = apiOptions ?? Frozen.EMPTY_OBJECT;
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("apiOptions", apiOptions);
+    //>>includeEnd('debug');
 
-  if (!apiOptions.onlyUsingWithGoogleGeocoder) {
-    oneTimeWarning(
-      "google-tiles-with-google-geocoder",
-      "Only the Google geocoder can be used with Google Photorealistic 3D Tiles.  Set the `geocode` property of Viewer constructor options.  You can set additionalOptions.onlyUsingWithGoogleGeocoder to hide this warning once you have configured the geocoder.",
-    );
-  }
+    if (!apiOptions.onlyUsingWithGoogleGeocoder) {
+        oneTimeWarning(
+            "google-tiles-with-google-geocoder",
+            "Only the Google geocoder can be used with Google Photorealistic 3D Tiles.  Set the `geocode` property of Viewer constructor options.  You can set additionalOptions.onlyUsingWithGoogleGeocoder to hide this warning once you have configured the geocoder.",
+        );
+    }
 
-  const key = apiOptions.key ?? GoogleMaps.defaultApiKey;
-  if (!defined(key)) {
-    return requestCachedIonTileset(tilesetOptions);
-  }
+    const key = apiOptions.key ?? GoogleMaps.defaultApiKey;
+    if (!defined(key)) {
+        return requestCachedIonTileset(tilesetOptions);
+    }
 
-  let credits;
-  const credit = GoogleMaps.getDefaultCredit();
-  if (defined(credit)) {
-    credits = [credit];
-  }
+    let credits;
+    const credit = GoogleMaps.getDefaultCredit();
+    if (defined(credit)) {
+        credits = [credit];
+    }
 
-  const resource = new Resource({
-    url: `${GoogleMaps.mapTilesApiEndpoint}v1/3dtiles/root.json`,
-    queryParameters: {
-      key: key,
-    },
-    credits: credits,
-  });
+    const resource = new Resource({
+        url: `${GoogleMaps.mapTilesApiEndpoint}v1/3dtiles/root.json`,
+        queryParameters: {
+            key: key,
+        },
+        credits: credits,
+    });
 
-  return Cesium3DTileset.fromUrl(resource, tilesetOptions);
+    return Cesium3DTileset.fromUrl(resource, tilesetOptions);
 }
 
 const metadataCache = {};
 async function requestCachedIonTileset(options) {
-  const ionAssetId = 2275207;
-  const cacheKey = ionAssetId;
+    const ionAssetId = 2275207;
+    const cacheKey = ionAssetId;
 
-  let promise = metadataCache[cacheKey];
-  if (!defined(promise)) {
-    promise = IonResource.fromAssetId(ionAssetId);
-    metadataCache[cacheKey] = promise;
-  }
+    let promise = metadataCache[cacheKey];
+    if (!defined(promise)) {
+        promise = IonResource.fromAssetId(ionAssetId);
+        metadataCache[cacheKey] = promise;
+    }
 
-  const resource = await promise;
-  return Cesium3DTileset.fromUrl(resource, options);
+    const resource = await promise;
+    return Cesium3DTileset.fromUrl(resource, options);
 }
 
 export default createGooglePhotorealistic3DTileset;

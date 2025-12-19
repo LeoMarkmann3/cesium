@@ -27,61 +27,61 @@ const MAXIMUM_TERRAIN_PICKER_LEVEL = 3;
  * @private
  */
 function TerrainPicker(vertices, indices, encoding) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("vertices", vertices);
-  Check.defined("indices", indices);
-  Check.defined("encoding", encoding);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("vertices", vertices);
+    Check.defined("indices", indices);
+    Check.defined("encoding", encoding);
+    //>>includeEnd('debug');
 
-  /**
-   * The terrain mesh's vertex buffer.
-   * @type {Float32Array}
-   */
-  this._vertices = vertices;
-  /**
-   * The terrain mesh's index buffer.
-   * @type {Uint32Array}
-   */
-  this._indices = indices;
-  /**
-   * The terrain mesh's vertex encoding.
-   * @type {TerrainEncoding}
-   */
-  this._encoding = encoding;
-  /**
-   * The inverse of the terrain mesh tile's transform from world space to local space.
-   * @type {Matrix4}
-   */
-  this._inverseTransform = new Matrix4(); // Compute as-needed on rebuild
-  /**
-   * Whether or not to reset this terrain mesh's picker on the next ray intersection.
-   * @type {Boolean}
-   */
-  this._needsRebuild = true;
-  /**
-   * The root node of the terrain picker's quadtree.
-   * @type {TerrainPickerNode}
-   */
-  this._rootNode = new TerrainPickerNode();
+    /**
+     * The terrain mesh's vertex buffer.
+     * @type {Float32Array}
+     */
+    this._vertices = vertices;
+    /**
+     * The terrain mesh's index buffer.
+     * @type {Uint32Array}
+     */
+    this._indices = indices;
+    /**
+     * The terrain mesh's vertex encoding.
+     * @type {TerrainEncoding}
+     */
+    this._encoding = encoding;
+    /**
+     * The inverse of the terrain mesh tile's transform from world space to local space.
+     * @type {Matrix4}
+     */
+    this._inverseTransform = new Matrix4(); // Compute as-needed on rebuild
+    /**
+     * Whether or not to reset this terrain mesh's picker on the next ray intersection.
+     * @type {Boolean}
+     */
+    this._needsRebuild = true;
+    /**
+     * The root node of the terrain picker's quadtree.
+     * @type {TerrainPickerNode}
+     */
+    this._rootNode = new TerrainPickerNode();
 }
 
 const incrementallyBuildTerrainPickerTaskProcessor = new TaskProcessor(
-  "incrementallyBuildTerrainPicker",
+    "incrementallyBuildTerrainPicker",
 );
 
 Object.defineProperties(TerrainPicker.prototype, {
-  /**
-   * Indicates whether the terrain picker needs to be rebuilt due to changes in the underlying terrain mesh's vertices or indices.
-   * @type {boolean}
-   */
-  needsRebuild: {
-    get: function () {
-      return this._needsRebuild;
+    /**
+     * Indicates whether the terrain picker needs to be rebuilt due to changes in the underlying terrain mesh's vertices or indices.
+     * @type {boolean}
+     */
+    needsRebuild: {
+        get: function () {
+            return this._needsRebuild;
+        },
+        set: function (value) {
+            this._needsRebuild = value;
+        },
     },
-    set: function (value) {
-      this._needsRebuild = value;
-    },
-  },
 });
 
 /**
@@ -90,41 +90,41 @@ Object.defineProperties(TerrainPicker.prototype, {
  * @private
  */
 function TerrainPickerNode() {
-  /**
-   * The tree-space x-coordinate of this node.
-   * @type {Number}
-   */
-  this.x = 0;
-  /**
-   * The tree-space y-coordinate of this node.
-   * @type {Number}
-   */
-  this.y = 0;
-  /**
-   * The level of this node in the quadtree.
-   * @type {Number}
-   */
-  this.level = 0;
-  /**
-   * The axis-aligned bounding box of this node (in the tree's local space).
-   * @type {AxisAlignedBoundingBox}
-   */
-  this.aabb = createAABBForNode(this.x, this.y, this.level);
-  /**
-   * The indices of the triangles that intersect this node.
-   * @type {Uint32Array}
-   */
-  this.intersectingTriangles = new Uint32Array(0);
-  /**
-   * The child terrain picker nodes of this node.
-   * @type {TerrainPickerNode[]}
-   */
-  this.children = [];
-  /**
-   * Whether or not this node is currently building its children on a worker.
-   * @type {Boolean}
-   */
-  this.buildingChildren = false;
+    /**
+     * The tree-space x-coordinate of this node.
+     * @type {Number}
+     */
+    this.x = 0;
+    /**
+     * The tree-space y-coordinate of this node.
+     * @type {Number}
+     */
+    this.y = 0;
+    /**
+     * The level of this node in the quadtree.
+     * @type {Number}
+     */
+    this.level = 0;
+    /**
+     * The axis-aligned bounding box of this node (in the tree's local space).
+     * @type {AxisAlignedBoundingBox}
+     */
+    this.aabb = createAABBForNode(this.x, this.y, this.level);
+    /**
+     * The indices of the triangles that intersect this node.
+     * @type {Uint32Array}
+     */
+    this.intersectingTriangles = new Uint32Array(0);
+    /**
+     * The child terrain picker nodes of this node.
+     * @type {TerrainPickerNode[]}
+     */
+    this.children = [];
+    /**
+     * Whether or not this node is currently building its children on a worker.
+     * @type {Boolean}
+     */
+    this.buildingChildren = false;
 }
 
 /**
@@ -134,29 +134,33 @@ function TerrainPickerNode() {
  * @memberof TerrainPickerNode
  */
 TerrainPickerNode.prototype.addChild = function (childIdx) {
-  //>>includeStart('debug', pragmas.debug);
-  if (childIdx < 0 || childIdx > 3) {
-    throw new DeveloperError(
-      "TerrainPickerNode child index must be between 0 and 3, inclusive.",
+    //>>includeStart('debug', pragmas.debug);
+    if (childIdx < 0 || childIdx > 3) {
+        throw new DeveloperError(
+            "TerrainPickerNode child index must be between 0 and 3, inclusive.",
+        );
+    }
+    //>>includeEnd('debug');
+
+    const childNode = new TerrainPickerNode();
+    // Use bitwise operations to get child x,y from child index and parent x,y
+    childNode.x = this.x * 2 + (childIdx & 1);
+    childNode.y = this.y * 2 + ((childIdx >> 1) & 1);
+    childNode.level = this.level + 1;
+    childNode.aabb = createAABBForNode(
+        childNode.x,
+        childNode.y,
+        childNode.level,
     );
-  }
-  //>>includeEnd('debug');
 
-  const childNode = new TerrainPickerNode();
-  // Use bitwise operations to get child x,y from child index and parent x,y
-  childNode.x = this.x * 2 + (childIdx & 1);
-  childNode.y = this.y * 2 + ((childIdx >> 1) & 1);
-  childNode.level = this.level + 1;
-  childNode.aabb = createAABBForNode(childNode.x, childNode.y, childNode.level);
-
-  this.children[childIdx] = childNode;
+    this.children[childIdx] = childNode;
 };
 
 const scratchTransformedRay = new Ray();
 const scratchTrianglePoints = [
-  new Cartesian3(),
-  new Cartesian3(),
-  new Cartesian3(),
+    new Cartesian3(),
+    new Cartesian3(),
+    new Cartesian3(),
 ];
 
 /**
@@ -171,43 +175,43 @@ const scratchTrianglePoints = [
  * @private
  */
 TerrainPicker.prototype.rayIntersect = function (
-  ray,
-  tileTransform,
-  cullBackFaces,
-  mode,
-  projection,
-) {
-  // Lazily (re)create the terrain picker
-  if (this._needsRebuild) {
-    reset(this, tileTransform);
-  }
-
-  const invTransform = this._inverseTransform;
-
-  const transformedRay = scratchTransformedRay;
-
-  transformedRay.origin = Matrix4.multiplyByPoint(
-    invTransform,
-    ray.origin,
-    transformedRay.origin,
-  );
-  transformedRay.direction = Matrix4.multiplyByPointAsVector(
-    invTransform,
-    ray.direction,
-    transformedRay.direction,
-  );
-
-  const intersections = [];
-  getNodesIntersectingRay(this._rootNode, transformedRay, intersections);
-
-  return findClosestPointInClosestNode(
-    this,
-    intersections,
     ray,
+    tileTransform,
     cullBackFaces,
     mode,
     projection,
-  );
+) {
+    // Lazily (re)create the terrain picker
+    if (this._needsRebuild) {
+        reset(this, tileTransform);
+    }
+
+    const invTransform = this._inverseTransform;
+
+    const transformedRay = scratchTransformedRay;
+
+    transformedRay.origin = Matrix4.multiplyByPoint(
+        invTransform,
+        ray.origin,
+        transformedRay.origin,
+    );
+    transformedRay.direction = Matrix4.multiplyByPointAsVector(
+        invTransform,
+        ray.direction,
+        transformedRay.direction,
+    );
+
+    const intersections = [];
+    getNodesIntersectingRay(this._rootNode, transformedRay, intersections);
+
+    return findClosestPointInClosestNode(
+        this,
+        intersections,
+        ray,
+        cullBackFaces,
+        mode,
+        projection,
+    );
 };
 
 /**
@@ -216,21 +220,21 @@ TerrainPicker.prototype.rayIntersect = function (
  * @private
  */
 function reset(terrainPicker, tileTransform) {
-  // PERFORMANCE_IDEA: warm-start the terrain picker by building a level on a worker.
-  // This currently isn't feasible because you can only copy the vertex buffer to a worker (slow) or transfer ownership (can't do picking on main thread in meantime).
-  // SharedArrayBuffers could be used, but most environments do not support them.
-  Matrix4.inverse(tileTransform, terrainPicker._inverseTransform);
+    // PERFORMANCE_IDEA: warm-start the terrain picker by building a level on a worker.
+    // This currently isn't feasible because you can only copy the vertex buffer to a worker (slow) or transfer ownership (can't do picking on main thread in meantime).
+    // SharedArrayBuffers could be used, but most environments do not support them.
+    Matrix4.inverse(tileTransform, terrainPicker._inverseTransform);
 
-  terrainPicker._needsRebuild = false;
-  const triangleCount = terrainPicker._indices.length / 3;
-  const intersectingTriangles = new Uint32Array(triangleCount);
+    terrainPicker._needsRebuild = false;
+    const triangleCount = terrainPicker._indices.length / 3;
+    const intersectingTriangles = new Uint32Array(triangleCount);
 
-  for (let i = 0; i < triangleCount; ++i) {
-    intersectingTriangles[i] = i;
-  }
+    for (let i = 0; i < triangleCount; ++i) {
+        intersectingTriangles[i] = i;
+    }
 
-  terrainPicker._rootNode.intersectingTriangles = intersectingTriangles;
-  terrainPicker._rootNode.children.length = 0;
+    terrainPicker._rootNode.intersectingTriangles = intersectingTriangles;
+    terrainPicker._rootNode.children.length = 0;
 }
 
 const scratchAABBMin = new Cartesian3();
@@ -246,23 +250,23 @@ const scratchAABBMax = new Cartesian3();
  * @returns {AxisAlignedBoundingBox} The axis-aligned bounding box for the node.
  */
 function createAABBForNode(x, y, level) {
-  const sizeAtLevel = 1.0 / Math.pow(2, level);
+    const sizeAtLevel = 1.0 / Math.pow(2, level);
 
-  const aabbMin = Cartesian3.fromElements(
-    x * sizeAtLevel - 0.5,
-    y * sizeAtLevel - 0.5,
-    -0.5,
-    scratchAABBMin,
-  );
+    const aabbMin = Cartesian3.fromElements(
+        x * sizeAtLevel - 0.5,
+        y * sizeAtLevel - 0.5,
+        -0.5,
+        scratchAABBMin,
+    );
 
-  const aabbMax = Cartesian3.fromElements(
-    (x + 1) * sizeAtLevel - 0.5,
-    (y + 1) * sizeAtLevel - 0.5,
-    0.5,
-    scratchAABBMax,
-  );
+    const aabbMax = Cartesian3.fromElements(
+        (x + 1) * sizeAtLevel - 0.5,
+        (y + 1) * sizeAtLevel - 0.5,
+        0.5,
+        scratchAABBMax,
+    );
 
-  return AxisAlignedBoundingBox.fromCorners(aabbMin, aabbMax);
+    return AxisAlignedBoundingBox.fromCorners(aabbMin, aabbMax);
 }
 
 /**
@@ -276,28 +280,28 @@ function createAABBForNode(x, y, level) {
  * @private
  */
 function packTriangleBuffers(
-  trianglePositionsBuffer,
-  triangleIndicesBuffer,
-  trianglePositions,
-  triangleIndex,
-  bufferIndex,
+    trianglePositionsBuffer,
+    triangleIndicesBuffer,
+    trianglePositions,
+    triangleIndex,
+    bufferIndex,
 ) {
-  Cartesian3.pack(
-    trianglePositions[0],
-    trianglePositionsBuffer,
-    9 * bufferIndex,
-  );
-  Cartesian3.pack(
-    trianglePositions[1],
-    trianglePositionsBuffer,
-    9 * bufferIndex + 3,
-  );
-  Cartesian3.pack(
-    trianglePositions[2],
-    trianglePositionsBuffer,
-    9 * bufferIndex + 6,
-  );
-  triangleIndicesBuffer[bufferIndex] = triangleIndex;
+    Cartesian3.pack(
+        trianglePositions[0],
+        trianglePositionsBuffer,
+        9 * bufferIndex,
+    );
+    Cartesian3.pack(
+        trianglePositions[1],
+        trianglePositionsBuffer,
+        9 * bufferIndex + 3,
+    );
+    Cartesian3.pack(
+        trianglePositions[2],
+        trianglePositionsBuffer,
+        9 * bufferIndex + 6,
+    );
+    triangleIndicesBuffer[bufferIndex] = triangleIndex;
 }
 
 /**
@@ -318,28 +322,32 @@ const scratchInterval = new Interval();
  * @private
  */
 function getNodesIntersectingRay(currentNode, ray, intersectingNodes) {
-  const interval = IntersectionTests.rayAxisAlignedBoundingBox(
-    ray,
-    currentNode.aabb,
-    scratchInterval,
-  );
+    const interval = IntersectionTests.rayAxisAlignedBoundingBox(
+        ray,
+        currentNode.aabb,
+        scratchInterval,
+    );
 
-  if (!defined(interval)) {
-    return;
-  }
+    if (!defined(interval)) {
+        return;
+    }
 
-  const isLeaf = !currentNode.children.length || currentNode.buildingChildren;
-  if (isLeaf) {
-    intersectingNodes.push({
-      node: currentNode,
-      interval: new Interval(interval.start, interval.stop),
-    });
-    return;
-  }
+    const isLeaf = !currentNode.children.length || currentNode.buildingChildren;
+    if (isLeaf) {
+        intersectingNodes.push({
+            node: currentNode,
+            interval: new Interval(interval.start, interval.stop),
+        });
+        return;
+    }
 
-  for (let i = 0; i < currentNode.children.length; i++) {
-    getNodesIntersectingRay(currentNode.children[i], ray, intersectingNodes);
-  }
+    for (let i = 0; i < currentNode.children.length; i++) {
+        getNodesIntersectingRay(
+            currentNode.children[i],
+            ray,
+            intersectingNodes,
+        );
+    }
 }
 
 /**
@@ -356,39 +364,39 @@ function getNodesIntersectingRay(currentNode, ray, intersectingNodes) {
  * @private
  */
 function findClosestPointInClosestNode(
-  terrainPicker,
-  intersections,
-  ray,
-  cullBackFaces,
-  mode,
-  projection,
+    terrainPicker,
+    intersections,
+    ray,
+    cullBackFaces,
+    mode,
+    projection,
 ) {
-  const sortedIntersections = intersections.sort(function (a, b) {
-    return a.interval.start - b.interval.start;
-  });
+    const sortedIntersections = intersections.sort(function (a, b) {
+        return a.interval.start - b.interval.start;
+    });
 
-  let minT = Number.MAX_VALUE;
-  for (let i = 0; i < sortedIntersections.length; i++) {
-    const intersection = sortedIntersections[i];
-    const intersectionResult = getClosestTriangleInNode(
-      terrainPicker,
-      ray,
-      intersection.node,
-      cullBackFaces,
-      mode,
-      projection,
-    );
-    minT = Math.min(intersectionResult, minT);
-    if (minT !== Number.MAX_VALUE) {
-      break;
+    let minT = Number.MAX_VALUE;
+    for (let i = 0; i < sortedIntersections.length; i++) {
+        const intersection = sortedIntersections[i];
+        const intersectionResult = getClosestTriangleInNode(
+            terrainPicker,
+            ray,
+            intersection.node,
+            cullBackFaces,
+            mode,
+            projection,
+        );
+        minT = Math.min(intersectionResult, minT);
+        if (minT !== Number.MAX_VALUE) {
+            break;
+        }
     }
-  }
 
-  if (minT !== Number.MAX_VALUE) {
-    return Ray.getPoint(ray, minT);
-  }
+    if (minT !== Number.MAX_VALUE) {
+        return Ray.getPoint(ray, minT);
+    }
 
-  return undefined;
+    return undefined;
 }
 
 /**
@@ -405,93 +413,93 @@ function findClosestPointInClosestNode(
  * @private
  */
 function getClosestTriangleInNode(
-  terrainPicker,
-  ray,
-  node,
-  cullBackFaces,
-  mode,
-  projection,
+    terrainPicker,
+    ray,
+    node,
+    cullBackFaces,
+    mode,
+    projection,
 ) {
-  let result = Number.MAX_VALUE;
-  const encoding = terrainPicker._encoding;
-  const indices = terrainPicker._indices;
-  const vertices = terrainPicker._vertices;
-  const triangleCount = node.intersectingTriangles.length;
-  const isMaxLevel = node.level >= MAXIMUM_TERRAIN_PICKER_LEVEL;
-  const shouldBuildChildren = !isMaxLevel && !node.buildingChildren;
+    let result = Number.MAX_VALUE;
+    const encoding = terrainPicker._encoding;
+    const indices = terrainPicker._indices;
+    const vertices = terrainPicker._vertices;
+    const triangleCount = node.intersectingTriangles.length;
+    const isMaxLevel = node.level >= MAXIMUM_TERRAIN_PICKER_LEVEL;
+    const shouldBuildChildren = !isMaxLevel && !node.buildingChildren;
 
-  let trianglePositions;
-  let triangleIndices;
-  if (shouldBuildChildren) {
-    // If the tree can be built deeper, prepare buffers to store triangle data for child nodes
-    trianglePositions = new Float32Array(triangleCount * 9); // 3 vertices per triangle * 3 floats per vertex
-    triangleIndices = new Uint32Array(triangleCount);
-  }
+    let trianglePositions;
+    let triangleIndices;
+    if (shouldBuildChildren) {
+        // If the tree can be built deeper, prepare buffers to store triangle data for child nodes
+        trianglePositions = new Float32Array(triangleCount * 9); // 3 vertices per triangle * 3 floats per vertex
+        triangleIndices = new Uint32Array(triangleCount);
+    }
 
-  for (let i = 0; i < triangleCount; i++) {
-    const triIndex = node.intersectingTriangles[i];
-    const v0 = getVertexPosition(
-      encoding,
-      mode,
-      projection,
-      vertices,
-      indices[3 * triIndex],
-      scratchTrianglePoints[0],
-    );
-    const v1 = getVertexPosition(
-      encoding,
-      mode,
-      projection,
-      vertices,
-      indices[3 * triIndex + 1],
-      scratchTrianglePoints[1],
-    );
-    const v2 = getVertexPosition(
-      encoding,
-      mode,
-      projection,
-      vertices,
-      indices[3 * triIndex + 2],
-      scratchTrianglePoints[2],
-    );
+    for (let i = 0; i < triangleCount; i++) {
+        const triIndex = node.intersectingTriangles[i];
+        const v0 = getVertexPosition(
+            encoding,
+            mode,
+            projection,
+            vertices,
+            indices[3 * triIndex],
+            scratchTrianglePoints[0],
+        );
+        const v1 = getVertexPosition(
+            encoding,
+            mode,
+            projection,
+            vertices,
+            indices[3 * triIndex + 1],
+            scratchTrianglePoints[1],
+        );
+        const v2 = getVertexPosition(
+            encoding,
+            mode,
+            projection,
+            vertices,
+            indices[3 * triIndex + 2],
+            scratchTrianglePoints[2],
+        );
 
-    const triT = IntersectionTests.rayTriangleParametric(
-      ray,
-      v0,
-      v1,
-      v2,
-      cullBackFaces,
-    );
+        const triT = IntersectionTests.rayTriangleParametric(
+            ray,
+            v0,
+            v1,
+            v2,
+            cullBackFaces,
+        );
 
-    if (defined(triT) && triT < result && triT >= 0) {
-      result = triT;
+        if (defined(triT) && triT < result && triT >= 0) {
+            result = triT;
+        }
+
+        if (shouldBuildChildren) {
+            packTriangleBuffers(
+                trianglePositions,
+                triangleIndices,
+                scratchTrianglePoints,
+                triIndex,
+                i,
+            );
+        }
     }
 
     if (shouldBuildChildren) {
-      packTriangleBuffers(
-        trianglePositions,
-        triangleIndices,
-        scratchTrianglePoints,
-        triIndex,
-        i,
-      );
-    }
-  }
+        for (let childIdx = 0; childIdx < 4; childIdx++) {
+            node.addChild(childIdx);
+        }
 
-  if (shouldBuildChildren) {
-    for (let childIdx = 0; childIdx < 4; childIdx++) {
-      node.addChild(childIdx);
+        addTrianglesToChildrenNodes(
+            terrainPicker._inverseTransform,
+            node,
+            triangleIndices,
+            trianglePositions,
+        );
     }
 
-    addTrianglesToChildrenNodes(
-      terrainPicker._inverseTransform,
-      node,
-      triangleIndices,
-      trianglePositions,
-    );
-  }
-
-  return result;
+    return result;
 }
 
 const scratchCartographic = new Cartographic();
@@ -509,33 +517,33 @@ const scratchCartographic = new Cartographic();
  * @private
  */
 function getVertexPosition(
-  encoding,
-  mode,
-  projection,
-  vertices,
-  index,
-  result,
-) {
-  let position = encoding.getExaggeratedPosition(vertices, index, result);
-  if (mode === SceneMode.SCENE3D) {
-    return position;
-  }
-
-  const ellipsoid = projection.ellipsoid;
-  const positionCartographic = ellipsoid.cartesianToCartographic(
-    position,
-    scratchCartographic,
-  );
-  position = projection.project(positionCartographic, result);
-  // Swizzle because coordinate basis are different in 2D/Columbus View
-  position = Cartesian3.fromElements(
-    position.z,
-    position.x,
-    position.y,
+    encoding,
+    mode,
+    projection,
+    vertices,
+    index,
     result,
-  );
+) {
+    let position = encoding.getExaggeratedPosition(vertices, index, result);
+    if (mode === SceneMode.SCENE3D) {
+        return position;
+    }
 
-  return position;
+    const ellipsoid = projection.ellipsoid;
+    const positionCartographic = ellipsoid.cartesianToCartographic(
+        position,
+        scratchCartographic,
+    );
+    position = projection.project(positionCartographic, result);
+    // Swizzle because coordinate basis are different in 2D/Columbus View
+    position = Cartesian3.fromElements(
+        position.z,
+        position.x,
+        position.y,
+        result,
+    );
+
+    return position;
 }
 
 /**
@@ -549,59 +557,59 @@ function getVertexPosition(
  * @private
  */
 async function addTrianglesToChildrenNodes(
-  inverseTransform,
-  node,
-  triangleIndices,
-  trianglePositions,
+    inverseTransform,
+    node,
+    triangleIndices,
+    trianglePositions,
 ) {
-  node.buildingChildren = true;
+    node.buildingChildren = true;
 
-  // Prepare data to be sent to a worker
-  const inverseTransformPacked = new Float64Array(16);
-  Matrix4.pack(inverseTransform, inverseTransformPacked, 0);
+    // Prepare data to be sent to a worker
+    const inverseTransformPacked = new Float64Array(16);
+    Matrix4.pack(inverseTransform, inverseTransformPacked, 0);
 
-  const aabbArray = new Float64Array(6 * 4); // 6 elements per AABB, 4 children
-  for (let i = 0; i < 4; i++) {
-    Cartesian3.pack(node.children[i].aabb.minimum, aabbArray, i * 6);
-    Cartesian3.pack(node.children[i].aabb.maximum, aabbArray, i * 6 + 3);
-  }
+    const aabbArray = new Float64Array(6 * 4); // 6 elements per AABB, 4 children
+    for (let i = 0; i < 4; i++) {
+        Cartesian3.pack(node.children[i].aabb.minimum, aabbArray, i * 6);
+        Cartesian3.pack(node.children[i].aabb.maximum, aabbArray, i * 6 + 3);
+    }
 
-  const parameters = {
-    aabbs: aabbArray,
-    inverseTransform: inverseTransformPacked,
-    triangleIndices: triangleIndices,
-    trianglePositions: trianglePositions,
-  };
+    const parameters = {
+        aabbs: aabbArray,
+        inverseTransform: inverseTransformPacked,
+        triangleIndices: triangleIndices,
+        trianglePositions: trianglePositions,
+    };
 
-  const transferableObjects = [
-    aabbArray.buffer,
-    inverseTransformPacked.buffer,
-    triangleIndices.buffer,
-    trianglePositions.buffer,
-  ];
+    const transferableObjects = [
+        aabbArray.buffer,
+        inverseTransformPacked.buffer,
+        triangleIndices.buffer,
+        trianglePositions.buffer,
+    ];
 
-  const incrementallyBuildTerrainPickerPromise =
-    incrementallyBuildTerrainPickerTaskProcessor.scheduleTask(
-      parameters,
-      transferableObjects,
-    );
+    const incrementallyBuildTerrainPickerPromise =
+        incrementallyBuildTerrainPickerTaskProcessor.scheduleTask(
+            parameters,
+            transferableObjects,
+        );
 
-  if (!defined(incrementallyBuildTerrainPickerPromise)) {
-    // Failed to schedule task, retry on next pick
+    if (!defined(incrementallyBuildTerrainPickerPromise)) {
+        // Failed to schedule task, retry on next pick
+        node.buildingChildren = false;
+        return;
+    }
+
+    // After worker completes, it transfers back a buffer of intersecting triangles for each child node
+    // Assign these to the child nodes
+    const result = await incrementallyBuildTerrainPickerPromise;
+    result.intersectingTrianglesArrays.forEach((buffer, index) => {
+        node.children[index].intersectingTriangles = new Uint32Array(buffer);
+    });
+
+    // The node's triangles have been distributed to its children
+    node.intersectingTriangles = new Uint32Array(0);
     node.buildingChildren = false;
-    return;
-  }
-
-  // After worker completes, it transfers back a buffer of intersecting triangles for each child node
-  // Assign these to the child nodes
-  const result = await incrementallyBuildTerrainPickerPromise;
-  result.intersectingTrianglesArrays.forEach((buffer, index) => {
-    node.children[index].intersectingTriangles = new Uint32Array(buffer);
-  });
-
-  // The node's triangles have been distributed to its children
-  node.intersectingTriangles = new Uint32Array(0);
-  node.buildingChildren = false;
 }
 
 export default TerrainPicker;

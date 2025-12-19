@@ -21,82 +21,82 @@ import MetadataTable from "./MetadataTable.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function parseStructuralMetadata(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const extension = options.extension;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const extension = options.extension;
 
-  // The calling code is responsible for loading the schema.
-  // This keeps metadata parsing synchronous.
-  const schema = options.schema;
+    // The calling code is responsible for loading the schema.
+    // This keeps metadata parsing synchronous.
+    const schema = options.schema;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.extension", extension);
-  Check.typeOf.object("options.schema", schema);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.extension", extension);
+    Check.typeOf.object("options.schema", schema);
+    //>>includeEnd('debug');
 
-  const propertyTables = [];
-  if (defined(extension.propertyTables)) {
-    for (let i = 0; i < extension.propertyTables.length; i++) {
-      const propertyTable = extension.propertyTables[i];
-      const classDefinition = schema.classes[propertyTable.class];
-      const metadataTable = new MetadataTable({
-        count: propertyTable.count,
-        properties: propertyTable.properties,
-        class: classDefinition,
-        bufferViews: options.bufferViews,
-      });
-      propertyTables.push(
-        new PropertyTable({
-          id: i,
-          name: propertyTable.name,
-          count: propertyTable.count,
-          metadataTable: metadataTable,
-          extras: propertyTable.extras,
-          extensions: propertyTable.extensions,
-        }),
-      );
+    const propertyTables = [];
+    if (defined(extension.propertyTables)) {
+        for (let i = 0; i < extension.propertyTables.length; i++) {
+            const propertyTable = extension.propertyTables[i];
+            const classDefinition = schema.classes[propertyTable.class];
+            const metadataTable = new MetadataTable({
+                count: propertyTable.count,
+                properties: propertyTable.properties,
+                class: classDefinition,
+                bufferViews: options.bufferViews,
+            });
+            propertyTables.push(
+                new PropertyTable({
+                    id: i,
+                    name: propertyTable.name,
+                    count: propertyTable.count,
+                    metadataTable: metadataTable,
+                    extras: propertyTable.extras,
+                    extensions: propertyTable.extensions,
+                }),
+            );
+        }
     }
-  }
 
-  const propertyTextures = [];
-  if (defined(extension.propertyTextures)) {
-    for (let i = 0; i < extension.propertyTextures.length; i++) {
-      const propertyTexture = extension.propertyTextures[i];
-      propertyTextures.push(
-        new PropertyTexture({
-          id: i,
-          name: propertyTexture.name,
-          propertyTexture: propertyTexture,
-          class: schema.classes[propertyTexture.class],
-          textures: options.textures,
-        }),
-      );
+    const propertyTextures = [];
+    if (defined(extension.propertyTextures)) {
+        for (let i = 0; i < extension.propertyTextures.length; i++) {
+            const propertyTexture = extension.propertyTextures[i];
+            propertyTextures.push(
+                new PropertyTexture({
+                    id: i,
+                    name: propertyTexture.name,
+                    propertyTexture: propertyTexture,
+                    class: schema.classes[propertyTexture.class],
+                    textures: options.textures,
+                }),
+            );
+        }
     }
-  }
 
-  const propertyAttributes = [];
-  if (defined(extension.propertyAttributes)) {
-    for (let i = 0; i < extension.propertyAttributes.length; i++) {
-      const propertyAttribute = extension.propertyAttributes[i];
-      propertyAttributes.push(
-        new PropertyAttribute({
-          id: i,
-          name: propertyAttribute.name,
-          class: schema.classes[propertyAttribute.class],
-          propertyAttribute: propertyAttribute,
-        }),
-      );
+    const propertyAttributes = [];
+    if (defined(extension.propertyAttributes)) {
+        for (let i = 0; i < extension.propertyAttributes.length; i++) {
+            const propertyAttribute = extension.propertyAttributes[i];
+            propertyAttributes.push(
+                new PropertyAttribute({
+                    id: i,
+                    name: propertyAttribute.name,
+                    class: schema.classes[propertyAttribute.class],
+                    propertyAttribute: propertyAttribute,
+                }),
+            );
+        }
     }
-  }
 
-  return new StructuralMetadata({
-    schema: schema,
-    propertyTables: propertyTables,
-    propertyTextures: propertyTextures,
-    propertyAttributes: propertyAttributes,
-    statistics: extension.statistics,
-    extras: extension.extras,
-    extensions: extension.extensions,
-  });
+    return new StructuralMetadata({
+        schema: schema,
+        propertyTables: propertyTables,
+        propertyTextures: propertyTextures,
+        propertyAttributes: propertyAttributes,
+        statistics: extension.statistics,
+        extras: extension.extras,
+        extensions: extension.extensions,
+    });
 }
 
 export default parseStructuralMetadata;

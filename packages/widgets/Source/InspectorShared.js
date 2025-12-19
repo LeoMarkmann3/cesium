@@ -14,28 +14,28 @@ const InspectorShared = {};
  * @return {Element}
  */
 InspectorShared.createCheckbox = function (
-  labelText,
-  checkedBinding,
-  enableBinding,
+    labelText,
+    checkedBinding,
+    enableBinding,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("labelText", labelText);
-  Check.typeOf.string("checkedBinding", checkedBinding);
-  //>>includeEnd('debug');
-  const checkboxContainer = document.createElement("div");
-  const checkboxLabel = document.createElement("label");
-  const checkboxInput = document.createElement("input");
-  checkboxInput.type = "checkbox";
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("labelText", labelText);
+    Check.typeOf.string("checkedBinding", checkedBinding);
+    //>>includeEnd('debug');
+    const checkboxContainer = document.createElement("div");
+    const checkboxLabel = document.createElement("label");
+    const checkboxInput = document.createElement("input");
+    checkboxInput.type = "checkbox";
 
-  let binding = `checked: ${checkedBinding}`;
-  if (defined(enableBinding)) {
-    binding += `, enable: ${enableBinding}`;
-  }
-  checkboxInput.setAttribute("data-bind", binding);
-  checkboxLabel.appendChild(checkboxInput);
-  checkboxLabel.appendChild(document.createTextNode(labelText));
-  checkboxContainer.appendChild(checkboxLabel);
-  return checkboxContainer;
+    let binding = `checked: ${checkedBinding}`;
+    if (defined(enableBinding)) {
+        binding += `, enable: ${enableBinding}`;
+    }
+    checkboxInput.setAttribute("data-bind", binding);
+    checkboxLabel.appendChild(checkboxInput);
+    checkboxLabel.appendChild(document.createTextNode(labelText));
+    checkboxContainer.appendChild(checkboxLabel);
+    return checkboxContainer;
 };
 
 /**
@@ -47,41 +47,41 @@ InspectorShared.createCheckbox = function (
  * @return {Element}
  */
 InspectorShared.createSection = function (
-  panel,
-  headerText,
-  sectionVisibleBinding,
-  toggleSectionVisibilityBinding,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("panel", panel);
-  Check.typeOf.string("headerText", headerText);
-  Check.typeOf.string("sectionVisibleBinding", sectionVisibleBinding);
-  Check.typeOf.string(
-    "toggleSectionVisibilityBinding",
+    panel,
+    headerText,
+    sectionVisibleBinding,
     toggleSectionVisibilityBinding,
-  );
-  //>>includeEnd('debug');
-  const section = document.createElement("div");
-  section.className = "cesium-cesiumInspector-section";
-  section.setAttribute(
-    "data-bind",
-    `css: { "cesium-cesiumInspector-section-collapsed": !${sectionVisibleBinding} }`,
-  );
-  panel.appendChild(section);
+) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("panel", panel);
+    Check.typeOf.string("headerText", headerText);
+    Check.typeOf.string("sectionVisibleBinding", sectionVisibleBinding);
+    Check.typeOf.string(
+        "toggleSectionVisibilityBinding",
+        toggleSectionVisibilityBinding,
+    );
+    //>>includeEnd('debug');
+    const section = document.createElement("div");
+    section.className = "cesium-cesiumInspector-section";
+    section.setAttribute(
+        "data-bind",
+        `css: { "cesium-cesiumInspector-section-collapsed": !${sectionVisibleBinding} }`,
+    );
+    panel.appendChild(section);
 
-  const sectionHeader = document.createElement("h3");
-  sectionHeader.className = "cesium-cesiumInspector-sectionHeader";
-  sectionHeader.appendChild(document.createTextNode(headerText));
-  sectionHeader.setAttribute(
-    "data-bind",
-    `click: ${toggleSectionVisibilityBinding}`,
-  );
-  section.appendChild(sectionHeader);
+    const sectionHeader = document.createElement("h3");
+    sectionHeader.className = "cesium-cesiumInspector-sectionHeader";
+    sectionHeader.appendChild(document.createTextNode(headerText));
+    sectionHeader.setAttribute(
+        "data-bind",
+        `click: ${toggleSectionVisibilityBinding}`,
+    );
+    section.appendChild(sectionHeader);
 
-  const sectionContent = document.createElement("div");
-  sectionContent.className = "cesium-cesiumInspector-sectionContent";
-  section.appendChild(sectionContent);
-  return sectionContent;
+    const sectionContent = document.createElement("div");
+    sectionContent.className = "cesium-cesiumInspector-sectionContent";
+    section.appendChild(sectionContent);
+    return sectionContent;
 };
 
 /**
@@ -95,45 +95,45 @@ InspectorShared.createSection = function (
  * @return {Element}
  */
 InspectorShared.createRangeInput = function (
-  rangeText,
-  sliderValueBinding,
-  min,
-  max,
-  step,
-  inputValueBinding,
+    rangeText,
+    sliderValueBinding,
+    min,
+    max,
+    step,
+    inputValueBinding,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("rangeText", rangeText);
-  Check.typeOf.string("sliderValueBinding", sliderValueBinding);
-  Check.typeOf.number("min", min);
-  Check.typeOf.number("max", max);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("rangeText", rangeText);
+    Check.typeOf.string("sliderValueBinding", sliderValueBinding);
+    Check.typeOf.number("min", min);
+    Check.typeOf.number("max", max);
+    //>>includeEnd('debug');
 
-  inputValueBinding = inputValueBinding ?? sliderValueBinding;
-  const input = document.createElement("input");
-  input.setAttribute("data-bind", `value: ${inputValueBinding}`);
-  input.type = "number";
+    inputValueBinding = inputValueBinding ?? sliderValueBinding;
+    const input = document.createElement("input");
+    input.setAttribute("data-bind", `value: ${inputValueBinding}`);
+    input.type = "number";
 
-  const slider = document.createElement("input");
-  slider.type = "range";
-  slider.min = min;
-  slider.max = max;
-  slider.step = step ?? "any";
-  slider.setAttribute(
-    "data-bind",
-    `valueUpdate: "input", value: ${sliderValueBinding}`,
-  );
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = min;
+    slider.max = max;
+    slider.step = step ?? "any";
+    slider.setAttribute(
+        "data-bind",
+        `valueUpdate: "input", value: ${sliderValueBinding}`,
+    );
 
-  const wrapper = document.createElement("div");
-  wrapper.appendChild(slider);
+    const wrapper = document.createElement("div");
+    wrapper.appendChild(slider);
 
-  const container = document.createElement("div");
-  container.className = "cesium-cesiumInspector-slider";
-  container.appendChild(document.createTextNode(rangeText));
-  container.appendChild(input);
-  container.appendChild(wrapper);
+    const container = document.createElement("div");
+    container.className = "cesium-cesiumInspector-slider";
+    container.appendChild(document.createTextNode(rangeText));
+    container.appendChild(input);
+    container.appendChild(wrapper);
 
-  return container;
+    return container;
 };
 
 /**
@@ -145,39 +145,39 @@ InspectorShared.createRangeInput = function (
  * @return {Element}
  */
 InspectorShared.createRangeInputWithDynamicMinMax = function (
-  rangeText,
-  sliderValueBinding,
-  step,
-  inputValueBinding,
+    rangeText,
+    sliderValueBinding,
+    step,
+    inputValueBinding,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("rangeText", rangeText);
-  Check.typeOf.string("sliderValueBinding", sliderValueBinding);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("rangeText", rangeText);
+    Check.typeOf.string("sliderValueBinding", sliderValueBinding);
+    //>>includeEnd('debug');
 
-  inputValueBinding = inputValueBinding ?? sliderValueBinding;
-  const input = document.createElement("input");
-  input.setAttribute("data-bind", `value: ${inputValueBinding}`);
-  input.type = "number";
+    inputValueBinding = inputValueBinding ?? sliderValueBinding;
+    const input = document.createElement("input");
+    input.setAttribute("data-bind", `value: ${inputValueBinding}`);
+    input.type = "number";
 
-  const slider = document.createElement("input");
-  slider.type = "range";
-  slider.step = step ?? "any";
-  slider.setAttribute(
-    "data-bind",
-    `valueUpdate: "input", value: ${sliderValueBinding}, attr: { min: ${sliderValueBinding}Min, max: ${sliderValueBinding}Max }`,
-  );
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.step = step ?? "any";
+    slider.setAttribute(
+        "data-bind",
+        `valueUpdate: "input", value: ${sliderValueBinding}, attr: { min: ${sliderValueBinding}Min, max: ${sliderValueBinding}Max }`,
+    );
 
-  const wrapper = document.createElement("div");
-  wrapper.appendChild(slider);
+    const wrapper = document.createElement("div");
+    wrapper.appendChild(slider);
 
-  const container = document.createElement("div");
-  container.className = "cesium-cesiumInspector-slider";
-  container.appendChild(document.createTextNode(rangeText));
-  container.appendChild(input);
-  container.appendChild(wrapper);
+    const container = document.createElement("div");
+    container.className = "cesium-cesiumInspector-slider";
+    container.appendChild(document.createTextNode(rangeText));
+    container.appendChild(input);
+    container.appendChild(wrapper);
 
-  return container;
+    return container;
 };
 
 /**
@@ -188,26 +188,26 @@ InspectorShared.createRangeInputWithDynamicMinMax = function (
  * @return {Element}
  */
 InspectorShared.createButton = function (
-  buttonText,
-  clickedBinding,
-  activeBinding,
+    buttonText,
+    clickedBinding,
+    activeBinding,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("buttonText", buttonText);
-  Check.typeOf.string("clickedBinding", clickedBinding);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("buttonText", buttonText);
+    Check.typeOf.string("clickedBinding", clickedBinding);
+    //>>includeEnd('debug');
 
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = buttonText;
-  button.className = "cesium-cesiumInspector-pickButton";
-  let binding = `click: ${clickedBinding}`;
-  if (defined(activeBinding)) {
-    binding += `, css: {"cesium-cesiumInspector-pickButtonHighlight" : ${activeBinding}}`;
-  }
-  button.setAttribute("data-bind", binding);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = buttonText;
+    button.className = "cesium-cesiumInspector-pickButton";
+    let binding = `click: ${clickedBinding}`;
+    if (defined(activeBinding)) {
+        binding += `, css: {"cesium-cesiumInspector-pickButtonHighlight" : ${activeBinding}}`;
+    }
+    button.setAttribute("data-bind", binding);
 
-  return button;
+    return button;
 };
 
 export default InspectorShared;

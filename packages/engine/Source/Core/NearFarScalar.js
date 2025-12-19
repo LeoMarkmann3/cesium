@@ -14,30 +14,30 @@ import DeveloperError from "./DeveloperError.js";
  * @see Packable
  */
 function NearFarScalar(near, nearValue, far, farValue) {
-  /**
-   * The lower bound of the camera range.
-   * @type {number}
-   * @default 0.0
-   */
-  this.near = near ?? 0.0;
-  /**
-   * The value at the lower bound of the camera range.
-   * @type {number}
-   * @default 0.0
-   */
-  this.nearValue = nearValue ?? 0.0;
-  /**
-   * The upper bound of the camera range.
-   * @type {number}
-   * @default 1.0
-   */
-  this.far = far ?? 1.0;
-  /**
-   * The value at the upper bound of the camera range.
-   * @type {number}
-   * @default 0.0
-   */
-  this.farValue = farValue ?? 0.0;
+    /**
+     * The lower bound of the camera range.
+     * @type {number}
+     * @default 0.0
+     */
+    this.near = near ?? 0.0;
+    /**
+     * The value at the lower bound of the camera range.
+     * @type {number}
+     * @default 0.0
+     */
+    this.nearValue = nearValue ?? 0.0;
+    /**
+     * The upper bound of the camera range.
+     * @type {number}
+     * @default 1.0
+     */
+    this.far = far ?? 1.0;
+    /**
+     * The value at the upper bound of the camera range.
+     * @type {number}
+     * @default 0.0
+     */
+    this.farValue = farValue ?? 0.0;
 }
 
 /**
@@ -48,24 +48,24 @@ function NearFarScalar(near, nearValue, far, farValue) {
  * @returns {NearFarScalar} The modified result parameter or a new NearFarScalar instance if one was not provided. (Returns undefined if nearFarScalar is undefined)
  */
 NearFarScalar.clone = function (nearFarScalar, result) {
-  if (!defined(nearFarScalar)) {
-    return undefined;
-  }
+    if (!defined(nearFarScalar)) {
+        return undefined;
+    }
 
-  if (!defined(result)) {
-    return new NearFarScalar(
-      nearFarScalar.near,
-      nearFarScalar.nearValue,
-      nearFarScalar.far,
-      nearFarScalar.farValue,
-    );
-  }
+    if (!defined(result)) {
+        return new NearFarScalar(
+            nearFarScalar.near,
+            nearFarScalar.nearValue,
+            nearFarScalar.far,
+            nearFarScalar.farValue,
+        );
+    }
 
-  result.near = nearFarScalar.near;
-  result.nearValue = nearFarScalar.nearValue;
-  result.far = nearFarScalar.far;
-  result.farValue = nearFarScalar.farValue;
-  return result;
+    result.near = nearFarScalar.near;
+    result.nearValue = nearFarScalar.nearValue;
+    result.far = nearFarScalar.far;
+    result.farValue = nearFarScalar.farValue;
+    return result;
 };
 
 /**
@@ -84,23 +84,23 @@ NearFarScalar.packedLength = 4;
  * @returns {number[]} The array that was packed into
  */
 NearFarScalar.pack = function (value, array, startingIndex) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(value)) {
-    throw new DeveloperError("value is required");
-  }
-  if (!defined(array)) {
-    throw new DeveloperError("array is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(value)) {
+        throw new DeveloperError("value is required");
+    }
+    if (!defined(array)) {
+        throw new DeveloperError("array is required");
+    }
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  array[startingIndex++] = value.near;
-  array[startingIndex++] = value.nearValue;
-  array[startingIndex++] = value.far;
-  array[startingIndex] = value.farValue;
+    array[startingIndex++] = value.near;
+    array[startingIndex++] = value.nearValue;
+    array[startingIndex++] = value.far;
+    array[startingIndex] = value.farValue;
 
-  return array;
+    return array;
 };
 
 /**
@@ -112,22 +112,22 @@ NearFarScalar.pack = function (value, array, startingIndex) {
  * @returns {NearFarScalar} The modified result parameter or a new NearFarScalar instance if one was not provided.
  */
 NearFarScalar.unpack = function (array, startingIndex, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(array)) {
-    throw new DeveloperError("array is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(array)) {
+        throw new DeveloperError("array is required");
+    }
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  if (!defined(result)) {
-    result = new NearFarScalar();
-  }
-  result.near = array[startingIndex++];
-  result.nearValue = array[startingIndex++];
-  result.far = array[startingIndex++];
-  result.farValue = array[startingIndex];
-  return result;
+    if (!defined(result)) {
+        result = new NearFarScalar();
+    }
+    result.near = array[startingIndex++];
+    result.nearValue = array[startingIndex++];
+    result.far = array[startingIndex++];
+    result.farValue = array[startingIndex];
+    return result;
 };
 
 /**
@@ -139,15 +139,15 @@ NearFarScalar.unpack = function (array, startingIndex, result) {
  * @returns {boolean} <code>true</code> if left and right are equal; otherwise <code>false</code>.
  */
 NearFarScalar.equals = function (left, right) {
-  return (
-    left === right ||
-    (defined(left) &&
-      defined(right) &&
-      left.near === right.near &&
-      left.nearValue === right.nearValue &&
-      left.far === right.far &&
-      left.farValue === right.farValue)
-  );
+    return (
+        left === right ||
+        (defined(left) &&
+            defined(right) &&
+            left.near === right.near &&
+            left.nearValue === right.nearValue &&
+            left.far === right.far &&
+            left.farValue === right.farValue)
+    );
 };
 
 /**
@@ -157,7 +157,7 @@ NearFarScalar.equals = function (left, right) {
  * @returns {NearFarScalar} The modified result parameter or a new NearFarScalar instance if one was not provided.
  */
 NearFarScalar.prototype.clone = function (result) {
-  return NearFarScalar.clone(this, result);
+    return NearFarScalar.clone(this, result);
 };
 
 /**
@@ -168,6 +168,6 @@ NearFarScalar.prototype.clone = function (result) {
  * @returns {boolean} <code>true</code> if left and right are equal; otherwise <code>false</code>.
  */
 NearFarScalar.prototype.equals = function (right) {
-  return NearFarScalar.equals(this, right);
+    return NearFarScalar.equals(this, right);
 };
 export default NearFarScalar;

@@ -9,47 +9,47 @@ import createTaskProcessorWorker from "./createTaskProcessorWorker.js";
  */
 
 function upsampleVerticesFromCesium3DTilesTerrain(
-  options,
-  transferableObjects,
+    options,
+    transferableObjects,
 ) {
-  const mesh = Cesium3DTilesTerrainGeometryProcessor.upsampleMesh(options);
+    const mesh = Cesium3DTilesTerrainGeometryProcessor.upsampleMesh(options);
 
-  const verticesBuffer = mesh.vertices.buffer;
-  const indicesBuffer = mesh.indices.buffer;
-  const westIndicesBuffer = mesh.westIndicesSouthToNorth.buffer;
-  const southIndicesBuffer = mesh.southIndicesEastToWest.buffer;
-  const eastIndicesBuffer = mesh.eastIndicesNorthToSouth.buffer;
-  const northIndicesBuffer = mesh.northIndicesWestToEast.buffer;
+    const verticesBuffer = mesh.vertices.buffer;
+    const indicesBuffer = mesh.indices.buffer;
+    const westIndicesBuffer = mesh.westIndicesSouthToNorth.buffer;
+    const southIndicesBuffer = mesh.southIndicesEastToWest.buffer;
+    const eastIndicesBuffer = mesh.eastIndicesNorthToSouth.buffer;
+    const northIndicesBuffer = mesh.northIndicesWestToEast.buffer;
 
-  transferableObjects.push(
-    verticesBuffer,
-    indicesBuffer,
-    westIndicesBuffer,
-    southIndicesBuffer,
-    eastIndicesBuffer,
-    northIndicesBuffer,
-  );
+    transferableObjects.push(
+        verticesBuffer,
+        indicesBuffer,
+        westIndicesBuffer,
+        southIndicesBuffer,
+        eastIndicesBuffer,
+        northIndicesBuffer,
+    );
 
-  /** @type {TerrainMeshProxy} */
-  const result = {
-    verticesBuffer: verticesBuffer,
-    indicesBuffer: indicesBuffer,
-    vertexCountWithoutSkirts: mesh.vertexCountWithoutSkirts,
-    indexCountWithoutSkirts: mesh.indexCountWithoutSkirts,
-    encoding: mesh.encoding,
-    westIndicesBuffer: westIndicesBuffer,
-    southIndicesBuffer: southIndicesBuffer,
-    eastIndicesBuffer: eastIndicesBuffer,
-    northIndicesBuffer: northIndicesBuffer,
-    minimumHeight: mesh.minimumHeight,
-    maximumHeight: mesh.maximumHeight,
-    boundingSphere: mesh.boundingSphere3D,
-    orientedBoundingBox: mesh.orientedBoundingBox,
-    horizonOcclusionPoint: mesh.horizonOcclusionPoint,
-  };
-  return result;
+    /** @type {TerrainMeshProxy} */
+    const result = {
+        verticesBuffer: verticesBuffer,
+        indicesBuffer: indicesBuffer,
+        vertexCountWithoutSkirts: mesh.vertexCountWithoutSkirts,
+        indexCountWithoutSkirts: mesh.indexCountWithoutSkirts,
+        encoding: mesh.encoding,
+        westIndicesBuffer: westIndicesBuffer,
+        southIndicesBuffer: southIndicesBuffer,
+        eastIndicesBuffer: eastIndicesBuffer,
+        northIndicesBuffer: northIndicesBuffer,
+        minimumHeight: mesh.minimumHeight,
+        maximumHeight: mesh.maximumHeight,
+        boundingSphere: mesh.boundingSphere3D,
+        orientedBoundingBox: mesh.orientedBoundingBox,
+        horizonOcclusionPoint: mesh.horizonOcclusionPoint,
+    };
+    return result;
 }
 
 export default createTaskProcessorWorker(
-  upsampleVerticesFromCesium3DTilesTerrain,
+    upsampleVerticesFromCesium3DTilesTerrain,
 );

@@ -16,26 +16,26 @@ import scaleToGeodeticSurface from "./scaleToGeodeticSurface.js";
  * @see Ellipsoid
  */
 function Cartographic(longitude, latitude, height) {
-  /**
-   * The longitude, in radians.
-   * @type {number}
-   * @default 0.0
-   */
-  this.longitude = longitude ?? 0.0;
+    /**
+     * The longitude, in radians.
+     * @type {number}
+     * @default 0.0
+     */
+    this.longitude = longitude ?? 0.0;
 
-  /**
-   * The latitude, in radians.
-   * @type {number}
-   * @default 0.0
-   */
-  this.latitude = latitude ?? 0.0;
+    /**
+     * The latitude, in radians.
+     * @type {number}
+     * @default 0.0
+     */
+    this.latitude = latitude ?? 0.0;
 
-  /**
-   * The height, in meters, above the ellipsoid.
-   * @type {number}
-   * @default 0.0
-   */
-  this.height = height ?? 0.0;
+    /**
+     * The height, in meters, above the ellipsoid.
+     * @type {number}
+     * @default 0.0
+     */
+    this.height = height ?? 0.0;
 }
 
 /**
@@ -49,21 +49,21 @@ function Cartographic(longitude, latitude, height) {
  * @returns {Cartographic} The modified result parameter or a new Cartographic instance if one was not provided.
  */
 Cartographic.fromRadians = function (longitude, latitude, height, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("longitude", longitude);
-  Check.typeOf.number("latitude", latitude);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("longitude", longitude);
+    Check.typeOf.number("latitude", latitude);
+    //>>includeEnd('debug');
 
-  height = height ?? 0.0;
+    height = height ?? 0.0;
 
-  if (!defined(result)) {
-    return new Cartographic(longitude, latitude, height);
-  }
+    if (!defined(result)) {
+        return new Cartographic(longitude, latitude, height);
+    }
 
-  result.longitude = longitude;
-  result.latitude = latitude;
-  result.height = height;
-  return result;
+    result.longitude = longitude;
+    result.latitude = latitude;
+    result.height = height;
+    return result;
 };
 
 /**
@@ -78,15 +78,15 @@ Cartographic.fromRadians = function (longitude, latitude, height, result) {
  * @returns {Cartographic} The modified result parameter or a new Cartographic instance if one was not provided.
  */
 Cartographic.fromDegrees = function (longitude, latitude, height, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("longitude", longitude);
-  Check.typeOf.number("latitude", latitude);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("longitude", longitude);
+    Check.typeOf.number("latitude", latitude);
+    //>>includeEnd('debug');
 
-  longitude = CesiumMath.toRadians(longitude);
-  latitude = CesiumMath.toRadians(latitude);
+    longitude = CesiumMath.toRadians(longitude);
+    latitude = CesiumMath.toRadians(latitude);
 
-  return Cartographic.fromRadians(longitude, latitude, height, result);
+    return Cartographic.fromRadians(longitude, latitude, height, result);
 };
 
 const cartesianToCartographicN = new Cartesian3();
@@ -95,14 +95,14 @@ const cartesianToCartographicH = new Cartesian3();
 
 // To avoid circular dependencies, these are set by Ellipsoid when Ellipsoid.default is set.
 Cartographic._ellipsoidOneOverRadii = new Cartesian3(
-  1.0 / 6378137.0,
-  1.0 / 6378137.0,
-  1.0 / 6356752.3142451793,
+    1.0 / 6378137.0,
+    1.0 / 6378137.0,
+    1.0 / 6356752.3142451793,
 );
 Cartographic._ellipsoidOneOverRadiiSquared = new Cartesian3(
-  1.0 / (6378137.0 * 6378137.0),
-  1.0 / (6378137.0 * 6378137.0),
-  1.0 / (6356752.3142451793 * 6356752.3142451793),
+    1.0 / (6378137.0 * 6378137.0),
+    1.0 / (6378137.0 * 6378137.0),
+    1.0 / (6356752.3142451793 * 6356752.3142451793),
 );
 Cartographic._ellipsoidCenterToleranceSquared = CesiumMath.EPSILON1;
 
@@ -116,50 +116,50 @@ Cartographic._ellipsoidCenterToleranceSquared = CesiumMath.EPSILON1;
  * @returns {Cartographic} The modified result parameter, new Cartographic instance if none was provided, or undefined if the cartesian is at the center of the ellipsoid.
  */
 Cartographic.fromCartesian = function (cartesian, ellipsoid, result) {
-  const oneOverRadii = defined(ellipsoid)
-    ? ellipsoid.oneOverRadii
-    : Cartographic._ellipsoidOneOverRadii;
-  const oneOverRadiiSquared = defined(ellipsoid)
-    ? ellipsoid.oneOverRadiiSquared
-    : Cartographic._ellipsoidOneOverRadiiSquared;
-  const centerToleranceSquared = defined(ellipsoid)
-    ? ellipsoid._centerToleranceSquared
-    : Cartographic._ellipsoidCenterToleranceSquared;
+    const oneOverRadii = defined(ellipsoid)
+        ? ellipsoid.oneOverRadii
+        : Cartographic._ellipsoidOneOverRadii;
+    const oneOverRadiiSquared = defined(ellipsoid)
+        ? ellipsoid.oneOverRadiiSquared
+        : Cartographic._ellipsoidOneOverRadiiSquared;
+    const centerToleranceSquared = defined(ellipsoid)
+        ? ellipsoid._centerToleranceSquared
+        : Cartographic._ellipsoidCenterToleranceSquared;
 
-  //`cartesian is required.` is thrown from scaleToGeodeticSurface
-  const p = scaleToGeodeticSurface(
-    cartesian,
-    oneOverRadii,
-    oneOverRadiiSquared,
-    centerToleranceSquared,
-    cartesianToCartographicP,
-  );
+    //`cartesian is required.` is thrown from scaleToGeodeticSurface
+    const p = scaleToGeodeticSurface(
+        cartesian,
+        oneOverRadii,
+        oneOverRadiiSquared,
+        centerToleranceSquared,
+        cartesianToCartographicP,
+    );
 
-  if (!defined(p)) {
-    return undefined;
-  }
+    if (!defined(p)) {
+        return undefined;
+    }
 
-  let n = Cartesian3.multiplyComponents(
-    p,
-    oneOverRadiiSquared,
-    cartesianToCartographicN,
-  );
-  n = Cartesian3.normalize(n, n);
+    let n = Cartesian3.multiplyComponents(
+        p,
+        oneOverRadiiSquared,
+        cartesianToCartographicN,
+    );
+    n = Cartesian3.normalize(n, n);
 
-  const h = Cartesian3.subtract(cartesian, p, cartesianToCartographicH);
+    const h = Cartesian3.subtract(cartesian, p, cartesianToCartographicH);
 
-  const longitude = Math.atan2(n.y, n.x);
-  const latitude = Math.asin(n.z);
-  const height =
-    CesiumMath.sign(Cartesian3.dot(h, cartesian)) * Cartesian3.magnitude(h);
+    const longitude = Math.atan2(n.y, n.x);
+    const latitude = Math.asin(n.z);
+    const height =
+        CesiumMath.sign(Cartesian3.dot(h, cartesian)) * Cartesian3.magnitude(h);
 
-  if (!defined(result)) {
-    return new Cartographic(longitude, latitude, height);
-  }
-  result.longitude = longitude;
-  result.latitude = latitude;
-  result.height = height;
-  return result;
+    if (!defined(result)) {
+        return new Cartographic(longitude, latitude, height);
+    }
+    result.longitude = longitude;
+    result.latitude = latitude;
+    result.height = height;
+    return result;
 };
 
 /**
@@ -172,17 +172,17 @@ Cartographic.fromCartesian = function (cartesian, ellipsoid, result) {
  * @returns {Cartesian3} The position
  */
 Cartographic.toCartesian = function (cartographic, ellipsoid, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("cartographic", cartographic);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("cartographic", cartographic);
+    //>>includeEnd('debug');
 
-  return Cartesian3.fromRadians(
-    cartographic.longitude,
-    cartographic.latitude,
-    cartographic.height,
-    ellipsoid,
-    result,
-  );
+    return Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        cartographic.height,
+        ellipsoid,
+        result,
+    );
 };
 
 /**
@@ -193,20 +193,20 @@ Cartographic.toCartesian = function (cartographic, ellipsoid, result) {
  * @returns {Cartographic} The modified result parameter or a new Cartographic instance if one was not provided. (Returns undefined if cartographic is undefined)
  */
 Cartographic.clone = function (cartographic, result) {
-  if (!defined(cartographic)) {
-    return undefined;
-  }
-  if (!defined(result)) {
-    return new Cartographic(
-      cartographic.longitude,
-      cartographic.latitude,
-      cartographic.height,
-    );
-  }
-  result.longitude = cartographic.longitude;
-  result.latitude = cartographic.latitude;
-  result.height = cartographic.height;
-  return result;
+    if (!defined(cartographic)) {
+        return undefined;
+    }
+    if (!defined(result)) {
+        return new Cartographic(
+            cartographic.longitude,
+            cartographic.latitude,
+            cartographic.height,
+        );
+    }
+    result.longitude = cartographic.longitude;
+    result.latitude = cartographic.latitude;
+    result.height = cartographic.height;
+    return result;
 };
 
 /**
@@ -218,14 +218,14 @@ Cartographic.clone = function (cartographic, result) {
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 Cartographic.equals = function (left, right) {
-  return (
-    left === right ||
-    (defined(left) &&
-      defined(right) &&
-      left.longitude === right.longitude &&
-      left.latitude === right.latitude &&
-      left.height === right.height)
-  );
+    return (
+        left === right ||
+        (defined(left) &&
+            defined(right) &&
+            left.longitude === right.longitude &&
+            left.latitude === right.latitude &&
+            left.height === right.height)
+    );
 };
 
 /**
@@ -239,16 +239,16 @@ Cartographic.equals = function (left, right) {
  * @returns {boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
  */
 Cartographic.equalsEpsilon = function (left, right, epsilon) {
-  epsilon = epsilon ?? 0;
+    epsilon = epsilon ?? 0;
 
-  return (
-    left === right ||
-    (defined(left) &&
-      defined(right) &&
-      Math.abs(left.longitude - right.longitude) <= epsilon &&
-      Math.abs(left.latitude - right.latitude) <= epsilon &&
-      Math.abs(left.height - right.height) <= epsilon)
-  );
+    return (
+        left === right ||
+        (defined(left) &&
+            defined(right) &&
+            Math.abs(left.longitude - right.longitude) <= epsilon &&
+            Math.abs(left.latitude - right.latitude) <= epsilon &&
+            Math.abs(left.height - right.height) <= epsilon)
+    );
 };
 
 /**
@@ -266,7 +266,7 @@ Cartographic.ZERO = Object.freeze(new Cartographic(0.0, 0.0, 0.0));
  * @returns {Cartographic} The modified result parameter or a new Cartographic instance if one was not provided.
  */
 Cartographic.prototype.clone = function (result) {
-  return Cartographic.clone(this, result);
+    return Cartographic.clone(this, result);
 };
 
 /**
@@ -277,7 +277,7 @@ Cartographic.prototype.clone = function (result) {
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 Cartographic.prototype.equals = function (right) {
-  return Cartographic.equals(this, right);
+    return Cartographic.equals(this, right);
 };
 
 /**
@@ -290,7 +290,7 @@ Cartographic.prototype.equals = function (right) {
  * @returns {boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
  */
 Cartographic.prototype.equalsEpsilon = function (right, epsilon) {
-  return Cartographic.equalsEpsilon(this, right, epsilon);
+    return Cartographic.equalsEpsilon(this, right, epsilon);
 };
 
 /**
@@ -299,6 +299,6 @@ Cartographic.prototype.equalsEpsilon = function (right, epsilon) {
  * @returns {string} A string representing the provided cartographic in the format '(longitude, latitude, height)'.
  */
 Cartographic.prototype.toString = function () {
-  return `(${this.longitude}, ${this.latitude}, ${this.height})`;
+    return `(${this.longitude}, ${this.latitude}, ${this.height})`;
 };
 export default Cartographic;

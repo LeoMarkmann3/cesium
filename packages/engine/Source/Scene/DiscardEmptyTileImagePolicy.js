@@ -17,7 +17,7 @@ function DiscardEmptyTileImagePolicy(options) {}
  * @returns {boolean} True if the discard policy is ready to process images; otherwise, false.
  */
 DiscardEmptyTileImagePolicy.prototype.isReady = function () {
-  return true;
+    return true;
 };
 
 /**
@@ -27,28 +27,28 @@ DiscardEmptyTileImagePolicy.prototype.isReady = function () {
  * @returns {boolean} True if the image should be discarded; otherwise, false.
  */
 DiscardEmptyTileImagePolicy.prototype.shouldDiscardImage = function (image) {
-  return DiscardEmptyTileImagePolicy.EMPTY_IMAGE === image;
+    return DiscardEmptyTileImagePolicy.EMPTY_IMAGE === image;
 };
 
 let emptyImage;
 
 Object.defineProperties(DiscardEmptyTileImagePolicy, {
-  /**
-   * Default value for representing an empty image.
-   * @type {HTMLImageElement}
-   * @readonly
-   * @memberof DiscardEmptyTileImagePolicy
-   */
-  EMPTY_IMAGE: {
-    get: function () {
-      if (!defined(emptyImage)) {
-        emptyImage = new Image();
-        // load a blank data URI with a 1x1 transparent pixel.
-        emptyImage.src =
-          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-      }
-      return emptyImage;
+    /**
+     * Default value for representing an empty image.
+     * @type {HTMLImageElement}
+     * @readonly
+     * @memberof DiscardEmptyTileImagePolicy
+     */
+    EMPTY_IMAGE: {
+        get: function () {
+            if (!defined(emptyImage)) {
+                emptyImage = new Image();
+                // load a blank data URI with a 1x1 transparent pixel.
+                emptyImage.src =
+                    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+            }
+            return emptyImage;
+        },
     },
-  },
 });
 export default DiscardEmptyTileImagePolicy;

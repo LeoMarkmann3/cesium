@@ -35,31 +35,31 @@ const BoundingVolumeSemantics = {};
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 BoundingVolumeSemantics.parseAllBoundingVolumeSemantics = function (
-  prefix,
-  metadata,
+    prefix,
+    metadata,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("prefix", prefix);
-  if (prefix !== "TILE" && prefix !== "CONTENT") {
-    throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
-  }
-  Check.typeOf.object("metadata", metadata);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("prefix", prefix);
+    if (prefix !== "TILE" && prefix !== "CONTENT") {
+        throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
+    }
+    Check.typeOf.object("metadata", metadata);
+    //>>includeEnd('debug');
 
-  return {
-    boundingVolume: BoundingVolumeSemantics.parseBoundingVolumeSemantic(
-      prefix,
-      metadata,
-    ),
-    minimumHeight: BoundingVolumeSemantics._parseMinimumHeight(
-      prefix,
-      metadata,
-    ),
-    maximumHeight: BoundingVolumeSemantics._parseMaximumHeight(
-      prefix,
-      metadata,
-    ),
-  };
+    return {
+        boundingVolume: BoundingVolumeSemantics.parseBoundingVolumeSemantic(
+            prefix,
+            metadata,
+        ),
+        minimumHeight: BoundingVolumeSemantics._parseMinimumHeight(
+            prefix,
+            metadata,
+        ),
+        maximumHeight: BoundingVolumeSemantics._parseMaximumHeight(
+            prefix,
+            metadata,
+        ),
+    };
 };
 
 /**
@@ -78,46 +78,50 @@ BoundingVolumeSemantics.parseAllBoundingVolumeSemantics = function (
  * @private
  */
 BoundingVolumeSemantics.parseBoundingVolumeSemantic = function (
-  prefix,
-  metadata,
+    prefix,
+    metadata,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("prefix", prefix);
-  if (prefix !== "TILE" && prefix !== "CONTENT") {
-    throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
-  }
-  Check.typeOf.object("metadata", metadata);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("prefix", prefix);
+    if (prefix !== "TILE" && prefix !== "CONTENT") {
+        throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
+    }
+    Check.typeOf.object("metadata", metadata);
+    //>>includeEnd('debug');
 
-  const boundingBoxSemantic = `${prefix}_BOUNDING_BOX`;
-  const boundingBox = metadata.getPropertyBySemantic(boundingBoxSemantic);
+    const boundingBoxSemantic = `${prefix}_BOUNDING_BOX`;
+    const boundingBox = metadata.getPropertyBySemantic(boundingBoxSemantic);
 
-  if (defined(boundingBox)) {
-    return {
-      box: boundingBox,
-    };
-  }
+    if (defined(boundingBox)) {
+        return {
+            box: boundingBox,
+        };
+    }
 
-  const boundingRegionSemantic = `${prefix}_BOUNDING_REGION`;
-  const boundingRegion = metadata.getPropertyBySemantic(boundingRegionSemantic);
+    const boundingRegionSemantic = `${prefix}_BOUNDING_REGION`;
+    const boundingRegion = metadata.getPropertyBySemantic(
+        boundingRegionSemantic,
+    );
 
-  if (defined(boundingRegion)) {
-    return {
-      region: boundingRegion,
-    };
-  }
+    if (defined(boundingRegion)) {
+        return {
+            region: boundingRegion,
+        };
+    }
 
-  const boundingSphereSemantic = `${prefix}_BOUNDING_SPHERE`;
-  const boundingSphere = metadata.getPropertyBySemantic(boundingSphereSemantic);
+    const boundingSphereSemantic = `${prefix}_BOUNDING_SPHERE`;
+    const boundingSphere = metadata.getPropertyBySemantic(
+        boundingSphereSemantic,
+    );
 
-  if (defined(boundingSphere)) {
-    // ARRAY with 4 elements is automatically converted to a Cartesian4
-    return {
-      sphere: boundingSphere,
-    };
-  }
+    if (defined(boundingSphere)) {
+        // ARRAY with 4 elements is automatically converted to a Cartesian4
+        return {
+            sphere: boundingSphere,
+        };
+    }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -131,16 +135,16 @@ BoundingVolumeSemantics.parseBoundingVolumeSemantic = function (
  * @private
  */
 BoundingVolumeSemantics._parseMinimumHeight = function (prefix, metadata) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("prefix", prefix);
-  if (prefix !== "TILE" && prefix !== "CONTENT") {
-    throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
-  }
-  Check.typeOf.object("metadata", metadata);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("prefix", prefix);
+    if (prefix !== "TILE" && prefix !== "CONTENT") {
+        throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
+    }
+    Check.typeOf.object("metadata", metadata);
+    //>>includeEnd('debug');
 
-  const minimumHeightSemantic = `${prefix}_MINIMUM_HEIGHT`;
-  return metadata.getPropertyBySemantic(minimumHeightSemantic);
+    const minimumHeightSemantic = `${prefix}_MINIMUM_HEIGHT`;
+    return metadata.getPropertyBySemantic(minimumHeightSemantic);
 };
 
 /**
@@ -154,16 +158,16 @@ BoundingVolumeSemantics._parseMinimumHeight = function (prefix, metadata) {
  * @private
  */
 BoundingVolumeSemantics._parseMaximumHeight = function (prefix, metadata) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("prefix", prefix);
-  if (prefix !== "TILE" && prefix !== "CONTENT") {
-    throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
-  }
-  Check.typeOf.object("metadata", metadata);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("prefix", prefix);
+    if (prefix !== "TILE" && prefix !== "CONTENT") {
+        throw new DeveloperError("prefix must be either 'TILE' or 'CONTENT'");
+    }
+    Check.typeOf.object("metadata", metadata);
+    //>>includeEnd('debug');
 
-  const maximumHeightSemantic = `${prefix}_MAXIMUM_HEIGHT`;
-  return metadata.getPropertyBySemantic(maximumHeightSemantic);
+    const maximumHeightSemantic = `${prefix}_MAXIMUM_HEIGHT`;
+    return metadata.getPropertyBySemantic(maximumHeightSemantic);
 };
 
 export default BoundingVolumeSemantics;

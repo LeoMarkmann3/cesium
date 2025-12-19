@@ -4,63 +4,62 @@ import Sandcastle from "Sandcastle";
 // One World Terrain Base Globe provided by Maxar
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  globe: false,
+    globe: false,
 });
 const scene = viewer.scene;
 
 viewer.camera.flyTo({
-  duration: 0,
-  destination: new Cesium.Cartesian3(
-    762079.3157173397,
-    -28363749.882652905,
-    19814354.842565004,
-  ),
-  orientation: {
-    direction: new Cesium.Cartesian3(
-      -0.022007098944236157,
-      0.819079900508189,
-      -0.5732571885110153,
+    duration: 0,
+    destination: new Cesium.Cartesian3(
+        762079.3157173397,
+        -28363749.882652905,
+        19814354.842565004,
     ),
-    up: new Cesium.Cartesian3(
-      -0.015396759850986286,
-      0.5730503851893346,
-      0.8193754913471885,
-    ),
-  },
-  easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+    orientation: {
+        direction: new Cesium.Cartesian3(
+            -0.022007098944236157,
+            0.819079900508189,
+            -0.5732571885110153,
+        ),
+        up: new Cesium.Cartesian3(
+            -0.015396759850986286,
+            0.5730503851893346,
+            0.8193754913471885,
+        ),
+    },
+    easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
 });
 
 let tileset;
 try {
-  // MAXAR OWT WFF 1.2 Base Globe
-  tileset = await Cesium.Cesium3DTileset.fromIonAssetId(1208297, {
-    maximumScreenSpaceError: 4,
-  });
-  scene.primitives.add(tileset);
+    // MAXAR OWT WFF 1.2 Base Globe
+    tileset = await Cesium.Cesium3DTileset.fromIonAssetId(1208297, {
+        maximumScreenSpaceError: 4,
+    });
+    scene.primitives.add(tileset);
 } catch (error) {
-  console.log(`Error loading tileset: ${error}`);
+    console.log(`Error loading tileset: ${error}`);
 }
 
 // --- Style ---
 
 const style = new Cesium.Cesium3DTileStyle({
-  defines: {
-    LandCoverColor: "rgb(${color}[0], ${color}[1], ${color}[2])",
-  },
-  color:
-    "${LandCoverColor} === vec4(1.0) ? rgb(254, 254, 254) : ${LandCoverColor}",
+    defines: {
+        LandCoverColor: "rgb(${color}[0], ${color}[1], ${color}[2])",
+    },
+    color: "${LandCoverColor} === vec4(1.0) ? rgb(254, 254, 254) : ${LandCoverColor}",
 });
 
 // --- Custom Shader ---
 
 const customShader = new Cesium.CustomShader({
-  uniforms: {
-    u_time: {
-      type: Cesium.UniformType.FLOAT,
-      value: 0,
+    uniforms: {
+        u_time: {
+            type: Cesium.UniformType.FLOAT,
+            value: 0,
+        },
     },
-  },
-  fragmentShaderText: `
+    fragmentShaderText: `
             void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material)
             {
               int featureId = fsInput.featureIds.featureId_0;
@@ -80,12 +79,12 @@ const customShader = new Cesium.CustomShader({
 
 const startTime = performance.now();
 const customShaderUpdate = function () {
-  const elapsedTimeSeconds = (performance.now() - startTime) / 1000;
-  customShader.setUniform("u_time", elapsedTimeSeconds);
+    const elapsedTimeSeconds = (performance.now() - startTime) / 1000;
+    customShader.setUniform("u_time", elapsedTimeSeconds);
 };
 
 viewer.scene.postUpdate.addEventListener(function () {
-  customShaderUpdate();
+    customShaderUpdate();
 });
 
 // --- Picking ---
@@ -110,75 +109,75 @@ metadataOverlay.style.borderRadius = "4px";
 let tableHtmlScratch;
 
 handler.setInputAction(function (movement) {
-  if (enablePicking) {
-    const feature = scene.pick(movement.endPosition);
-    if (feature instanceof Cesium.Cesium3DTileFeature) {
-      metadataOverlay.style.display = "block";
-      metadataOverlay.style.bottom = `${
-        viewer.canvas.clientHeight - movement.endPosition.y
-      }px`;
-      metadataOverlay.style.left = `${movement.endPosition.x}px`;
+    if (enablePicking) {
+        const feature = scene.pick(movement.endPosition);
+        if (feature instanceof Cesium.Cesium3DTileFeature) {
+            metadataOverlay.style.display = "block";
+            metadataOverlay.style.bottom = `${
+                viewer.canvas.clientHeight - movement.endPosition.y
+            }px`;
+            metadataOverlay.style.left = `${movement.endPosition.x}px`;
 
-      tableHtmlScratch =
-        "<table><thead><tr><th><tt>Property</tt></th><th><tt>Value</tt></th></tr></thead><tbody>";
+            tableHtmlScratch =
+                "<table><thead><tr><th><tt>Property</tt></th><th><tt>Value</tt></th></tr></thead><tbody>";
 
-      const propertyIds = feature.getPropertyIds();
-      const length = propertyIds.length;
-      for (let i = 0; i < length; ++i) {
-        const propertyId = propertyIds[i];
-        const propertyValue = feature.getProperty(propertyId);
-        tableHtmlScratch += `<tr><td><tt>${propertyId}</tt></td><td><tt>${propertyValue}</tt></td></tr>`;
-      }
-      tableHtmlScratch += "</tbody></table>";
-      metadataOverlay.innerHTML = tableHtmlScratch;
-    } else {
-      metadataOverlay.style.display = "none";
+            const propertyIds = feature.getPropertyIds();
+            const length = propertyIds.length;
+            for (let i = 0; i < length; ++i) {
+                const propertyId = propertyIds[i];
+                const propertyValue = feature.getProperty(propertyId);
+                tableHtmlScratch += `<tr><td><tt>${propertyId}</tt></td><td><tt>${propertyValue}</tt></td></tr>`;
+            }
+            tableHtmlScratch += "</tbody></table>";
+            metadataOverlay.innerHTML = tableHtmlScratch;
+        } else {
+            metadataOverlay.style.display = "none";
+        }
     }
-  }
 }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
 // --- UI ---
 
 const modes = [
-  {
-    text: "Globe View",
-    onselect: function () {
-      tileset.customShader = undefined;
-      tileset.debugShowBoundingVolume = false;
-      tileset.style = undefined;
+    {
+        text: "Globe View",
+        onselect: function () {
+            tileset.customShader = undefined;
+            tileset.debugShowBoundingVolume = false;
+            tileset.style = undefined;
+        },
     },
-  },
-  {
-    text: "Show S2 Bounding Volumes",
-    onselect: function () {
-      tileset.customShader = undefined;
-      tileset.debugShowBoundingVolume = true;
-      tileset.style = undefined;
+    {
+        text: "Show S2 Bounding Volumes",
+        onselect: function () {
+            tileset.customShader = undefined;
+            tileset.debugShowBoundingVolume = true;
+            tileset.style = undefined;
+        },
     },
-  },
-  {
-    text: "Apply Style",
-    onselect: function () {
-      tileset.customShader = undefined;
-      tileset.debugShowBoundingVolume = false;
-      tileset.style = style;
+    {
+        text: "Apply Style",
+        onselect: function () {
+            tileset.customShader = undefined;
+            tileset.debugShowBoundingVolume = false;
+            tileset.style = style;
+        },
     },
-  },
-  {
-    text: "Apply Custom Shader",
-    onselect: function () {
-      tileset.customShader = customShader;
-      tileset.debugShowBoundingVolume = false;
-      tileset.style = undefined;
+    {
+        text: "Apply Custom Shader",
+        onselect: function () {
+            tileset.customShader = customShader;
+            tileset.debugShowBoundingVolume = false;
+            tileset.style = undefined;
+        },
     },
-  },
 ];
 
 Sandcastle.addToolbarMenu(modes);
 Sandcastle.addToggleButton("Enable picking", enablePicking, function (checked) {
-  if (enablePicking) {
-    metadataOverlay.style.display = "none";
-  }
+    if (enablePicking) {
+        metadataOverlay.style.display = "none";
+    }
 
-  enablePicking = checked;
+    enablePicking = checked;
 });

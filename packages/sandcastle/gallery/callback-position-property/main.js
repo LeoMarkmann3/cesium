@@ -5,7 +5,7 @@ import * as Cesium from "cesium";
 // Use a CallbackPositionProperty when your data can't be pre-computed
 // or needs to be derived from other properties at runtime.
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  terrain: Cesium.Terrain.fromWorldTerrain(),
+    terrain: Cesium.Terrain.fromWorldTerrain(),
 });
 
 // Enable lighting based on the sun position.
@@ -18,9 +18,9 @@ viewer.scene.globe.depthTestAgainstTerrain = true;
 const start = Cesium.JulianDate.fromDate(new Date(2015, 2, 25, 16));
 const duration = 8;
 const stop = Cesium.JulianDate.addSeconds(
-  start,
-  duration,
-  new Cesium.JulianDate(),
+    start,
+    duration,
+    new Cesium.JulianDate(),
 );
 
 // Make sure viewer is at the desired time.
@@ -44,90 +44,90 @@ const delta = lastTime - firstTime;
 // calculate the first and last tangents for the spline.
 const before = Cesium.Cartesian3.fromDegrees(-112.87962, 36.27375, 620.01);
 const points = [
-  Cesium.Cartesian3.fromDegrees(-112.87709, 36.27782, 620.01),
-  Cesium.Cartesian3.fromDegrees(-112.87351, 36.27992, 617.9),
-  Cesium.Cartesian3.fromDegrees(-112.87081, 36.2816, 617.6),
-  Cesium.Cartesian3.fromDegrees(-112.86539, 36.28239, 625.36),
-  Cesium.Cartesian3.fromDegrees(-112.86108, 36.28137, 627.82),
-  Cesium.Cartesian3.fromDegrees(-112.85551, 36.27967, 625.54),
-  Cesium.Cartesian3.fromDegrees(-112.848, 36.27732, 628.9),
-  Cesium.Cartesian3.fromDegrees(-112.84086, 36.27739, 638.81),
-  Cesium.Cartesian3.fromDegrees(-112.83682, 36.27995, 643.31),
+    Cesium.Cartesian3.fromDegrees(-112.87709, 36.27782, 620.01),
+    Cesium.Cartesian3.fromDegrees(-112.87351, 36.27992, 617.9),
+    Cesium.Cartesian3.fromDegrees(-112.87081, 36.2816, 617.6),
+    Cesium.Cartesian3.fromDegrees(-112.86539, 36.28239, 625.36),
+    Cesium.Cartesian3.fromDegrees(-112.86108, 36.28137, 627.82),
+    Cesium.Cartesian3.fromDegrees(-112.85551, 36.27967, 625.54),
+    Cesium.Cartesian3.fromDegrees(-112.848, 36.27732, 628.9),
+    Cesium.Cartesian3.fromDegrees(-112.84086, 36.27739, 638.81),
+    Cesium.Cartesian3.fromDegrees(-112.83682, 36.27995, 643.31),
 ];
 const after = Cesium.Cartesian3.fromDegrees(-112.83506, 36.2822, 643.31);
 
 // Calculate first and last tangents.
 const firstTangent = Cesium.Cartesian3.subtract(
-  points[0],
-  before,
-  new Cesium.Cartesian3(),
+    points[0],
+    before,
+    new Cesium.Cartesian3(),
 );
 const lastTangent = Cesium.Cartesian3.subtract(
-  after,
-  points[8],
-  new Cesium.Cartesian3(),
+    after,
+    points[8],
+    new Cesium.Cartesian3(),
 );
 
 // Create the position spline.
 const positionSpline = new Cesium.CatmullRomSpline({
-  times: times,
-  points: points,
-  firstTangent: firstTangent,
-  lastTangent: lastTangent,
+    times: times,
+    points: points,
+    firstTangent: firstTangent,
+    lastTangent: lastTangent,
 });
 
 // Create the callback position property and make it return spline evaluations.
 const position = new Cesium.CallbackPositionProperty(function (time, result) {
-  const splineTime =
-    (delta * Cesium.JulianDate.secondsDifference(time, start)) / duration;
-  if (splineTime < firstTime || splineTime > lastTime) {
-    return undefined;
-  }
-  return positionSpline.evaluate(splineTime, result);
+    const splineTime =
+        (delta * Cesium.JulianDate.secondsDifference(time, start)) / duration;
+    if (splineTime < firstTime || splineTime > lastTime) {
+        return undefined;
+    }
+    return positionSpline.evaluate(splineTime, result);
 }, false);
 
 const orientation = new Cesium.VelocityOrientationProperty(position);
 
 // Add a waypoints.
 for (let i = 0; i < points.length; ++i) {
-  viewer.entities.add({
-    position: points[i],
-    point: {
-      pixelSize: 8,
-      color: Cesium.Color.TRANSPARENT,
-      outlineColor: Cesium.Color.YELLOW,
-      outlineWidth: 3,
-    },
-  });
+    viewer.entities.add({
+        position: points[i],
+        point: {
+            pixelSize: 8,
+            color: Cesium.Color.TRANSPARENT,
+            outlineColor: Cesium.Color.YELLOW,
+            outlineWidth: 3,
+        },
+    });
 }
 
 // Create the entity and bind its position to the callback position property
 const entity = viewer.entities.add({
-  availability: new Cesium.TimeIntervalCollection([
-    new Cesium.TimeInterval({
-      start: start,
-      stop: stop,
-    }),
-  ]),
-  position: position,
-  orientation: orientation,
-  model: {
-    uri: "../../SampleData/models/CesiumDrone/CesiumDrone.glb",
-    minimumPixelSize: 64,
-    maximumScale: 20000,
-  },
-  path: {
-    material: new Cesium.PolylineGlowMaterialProperty({
-      glowPower: 0.1,
-      color: Cesium.Color.YELLOW,
-    }),
-    width: 10,
-    resolution: 0.01,
-    leadTime: 1,
-    trailTime: 0.1,
-  },
-  trackingReferenceFrame: Cesium.TrackingReferenceFrame.INERTIAL,
-  viewFrom: new Cesium.Cartesian3(-100, 0, 10),
+    availability: new Cesium.TimeIntervalCollection([
+        new Cesium.TimeInterval({
+            start: start,
+            stop: stop,
+        }),
+    ]),
+    position: position,
+    orientation: orientation,
+    model: {
+        uri: "../../SampleData/models/CesiumDrone/CesiumDrone.glb",
+        minimumPixelSize: 64,
+        maximumScale: 20000,
+    },
+    path: {
+        material: new Cesium.PolylineGlowMaterialProperty({
+            glowPower: 0.1,
+            color: Cesium.Color.YELLOW,
+        }),
+        width: 10,
+        resolution: 0.01,
+        leadTime: 1,
+        trailTime: 0.1,
+    },
+    trackingReferenceFrame: Cesium.TrackingReferenceFrame.INERTIAL,
+    viewFrom: new Cesium.Cartesian3(-100, 0, 10),
 });
 
 viewer.trackedEntity = entity;

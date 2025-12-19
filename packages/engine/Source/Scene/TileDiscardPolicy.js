@@ -11,7 +11,7 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @see NeverTileDiscardPolicy
  */
 function TileDiscardPolicy(options) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 /**
@@ -30,5 +30,5 @@ TileDiscardPolicy.prototype.isReady = DeveloperError.throwInstantiationError;
  * @returns {boolean} True if the image should be discarded; otherwise, false.
  */
 TileDiscardPolicy.prototype.shouldDiscardImage =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 export default TileDiscardPolicy;

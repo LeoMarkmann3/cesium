@@ -29,79 +29,79 @@ import WebMercatorProjection from "./WebMercatorProjection.js";
  *        direction, resulting in a square projection.
  */
 function WebMercatorTilingScheme(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._ellipsoid = options.ellipsoid ?? Ellipsoid.default;
-  this._numberOfLevelZeroTilesX = options.numberOfLevelZeroTilesX ?? 1;
-  this._numberOfLevelZeroTilesY = options.numberOfLevelZeroTilesY ?? 1;
+    this._ellipsoid = options.ellipsoid ?? Ellipsoid.default;
+    this._numberOfLevelZeroTilesX = options.numberOfLevelZeroTilesX ?? 1;
+    this._numberOfLevelZeroTilesY = options.numberOfLevelZeroTilesY ?? 1;
 
-  this._projection = new WebMercatorProjection(this._ellipsoid);
+    this._projection = new WebMercatorProjection(this._ellipsoid);
 
-  if (
-    defined(options.rectangleSouthwestInMeters) &&
-    defined(options.rectangleNortheastInMeters)
-  ) {
-    this._rectangleSouthwestInMeters = options.rectangleSouthwestInMeters;
-    this._rectangleNortheastInMeters = options.rectangleNortheastInMeters;
-  } else {
-    const semimajorAxisTimesPi = this._ellipsoid.maximumRadius * Math.PI;
-    this._rectangleSouthwestInMeters = new Cartesian2(
-      -semimajorAxisTimesPi,
-      -semimajorAxisTimesPi,
+    if (
+        defined(options.rectangleSouthwestInMeters) &&
+        defined(options.rectangleNortheastInMeters)
+    ) {
+        this._rectangleSouthwestInMeters = options.rectangleSouthwestInMeters;
+        this._rectangleNortheastInMeters = options.rectangleNortheastInMeters;
+    } else {
+        const semimajorAxisTimesPi = this._ellipsoid.maximumRadius * Math.PI;
+        this._rectangleSouthwestInMeters = new Cartesian2(
+            -semimajorAxisTimesPi,
+            -semimajorAxisTimesPi,
+        );
+        this._rectangleNortheastInMeters = new Cartesian2(
+            semimajorAxisTimesPi,
+            semimajorAxisTimesPi,
+        );
+    }
+
+    const southwest = this._projection.unproject(
+        this._rectangleSouthwestInMeters,
     );
-    this._rectangleNortheastInMeters = new Cartesian2(
-      semimajorAxisTimesPi,
-      semimajorAxisTimesPi,
+    const northeast = this._projection.unproject(
+        this._rectangleNortheastInMeters,
     );
-  }
-
-  const southwest = this._projection.unproject(
-    this._rectangleSouthwestInMeters,
-  );
-  const northeast = this._projection.unproject(
-    this._rectangleNortheastInMeters,
-  );
-  this._rectangle = new Rectangle(
-    southwest.longitude,
-    southwest.latitude,
-    northeast.longitude,
-    northeast.latitude,
-  );
+    this._rectangle = new Rectangle(
+        southwest.longitude,
+        southwest.latitude,
+        northeast.longitude,
+        northeast.latitude,
+    );
 }
 
 Object.defineProperties(WebMercatorTilingScheme.prototype, {
-  /**
-   * Gets the ellipsoid that is tiled by this tiling scheme.
-   * @memberof WebMercatorTilingScheme.prototype
-   * @type {Ellipsoid}
-   */
-  ellipsoid: {
-    get: function () {
-      return this._ellipsoid;
+    /**
+     * Gets the ellipsoid that is tiled by this tiling scheme.
+     * @memberof WebMercatorTilingScheme.prototype
+     * @type {Ellipsoid}
+     */
+    ellipsoid: {
+        get: function () {
+            return this._ellipsoid;
+        },
     },
-  },
 
-  /**
-   * Gets the rectangle, in radians, covered by this tiling scheme.
-   * @memberof WebMercatorTilingScheme.prototype
-   * @type {Rectangle}
-   */
-  rectangle: {
-    get: function () {
-      return this._rectangle;
+    /**
+     * Gets the rectangle, in radians, covered by this tiling scheme.
+     * @memberof WebMercatorTilingScheme.prototype
+     * @type {Rectangle}
+     */
+    rectangle: {
+        get: function () {
+            return this._rectangle;
+        },
     },
-  },
 
-  /**
-   * Gets the map projection used by this tiling scheme.
-   * @memberof WebMercatorTilingScheme.prototype
-   * @type {MapProjection}
-   */
-  projection: {
-    get: function () {
-      return this._projection;
+    /**
+     * Gets the map projection used by this tiling scheme.
+     * @memberof WebMercatorTilingScheme.prototype
+     * @type {MapProjection}
+     */
+    projection: {
+        get: function () {
+            return this._projection;
+        },
     },
-  },
 });
 
 /**
@@ -111,7 +111,7 @@ Object.defineProperties(WebMercatorTilingScheme.prototype, {
  * @returns {number} The number of tiles in the X direction at the given level.
  */
 WebMercatorTilingScheme.prototype.getNumberOfXTilesAtLevel = function (level) {
-  return this._numberOfLevelZeroTilesX << level;
+    return this._numberOfLevelZeroTilesX << level;
 };
 
 /**
@@ -121,7 +121,7 @@ WebMercatorTilingScheme.prototype.getNumberOfXTilesAtLevel = function (level) {
  * @returns {number} The number of tiles in the Y direction at the given level.
  */
 WebMercatorTilingScheme.prototype.getNumberOfYTilesAtLevel = function (level) {
-  return this._numberOfLevelZeroTilesY << level;
+    return this._numberOfLevelZeroTilesY << level;
 };
 
 /**
@@ -135,22 +135,27 @@ WebMercatorTilingScheme.prototype.getNumberOfYTilesAtLevel = function (level) {
  *          is undefined.
  */
 WebMercatorTilingScheme.prototype.rectangleToNativeRectangle = function (
-  rectangle,
-  result,
+    rectangle,
+    result,
 ) {
-  const projection = this._projection;
-  const southwest = projection.project(Rectangle.southwest(rectangle));
-  const northeast = projection.project(Rectangle.northeast(rectangle));
+    const projection = this._projection;
+    const southwest = projection.project(Rectangle.southwest(rectangle));
+    const northeast = projection.project(Rectangle.northeast(rectangle));
 
-  if (!defined(result)) {
-    return new Rectangle(southwest.x, southwest.y, northeast.x, northeast.y);
-  }
+    if (!defined(result)) {
+        return new Rectangle(
+            southwest.x,
+            southwest.y,
+            northeast.x,
+            northeast.y,
+        );
+    }
 
-  result.west = southwest.x;
-  result.south = southwest.y;
-  result.east = northeast.x;
-  result.north = northeast.y;
-  return result;
+    result.west = southwest.x;
+    result.south = southwest.y;
+    result.east = northeast.x;
+    result.north = northeast.y;
+    return result;
 };
 
 /**
@@ -166,35 +171,37 @@ WebMercatorTilingScheme.prototype.rectangleToNativeRectangle = function (
  *          if 'result' is undefined.
  */
 WebMercatorTilingScheme.prototype.tileXYToNativeRectangle = function (
-  x,
-  y,
-  level,
-  result,
+    x,
+    y,
+    level,
+    result,
 ) {
-  const xTiles = this.getNumberOfXTilesAtLevel(level);
-  const yTiles = this.getNumberOfYTilesAtLevel(level);
+    const xTiles = this.getNumberOfXTilesAtLevel(level);
+    const yTiles = this.getNumberOfYTilesAtLevel(level);
 
-  const xTileWidth =
-    (this._rectangleNortheastInMeters.x - this._rectangleSouthwestInMeters.x) /
-    xTiles;
-  const west = this._rectangleSouthwestInMeters.x + x * xTileWidth;
-  const east = this._rectangleSouthwestInMeters.x + (x + 1) * xTileWidth;
+    const xTileWidth =
+        (this._rectangleNortheastInMeters.x -
+            this._rectangleSouthwestInMeters.x) /
+        xTiles;
+    const west = this._rectangleSouthwestInMeters.x + x * xTileWidth;
+    const east = this._rectangleSouthwestInMeters.x + (x + 1) * xTileWidth;
 
-  const yTileHeight =
-    (this._rectangleNortheastInMeters.y - this._rectangleSouthwestInMeters.y) /
-    yTiles;
-  const north = this._rectangleNortheastInMeters.y - y * yTileHeight;
-  const south = this._rectangleNortheastInMeters.y - (y + 1) * yTileHeight;
+    const yTileHeight =
+        (this._rectangleNortheastInMeters.y -
+            this._rectangleSouthwestInMeters.y) /
+        yTiles;
+    const north = this._rectangleNortheastInMeters.y - y * yTileHeight;
+    const south = this._rectangleNortheastInMeters.y - (y + 1) * yTileHeight;
 
-  if (!defined(result)) {
-    return new Rectangle(west, south, east, north);
-  }
+    if (!defined(result)) {
+        return new Rectangle(west, south, east, north);
+    }
 
-  result.west = west;
-  result.south = south;
-  result.east = east;
-  result.north = north;
-  return result;
+    result.west = west;
+    result.south = south;
+    result.east = east;
+    result.north = north;
+    return result;
 };
 
 /**
@@ -209,26 +216,26 @@ WebMercatorTilingScheme.prototype.tileXYToNativeRectangle = function (
  *          if 'result' is undefined.
  */
 WebMercatorTilingScheme.prototype.tileXYToRectangle = function (
-  x,
-  y,
-  level,
-  result,
+    x,
+    y,
+    level,
+    result,
 ) {
-  const nativeRectangle = this.tileXYToNativeRectangle(x, y, level, result);
+    const nativeRectangle = this.tileXYToNativeRectangle(x, y, level, result);
 
-  const projection = this._projection;
-  const southwest = projection.unproject(
-    new Cartesian2(nativeRectangle.west, nativeRectangle.south),
-  );
-  const northeast = projection.unproject(
-    new Cartesian2(nativeRectangle.east, nativeRectangle.north),
-  );
+    const projection = this._projection;
+    const southwest = projection.unproject(
+        new Cartesian2(nativeRectangle.west, nativeRectangle.south),
+    );
+    const northeast = projection.unproject(
+        new Cartesian2(nativeRectangle.east, nativeRectangle.north),
+    );
 
-  nativeRectangle.west = southwest.longitude;
-  nativeRectangle.south = southwest.latitude;
-  nativeRectangle.east = northeast.longitude;
-  nativeRectangle.north = northeast.latitude;
-  return nativeRectangle;
+    nativeRectangle.west = southwest.longitude;
+    nativeRectangle.south = southwest.latitude;
+    nativeRectangle.east = northeast.longitude;
+    nativeRectangle.north = northeast.latitude;
+    return nativeRectangle;
 };
 
 /**
@@ -243,49 +250,49 @@ WebMercatorTilingScheme.prototype.tileXYToRectangle = function (
  *          if 'result' is undefined.
  */
 WebMercatorTilingScheme.prototype.positionToTileXY = function (
-  position,
-  level,
-  result,
+    position,
+    level,
+    result,
 ) {
-  const rectangle = this._rectangle;
-  if (!Rectangle.contains(rectangle, position)) {
-    // outside the bounds of the tiling scheme
-    return undefined;
-  }
+    const rectangle = this._rectangle;
+    if (!Rectangle.contains(rectangle, position)) {
+        // outside the bounds of the tiling scheme
+        return undefined;
+    }
 
-  const xTiles = this.getNumberOfXTilesAtLevel(level);
-  const yTiles = this.getNumberOfYTilesAtLevel(level);
+    const xTiles = this.getNumberOfXTilesAtLevel(level);
+    const yTiles = this.getNumberOfYTilesAtLevel(level);
 
-  const overallWidth =
-    this._rectangleNortheastInMeters.x - this._rectangleSouthwestInMeters.x;
-  const xTileWidth = overallWidth / xTiles;
-  const overallHeight =
-    this._rectangleNortheastInMeters.y - this._rectangleSouthwestInMeters.y;
-  const yTileHeight = overallHeight / yTiles;
+    const overallWidth =
+        this._rectangleNortheastInMeters.x - this._rectangleSouthwestInMeters.x;
+    const xTileWidth = overallWidth / xTiles;
+    const overallHeight =
+        this._rectangleNortheastInMeters.y - this._rectangleSouthwestInMeters.y;
+    const yTileHeight = overallHeight / yTiles;
 
-  const projection = this._projection;
+    const projection = this._projection;
 
-  const webMercatorPosition = projection.project(position);
-  const distanceFromWest =
-    webMercatorPosition.x - this._rectangleSouthwestInMeters.x;
-  const distanceFromNorth =
-    this._rectangleNortheastInMeters.y - webMercatorPosition.y;
+    const webMercatorPosition = projection.project(position);
+    const distanceFromWest =
+        webMercatorPosition.x - this._rectangleSouthwestInMeters.x;
+    const distanceFromNorth =
+        this._rectangleNortheastInMeters.y - webMercatorPosition.y;
 
-  let xTileCoordinate = (distanceFromWest / xTileWidth) | 0;
-  if (xTileCoordinate >= xTiles) {
-    xTileCoordinate = xTiles - 1;
-  }
-  let yTileCoordinate = (distanceFromNorth / yTileHeight) | 0;
-  if (yTileCoordinate >= yTiles) {
-    yTileCoordinate = yTiles - 1;
-  }
+    let xTileCoordinate = (distanceFromWest / xTileWidth) | 0;
+    if (xTileCoordinate >= xTiles) {
+        xTileCoordinate = xTiles - 1;
+    }
+    let yTileCoordinate = (distanceFromNorth / yTileHeight) | 0;
+    if (yTileCoordinate >= yTiles) {
+        yTileCoordinate = yTiles - 1;
+    }
 
-  if (!defined(result)) {
-    return new Cartesian2(xTileCoordinate, yTileCoordinate);
-  }
+    if (!defined(result)) {
+        return new Cartesian2(xTileCoordinate, yTileCoordinate);
+    }
 
-  result.x = xTileCoordinate;
-  result.y = yTileCoordinate;
-  return result;
+    result.x = xTileCoordinate;
+    result.y = yTileCoordinate;
+    return result;
 };
 export default WebMercatorTilingScheme;

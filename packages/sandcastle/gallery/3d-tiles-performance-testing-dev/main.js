@@ -29,181 +29,181 @@ const referenceMaximum = new Cesium.JulianDate();
 const heatmapTileProperty = "_foveatedFactor";
 
 const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(75343, {
-  debugHeatmapTilePropertyName: heatmapTileProperty,
+    debugHeatmapTilePropertyName: heatmapTileProperty,
 });
 
 function updateReferenceMinMax() {
-  if (heatmapTileProperty === "_loadTimestamp") {
-    Cesium.JulianDate.now(referenceMinimum);
-    const viewLoadTime = 10;
-    Cesium.JulianDate.addSeconds(
-      referenceMinimum,
-      viewLoadTime,
-      referenceMaximum,
-    );
-    tileset._heatmap.setReferenceMinimumMaximum(
-      referenceMinimum,
-      referenceMaximum,
-      heatmapTileProperty,
-    );
-  } else if (heatmapTileProperty === "_priorityDeferred") {
-    tileset._heatmap.setReferenceMinimumMaximum(-1, 1, heatmapTileProperty);
-  }
+    if (heatmapTileProperty === "_loadTimestamp") {
+        Cesium.JulianDate.now(referenceMinimum);
+        const viewLoadTime = 10;
+        Cesium.JulianDate.addSeconds(
+            referenceMinimum,
+            viewLoadTime,
+            referenceMaximum,
+        );
+        tileset._heatmap.setReferenceMinimumMaximum(
+            referenceMinimum,
+            referenceMaximum,
+            heatmapTileProperty,
+        );
+    } else if (heatmapTileProperty === "_priorityDeferred") {
+        tileset._heatmap.setReferenceMinimumMaximum(-1, 1, heatmapTileProperty);
+    }
 }
 
 viewer.scene.primitives.add(tileset);
 
 destinationFunctions[0] = function () {
-  tourTime = 0;
-  updateReferenceMinMax();
-  camera.flyTo({
-    destination: new Cartesian3(
-      1333596.036282181,
-      -4655169.681831507,
-      4137566.3043841794,
-    ),
-    orientation: {
-      direction: new Cartesian3(
-        0.16082862107778806,
-        0.8832766751525227,
-        0.4404048929947557,
-      ),
-      up: new Cartesian3(
-        0.27688172689171486,
-        -0.4686726309748134,
-        0.8388578391411791,
-      ),
-    },
-    duration: 0,
-    easingFunction: Cesium.EasingFunction.LINEAR_NONE,
-  });
-  startTimer();
+    tourTime = 0;
+    updateReferenceMinMax();
+    camera.flyTo({
+        destination: new Cartesian3(
+            1333596.036282181,
+            -4655169.681831507,
+            4137566.3043841794,
+        ),
+        orientation: {
+            direction: new Cartesian3(
+                0.16082862107778806,
+                0.8832766751525227,
+                0.4404048929947557,
+            ),
+            up: new Cartesian3(
+                0.27688172689171486,
+                -0.4686726309748134,
+                0.8388578391411791,
+            ),
+        },
+        duration: 0,
+        easingFunction: Cesium.EasingFunction.LINEAR_NONE,
+    });
+    startTimer();
 };
 
 destinationFunctions[1] = function () {
-  updateReferenceMinMax();
-  camera.flyTo({
-    destination: new Cartesian3(
-      1334667.3697728787,
-      -4654198.808294234,
-      4137970.3278586734,
-    ),
-    orientation: {
-      direction: new Cartesian3(
-        -0.27073345520322445,
-        0.8195770495850765,
-        0.504972133911511,
-      ),
-      up: new Cartesian3(
-        0.12792976837875633,
-        -0.48927851021971713,
-        0.8626937543530335,
-      ),
-    },
-    duration: flightDuration,
-    easingFunction: Cesium.EasingFunction.LINEAR_NONE,
-    maximumHeight: 100,
-  });
-  startTimer();
+    updateReferenceMinMax();
+    camera.flyTo({
+        destination: new Cartesian3(
+            1334667.3697728787,
+            -4654198.808294234,
+            4137970.3278586734,
+        ),
+        orientation: {
+            direction: new Cartesian3(
+                -0.27073345520322445,
+                0.8195770495850765,
+                0.504972133911511,
+            ),
+            up: new Cartesian3(
+                0.12792976837875633,
+                -0.48927851021971713,
+                0.8626937543530335,
+            ),
+        },
+        duration: flightDuration,
+        easingFunction: Cesium.EasingFunction.LINEAR_NONE,
+        maximumHeight: 100,
+    });
+    startTimer();
 };
 
 destinationFunctions[2] = function () {
-  updateReferenceMinMax();
-  camera.flyTo({
-    destination: new Cartesian3(
-      1334615.6546409938,
-      -4653003.089826743,
-      4139331.5003454844,
-    ),
-    orientation: {
-      direction: new Cartesian3(
-        -0.2708199805903497,
-        0.8196978379289465,
-        0.5047296232713642,
-      ),
-      up: new Cartesian3(
-        0.12789117766285887,
-        -0.48903793608573193,
-        0.8628358730054139,
-      ),
-    },
-    duration: flightDuration,
-    easingFunction: Cesium.EasingFunction.LINEAR_NONE,
-    maximumHeight: 100,
-  });
-  startTimer();
+    updateReferenceMinMax();
+    camera.flyTo({
+        destination: new Cartesian3(
+            1334615.6546409938,
+            -4653003.089826743,
+            4139331.5003454844,
+        ),
+        orientation: {
+            direction: new Cartesian3(
+                -0.2708199805903497,
+                0.8196978379289465,
+                0.5047296232713642,
+            ),
+            up: new Cartesian3(
+                0.12789117766285887,
+                -0.48903793608573193,
+                0.8628358730054139,
+            ),
+        },
+        duration: flightDuration,
+        easingFunction: Cesium.EasingFunction.LINEAR_NONE,
+        maximumHeight: 100,
+    });
+    startTimer();
 };
 
 destinationFunctions[3] = function () {
-  console.log(
-    `Total Loads and Time (ignoring first view and flight time): ${tourLoads}, ${tourTime}`,
-  );
+    console.log(
+        `Total Loads and Time (ignoring first view and flight time): ${tourLoads}, ${tourTime}`,
+    );
 };
 
 viewer.scene.debugShowFramesPerSecond = true;
 
 Sandcastle.addToolbarButton("Start Test", function () {
-  currentDestination = 0;
-  tourLoads = 0;
-  tourTime = 0;
-  doTour = true;
-  lastTotalLoaded = 0;
-  destinationFunctions[0]();
+    currentDestination = 0;
+    tourLoads = 0;
+    tourTime = 0;
+    doTour = true;
+    lastTotalLoaded = 0;
+    destinationFunctions[0]();
 });
 
 Sandcastle.addToolbarButton("View 0", function () {
-  destinationFunctions[0]();
+    destinationFunctions[0]();
 });
 
 Sandcastle.addToolbarButton("View 1", function () {
-  destinationFunctions[1]();
+    destinationFunctions[1]();
 });
 
 Sandcastle.addToolbarButton("View 2", function () {
-  destinationFunctions[2]();
+    destinationFunctions[2]();
 });
 
 function startTimer() {
-  const timerStart = window.performance.now();
-  const timerListener = function () {
-    if (camera._currentFlight !== undefined) {
-      tileset.allTilesLoaded.removeEventListener(timerListener);
-      camera.moveEnd.addEventListener(timerListener);
-      return;
-    } else if (!tileset._tilesLoaded) {
-      return;
-    }
-    const timerEnd = window.performance.now();
-    let duration = (timerEnd - timerStart) / 1000.0;
-    const totalLoaded = tileset._statistics.numberOfLoadedTilesTotal;
-    duration -= currentDestination === 0 ? 0 : flightDuration;
-    const flightLoads = totalLoaded - lastTotalLoaded;
-    console.log(
-      `view ${currentDestination} flight loads, final view time: ${flightLoads}, ${duration}`,
-    );
-    lastTotalLoaded = totalLoaded;
-    tourTime += currentDestination === 0 ? 0 : duration;
-    tourLoads += currentDestination === 0 ? 0 : flightLoads;
-    if (doTour && currentDestination < destinationFunctions.length - 1) {
-      destinationFunctions[++currentDestination]();
-    }
-    tileset.allTilesLoaded.removeEventListener(timerListener);
-    camera.moveEnd.removeEventListener(timerListener);
-  };
-  window.setTimeout(function () {
-    tileset.allTilesLoaded.addEventListener(timerListener);
-  }, 50);
+    const timerStart = window.performance.now();
+    const timerListener = function () {
+        if (camera._currentFlight !== undefined) {
+            tileset.allTilesLoaded.removeEventListener(timerListener);
+            camera.moveEnd.addEventListener(timerListener);
+            return;
+        } else if (!tileset._tilesLoaded) {
+            return;
+        }
+        const timerEnd = window.performance.now();
+        let duration = (timerEnd - timerStart) / 1000.0;
+        const totalLoaded = tileset._statistics.numberOfLoadedTilesTotal;
+        duration -= currentDestination === 0 ? 0 : flightDuration;
+        const flightLoads = totalLoaded - lastTotalLoaded;
+        console.log(
+            `view ${currentDestination} flight loads, final view time: ${flightLoads}, ${duration}`,
+        );
+        lastTotalLoaded = totalLoaded;
+        tourTime += currentDestination === 0 ? 0 : duration;
+        tourLoads += currentDestination === 0 ? 0 : flightLoads;
+        if (doTour && currentDestination < destinationFunctions.length - 1) {
+            destinationFunctions[++currentDestination]();
+        }
+        tileset.allTilesLoaded.removeEventListener(timerListener);
+        camera.moveEnd.removeEventListener(timerListener);
+    };
+    window.setTimeout(function () {
+        tileset.allTilesLoaded.addEventListener(timerListener);
+    }, 50);
 }
 
 // Add code for flyto
 Sandcastle.addToolbarButton("get cam", function () {
-  console.log("requested params for current camera view");
-  const position = camera.position;
-  const direction = camera.direction;
-  const up = camera.up;
+    console.log("requested params for current camera view");
+    const position = camera.position;
+    const direction = camera.direction;
+    const up = camera.up;
 
-  console.log(
-    `\n\
+    console.log(
+        `\n\
 Sandcastle.addToolbarButton(VIEW, function() {\n\
     camera.flyTo({\n\
   destination : new Cartesian3(${position.x}, ${position.y}, ${position.z}),\n\
@@ -216,5 +216,5 @@ Sandcastle.addToolbarButton(VIEW, function() {\n\
     });\n\
     timeAll();\n\
 });`,
-  );
+    );
 });

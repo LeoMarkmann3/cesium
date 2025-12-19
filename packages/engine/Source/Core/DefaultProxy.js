@@ -9,7 +9,7 @@
  * @param {string} proxy The proxy URL that will be used to requests all resources.
  */
 function DefaultProxy(proxy) {
-  this.proxy = proxy;
+    this.proxy = proxy;
 }
 
 /**
@@ -19,8 +19,8 @@ function DefaultProxy(proxy) {
  * @returns {string} proxied resource
  */
 DefaultProxy.prototype.getURL = function (resource) {
-  const prefix = this.proxy.indexOf("?") === -1 ? "?" : "";
-  return this.proxy + prefix + encodeURIComponent(resource);
+    const prefix = this.proxy.indexOf("?") === -1 ? "?" : "";
+    return this.proxy + prefix + encodeURIComponent(resource);
 };
 
 export default DefaultProxy;

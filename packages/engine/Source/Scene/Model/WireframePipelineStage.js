@@ -16,7 +16,7 @@ import WireframeIndexGenerator from "../../Core/WireframeIndexGenerator.js";
  * @private
  */
 const WireframePipelineStage = {
-  name: "WireframePipelineStage", // Helps with debugging
+    name: "WireframePipelineStage", // Helps with debugging
 };
 
 /**
@@ -32,87 +32,87 @@ const WireframePipelineStage = {
  * @param {FrameState} frameState The frame state
  */
 WireframePipelineStage.process = function (
-  renderResources,
-  primitive,
-  frameState,
-) {
-  // Applying normal mapping to the lines will result in rendering
-  // errors on Linux. This define is added to disable normal
-  // mapping in the shader.
-  const shaderBuilder = renderResources.shaderBuilder;
-  shaderBuilder.addDefine(
-    "HAS_WIREFRAME",
-    undefined,
-    ShaderDestination.FRAGMENT,
-  );
-
-  const model = renderResources.model;
-  const wireframeIndexBuffer = createWireframeIndexBuffer(
+    renderResources,
     primitive,
-    renderResources.indices,
     frameState,
-  );
-  model._pipelineResources.push(wireframeIndexBuffer);
-  renderResources.wireframeIndexBuffer = wireframeIndexBuffer;
+) {
+    // Applying normal mapping to the lines will result in rendering
+    // errors on Linux. This define is added to disable normal
+    // mapping in the shader.
+    const shaderBuilder = renderResources.shaderBuilder;
+    shaderBuilder.addDefine(
+        "HAS_WIREFRAME",
+        undefined,
+        ShaderDestination.FRAGMENT,
+    );
 
-  // We only need to count memory for the generated buffer. In WebGL 1, the CPU
-  // copy of the original indices is already counted in the geometry stage,
-  // and in WebGL 2, the CPU copy of the original indices (generated from the
-  // data of the original buffer) is discarded after generating the wireframe
-  // indices.
-  const hasCpuCopy = false;
-  model.statistics.addBuffer(wireframeIndexBuffer, hasCpuCopy);
+    const model = renderResources.model;
+    const wireframeIndexBuffer = createWireframeIndexBuffer(
+        primitive,
+        renderResources.indices,
+        frameState,
+    );
+    model._pipelineResources.push(wireframeIndexBuffer);
+    renderResources.wireframeIndexBuffer = wireframeIndexBuffer;
 
-  // Update render resources so we render LINES with the correct index count
-  const originalPrimitiveType = renderResources.primitiveType;
-  const originalCount = renderResources.count;
-  renderResources.primitiveType = PrimitiveType.LINES;
-  renderResources.count = WireframeIndexGenerator.getWireframeIndicesCount(
-    originalPrimitiveType,
-    originalCount,
-  );
+    // We only need to count memory for the generated buffer. In WebGL 1, the CPU
+    // copy of the original indices is already counted in the geometry stage,
+    // and in WebGL 2, the CPU copy of the original indices (generated from the
+    // data of the original buffer) is discarded after generating the wireframe
+    // indices.
+    const hasCpuCopy = false;
+    model.statistics.addBuffer(wireframeIndexBuffer, hasCpuCopy);
+
+    // Update render resources so we render LINES with the correct index count
+    const originalPrimitiveType = renderResources.primitiveType;
+    const originalCount = renderResources.count;
+    renderResources.primitiveType = PrimitiveType.LINES;
+    renderResources.count = WireframeIndexGenerator.getWireframeIndicesCount(
+        originalPrimitiveType,
+        originalCount,
+    );
 };
 
 function createWireframeIndexBuffer(primitive, indices, frameState) {
-  const positionAttribute = ModelUtility.getAttributeBySemantic(
-    primitive,
-    VertexAttributeSemantic.POSITION,
-  );
-  const vertexCount = positionAttribute.count;
-  const webgl2 = frameState.context.webgl2;
+    const positionAttribute = ModelUtility.getAttributeBySemantic(
+        primitive,
+        VertexAttributeSemantic.POSITION,
+    );
+    const vertexCount = positionAttribute.count;
+    const webgl2 = frameState.context.webgl2;
 
-  let originalIndices;
-  if (defined(indices)) {
-    const indicesBuffer = indices.buffer;
-    const indicesCount = indices.count;
-    if (defined(indicesBuffer) && webgl2) {
-      const useUint8Array = indicesBuffer.sizeInBytes === indicesCount;
-      originalIndices = useUint8Array
-        ? new Uint8Array(indicesCount)
-        : IndexDatatype.createTypedArray(vertexCount, indicesCount);
+    let originalIndices;
+    if (defined(indices)) {
+        const indicesBuffer = indices.buffer;
+        const indicesCount = indices.count;
+        if (defined(indicesBuffer) && webgl2) {
+            const useUint8Array = indicesBuffer.sizeInBytes === indicesCount;
+            originalIndices = useUint8Array
+                ? new Uint8Array(indicesCount)
+                : IndexDatatype.createTypedArray(vertexCount, indicesCount);
 
-      indicesBuffer.getBufferData(originalIndices);
-    } else {
-      originalIndices = indices.typedArray;
+            indicesBuffer.getBufferData(originalIndices);
+        } else {
+            originalIndices = indices.typedArray;
+        }
     }
-  }
 
-  const primitiveType = primitive.primitiveType;
-  const wireframeIndices = WireframeIndexGenerator.createWireframeIndices(
-    primitiveType,
-    vertexCount,
-    originalIndices,
-  );
-  const indexDatatype = IndexDatatype.fromSizeInBytes(
-    wireframeIndices.BYTES_PER_ELEMENT,
-  );
+    const primitiveType = primitive.primitiveType;
+    const wireframeIndices = WireframeIndexGenerator.createWireframeIndices(
+        primitiveType,
+        vertexCount,
+        originalIndices,
+    );
+    const indexDatatype = IndexDatatype.fromSizeInBytes(
+        wireframeIndices.BYTES_PER_ELEMENT,
+    );
 
-  return Buffer.createIndexBuffer({
-    context: frameState.context,
-    typedArray: wireframeIndices,
-    usage: BufferUsage.STATIC_DRAW,
-    indexDatatype: indexDatatype,
-  });
+    return Buffer.createIndexBuffer({
+        context: frameState.context,
+        typedArray: wireframeIndices,
+        usage: BufferUsage.STATIC_DRAW,
+        indexDatatype: indexDatatype,
+    });
 }
 
 export default WireframePipelineStage;

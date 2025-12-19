@@ -12,7 +12,7 @@ import VerticalExaggerationStageVS from "../../Shaders/Model/VerticalExaggeratio
  * @private
  */
 const VerticalExaggerationPipelineStage = {
-  name: "VerticalExaggerationPipelineStage", // Helps with debugging
+    name: "VerticalExaggerationPipelineStage", // Helps with debugging
 };
 
 const scratchExaggerationUniform = new Cartesian2();
@@ -26,33 +26,33 @@ const scratchExaggerationUniform = new Cartesian2();
  * @private
  */
 VerticalExaggerationPipelineStage.process = function (
-  renderResources,
-  primitive,
-  frameState,
+    renderResources,
+    primitive,
+    frameState,
 ) {
-  const { shaderBuilder, uniformMap } = renderResources;
+    const { shaderBuilder, uniformMap } = renderResources;
 
-  shaderBuilder.addVertexLines(VerticalExaggerationStageVS);
+    shaderBuilder.addVertexLines(VerticalExaggerationStageVS);
 
-  shaderBuilder.addDefine(
-    "HAS_VERTICAL_EXAGGERATION",
-    undefined,
-    ShaderDestination.VERTEX,
-  );
-
-  shaderBuilder.addUniform(
-    "vec2",
-    "u_verticalExaggerationAndRelativeHeight",
-    ShaderDestination.VERTEX,
-  );
-
-  uniformMap.u_verticalExaggerationAndRelativeHeight = function () {
-    return Cartesian2.fromElements(
-      frameState.verticalExaggeration,
-      frameState.verticalExaggerationRelativeHeight,
-      scratchExaggerationUniform,
+    shaderBuilder.addDefine(
+        "HAS_VERTICAL_EXAGGERATION",
+        undefined,
+        ShaderDestination.VERTEX,
     );
-  };
+
+    shaderBuilder.addUniform(
+        "vec2",
+        "u_verticalExaggerationAndRelativeHeight",
+        ShaderDestination.VERTEX,
+    );
+
+    uniformMap.u_verticalExaggerationAndRelativeHeight = function () {
+        return Cartesian2.fromElements(
+            frameState.verticalExaggeration,
+            frameState.verticalExaggerationRelativeHeight,
+            scratchExaggerationUniform,
+        );
+    };
 };
 
 export default VerticalExaggerationPipelineStage;

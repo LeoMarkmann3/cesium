@@ -8,10 +8,10 @@ import defined from "../Core/defined.js";
  * @private
  */
 function TileReplacementQueue() {
-  this.head = undefined;
-  this.tail = undefined;
-  this.count = 0;
-  this._lastBeforeStartOfFrame = undefined;
+    this.head = undefined;
+    this.tail = undefined;
+    this.count = 0;
+    this._lastBeforeStartOfFrame = undefined;
 }
 
 /**
@@ -19,7 +19,7 @@ function TileReplacementQueue() {
  * list were used last frame and must not be unloaded.
  */
 TileReplacementQueue.prototype.markStartOfRenderFrame = function () {
-  this._lastBeforeStartOfFrame = this.head;
+    this._lastBeforeStartOfFrame = this.head;
 };
 
 /**
@@ -30,53 +30,53 @@ TileReplacementQueue.prototype.markStartOfRenderFrame = function () {
  * @param {number} maximumTiles The maximum number of tiles in the queue.
  */
 TileReplacementQueue.prototype.trimTiles = function (maximumTiles) {
-  let tileToTrim = this.tail;
-  let keepTrimming = true;
-  while (
-    keepTrimming &&
-    defined(this._lastBeforeStartOfFrame) &&
-    this.count > maximumTiles &&
-    defined(tileToTrim)
-  ) {
-    // Stop trimming after we process the last tile not used in the
-    // current frame.
-    keepTrimming = tileToTrim !== this._lastBeforeStartOfFrame;
+    let tileToTrim = this.tail;
+    let keepTrimming = true;
+    while (
+        keepTrimming &&
+        defined(this._lastBeforeStartOfFrame) &&
+        this.count > maximumTiles &&
+        defined(tileToTrim)
+    ) {
+        // Stop trimming after we process the last tile not used in the
+        // current frame.
+        keepTrimming = tileToTrim !== this._lastBeforeStartOfFrame;
 
-    const previous = tileToTrim.replacementPrevious;
+        const previous = tileToTrim.replacementPrevious;
 
-    if (tileToTrim.eligibleForUnloading) {
-      tileToTrim.freeResources();
-      remove(this, tileToTrim);
+        if (tileToTrim.eligibleForUnloading) {
+            tileToTrim.freeResources();
+            remove(this, tileToTrim);
+        }
+
+        tileToTrim = previous;
     }
-
-    tileToTrim = previous;
-  }
 };
 
 function remove(tileReplacementQueue, item) {
-  const previous = item.replacementPrevious;
-  const next = item.replacementNext;
+    const previous = item.replacementPrevious;
+    const next = item.replacementNext;
 
-  if (item === tileReplacementQueue._lastBeforeStartOfFrame) {
-    tileReplacementQueue._lastBeforeStartOfFrame = next;
-  }
+    if (item === tileReplacementQueue._lastBeforeStartOfFrame) {
+        tileReplacementQueue._lastBeforeStartOfFrame = next;
+    }
 
-  if (item === tileReplacementQueue.head) {
-    tileReplacementQueue.head = next;
-  } else {
-    previous.replacementNext = next;
-  }
+    if (item === tileReplacementQueue.head) {
+        tileReplacementQueue.head = next;
+    } else {
+        previous.replacementNext = next;
+    }
 
-  if (item === tileReplacementQueue.tail) {
-    tileReplacementQueue.tail = previous;
-  } else {
-    next.replacementPrevious = previous;
-  }
+    if (item === tileReplacementQueue.tail) {
+        tileReplacementQueue.tail = previous;
+    } else {
+        next.replacementPrevious = previous;
+    }
 
-  item.replacementPrevious = undefined;
-  item.replacementNext = undefined;
+    item.replacementPrevious = undefined;
+    item.replacementNext = undefined;
 
-  --tileReplacementQueue.count;
+    --tileReplacementQueue.count;
 }
 
 /**
@@ -86,34 +86,34 @@ function remove(tileReplacementQueue, item) {
  * @param {TileReplacementQueue} item The tile that was rendered.
  */
 TileReplacementQueue.prototype.markTileRendered = function (item) {
-  const head = this.head;
-  if (head === item) {
-    if (item === this._lastBeforeStartOfFrame) {
-      this._lastBeforeStartOfFrame = item.replacementNext;
+    const head = this.head;
+    if (head === item) {
+        if (item === this._lastBeforeStartOfFrame) {
+            this._lastBeforeStartOfFrame = item.replacementNext;
+        }
+        return;
     }
-    return;
-  }
 
-  ++this.count;
+    ++this.count;
 
-  if (!defined(head)) {
-    // no other tiles in the list
+    if (!defined(head)) {
+        // no other tiles in the list
+        item.replacementPrevious = undefined;
+        item.replacementNext = undefined;
+        this.head = item;
+        this.tail = item;
+        return;
+    }
+
+    if (defined(item.replacementPrevious) || defined(item.replacementNext)) {
+        // tile already in the list, remove from its current location
+        remove(this, item);
+    }
+
     item.replacementPrevious = undefined;
-    item.replacementNext = undefined;
+    item.replacementNext = head;
+    head.replacementPrevious = item;
+
     this.head = item;
-    this.tail = item;
-    return;
-  }
-
-  if (defined(item.replacementPrevious) || defined(item.replacementNext)) {
-    // tile already in the list, remove from its current location
-    remove(this, item);
-  }
-
-  item.replacementPrevious = undefined;
-  item.replacementNext = head;
-  head.replacementPrevious = item;
-
-  this.head = item;
 };
 export default TileReplacementQueue;

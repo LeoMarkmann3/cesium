@@ -42,193 +42,193 @@ import Material from "./Material.js";
  * });
  */
 function EllipsoidSurfaceAppearance(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const translucent = options.translucent ?? true;
-  const aboveGround = options.aboveGround ?? false;
+    const translucent = options.translucent ?? true;
+    const aboveGround = options.aboveGround ?? false;
 
-  /**
-   * The material used to determine the fragment color.  Unlike other {@link EllipsoidSurfaceAppearance}
-   * properties, this is not read-only, so an appearance's material can change on the fly.
-   *
-   * @type Material
-   *
-   * @default {@link Material.ColorType}
-   *
-   * @see {@link https://github.com/CesiumGS/cesium/wiki/Fabric|Fabric}
-   */
-  this.material = defined(options.material)
-    ? options.material
-    : Material.fromType(Material.ColorType);
+    /**
+     * The material used to determine the fragment color.  Unlike other {@link EllipsoidSurfaceAppearance}
+     * properties, this is not read-only, so an appearance's material can change on the fly.
+     *
+     * @type Material
+     *
+     * @default {@link Material.ColorType}
+     *
+     * @see {@link https://github.com/CesiumGS/cesium/wiki/Fabric|Fabric}
+     */
+    this.material = defined(options.material)
+        ? options.material
+        : Material.fromType(Material.ColorType);
 
-  /**
-   * When <code>true</code>, the geometry is expected to appear translucent.
-   *
-   * @type {boolean}
-   *
-   * @default true
-   */
-  this.translucent = options.translucent ?? true;
+    /**
+     * When <code>true</code>, the geometry is expected to appear translucent.
+     *
+     * @type {boolean}
+     *
+     * @default true
+     */
+    this.translucent = options.translucent ?? true;
 
-  this._vertexShaderSource =
-    options.vertexShaderSource ?? EllipsoidSurfaceAppearanceVS;
-  this._fragmentShaderSource =
-    options.fragmentShaderSource ?? EllipsoidSurfaceAppearanceFS;
-  this._renderState = Appearance.getDefaultRenderState(
-    translucent,
-    !aboveGround,
-    options.renderState,
-  );
-  this._closed = false;
+    this._vertexShaderSource =
+        options.vertexShaderSource ?? EllipsoidSurfaceAppearanceVS;
+    this._fragmentShaderSource =
+        options.fragmentShaderSource ?? EllipsoidSurfaceAppearanceFS;
+    this._renderState = Appearance.getDefaultRenderState(
+        translucent,
+        !aboveGround,
+        options.renderState,
+    );
+    this._closed = false;
 
-  // Non-derived members
+    // Non-derived members
 
-  this._flat = options.flat ?? false;
-  this._faceForward = options.faceForward ?? aboveGround;
-  this._aboveGround = aboveGround;
+    this._flat = options.flat ?? false;
+    this._faceForward = options.faceForward ?? aboveGround;
+    this._aboveGround = aboveGround;
 }
 
 Object.defineProperties(EllipsoidSurfaceAppearance.prototype, {
-  /**
-   * The GLSL source code for the vertex shader.
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type {string}
-   * @readonly
-   */
-  vertexShaderSource: {
-    get: function () {
-      return this._vertexShaderSource;
+    /**
+     * The GLSL source code for the vertex shader.
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type {string}
+     * @readonly
+     */
+    vertexShaderSource: {
+        get: function () {
+            return this._vertexShaderSource;
+        },
     },
-  },
 
-  /**
-   * The GLSL source code for the fragment shader.  The full fragment shader
-   * source is built procedurally taking into account {@link EllipsoidSurfaceAppearance#material},
-   * {@link EllipsoidSurfaceAppearance#flat}, and {@link EllipsoidSurfaceAppearance#faceForward}.
-   * Use {@link EllipsoidSurfaceAppearance#getFragmentShaderSource} to get the full source.
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type {string}
-   * @readonly
-   */
-  fragmentShaderSource: {
-    get: function () {
-      return this._fragmentShaderSource;
+    /**
+     * The GLSL source code for the fragment shader.  The full fragment shader
+     * source is built procedurally taking into account {@link EllipsoidSurfaceAppearance#material},
+     * {@link EllipsoidSurfaceAppearance#flat}, and {@link EllipsoidSurfaceAppearance#faceForward}.
+     * Use {@link EllipsoidSurfaceAppearance#getFragmentShaderSource} to get the full source.
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type {string}
+     * @readonly
+     */
+    fragmentShaderSource: {
+        get: function () {
+            return this._fragmentShaderSource;
+        },
     },
-  },
 
-  /**
-   * The WebGL fixed-function state to use when rendering the geometry.
-   * <p>
-   * The render state can be explicitly defined when constructing a {@link EllipsoidSurfaceAppearance}
-   * instance, or it is set implicitly via {@link EllipsoidSurfaceAppearance#translucent}
-   * and {@link EllipsoidSurfaceAppearance#aboveGround}.
-   * </p>
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type {object}
-   * @readonly
-   */
-  renderState: {
-    get: function () {
-      return this._renderState;
+    /**
+     * The WebGL fixed-function state to use when rendering the geometry.
+     * <p>
+     * The render state can be explicitly defined when constructing a {@link EllipsoidSurfaceAppearance}
+     * instance, or it is set implicitly via {@link EllipsoidSurfaceAppearance#translucent}
+     * and {@link EllipsoidSurfaceAppearance#aboveGround}.
+     * </p>
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type {object}
+     * @readonly
+     */
+    renderState: {
+        get: function () {
+            return this._renderState;
+        },
     },
-  },
 
-  /**
-   * When <code>true</code>, the geometry is expected to be closed so
-   * {@link EllipsoidSurfaceAppearance#renderState} has backface culling enabled.
-   * If the viewer enters the geometry, it will not be visible.
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @default false
-   */
-  closed: {
-    get: function () {
-      return this._closed;
+    /**
+     * When <code>true</code>, the geometry is expected to be closed so
+     * {@link EllipsoidSurfaceAppearance#renderState} has backface culling enabled.
+     * If the viewer enters the geometry, it will not be visible.
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @default false
+     */
+    closed: {
+        get: function () {
+            return this._closed;
+        },
     },
-  },
 
-  /**
-   * The {@link VertexFormat} that this appearance instance is compatible with.
-   * A geometry can have more vertex attributes and still be compatible - at a
-   * potential performance cost - but it can't have less.
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type VertexFormat
-   * @readonly
-   *
-   * @default {@link EllipsoidSurfaceAppearance.VERTEX_FORMAT}
-   */
-  vertexFormat: {
-    get: function () {
-      return EllipsoidSurfaceAppearance.VERTEX_FORMAT;
+    /**
+     * The {@link VertexFormat} that this appearance instance is compatible with.
+     * A geometry can have more vertex attributes and still be compatible - at a
+     * potential performance cost - but it can't have less.
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type VertexFormat
+     * @readonly
+     *
+     * @default {@link EllipsoidSurfaceAppearance.VERTEX_FORMAT}
+     */
+    vertexFormat: {
+        get: function () {
+            return EllipsoidSurfaceAppearance.VERTEX_FORMAT;
+        },
     },
-  },
 
-  /**
-   * When <code>true</code>, flat shading is used in the fragment shader,
-   * which means lighting is not taking into account.
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @default false
-   */
-  flat: {
-    get: function () {
-      return this._flat;
+    /**
+     * When <code>true</code>, flat shading is used in the fragment shader,
+     * which means lighting is not taking into account.
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @default false
+     */
+    flat: {
+        get: function () {
+            return this._flat;
+        },
     },
-  },
 
-  /**
-   * When <code>true</code>, the fragment shader flips the surface normal
-   * as needed to ensure that the normal faces the viewer to avoid
-   * dark spots.  This is useful when both sides of a geometry should be
-   * shaded like {@link WallGeometry}.
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @default true
-   */
-  faceForward: {
-    get: function () {
-      return this._faceForward;
+    /**
+     * When <code>true</code>, the fragment shader flips the surface normal
+     * as needed to ensure that the normal faces the viewer to avoid
+     * dark spots.  This is useful when both sides of a geometry should be
+     * shaded like {@link WallGeometry}.
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @default true
+     */
+    faceForward: {
+        get: function () {
+            return this._faceForward;
+        },
     },
-  },
 
-  /**
-   * When <code>true</code>, the geometry is expected to be on the ellipsoid's
-   * surface - not at a constant height above it - so {@link EllipsoidSurfaceAppearance#renderState}
-   * has backface culling enabled.
-   *
-   *
-   * @memberof EllipsoidSurfaceAppearance.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @default false
-   */
-  aboveGround: {
-    get: function () {
-      return this._aboveGround;
+    /**
+     * When <code>true</code>, the geometry is expected to be on the ellipsoid's
+     * surface - not at a constant height above it - so {@link EllipsoidSurfaceAppearance#renderState}
+     * has backface culling enabled.
+     *
+     *
+     * @memberof EllipsoidSurfaceAppearance.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @default false
+     */
+    aboveGround: {
+        get: function () {
+            return this._aboveGround;
+        },
     },
-  },
 });
 
 /**
@@ -252,7 +252,7 @@ EllipsoidSurfaceAppearance.VERTEX_FORMAT = VertexFormat.POSITION_AND_ST;
  * @returns {string} The full GLSL fragment shader source.
  */
 EllipsoidSurfaceAppearance.prototype.getFragmentShaderSource =
-  Appearance.prototype.getFragmentShaderSource;
+    Appearance.prototype.getFragmentShaderSource;
 
 /**
  * Determines if the geometry is translucent based on {@link EllipsoidSurfaceAppearance#translucent} and {@link Material#isTranslucent}.
@@ -262,7 +262,7 @@ EllipsoidSurfaceAppearance.prototype.getFragmentShaderSource =
  * @returns {boolean} <code>true</code> if the appearance is translucent.
  */
 EllipsoidSurfaceAppearance.prototype.isTranslucent =
-  Appearance.prototype.isTranslucent;
+    Appearance.prototype.isTranslucent;
 
 /**
  * Creates a render state.  This is not the final render state instance; instead,
@@ -274,5 +274,5 @@ EllipsoidSurfaceAppearance.prototype.isTranslucent =
  * @returns {object} The render state.
  */
 EllipsoidSurfaceAppearance.prototype.getRenderState =
-  Appearance.prototype.getRenderState;
+    Appearance.prototype.getRenderState;
 export default EllipsoidSurfaceAppearance;

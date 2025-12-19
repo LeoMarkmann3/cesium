@@ -42,50 +42,50 @@ import addAllToArray from "../../Core/addAllToArray.js";
  * @param {object} options.geoJson The GeoJson object.
  */
 function GeoJsonLoader(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.geoJson", options.geoJson);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.geoJson", options.geoJson);
+    //>>includeEnd('debug');
 
-  this._geoJson = options.geoJson;
-  this._components = undefined;
+    this._geoJson = options.geoJson;
+    this._components = undefined;
 }
 
 if (defined(Object.create)) {
-  GeoJsonLoader.prototype = Object.create(ResourceLoader.prototype);
-  GeoJsonLoader.prototype.constructor = GeoJsonLoader;
+    GeoJsonLoader.prototype = Object.create(ResourceLoader.prototype);
+    GeoJsonLoader.prototype.constructor = GeoJsonLoader;
 }
 
 Object.defineProperties(GeoJsonLoader.prototype, {
-  /**
-   * The cache key of the resource.
-   *
-   * @memberof GeoJsonLoader.prototype
-   *
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  cacheKey: {
-    get: function () {
-      return undefined;
+    /**
+     * The cache key of the resource.
+     *
+     * @memberof GeoJsonLoader.prototype
+     *
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    cacheKey: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
-  /**
-   * The loaded components.
-   *
-   * @memberof GeoJsonLoader.prototype
-   *
-   * @type {ModelComponents.Components}
-   * @readonly
-   * @private
-   */
-  components: {
-    get: function () {
-      return this._components;
+    /**
+     * The loaded components.
+     *
+     * @memberof GeoJsonLoader.prototype
+     *
+     * @type {ModelComponents.Components}
+     * @readonly
+     * @private
+     */
+    components: {
+        get: function () {
+            return this._components;
+        },
     },
-  },
 });
 
 /**
@@ -94,7 +94,7 @@ Object.defineProperties(GeoJsonLoader.prototype, {
  * @private
  */
 GeoJsonLoader.prototype.load = function () {
-  return Promise.resolve(this);
+    return Promise.resolve(this);
 };
 
 /**
@@ -104,586 +104,611 @@ GeoJsonLoader.prototype.load = function () {
  * @private
  */
 GeoJsonLoader.prototype.process = function (frameState) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("frameState", frameState);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("frameState", frameState);
+    //>>includeEnd('debug');
 
-  if (defined(this._components)) {
+    if (defined(this._components)) {
+        return true;
+    }
+
+    this._components = parse(this._geoJson, frameState);
+    this._geoJson = undefined;
     return true;
-  }
-
-  this._components = parse(this._geoJson, frameState);
-  this._geoJson = undefined;
-  return true;
 };
 
 function ParsedFeature() {
-  this.lines = undefined;
-  this.points = undefined;
-  this.properties = undefined;
+    this.lines = undefined;
+    this.points = undefined;
+    this.properties = undefined;
 }
 
 function ParseResult() {
-  this.features = [];
+    this.features = [];
 }
 
 function parsePosition(position) {
-  const x = position[0];
-  const y = position[1];
-  const z = position[2] ?? 0.0;
-  return new Cartesian3(x, y, z);
+    const x = position[0];
+    const y = position[1];
+    const z = position[2] ?? 0.0;
+    return new Cartesian3(x, y, z);
 }
 
 function parseLineString(coordinates) {
-  const positionsLength = coordinates.length;
-  const line = new Array(positionsLength);
-  for (let i = 0; i < positionsLength; i++) {
-    line[i] = parsePosition(coordinates[i]);
-  }
-  const lines = [line];
-  return lines;
+    const positionsLength = coordinates.length;
+    const line = new Array(positionsLength);
+    for (let i = 0; i < positionsLength; i++) {
+        line[i] = parsePosition(coordinates[i]);
+    }
+    const lines = [line];
+    return lines;
 }
 
 function parseMultiLineString(coordinates) {
-  const linesLength = coordinates.length;
-  const lines = new Array(linesLength);
-  for (let i = 0; i < linesLength; i++) {
-    lines[i] = parseLineString(coordinates[i])[0];
-  }
-  return lines;
+    const linesLength = coordinates.length;
+    const lines = new Array(linesLength);
+    for (let i = 0; i < linesLength; i++) {
+        lines[i] = parseLineString(coordinates[i])[0];
+    }
+    return lines;
 }
 
 function parsePolygon(coordinates) {
-  // Treat exterior polygon and interior polygons as lines
-  const linesLength = coordinates.length;
-  const lines = new Array(linesLength);
-  for (let i = 0; i < linesLength; i++) {
-    lines[i] = parseLineString(coordinates[i])[0];
-  }
-  return lines;
+    // Treat exterior polygon and interior polygons as lines
+    const linesLength = coordinates.length;
+    const lines = new Array(linesLength);
+    for (let i = 0; i < linesLength; i++) {
+        lines[i] = parseLineString(coordinates[i])[0];
+    }
+    return lines;
 }
 
 function parseMultiPolygon(coordinates) {
-  const polygonsLength = coordinates.length;
-  const lines = [];
-  for (let i = 0; i < polygonsLength; i++) {
-    const polygon = parsePolygon(coordinates[i]);
-    addAllToArray(lines, polygon);
-  }
-  return lines;
+    const polygonsLength = coordinates.length;
+    const lines = [];
+    for (let i = 0; i < polygonsLength; i++) {
+        const polygon = parsePolygon(coordinates[i]);
+        addAllToArray(lines, polygon);
+    }
+    return lines;
 }
 
 function parsePoint(coordinates) {
-  return [parsePosition(coordinates)];
+    return [parsePosition(coordinates)];
 }
 
 function parseMultiPoint(coordinates) {
-  const pointsLength = coordinates.length;
-  const points = new Array(pointsLength);
-  for (let i = 0; i < pointsLength; i++) {
-    points[i] = parsePosition(coordinates[i]);
-  }
-  return points;
+    const pointsLength = coordinates.length;
+    const points = new Array(pointsLength);
+    for (let i = 0; i < pointsLength; i++) {
+        points[i] = parsePosition(coordinates[i]);
+    }
+    return points;
 }
 
 const geometryTypes = {
-  LineString: parseLineString,
-  MultiLineString: parseMultiLineString,
-  MultiPolygon: parseMultiPolygon,
-  Polygon: parsePolygon,
-  MultiPoint: parseMultiPoint,
-  Point: parsePoint,
+    LineString: parseLineString,
+    MultiLineString: parseMultiLineString,
+    MultiPolygon: parseMultiPolygon,
+    Polygon: parsePolygon,
+    MultiPoint: parseMultiPoint,
+    Point: parsePoint,
 };
 
 const primitiveTypes = {
-  LineString: PrimitiveType.LINES,
-  MultiLineString: PrimitiveType.LINES,
-  MultiPolygon: PrimitiveType.LINES,
-  Polygon: PrimitiveType.LINES,
-  MultiPoint: PrimitiveType.POINTS,
-  Point: PrimitiveType.POINTS,
+    LineString: PrimitiveType.LINES,
+    MultiLineString: PrimitiveType.LINES,
+    MultiPolygon: PrimitiveType.LINES,
+    Polygon: PrimitiveType.LINES,
+    MultiPoint: PrimitiveType.POINTS,
+    Point: PrimitiveType.POINTS,
 };
 
 function parseFeature(feature, result) {
-  if (!defined(feature.geometry)) {
-    return;
-  }
+    if (!defined(feature.geometry)) {
+        return;
+    }
 
-  const geometryType = feature.geometry.type;
-  const geometryFunction = geometryTypes[geometryType];
-  const primitiveType = primitiveTypes[geometryType];
-  const coordinates = feature.geometry.coordinates;
+    const geometryType = feature.geometry.type;
+    const geometryFunction = geometryTypes[geometryType];
+    const primitiveType = primitiveTypes[geometryType];
+    const coordinates = feature.geometry.coordinates;
 
-  if (!defined(geometryFunction)) {
-    return;
-  }
+    if (!defined(geometryFunction)) {
+        return;
+    }
 
-  if (!defined(coordinates)) {
-    return;
-  }
+    if (!defined(coordinates)) {
+        return;
+    }
 
-  const parsedFeature = new ParsedFeature();
+    const parsedFeature = new ParsedFeature();
 
-  if (primitiveType === PrimitiveType.LINES) {
-    parsedFeature.lines = geometryFunction(coordinates);
-  } else if (primitiveType === PrimitiveType.POINTS) {
-    parsedFeature.points = geometryFunction(coordinates);
-  }
+    if (primitiveType === PrimitiveType.LINES) {
+        parsedFeature.lines = geometryFunction(coordinates);
+    } else if (primitiveType === PrimitiveType.POINTS) {
+        parsedFeature.points = geometryFunction(coordinates);
+    }
 
-  parsedFeature.properties = feature.properties;
+    parsedFeature.properties = feature.properties;
 
-  result.features.push(parsedFeature);
+    result.features.push(parsedFeature);
 }
 
 function parseFeatureCollection(featureCollection, result) {
-  const features = featureCollection.features;
-  const featuresLength = features.length;
-  for (let i = 0; i < featuresLength; i++) {
-    parseFeature(features[i], result);
-  }
+    const features = featureCollection.features;
+    const featuresLength = features.length;
+    for (let i = 0; i < featuresLength; i++) {
+        parseFeature(features[i], result);
+    }
 }
 
 const geoJsonObjectTypes = {
-  FeatureCollection: parseFeatureCollection,
-  Feature: parseFeature,
+    FeatureCollection: parseFeatureCollection,
+    Feature: parseFeature,
 };
 
 const scratchCartesian = new Cartesian3();
 
 function createLinesPrimitive(features, toLocal, frameState) {
-  // Count the number of vertices and indices
-  let vertexCount = 0;
-  let indexCount = 0;
+    // Count the number of vertices and indices
+    let vertexCount = 0;
+    let indexCount = 0;
 
-  const featureCount = features.length;
+    const featureCount = features.length;
 
-  for (let i = 0; i < featureCount; i++) {
-    const feature = features[i];
-    if (defined(feature.lines)) {
-      const linesLength = feature.lines.length;
-      for (let j = 0; j < linesLength; j++) {
-        const line = feature.lines[j];
-        vertexCount += line.length;
-        indexCount += (line.length - 1) * 2;
-      }
-    }
-  }
-
-  // Allocate typed arrays
-  const positionsTypedArray = new Float32Array(vertexCount * 3);
-  const featureIdsTypedArray = new Float32Array(vertexCount);
-  const indicesTypedArray = IndexDatatype.createTypedArray(
-    vertexCount,
-    indexCount,
-  );
-  const indexDatatype = IndexDatatype.fromTypedArray(indicesTypedArray);
-
-  // Process the data. Convert positions to local ENU. Generate indices.
-  const localMin = new Cartesian3(
-    Number.POSITIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-  );
-
-  const localMax = new Cartesian3(
-    Number.NEGATIVE_INFINITY,
-    Number.NEGATIVE_INFINITY,
-    Number.NEGATIVE_INFINITY,
-  );
-
-  let vertexCounter = 0;
-  let segmentCounter = 0;
-
-  for (let i = 0; i < featureCount; i++) {
-    const feature = features[i];
-
-    if (!defined(feature.lines)) {
-      continue;
+    for (let i = 0; i < featureCount; i++) {
+        const feature = features[i];
+        if (defined(feature.lines)) {
+            const linesLength = feature.lines.length;
+            for (let j = 0; j < linesLength; j++) {
+                const line = feature.lines[j];
+                vertexCount += line.length;
+                indexCount += (line.length - 1) * 2;
+            }
+        }
     }
 
-    const linesLength = feature.lines.length;
-    for (let j = 0; j < linesLength; j++) {
-      const line = feature.lines[j];
-      const positionsLength = line.length;
-      for (let k = 0; k < positionsLength; k++) {
-        const cartographic = line[k];
-        const globalCartesian = Cartesian3.fromDegrees(
-          cartographic.x,
-          cartographic.y,
-          cartographic.z,
-          Ellipsoid.WGS84,
-          scratchCartesian,
-        );
-        const localCartesian = Matrix4.multiplyByPoint(
-          toLocal,
-          globalCartesian,
-          scratchCartesian,
-        );
+    // Allocate typed arrays
+    const positionsTypedArray = new Float32Array(vertexCount * 3);
+    const featureIdsTypedArray = new Float32Array(vertexCount);
+    const indicesTypedArray = IndexDatatype.createTypedArray(
+        vertexCount,
+        indexCount,
+    );
+    const indexDatatype = IndexDatatype.fromTypedArray(indicesTypedArray);
 
-        Cartesian3.minimumByComponent(localMin, localCartesian, localMin);
-        Cartesian3.maximumByComponent(localMax, localCartesian, localMax);
+    // Process the data. Convert positions to local ENU. Generate indices.
+    const localMin = new Cartesian3(
+        Number.POSITIVE_INFINITY,
+        Number.POSITIVE_INFINITY,
+        Number.POSITIVE_INFINITY,
+    );
 
-        Cartesian3.pack(localCartesian, positionsTypedArray, vertexCounter * 3);
+    const localMax = new Cartesian3(
+        Number.NEGATIVE_INFINITY,
+        Number.NEGATIVE_INFINITY,
+        Number.NEGATIVE_INFINITY,
+    );
 
-        featureIdsTypedArray[vertexCounter] = i;
+    let vertexCounter = 0;
+    let segmentCounter = 0;
 
-        if (k < positionsLength - 1) {
-          indicesTypedArray[segmentCounter * 2] = vertexCounter;
-          indicesTypedArray[segmentCounter * 2 + 1] = vertexCounter + 1;
-          segmentCounter++;
+    for (let i = 0; i < featureCount; i++) {
+        const feature = features[i];
+
+        if (!defined(feature.lines)) {
+            continue;
         }
 
-        vertexCounter++;
-      }
+        const linesLength = feature.lines.length;
+        for (let j = 0; j < linesLength; j++) {
+            const line = feature.lines[j];
+            const positionsLength = line.length;
+            for (let k = 0; k < positionsLength; k++) {
+                const cartographic = line[k];
+                const globalCartesian = Cartesian3.fromDegrees(
+                    cartographic.x,
+                    cartographic.y,
+                    cartographic.z,
+                    Ellipsoid.WGS84,
+                    scratchCartesian,
+                );
+                const localCartesian = Matrix4.multiplyByPoint(
+                    toLocal,
+                    globalCartesian,
+                    scratchCartesian,
+                );
+
+                Cartesian3.minimumByComponent(
+                    localMin,
+                    localCartesian,
+                    localMin,
+                );
+                Cartesian3.maximumByComponent(
+                    localMax,
+                    localCartesian,
+                    localMax,
+                );
+
+                Cartesian3.pack(
+                    localCartesian,
+                    positionsTypedArray,
+                    vertexCounter * 3,
+                );
+
+                featureIdsTypedArray[vertexCounter] = i;
+
+                if (k < positionsLength - 1) {
+                    indicesTypedArray[segmentCounter * 2] = vertexCounter;
+                    indicesTypedArray[segmentCounter * 2 + 1] =
+                        vertexCounter + 1;
+                    segmentCounter++;
+                }
+
+                vertexCounter++;
+            }
+        }
     }
-  }
 
-  // Create GPU buffers
-  const positionBuffer = Buffer.createVertexBuffer({
-    typedArray: positionsTypedArray,
-    context: frameState.context,
-    usage: BufferUsage.STATIC_DRAW,
-  });
-  positionBuffer.vertexArrayDestroyable = false;
+    // Create GPU buffers
+    const positionBuffer = Buffer.createVertexBuffer({
+        typedArray: positionsTypedArray,
+        context: frameState.context,
+        usage: BufferUsage.STATIC_DRAW,
+    });
+    positionBuffer.vertexArrayDestroyable = false;
 
-  const featureIdBuffer = Buffer.createVertexBuffer({
-    typedArray: featureIdsTypedArray,
-    context: frameState.context,
-    usage: BufferUsage.STATIC_DRAW,
-  });
-  featureIdBuffer.vertexArrayDestroyable = false;
+    const featureIdBuffer = Buffer.createVertexBuffer({
+        typedArray: featureIdsTypedArray,
+        context: frameState.context,
+        usage: BufferUsage.STATIC_DRAW,
+    });
+    featureIdBuffer.vertexArrayDestroyable = false;
 
-  const indexBuffer = Buffer.createIndexBuffer({
-    typedArray: indicesTypedArray,
-    context: frameState.context,
-    usage: BufferUsage.STATIC_DRAW,
-    indexDatatype: indexDatatype,
-  });
-  indexBuffer.vertexArrayDestroyable = false;
+    const indexBuffer = Buffer.createIndexBuffer({
+        typedArray: indicesTypedArray,
+        context: frameState.context,
+        usage: BufferUsage.STATIC_DRAW,
+        indexDatatype: indexDatatype,
+    });
+    indexBuffer.vertexArrayDestroyable = false;
 
-  // Create ModelComponents
-  const positionAttribute = new ModelComponents.Attribute();
-  positionAttribute.semantic = VertexAttributeSemantic.POSITION;
-  positionAttribute.componentDatatype = ComponentDatatype.FLOAT;
-  positionAttribute.type = AttributeType.VEC3;
-  positionAttribute.count = vertexCount;
-  positionAttribute.min = localMin;
-  positionAttribute.max = localMax;
-  positionAttribute.buffer = positionBuffer;
+    // Create ModelComponents
+    const positionAttribute = new ModelComponents.Attribute();
+    positionAttribute.semantic = VertexAttributeSemantic.POSITION;
+    positionAttribute.componentDatatype = ComponentDatatype.FLOAT;
+    positionAttribute.type = AttributeType.VEC3;
+    positionAttribute.count = vertexCount;
+    positionAttribute.min = localMin;
+    positionAttribute.max = localMax;
+    positionAttribute.buffer = positionBuffer;
 
-  const featureIdAttribute = new ModelComponents.Attribute();
-  featureIdAttribute.semantic = VertexAttributeSemantic.FEATURE_ID;
-  featureIdAttribute.setIndex = 0;
-  featureIdAttribute.componentDatatype = ComponentDatatype.FLOAT;
-  featureIdAttribute.type = AttributeType.SCALAR;
-  featureIdAttribute.count = vertexCount;
-  featureIdAttribute.buffer = featureIdBuffer;
+    const featureIdAttribute = new ModelComponents.Attribute();
+    featureIdAttribute.semantic = VertexAttributeSemantic.FEATURE_ID;
+    featureIdAttribute.setIndex = 0;
+    featureIdAttribute.componentDatatype = ComponentDatatype.FLOAT;
+    featureIdAttribute.type = AttributeType.SCALAR;
+    featureIdAttribute.count = vertexCount;
+    featureIdAttribute.buffer = featureIdBuffer;
 
-  const attributes = [positionAttribute, featureIdAttribute];
+    const attributes = [positionAttribute, featureIdAttribute];
 
-  const material = new ModelComponents.Material();
-  material.unlit = true;
+    const material = new ModelComponents.Material();
+    material.unlit = true;
 
-  const indices = new ModelComponents.Indices();
-  indices.indexDatatype = indexDatatype;
-  indices.count = indicesTypedArray.length;
-  indices.buffer = indexBuffer;
+    const indices = new ModelComponents.Indices();
+    indices.indexDatatype = indexDatatype;
+    indices.count = indicesTypedArray.length;
+    indices.buffer = indexBuffer;
 
-  const featureId = new ModelComponents.FeatureIdAttribute();
-  featureId.featureCount = featureCount;
-  featureId.propertyTableId = 0;
-  featureId.setIndex = 0;
-  featureId.positionalLabel = "featureId_0";
+    const featureId = new ModelComponents.FeatureIdAttribute();
+    featureId.featureCount = featureCount;
+    featureId.propertyTableId = 0;
+    featureId.setIndex = 0;
+    featureId.positionalLabel = "featureId_0";
 
-  const featureIds = [featureId];
+    const featureIds = [featureId];
 
-  const primitive = new ModelComponents.Primitive();
-  primitive.attributes = attributes;
-  primitive.indices = indices;
-  primitive.featureIds = featureIds;
-  primitive.primitiveType = PrimitiveType.LINES;
-  primitive.material = material;
+    const primitive = new ModelComponents.Primitive();
+    primitive.attributes = attributes;
+    primitive.indices = indices;
+    primitive.featureIds = featureIds;
+    primitive.primitiveType = PrimitiveType.LINES;
+    primitive.material = material;
 
-  return primitive;
+    return primitive;
 }
 
 function createPointsPrimitive(features, toLocal, frameState) {
-  // Count the number of vertices
-  let vertexCount = 0;
+    // Count the number of vertices
+    let vertexCount = 0;
 
-  const featureCount = features.length;
+    const featureCount = features.length;
 
-  for (let i = 0; i < featureCount; i++) {
-    const feature = features[i];
-    if (defined(feature.points)) {
-      vertexCount += feature.points.length;
-    }
-  }
-
-  // Allocate typed arrays
-  const positionsTypedArray = new Float32Array(vertexCount * 3);
-  const featureIdsTypedArray = new Float32Array(vertexCount);
-
-  // Process the data. Convert positions to local ENU.
-  const localMin = new Cartesian3(
-    Number.POSITIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-  );
-
-  const localMax = new Cartesian3(
-    Number.NEGATIVE_INFINITY,
-    Number.NEGATIVE_INFINITY,
-    Number.NEGATIVE_INFINITY,
-  );
-
-  let vertexCounter = 0;
-
-  for (let i = 0; i < featureCount; i++) {
-    const feature = features[i];
-
-    if (!defined(feature.points)) {
-      continue;
+    for (let i = 0; i < featureCount; i++) {
+        const feature = features[i];
+        if (defined(feature.points)) {
+            vertexCount += feature.points.length;
+        }
     }
 
-    const pointsLength = feature.points.length;
-    for (let j = 0; j < pointsLength; j++) {
-      const cartographic = feature.points[j];
-      const globalCartesian = Cartesian3.fromDegrees(
-        cartographic.x,
-        cartographic.y,
-        cartographic.z,
-        Ellipsoid.WGS84,
-        scratchCartesian,
-      );
-      const localCartesian = Matrix4.multiplyByPoint(
-        toLocal,
-        globalCartesian,
-        scratchCartesian,
-      );
+    // Allocate typed arrays
+    const positionsTypedArray = new Float32Array(vertexCount * 3);
+    const featureIdsTypedArray = new Float32Array(vertexCount);
 
-      Cartesian3.minimumByComponent(localMin, localCartesian, localMin);
-      Cartesian3.maximumByComponent(localMax, localCartesian, localMax);
+    // Process the data. Convert positions to local ENU.
+    const localMin = new Cartesian3(
+        Number.POSITIVE_INFINITY,
+        Number.POSITIVE_INFINITY,
+        Number.POSITIVE_INFINITY,
+    );
 
-      Cartesian3.pack(localCartesian, positionsTypedArray, vertexCounter * 3);
+    const localMax = new Cartesian3(
+        Number.NEGATIVE_INFINITY,
+        Number.NEGATIVE_INFINITY,
+        Number.NEGATIVE_INFINITY,
+    );
 
-      featureIdsTypedArray[vertexCounter] = i;
+    let vertexCounter = 0;
 
-      vertexCounter++;
+    for (let i = 0; i < featureCount; i++) {
+        const feature = features[i];
+
+        if (!defined(feature.points)) {
+            continue;
+        }
+
+        const pointsLength = feature.points.length;
+        for (let j = 0; j < pointsLength; j++) {
+            const cartographic = feature.points[j];
+            const globalCartesian = Cartesian3.fromDegrees(
+                cartographic.x,
+                cartographic.y,
+                cartographic.z,
+                Ellipsoid.WGS84,
+                scratchCartesian,
+            );
+            const localCartesian = Matrix4.multiplyByPoint(
+                toLocal,
+                globalCartesian,
+                scratchCartesian,
+            );
+
+            Cartesian3.minimumByComponent(localMin, localCartesian, localMin);
+            Cartesian3.maximumByComponent(localMax, localCartesian, localMax);
+
+            Cartesian3.pack(
+                localCartesian,
+                positionsTypedArray,
+                vertexCounter * 3,
+            );
+
+            featureIdsTypedArray[vertexCounter] = i;
+
+            vertexCounter++;
+        }
     }
-  }
 
-  // Create GPU buffers
-  const positionBuffer = Buffer.createVertexBuffer({
-    typedArray: positionsTypedArray,
-    context: frameState.context,
-    usage: BufferUsage.STATIC_DRAW,
-  });
-  positionBuffer.vertexArrayDestroyable = false;
+    // Create GPU buffers
+    const positionBuffer = Buffer.createVertexBuffer({
+        typedArray: positionsTypedArray,
+        context: frameState.context,
+        usage: BufferUsage.STATIC_DRAW,
+    });
+    positionBuffer.vertexArrayDestroyable = false;
 
-  const featureIdBuffer = Buffer.createVertexBuffer({
-    typedArray: featureIdsTypedArray,
-    context: frameState.context,
-    usage: BufferUsage.STATIC_DRAW,
-  });
-  featureIdBuffer.vertexArrayDestroyable = false;
+    const featureIdBuffer = Buffer.createVertexBuffer({
+        typedArray: featureIdsTypedArray,
+        context: frameState.context,
+        usage: BufferUsage.STATIC_DRAW,
+    });
+    featureIdBuffer.vertexArrayDestroyable = false;
 
-  // Create ModelComponents
-  const positionAttribute = new ModelComponents.Attribute();
-  positionAttribute.semantic = VertexAttributeSemantic.POSITION;
-  positionAttribute.componentDatatype = ComponentDatatype.FLOAT;
-  positionAttribute.type = AttributeType.VEC3;
-  positionAttribute.count = vertexCount;
-  positionAttribute.min = localMin;
-  positionAttribute.max = localMax;
-  positionAttribute.buffer = positionBuffer;
+    // Create ModelComponents
+    const positionAttribute = new ModelComponents.Attribute();
+    positionAttribute.semantic = VertexAttributeSemantic.POSITION;
+    positionAttribute.componentDatatype = ComponentDatatype.FLOAT;
+    positionAttribute.type = AttributeType.VEC3;
+    positionAttribute.count = vertexCount;
+    positionAttribute.min = localMin;
+    positionAttribute.max = localMax;
+    positionAttribute.buffer = positionBuffer;
 
-  const featureIdAttribute = new ModelComponents.Attribute();
-  featureIdAttribute.semantic = VertexAttributeSemantic.FEATURE_ID;
-  featureIdAttribute.setIndex = 0;
-  featureIdAttribute.componentDatatype = ComponentDatatype.FLOAT;
-  featureIdAttribute.type = AttributeType.SCALAR;
-  featureIdAttribute.count = vertexCount;
-  featureIdAttribute.buffer = featureIdBuffer;
+    const featureIdAttribute = new ModelComponents.Attribute();
+    featureIdAttribute.semantic = VertexAttributeSemantic.FEATURE_ID;
+    featureIdAttribute.setIndex = 0;
+    featureIdAttribute.componentDatatype = ComponentDatatype.FLOAT;
+    featureIdAttribute.type = AttributeType.SCALAR;
+    featureIdAttribute.count = vertexCount;
+    featureIdAttribute.buffer = featureIdBuffer;
 
-  const attributes = [positionAttribute, featureIdAttribute];
+    const attributes = [positionAttribute, featureIdAttribute];
 
-  const material = new ModelComponents.Material();
-  material.unlit = true;
+    const material = new ModelComponents.Material();
+    material.unlit = true;
 
-  const featureId = new ModelComponents.FeatureIdAttribute();
-  featureId.featureCount = featureCount;
-  featureId.propertyTableId = 0;
-  featureId.setIndex = 0;
-  featureId.positionalLabel = "featureId_0";
+    const featureId = new ModelComponents.FeatureIdAttribute();
+    featureId.featureCount = featureCount;
+    featureId.propertyTableId = 0;
+    featureId.setIndex = 0;
+    featureId.positionalLabel = "featureId_0";
 
-  const featureIds = [featureId];
+    const featureIds = [featureId];
 
-  const primitive = new ModelComponents.Primitive();
-  primitive.attributes = attributes;
-  primitive.featureIds = featureIds;
-  primitive.primitiveType = PrimitiveType.POINTS;
-  primitive.material = material;
+    const primitive = new ModelComponents.Primitive();
+    primitive.attributes = attributes;
+    primitive.featureIds = featureIds;
+    primitive.primitiveType = PrimitiveType.POINTS;
+    primitive.material = material;
 
-  return primitive;
+    return primitive;
 }
 
 function parse(geoJson, frameState) {
-  const result = new ParseResult();
+    const result = new ParseResult();
 
-  // Parse the GeoJSON
-  const parseFunction = geoJsonObjectTypes[geoJson.type];
-  if (defined(parseFunction)) {
-    parseFunction(geoJson, result);
-  }
+    // Parse the GeoJSON
+    const parseFunction = geoJsonObjectTypes[geoJson.type];
+    if (defined(parseFunction)) {
+        parseFunction(geoJson, result);
+    }
 
-  const features = result.features;
-  const featureCount = features.length;
+    const features = result.features;
+    const featureCount = features.length;
 
-  if (featureCount === 0) {
-    throw new RuntimeError("GeoJSON must have at least one feature");
-  }
+    if (featureCount === 0) {
+        throw new RuntimeError("GeoJSON must have at least one feature");
+    }
 
-  // Allocate space for property values
-  const properties = {};
-  for (let i = 0; i < featureCount; i++) {
-    const feature = features[i];
-    const featureProperties = feature.properties ?? Frozen.EMPTY_OBJECT;
-    for (const propertyId in featureProperties) {
-      if (featureProperties.hasOwnProperty(propertyId)) {
-        if (!defined(properties[propertyId])) {
-          properties[propertyId] = new Array(featureCount);
+    // Allocate space for property values
+    const properties = {};
+    for (let i = 0; i < featureCount; i++) {
+        const feature = features[i];
+        const featureProperties = feature.properties ?? Frozen.EMPTY_OBJECT;
+        for (const propertyId in featureProperties) {
+            if (featureProperties.hasOwnProperty(propertyId)) {
+                if (!defined(properties[propertyId])) {
+                    properties[propertyId] = new Array(featureCount);
+                }
+            }
         }
-      }
     }
-  }
 
-  // Fill in the property values. Default to empty string for undefined values.
-  for (let i = 0; i < featureCount; i++) {
-    const feature = features[i];
-    for (const propertyId in properties) {
-      if (properties.hasOwnProperty(propertyId)) {
-        const value = feature.properties[propertyId] ?? "";
-        properties[propertyId][i] = value;
-      }
-    }
-  }
-
-  const jsonMetadataTable = new JsonMetadataTable({
-    count: featureCount,
-    properties: properties,
-  });
-
-  const propertyTable = new PropertyTable({
-    id: 0,
-    count: featureCount,
-    jsonMetadataTable: jsonMetadataTable,
-  });
-  const propertyTables = [propertyTable];
-
-  const schema = MetadataSchema.fromJson({});
-
-  const structuralMetadata = new StructuralMetadata({
-    schema: schema,
-    propertyTables: propertyTables,
-  });
-
-  // Find the cartographic bounding box
-  const cartographicMin = new Cartesian3(
-    Number.POSITIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-  );
-
-  const cartographicMax = new Cartesian3(
-    Number.NEGATIVE_INFINITY,
-    Number.NEGATIVE_INFINITY,
-    Number.NEGATIVE_INFINITY,
-  );
-
-  let hasLines = false;
-  let hasPoints = false;
-
-  for (let i = 0; i < featureCount; i++) {
-    const feature = features[i];
-    if (defined(feature.lines)) {
-      hasLines = true;
-      const linesLength = feature.lines.length;
-      for (let j = 0; j < linesLength; j++) {
-        const line = feature.lines[j];
-        const positionsLength = line.length;
-        for (let k = 0; k < positionsLength; k++) {
-          Cartesian3.minimumByComponent(
-            cartographicMin,
-            line[k],
-            cartographicMin,
-          );
-          Cartesian3.maximumByComponent(
-            cartographicMax,
-            line[k],
-            cartographicMax,
-          );
+    // Fill in the property values. Default to empty string for undefined values.
+    for (let i = 0; i < featureCount; i++) {
+        const feature = features[i];
+        for (const propertyId in properties) {
+            if (properties.hasOwnProperty(propertyId)) {
+                const value = feature.properties[propertyId] ?? "";
+                properties[propertyId][i] = value;
+            }
         }
-      }
     }
 
-    if (defined(feature.points)) {
-      hasPoints = true;
-      const pointsLength = feature.points.length;
-      for (let j = 0; j < pointsLength; j++) {
-        const point = feature.points[j];
-        Cartesian3.minimumByComponent(cartographicMin, point, cartographicMin);
-        Cartesian3.maximumByComponent(cartographicMax, point, cartographicMax);
-      }
+    const jsonMetadataTable = new JsonMetadataTable({
+        count: featureCount,
+        properties: properties,
+    });
+
+    const propertyTable = new PropertyTable({
+        id: 0,
+        count: featureCount,
+        jsonMetadataTable: jsonMetadataTable,
+    });
+    const propertyTables = [propertyTable];
+
+    const schema = MetadataSchema.fromJson({});
+
+    const structuralMetadata = new StructuralMetadata({
+        schema: schema,
+        propertyTables: propertyTables,
+    });
+
+    // Find the cartographic bounding box
+    const cartographicMin = new Cartesian3(
+        Number.POSITIVE_INFINITY,
+        Number.POSITIVE_INFINITY,
+        Number.POSITIVE_INFINITY,
+    );
+
+    const cartographicMax = new Cartesian3(
+        Number.NEGATIVE_INFINITY,
+        Number.NEGATIVE_INFINITY,
+        Number.NEGATIVE_INFINITY,
+    );
+
+    let hasLines = false;
+    let hasPoints = false;
+
+    for (let i = 0; i < featureCount; i++) {
+        const feature = features[i];
+        if (defined(feature.lines)) {
+            hasLines = true;
+            const linesLength = feature.lines.length;
+            for (let j = 0; j < linesLength; j++) {
+                const line = feature.lines[j];
+                const positionsLength = line.length;
+                for (let k = 0; k < positionsLength; k++) {
+                    Cartesian3.minimumByComponent(
+                        cartographicMin,
+                        line[k],
+                        cartographicMin,
+                    );
+                    Cartesian3.maximumByComponent(
+                        cartographicMax,
+                        line[k],
+                        cartographicMax,
+                    );
+                }
+            }
+        }
+
+        if (defined(feature.points)) {
+            hasPoints = true;
+            const pointsLength = feature.points.length;
+            for (let j = 0; j < pointsLength; j++) {
+                const point = feature.points[j];
+                Cartesian3.minimumByComponent(
+                    cartographicMin,
+                    point,
+                    cartographicMin,
+                );
+                Cartesian3.maximumByComponent(
+                    cartographicMax,
+                    point,
+                    cartographicMax,
+                );
+            }
+        }
     }
-  }
 
-  // Compute the ENU matrix
-  const cartographicCenter = Cartesian3.midpoint(
-    cartographicMin,
-    cartographicMax,
-    new Cartesian3(),
-  );
-  const ecefCenter = Cartesian3.fromDegrees(
-    cartographicCenter.x,
-    cartographicCenter.y,
-    cartographicCenter.z,
-    Ellipsoid.WGS84,
-    new Cartesian3(),
-  );
-  const toGlobal = Transforms.eastNorthUpToFixedFrame(
-    ecefCenter,
-    Ellipsoid.WGS84,
-    new Matrix4(),
-  );
-  const toLocal = Matrix4.inverseTransformation(toGlobal, new Matrix4());
+    // Compute the ENU matrix
+    const cartographicCenter = Cartesian3.midpoint(
+        cartographicMin,
+        cartographicMax,
+        new Cartesian3(),
+    );
+    const ecefCenter = Cartesian3.fromDegrees(
+        cartographicCenter.x,
+        cartographicCenter.y,
+        cartographicCenter.z,
+        Ellipsoid.WGS84,
+        new Cartesian3(),
+    );
+    const toGlobal = Transforms.eastNorthUpToFixedFrame(
+        ecefCenter,
+        Ellipsoid.WGS84,
+        new Matrix4(),
+    );
+    const toLocal = Matrix4.inverseTransformation(toGlobal, new Matrix4());
 
-  const primitives = [];
+    const primitives = [];
 
-  if (hasLines) {
-    primitives.push(createLinesPrimitive(features, toLocal, frameState));
-  }
+    if (hasLines) {
+        primitives.push(createLinesPrimitive(features, toLocal, frameState));
+    }
 
-  if (hasPoints) {
-    primitives.push(createPointsPrimitive(features, toLocal, frameState));
-  }
+    if (hasPoints) {
+        primitives.push(createPointsPrimitive(features, toLocal, frameState));
+    }
 
-  const node = new ModelComponents.Node();
-  node.index = 0;
-  node.primitives = primitives;
+    const node = new ModelComponents.Node();
+    node.index = 0;
+    node.primitives = primitives;
 
-  const nodes = [node];
+    const nodes = [node];
 
-  const scene = new ModelComponents.Scene();
-  scene.nodes = nodes;
+    const scene = new ModelComponents.Scene();
+    scene.nodes = nodes;
 
-  const components = new ModelComponents.Components();
-  components.scene = scene;
-  components.nodes = nodes;
-  components.transform = toGlobal;
-  components.structuralMetadata = structuralMetadata;
+    const components = new ModelComponents.Components();
+    components.scene = scene;
+    components.nodes = nodes;
+    components.transform = toGlobal;
+    components.structuralMetadata = structuralMetadata;
 
-  return components;
+    return components;
 }
 
 /**
@@ -691,7 +716,7 @@ function parse(geoJson, frameState) {
  * @private
  */
 GeoJsonLoader.prototype.unload = function () {
-  this._components = undefined;
+    this._components = undefined;
 };
 
 export default GeoJsonLoader;

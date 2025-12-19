@@ -13,72 +13,76 @@ import Check from "../../Core/Check.js";
  * @private
  */
 class MappedPositions {
-  /**
-   * Creates a new instance
-   *
-   * @param {Iterable<Cartographic>} cartographicPositions The positions
-   * @param {number} numPositions The number of positions
-   * @param {Rectangle} cartographicBoundingRectangle The bounding
-   * rectangle of the positions
-   * @param {Ellipsoid} ellipsoid The ellipsoid
-   */
-  constructor(
-    cartographicPositions,
-    numPositions,
-    cartographicBoundingRectangle,
-    ellipsoid,
-  ) {
-    //>>includeStart('debug', pragmas.debug);
-    Check.defined("cartographicPositions", cartographicPositions);
-    Check.typeOf.number.greaterThanOrEquals("numPositions", numPositions, 0);
-    Check.defined(
-      "cartographicBoundingRectangle",
-      cartographicBoundingRectangle,
-    );
-    Check.defined("ellipsoid", ellipsoid);
-    //>>includeEnd('debug');
+    /**
+     * Creates a new instance
+     *
+     * @param {Iterable<Cartographic>} cartographicPositions The positions
+     * @param {number} numPositions The number of positions
+     * @param {Rectangle} cartographicBoundingRectangle The bounding
+     * rectangle of the positions
+     * @param {Ellipsoid} ellipsoid The ellipsoid
+     */
+    constructor(
+        cartographicPositions,
+        numPositions,
+        cartographicBoundingRectangle,
+        ellipsoid,
+    ) {
+        //>>includeStart('debug', pragmas.debug);
+        Check.defined("cartographicPositions", cartographicPositions);
+        Check.typeOf.number.greaterThanOrEquals(
+            "numPositions",
+            numPositions,
+            0,
+        );
+        Check.defined(
+            "cartographicBoundingRectangle",
+            cartographicBoundingRectangle,
+        );
+        Check.defined("ellipsoid", ellipsoid);
+        //>>includeEnd('debug');
 
-    this._cartographicPositions = cartographicPositions;
-    this._numPositions = numPositions;
-    this._cartographicBoundingRectangle = cartographicBoundingRectangle;
-    this._ellipsoid = ellipsoid;
-  }
+        this._cartographicPositions = cartographicPositions;
+        this._numPositions = numPositions;
+        this._cartographicBoundingRectangle = cartographicBoundingRectangle;
+        this._ellipsoid = ellipsoid;
+    }
 
-  /**
-   * Returns the cartographic positions
-   *
-   * @returns {Iterable<Cartographic>} The positions
-   */
-  get cartographicPositions() {
-    return this._cartographicPositions;
-  }
+    /**
+     * Returns the cartographic positions
+     *
+     * @returns {Iterable<Cartographic>} The positions
+     */
+    get cartographicPositions() {
+        return this._cartographicPositions;
+    }
 
-  /**
-   * Returns the number of positions
-   *
-   * @returns {number} The number of positions
-   */
-  get numPositions() {
-    return this._numPositions;
-  }
+    /**
+     * Returns the number of positions
+     *
+     * @returns {number} The number of positions
+     */
+    get numPositions() {
+        return this._numPositions;
+    }
 
-  /**
-   * Returns the cartographic bounding rectangle
-   *
-   * @returns {Rectangle} The rectangle
-   */
-  get cartographicBoundingRectangle() {
-    return this._cartographicBoundingRectangle;
-  }
+    /**
+     * Returns the cartographic bounding rectangle
+     *
+     * @returns {Rectangle} The rectangle
+     */
+    get cartographicBoundingRectangle() {
+        return this._cartographicBoundingRectangle;
+    }
 
-  /**
-   * Returns the ellipsoid for which these positions have been created
-   *
-   * @returns {Ellipsoid} The ellipsoid
-   */
-  get ellipsoid() {
-    return this._ellipsoid;
-  }
+    /**
+     * Returns the ellipsoid for which these positions have been created
+     *
+     * @returns {Ellipsoid} The ellipsoid
+     */
+    get ellipsoid() {
+        return this._ellipsoid;
+    }
 }
 
 export default MappedPositions;

@@ -24,24 +24,24 @@ import Spline from "./Spline.js";
  * @see MorphWeightSpline
  */
 function ConstantSpline(value) {
-  this._value = value;
-  this._valueType = Spline.getPointType(value);
+    this._value = value;
+    this._valueType = Spline.getPointType(value);
 }
 
 Object.defineProperties(ConstantSpline.prototype, {
-  /**
-   * The constant value that the spline evaluates to.
-   *
-   * @memberof ConstantSpline.prototype
-   *
-   * @type {number|Cartesian3|Quaternion}
-   * @readonly
-   */
-  value: {
-    get: function () {
-      return this._value;
+    /**
+     * The constant value that the spline evaluates to.
+     *
+     * @memberof ConstantSpline.prototype
+     *
+     * @type {number|Cartesian3|Quaternion}
+     * @readonly
+     */
+    value: {
+        get: function () {
+            return this._value;
+        },
     },
-  },
 });
 
 /**
@@ -56,11 +56,11 @@ Object.defineProperties(ConstantSpline.prototype, {
  * @exception {DeveloperError} findTimeInterval cannot be called on a ConstantSpline.
  */
 ConstantSpline.prototype.findTimeInterval = function (time) {
-  //>>includeStart('debug', pragmas.debug);
-  throw new DeveloperError(
-    "findTimeInterval cannot be called on a ConstantSpline.",
-  );
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    throw new DeveloperError(
+        "findTimeInterval cannot be called on a ConstantSpline.",
+    );
+    //>>includeEnd('debug');
 };
 
 /**
@@ -71,11 +71,11 @@ ConstantSpline.prototype.findTimeInterval = function (time) {
  * @return {number} The time, wrapped around to the updated animation.
  */
 ConstantSpline.prototype.wrapTime = function (time) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("time", time);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("time", time);
+    //>>includeEnd('debug');
 
-  return 0.0;
+    return 0.0;
 };
 
 /**
@@ -86,11 +86,11 @@ ConstantSpline.prototype.wrapTime = function (time) {
  * @return {number} The time, clamped to the animation period.
  */
 ConstantSpline.prototype.clampTime = function (time) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("time", time);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("time", time);
+    //>>includeEnd('debug');
 
-  return 0.0;
+    return 0.0;
 };
 
 /**
@@ -102,18 +102,18 @@ ConstantSpline.prototype.clampTime = function (time) {
  * @returns {number|Cartesian3|Quaternion} The modified result parameter or the value that the constant spline represents.
  */
 ConstantSpline.prototype.evaluate = function (time, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("time", time);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("time", time);
+    //>>includeEnd('debug');
 
-  const value = this._value;
-  const ValueType = this._valueType;
+    const value = this._value;
+    const ValueType = this._valueType;
 
-  if (ValueType === Number) {
-    return value;
-  }
+    if (ValueType === Number) {
+        return value;
+    }
 
-  return ValueType.clone(value, result);
+    return ValueType.clone(value, result);
 };
 
 export default ConstantSpline;

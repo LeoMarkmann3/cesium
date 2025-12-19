@@ -16,7 +16,7 @@ import PrimitiveType from "./PrimitiveType.js";
  *
  */
 function PlaneOutlineGeometry() {
-  this._workerName = "createPlaneOutlineGeometry";
+    this._workerName = "createPlaneOutlineGeometry";
 }
 
 /**
@@ -34,12 +34,12 @@ PlaneOutlineGeometry.packedLength = 0;
  * @returns {number[]} The array that was packed into
  */
 PlaneOutlineGeometry.pack = function (value, array) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("value", value);
-  Check.defined("array", array);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("value", value);
+    Check.defined("array", array);
+    //>>includeEnd('debug');
 
-  return array;
+    return array;
 };
 
 /**
@@ -51,15 +51,15 @@ PlaneOutlineGeometry.pack = function (value, array) {
  * @returns {PlaneOutlineGeometry} The modified result parameter or a new PlaneOutlineGeometry instance if one was not provided.
  */
 PlaneOutlineGeometry.unpack = function (array, startingIndex, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("array", array);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("array", array);
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    return new PlaneOutlineGeometry();
-  }
+    if (!defined(result)) {
+        return new PlaneOutlineGeometry();
+    }
 
-  return result;
+    return result;
 };
 
 const min = new Cartesian3(-0.5, -0.5, 0.0);
@@ -71,43 +71,43 @@ const max = new Cartesian3(0.5, 0.5, 0.0);
  * @returns {Geometry|undefined} The computed vertices and indices.
  */
 PlaneOutlineGeometry.createGeometry = function () {
-  const attributes = new GeometryAttributes();
-  const indices = new Uint16Array(4 * 2);
-  const positions = new Float64Array(4 * 3);
+    const attributes = new GeometryAttributes();
+    const indices = new Uint16Array(4 * 2);
+    const positions = new Float64Array(4 * 3);
 
-  positions[0] = min.x;
-  positions[1] = min.y;
-  positions[2] = min.z;
-  positions[3] = max.x;
-  positions[4] = min.y;
-  positions[5] = min.z;
-  positions[6] = max.x;
-  positions[7] = max.y;
-  positions[8] = min.z;
-  positions[9] = min.x;
-  positions[10] = max.y;
-  positions[11] = min.z;
+    positions[0] = min.x;
+    positions[1] = min.y;
+    positions[2] = min.z;
+    positions[3] = max.x;
+    positions[4] = min.y;
+    positions[5] = min.z;
+    positions[6] = max.x;
+    positions[7] = max.y;
+    positions[8] = min.z;
+    positions[9] = min.x;
+    positions[10] = max.y;
+    positions[11] = min.z;
 
-  attributes.position = new GeometryAttribute({
-    componentDatatype: ComponentDatatype.DOUBLE,
-    componentsPerAttribute: 3,
-    values: positions,
-  });
+    attributes.position = new GeometryAttribute({
+        componentDatatype: ComponentDatatype.DOUBLE,
+        componentsPerAttribute: 3,
+        values: positions,
+    });
 
-  indices[0] = 0;
-  indices[1] = 1;
-  indices[2] = 1;
-  indices[3] = 2;
-  indices[4] = 2;
-  indices[5] = 3;
-  indices[6] = 3;
-  indices[7] = 0;
+    indices[0] = 0;
+    indices[1] = 1;
+    indices[2] = 1;
+    indices[3] = 2;
+    indices[4] = 2;
+    indices[5] = 3;
+    indices[6] = 3;
+    indices[7] = 0;
 
-  return new Geometry({
-    attributes: attributes,
-    indices: indices,
-    primitiveType: PrimitiveType.LINES,
-    boundingSphere: new BoundingSphere(Cartesian3.ZERO, Math.sqrt(2.0)),
-  });
+    return new Geometry({
+        attributes: attributes,
+        indices: indices,
+        primitiveType: PrimitiveType.LINES,
+        boundingSphere: new BoundingSphere(Cartesian3.ZERO, Math.sqrt(2.0)),
+    });
 };
 export default PlaneOutlineGeometry;

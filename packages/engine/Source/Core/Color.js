@@ -5,22 +5,22 @@ import FeatureDetection from "./FeatureDetection.js";
 import CesiumMath from "./Math.js";
 
 function hue2rgb(m1, m2, h) {
-  if (h < 0) {
-    h += 1;
-  }
-  if (h > 1) {
-    h -= 1;
-  }
-  if (h * 6 < 1) {
-    return m1 + (m2 - m1) * 6 * h;
-  }
-  if (h * 2 < 1) {
-    return m2;
-  }
-  if (h * 3 < 2) {
-    return m1 + (m2 - m1) * (2 / 3 - h) * 6;
-  }
-  return m1;
+    if (h < 0) {
+        h += 1;
+    }
+    if (h > 1) {
+        h -= 1;
+    }
+    if (h * 6 < 1) {
+        return m1 + (m2 - m1) * 6 * h;
+    }
+    if (h * 2 < 1) {
+        return m2;
+    }
+    if (h * 3 < 2) {
+        return m1 + (m2 - m1) * (2 / 3 - h) * 6;
+    }
+    return m1;
 }
 
 /**
@@ -37,30 +37,30 @@ function hue2rgb(m1, m2, h) {
  * @see Packable
  */
 function Color(red, green, blue, alpha) {
-  /**
-   * The red component.
-   * @type {number}
-   * @default 1.0
-   */
-  this.red = red ?? 1.0;
-  /**
-   * The green component.
-   * @type {number}
-   * @default 1.0
-   */
-  this.green = green ?? 1.0;
-  /**
-   * The blue component.
-   * @type {number}
-   * @default 1.0
-   */
-  this.blue = blue ?? 1.0;
-  /**
-   * The alpha component.
-   * @type {number}
-   * @default 1.0
-   */
-  this.alpha = alpha ?? 1.0;
+    /**
+     * The red component.
+     * @type {number}
+     * @default 1.0
+     */
+    this.red = red ?? 1.0;
+    /**
+     * The green component.
+     * @type {number}
+     * @default 1.0
+     */
+    this.green = green ?? 1.0;
+    /**
+     * The blue component.
+     * @type {number}
+     * @default 1.0
+     */
+    this.blue = blue ?? 1.0;
+    /**
+     * The alpha component.
+     * @type {number}
+     * @default 1.0
+     */
+    this.alpha = alpha ?? 1.0;
 }
 
 /**
@@ -72,19 +72,19 @@ function Color(red, green, blue, alpha) {
  * @returns {Color} The modified result parameter or a new Color instance if one was not provided.
  */
 Color.fromCartesian4 = function (cartesian, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("cartesian", cartesian);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("cartesian", cartesian);
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    return new Color(cartesian.x, cartesian.y, cartesian.z, cartesian.w);
-  }
+    if (!defined(result)) {
+        return new Color(cartesian.x, cartesian.y, cartesian.z, cartesian.w);
+    }
 
-  result.red = cartesian.x;
-  result.green = cartesian.y;
-  result.blue = cartesian.z;
-  result.alpha = cartesian.w;
-  return result;
+    result.red = cartesian.x;
+    result.green = cartesian.y;
+    result.blue = cartesian.z;
+    result.alpha = cartesian.w;
+    return result;
 };
 
 /**
@@ -99,20 +99,20 @@ Color.fromCartesian4 = function (cartesian, result) {
  * @returns {Color} The modified result parameter or a new Color instance if one was not provided.
  */
 Color.fromBytes = function (red, green, blue, alpha, result) {
-  red = Color.byteToFloat(red ?? 255.0);
-  green = Color.byteToFloat(green ?? 255.0);
-  blue = Color.byteToFloat(blue ?? 255.0);
-  alpha = Color.byteToFloat(alpha ?? 255.0);
+    red = Color.byteToFloat(red ?? 255.0);
+    green = Color.byteToFloat(green ?? 255.0);
+    blue = Color.byteToFloat(blue ?? 255.0);
+    alpha = Color.byteToFloat(alpha ?? 255.0);
 
-  if (!defined(result)) {
-    return new Color(red, green, blue, alpha);
-  }
+    if (!defined(result)) {
+        return new Color(red, green, blue, alpha);
+    }
 
-  result.red = red;
-  result.green = green;
-  result.blue = blue;
-  result.alpha = alpha;
-  return result;
+    result.red = red;
+    result.green = green;
+    result.blue = blue;
+    result.alpha = alpha;
+    return result;
 };
 
 /**
@@ -127,29 +127,29 @@ Color.fromBytes = function (red, green, blue, alpha, result) {
  * @example const translucentRed = Cesium.Color.fromAlpha(Cesium.Color.RED, 0.9);
  */
 Color.fromAlpha = function (color, alpha, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("color", color);
-  Check.typeOf.number("alpha", alpha);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("color", color);
+    Check.typeOf.number("alpha", alpha);
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    return new Color(color.red, color.green, color.blue, alpha);
-  }
+    if (!defined(result)) {
+        return new Color(color.red, color.green, color.blue, alpha);
+    }
 
-  result.red = color.red;
-  result.green = color.green;
-  result.blue = color.blue;
-  result.alpha = alpha;
-  return result;
+    result.red = color.red;
+    result.green = color.green;
+    result.blue = color.blue;
+    result.alpha = alpha;
+    return result;
 };
 
 let scratchArrayBuffer;
 let scratchUint32Array;
 let scratchUint8Array;
 if (FeatureDetection.supportsTypedArrays()) {
-  scratchArrayBuffer = new ArrayBuffer(4);
-  scratchUint32Array = new Uint32Array(scratchArrayBuffer);
-  scratchUint8Array = new Uint8Array(scratchArrayBuffer);
+    scratchArrayBuffer = new ArrayBuffer(4);
+    scratchUint32Array = new Uint32Array(scratchArrayBuffer);
+    scratchUint8Array = new Uint8Array(scratchArrayBuffer);
 }
 
 /**
@@ -166,15 +166,15 @@ if (FeatureDetection.supportsTypedArrays()) {
  * @see Color#toRgba
  */
 Color.fromRgba = function (rgba, result) {
-  // scratchUint32Array and scratchUint8Array share an underlying array buffer
-  scratchUint32Array[0] = rgba;
-  return Color.fromBytes(
-    scratchUint8Array[0],
-    scratchUint8Array[1],
-    scratchUint8Array[2],
-    scratchUint8Array[3],
-    result,
-  );
+    // scratchUint32Array and scratchUint8Array share an underlying array buffer
+    scratchUint32Array[0] = rgba;
+    return Color.fromBytes(
+        scratchUint8Array[0],
+        scratchUint8Array[1],
+        scratchUint8Array[2],
+        scratchUint8Array[3],
+        result,
+    );
 };
 
 /**
@@ -190,38 +190,38 @@ Color.fromRgba = function (rgba, result) {
  * @see {@link http://www.w3.org/TR/css3-color/#hsl-color|CSS color values}
  */
 Color.fromHsl = function (hue, saturation, lightness, alpha, result) {
-  hue = (hue ?? 0.0) % 1.0;
-  saturation = saturation ?? 0.0;
-  lightness = lightness ?? 0.0;
-  alpha = alpha ?? 1.0;
+    hue = (hue ?? 0.0) % 1.0;
+    saturation = saturation ?? 0.0;
+    lightness = lightness ?? 0.0;
+    alpha = alpha ?? 1.0;
 
-  let red = lightness;
-  let green = lightness;
-  let blue = lightness;
+    let red = lightness;
+    let green = lightness;
+    let blue = lightness;
 
-  if (saturation !== 0) {
-    let m2;
-    if (lightness < 0.5) {
-      m2 = lightness * (1 + saturation);
-    } else {
-      m2 = lightness + saturation - lightness * saturation;
+    if (saturation !== 0) {
+        let m2;
+        if (lightness < 0.5) {
+            m2 = lightness * (1 + saturation);
+        } else {
+            m2 = lightness + saturation - lightness * saturation;
+        }
+
+        const m1 = 2.0 * lightness - m2;
+        red = hue2rgb(m1, m2, hue + 1 / 3);
+        green = hue2rgb(m1, m2, hue);
+        blue = hue2rgb(m1, m2, hue - 1 / 3);
     }
 
-    const m1 = 2.0 * lightness - m2;
-    red = hue2rgb(m1, m2, hue + 1 / 3);
-    green = hue2rgb(m1, m2, hue);
-    blue = hue2rgb(m1, m2, hue - 1 / 3);
-  }
+    if (!defined(result)) {
+        return new Color(red, green, blue, alpha);
+    }
 
-  if (!defined(result)) {
-    return new Color(red, green, blue, alpha);
-  }
-
-  result.red = red;
-  result.green = green;
-  result.blue = blue;
-  result.alpha = alpha;
-  return result;
+    result.red = red;
+    result.green = green;
+    result.blue = blue;
+    result.alpha = alpha;
+    return result;
 };
 
 /**
@@ -269,95 +269,101 @@ Color.fromHsl = function (hue, saturation, lightness, alpha, result) {
  * });
  */
 Color.fromRandom = function (options, result) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  let red = options.red;
-  if (!defined(red)) {
-    const minimumRed = options.minimumRed ?? 0;
-    const maximumRed = options.maximumRed ?? 1.0;
+    let red = options.red;
+    if (!defined(red)) {
+        const minimumRed = options.minimumRed ?? 0;
+        const maximumRed = options.maximumRed ?? 1.0;
 
-    //>>includeStart('debug', pragmas.debug);
-    Check.typeOf.number.lessThanOrEquals("minimumRed", minimumRed, maximumRed);
-    //>>includeEnd('debug');
+        //>>includeStart('debug', pragmas.debug);
+        Check.typeOf.number.lessThanOrEquals(
+            "minimumRed",
+            minimumRed,
+            maximumRed,
+        );
+        //>>includeEnd('debug');
 
-    red =
-      minimumRed + CesiumMath.nextRandomNumber() * (maximumRed - minimumRed);
-  }
+        red =
+            minimumRed +
+            CesiumMath.nextRandomNumber() * (maximumRed - minimumRed);
+    }
 
-  let green = options.green;
-  if (!defined(green)) {
-    const minimumGreen = options.minimumGreen ?? 0;
-    const maximumGreen = options.maximumGreen ?? 1.0;
+    let green = options.green;
+    if (!defined(green)) {
+        const minimumGreen = options.minimumGreen ?? 0;
+        const maximumGreen = options.maximumGreen ?? 1.0;
 
-    //>>includeStart('debug', pragmas.debug);
-    Check.typeOf.number.lessThanOrEquals(
-      "minimumGreen",
-      minimumGreen,
-      maximumGreen,
-    );
-    //>>includeEnd('debug');
-    green =
-      minimumGreen +
-      CesiumMath.nextRandomNumber() * (maximumGreen - minimumGreen);
-  }
+        //>>includeStart('debug', pragmas.debug);
+        Check.typeOf.number.lessThanOrEquals(
+            "minimumGreen",
+            minimumGreen,
+            maximumGreen,
+        );
+        //>>includeEnd('debug');
+        green =
+            minimumGreen +
+            CesiumMath.nextRandomNumber() * (maximumGreen - minimumGreen);
+    }
 
-  let blue = options.blue;
-  if (!defined(blue)) {
-    const minimumBlue = options.minimumBlue ?? 0;
-    const maximumBlue = options.maximumBlue ?? 1.0;
+    let blue = options.blue;
+    if (!defined(blue)) {
+        const minimumBlue = options.minimumBlue ?? 0;
+        const maximumBlue = options.maximumBlue ?? 1.0;
 
-    //>>includeStart('debug', pragmas.debug);
-    Check.typeOf.number.lessThanOrEquals(
-      "minimumBlue",
-      minimumBlue,
-      maximumBlue,
-    );
-    //>>includeEnd('debug');
+        //>>includeStart('debug', pragmas.debug);
+        Check.typeOf.number.lessThanOrEquals(
+            "minimumBlue",
+            minimumBlue,
+            maximumBlue,
+        );
+        //>>includeEnd('debug');
 
-    blue =
-      minimumBlue + CesiumMath.nextRandomNumber() * (maximumBlue - minimumBlue);
-  }
+        blue =
+            minimumBlue +
+            CesiumMath.nextRandomNumber() * (maximumBlue - minimumBlue);
+    }
 
-  let alpha = options.alpha;
-  if (!defined(alpha)) {
-    const minimumAlpha = options.minimumAlpha ?? 0;
-    const maximumAlpha = options.maximumAlpha ?? 1.0;
+    let alpha = options.alpha;
+    if (!defined(alpha)) {
+        const minimumAlpha = options.minimumAlpha ?? 0;
+        const maximumAlpha = options.maximumAlpha ?? 1.0;
 
-    //>>includeStart('debug', pragmas.debug);
-    Check.typeOf.number.lessThanOrEquals(
-      "minimumAlpha",
-      minimumAlpha,
-      maximumAlpha,
-    );
-    //>>includeEnd('debug');
+        //>>includeStart('debug', pragmas.debug);
+        Check.typeOf.number.lessThanOrEquals(
+            "minimumAlpha",
+            minimumAlpha,
+            maximumAlpha,
+        );
+        //>>includeEnd('debug');
 
-    alpha =
-      minimumAlpha +
-      CesiumMath.nextRandomNumber() * (maximumAlpha - minimumAlpha);
-  }
+        alpha =
+            minimumAlpha +
+            CesiumMath.nextRandomNumber() * (maximumAlpha - minimumAlpha);
+    }
 
-  if (!defined(result)) {
-    return new Color(red, green, blue, alpha);
-  }
+    if (!defined(result)) {
+        return new Color(red, green, blue, alpha);
+    }
 
-  result.red = red;
-  result.green = green;
-  result.blue = blue;
-  result.alpha = alpha;
-  return result;
+    result.red = red;
+    result.green = green;
+    result.blue = blue;
+    result.alpha = alpha;
+    return result;
 };
 
 //#rgba
 const rgbaMatcher = /^#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?$/i;
 //#rrggbbaa
 const rrggbbaaMatcher =
-  /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?$/i;
+    /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?$/i;
 //rgb(), rgba(), or rgb%()
 const rgbParenthesesMatcher =
-  /^rgba?\s*\(\s*([0-9.]+%?)\s*[,\s]+\s*([0-9.]+%?)\s*[,\s]+\s*([0-9.]+%?)(?:\s*[,\s/]+\s*([0-9.]+))?\s*\)$/i;
+    /^rgba?\s*\(\s*([0-9.]+%?)\s*[,\s]+\s*([0-9.]+%?)\s*[,\s]+\s*([0-9.]+%?)(?:\s*[,\s/]+\s*([0-9.]+))?\s*\)$/i;
 //hsl() or hsla()
 const hslParenthesesMatcher =
-  /^hsla?\s*\(\s*([0-9.]+)\s*[,\s]+\s*([0-9.]+%)\s*[,\s]+\s*([0-9.]+%)(?:\s*[,\s/]+\s*([0-9.]+))?\s*\)$/i;
+    /^hsla?\s*\(\s*([0-9.]+)\s*[,\s]+\s*([0-9.]+%)\s*[,\s]+\s*([0-9.]+%)(?:\s*[,\s/]+\s*([0-9.]+))?\s*\)$/i;
 
 /**
  * Creates a Color instance from a CSS color value.
@@ -374,66 +380,69 @@ const hslParenthesesMatcher =
  * @see {@link http://www.w3.org/TR/css3-color|CSS color values}
  */
 Color.fromCssColorString = function (color, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("color", color);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("color", color);
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    result = new Color();
-  }
+    if (!defined(result)) {
+        result = new Color();
+    }
 
-  // Remove all surrounding whitespaces from the color string
-  color = color.trim();
+    // Remove all surrounding whitespaces from the color string
+    color = color.trim();
 
-  const namedColor = Color[color.toUpperCase()];
-  if (defined(namedColor)) {
-    Color.clone(namedColor, result);
+    const namedColor = Color[color.toUpperCase()];
+    if (defined(namedColor)) {
+        Color.clone(namedColor, result);
+        return result;
+    }
+
+    let matches = rgbaMatcher.exec(color);
+    if (matches !== null) {
+        result.red = parseInt(matches[1], 16) / 15;
+        result.green = parseInt(matches[2], 16) / 15.0;
+        result.blue = parseInt(matches[3], 16) / 15.0;
+        result.alpha = parseInt(matches[4] ?? "f", 16) / 15.0;
+        return result;
+    }
+
+    matches = rrggbbaaMatcher.exec(color);
+    if (matches !== null) {
+        result.red = parseInt(matches[1], 16) / 255.0;
+        result.green = parseInt(matches[2], 16) / 255.0;
+        result.blue = parseInt(matches[3], 16) / 255.0;
+        result.alpha = parseInt(matches[4] ?? "ff", 16) / 255.0;
+        return result;
+    }
+
+    matches = rgbParenthesesMatcher.exec(color);
+    if (matches !== null) {
+        result.red =
+            parseFloat(matches[1]) /
+            ("%" === matches[1].substr(-1) ? 100.0 : 255.0);
+        result.green =
+            parseFloat(matches[2]) /
+            ("%" === matches[2].substr(-1) ? 100.0 : 255.0);
+        result.blue =
+            parseFloat(matches[3]) /
+            ("%" === matches[3].substr(-1) ? 100.0 : 255.0);
+        result.alpha = parseFloat(matches[4] ?? "1.0");
+        return result;
+    }
+
+    matches = hslParenthesesMatcher.exec(color);
+    if (matches !== null) {
+        return Color.fromHsl(
+            parseFloat(matches[1]) / 360.0,
+            parseFloat(matches[2]) / 100.0,
+            parseFloat(matches[3]) / 100.0,
+            parseFloat(matches[4] ?? "1.0"),
+            result,
+        );
+    }
+
+    result = undefined;
     return result;
-  }
-
-  let matches = rgbaMatcher.exec(color);
-  if (matches !== null) {
-    result.red = parseInt(matches[1], 16) / 15;
-    result.green = parseInt(matches[2], 16) / 15.0;
-    result.blue = parseInt(matches[3], 16) / 15.0;
-    result.alpha = parseInt(matches[4] ?? "f", 16) / 15.0;
-    return result;
-  }
-
-  matches = rrggbbaaMatcher.exec(color);
-  if (matches !== null) {
-    result.red = parseInt(matches[1], 16) / 255.0;
-    result.green = parseInt(matches[2], 16) / 255.0;
-    result.blue = parseInt(matches[3], 16) / 255.0;
-    result.alpha = parseInt(matches[4] ?? "ff", 16) / 255.0;
-    return result;
-  }
-
-  matches = rgbParenthesesMatcher.exec(color);
-  if (matches !== null) {
-    result.red =
-      parseFloat(matches[1]) / ("%" === matches[1].substr(-1) ? 100.0 : 255.0);
-    result.green =
-      parseFloat(matches[2]) / ("%" === matches[2].substr(-1) ? 100.0 : 255.0);
-    result.blue =
-      parseFloat(matches[3]) / ("%" === matches[3].substr(-1) ? 100.0 : 255.0);
-    result.alpha = parseFloat(matches[4] ?? "1.0");
-    return result;
-  }
-
-  matches = hslParenthesesMatcher.exec(color);
-  if (matches !== null) {
-    return Color.fromHsl(
-      parseFloat(matches[1]) / 360.0,
-      parseFloat(matches[2]) / 100.0,
-      parseFloat(matches[3]) / 100.0,
-      parseFloat(matches[4] ?? "1.0"),
-      result,
-    );
-  }
-
-  result = undefined;
-  return result;
 };
 
 /**
@@ -452,18 +461,18 @@ Color.packedLength = 4;
  * @returns {number[]} The array that was packed into
  */
 Color.pack = function (value, array, startingIndex) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("value", value);
-  Check.defined("array", array);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("value", value);
+    Check.defined("array", array);
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
-  array[startingIndex++] = value.red;
-  array[startingIndex++] = value.green;
-  array[startingIndex++] = value.blue;
-  array[startingIndex] = value.alpha;
+    startingIndex = startingIndex ?? 0;
+    array[startingIndex++] = value.red;
+    array[startingIndex++] = value.green;
+    array[startingIndex++] = value.blue;
+    array[startingIndex] = value.alpha;
 
-  return array;
+    return array;
 };
 
 /**
@@ -475,19 +484,19 @@ Color.pack = function (value, array, startingIndex) {
  * @returns {Color} The modified result parameter or a new Color instance if one was not provided.
  */
 Color.unpack = function (array, startingIndex, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("array", array);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("array", array);
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
-  if (!defined(result)) {
-    result = new Color();
-  }
-  result.red = array[startingIndex++];
-  result.green = array[startingIndex++];
-  result.blue = array[startingIndex++];
-  result.alpha = array[startingIndex];
-  return result;
+    startingIndex = startingIndex ?? 0;
+    if (!defined(result)) {
+        result = new Color();
+    }
+    result.red = array[startingIndex++];
+    result.green = array[startingIndex++];
+    result.blue = array[startingIndex++];
+    result.alpha = array[startingIndex];
+    return result;
 };
 
 /**
@@ -498,7 +507,7 @@ Color.unpack = function (array, startingIndex, result) {
  * @returns {number} The converted number.
  */
 Color.byteToFloat = function (number) {
-  return number / 255.0;
+    return number / 255.0;
 };
 
 /**
@@ -509,7 +518,7 @@ Color.byteToFloat = function (number) {
  * @returns {number} The converted number.
  */
 Color.floatToByte = function (number) {
-  return number === 1.0 ? 255.0 : (number * 256.0) | 0;
+    return number === 1.0 ? 255.0 : (number * 256.0) | 0;
 };
 
 /**
@@ -520,17 +529,17 @@ Color.floatToByte = function (number) {
  * @returns {Color} The modified result parameter or a new instance if result was undefined. (Returns undefined if color is undefined)
  */
 Color.clone = function (color, result) {
-  if (!defined(color)) {
-    return undefined;
-  }
-  if (!defined(result)) {
-    return new Color(color.red, color.green, color.blue, color.alpha);
-  }
-  result.red = color.red;
-  result.green = color.green;
-  result.blue = color.blue;
-  result.alpha = color.alpha;
-  return result;
+    if (!defined(color)) {
+        return undefined;
+    }
+    if (!defined(result)) {
+        return new Color(color.red, color.green, color.blue, color.alpha);
+    }
+    result.red = color.red;
+    result.green = color.green;
+    result.blue = color.blue;
+    result.alpha = color.alpha;
+    return result;
 };
 
 /**
@@ -541,27 +550,27 @@ Color.clone = function (color, result) {
  * @returns {boolean} <code>true</code> if the Colors are equal; otherwise, <code>false</code>.
  */
 Color.equals = function (left, right) {
-  return (
-    left === right || //
-    (defined(left) && //
-      defined(right) && //
-      left.red === right.red && //
-      left.green === right.green && //
-      left.blue === right.blue && //
-      left.alpha === right.alpha)
-  );
+    return (
+        left === right || //
+        (defined(left) && //
+            defined(right) && //
+            left.red === right.red && //
+            left.green === right.green && //
+            left.blue === right.blue && //
+            left.alpha === right.alpha)
+    );
 };
 
 /**
  * @private
  */
 Color.equalsArray = function (color, array, offset) {
-  return (
-    color.red === array[offset] &&
-    color.green === array[offset + 1] &&
-    color.blue === array[offset + 2] &&
-    color.alpha === array[offset + 3]
-  );
+    return (
+        color.red === array[offset] &&
+        color.green === array[offset + 1] &&
+        color.blue === array[offset + 2] &&
+        color.alpha === array[offset + 3]
+    );
 };
 
 /**
@@ -571,7 +580,7 @@ Color.equalsArray = function (color, array, offset) {
  * @returns {Color} The modified result parameter or a new instance if result was undefined.
  */
 Color.prototype.clone = function (result) {
-  return Color.clone(this, result);
+    return Color.clone(this, result);
 };
 
 /**
@@ -581,7 +590,7 @@ Color.prototype.clone = function (result) {
  * @returns {boolean} <code>true</code> if the Colors are equal; otherwise, <code>false</code>.
  */
 Color.prototype.equals = function (other) {
-  return Color.equals(this, other);
+    return Color.equals(this, other);
 };
 
 /**
@@ -592,14 +601,14 @@ Color.prototype.equals = function (other) {
  * @returns {boolean} <code>true</code> if the Colors are equal within the specified epsilon; otherwise, <code>false</code>.
  */
 Color.prototype.equalsEpsilon = function (other, epsilon) {
-  return (
-    this === other || //
-    (defined(other) && //
-      Math.abs(this.red - other.red) <= epsilon && //
-      Math.abs(this.green - other.green) <= epsilon && //
-      Math.abs(this.blue - other.blue) <= epsilon && //
-      Math.abs(this.alpha - other.alpha) <= epsilon)
-  );
+    return (
+        this === other || //
+        (defined(other) && //
+            Math.abs(this.red - other.red) <= epsilon && //
+            Math.abs(this.green - other.green) <= epsilon && //
+            Math.abs(this.blue - other.blue) <= epsilon && //
+            Math.abs(this.alpha - other.alpha) <= epsilon)
+    );
 };
 
 /**
@@ -608,7 +617,7 @@ Color.prototype.equalsEpsilon = function (other, epsilon) {
  * @returns {string} A string representing this Color in the format '(red, green, blue, alpha)'.
  */
 Color.prototype.toString = function () {
-  return `(${this.red}, ${this.green}, ${this.blue}, ${this.alpha})`;
+    return `(${this.red}, ${this.green}, ${this.blue}, ${this.alpha})`;
 };
 
 /**
@@ -619,13 +628,13 @@ Color.prototype.toString = function () {
  * @see {@link http://www.w3.org/TR/css3-color/#rgba-color|CSS RGB or RGBA color values}
  */
 Color.prototype.toCssColorString = function () {
-  const red = Color.floatToByte(this.red);
-  const green = Color.floatToByte(this.green);
-  const blue = Color.floatToByte(this.blue);
-  if (this.alpha === 1) {
-    return `rgb(${red},${green},${blue})`;
-  }
-  return `rgba(${red},${green},${blue},${this.alpha})`;
+    const red = Color.floatToByte(this.red);
+    const green = Color.floatToByte(this.green);
+    const blue = Color.floatToByte(this.blue);
+    if (this.alpha === 1) {
+        return `rgb(${red},${green},${blue})`;
+    }
+    return `rgba(${red},${green},${blue},${this.alpha})`;
 };
 
 /**
@@ -634,26 +643,26 @@ Color.prototype.toCssColorString = function () {
  * @returns {string} The CSS hex string equivalent of this color.
  */
 Color.prototype.toCssHexString = function () {
-  let r = Color.floatToByte(this.red).toString(16);
-  if (r.length < 2) {
-    r = `0${r}`;
-  }
-  let g = Color.floatToByte(this.green).toString(16);
-  if (g.length < 2) {
-    g = `0${g}`;
-  }
-  let b = Color.floatToByte(this.blue).toString(16);
-  if (b.length < 2) {
-    b = `0${b}`;
-  }
-  if (this.alpha < 1) {
-    let hexAlpha = Color.floatToByte(this.alpha).toString(16);
-    if (hexAlpha.length < 2) {
-      hexAlpha = `0${hexAlpha}`;
+    let r = Color.floatToByte(this.red).toString(16);
+    if (r.length < 2) {
+        r = `0${r}`;
     }
-    return `#${r}${g}${b}${hexAlpha}`;
-  }
-  return `#${r}${g}${b}`;
+    let g = Color.floatToByte(this.green).toString(16);
+    if (g.length < 2) {
+        g = `0${g}`;
+    }
+    let b = Color.floatToByte(this.blue).toString(16);
+    if (b.length < 2) {
+        b = `0${b}`;
+    }
+    if (this.alpha < 1) {
+        let hexAlpha = Color.floatToByte(this.alpha).toString(16);
+        if (hexAlpha.length < 2) {
+            hexAlpha = `0${hexAlpha}`;
+        }
+        return `#${r}${g}${b}${hexAlpha}`;
+    }
+    return `#${r}${g}${b}`;
 };
 
 /**
@@ -664,19 +673,19 @@ Color.prototype.toCssHexString = function () {
  * @returns {number[]} The modified result parameter or a new instance if result was undefined.
  */
 Color.prototype.toBytes = function (result) {
-  const red = Color.floatToByte(this.red);
-  const green = Color.floatToByte(this.green);
-  const blue = Color.floatToByte(this.blue);
-  const alpha = Color.floatToByte(this.alpha);
+    const red = Color.floatToByte(this.red);
+    const green = Color.floatToByte(this.green);
+    const blue = Color.floatToByte(this.blue);
+    const alpha = Color.floatToByte(this.alpha);
 
-  if (!defined(result)) {
-    return [red, green, blue, alpha];
-  }
-  result[0] = red;
-  result[1] = green;
-  result[2] = blue;
-  result[3] = alpha;
-  return result;
+    if (!defined(result)) {
+        return [red, green, blue, alpha];
+    }
+    result[0] = red;
+    result[1] = green;
+    result[2] = blue;
+    result[3] = alpha;
+    return result;
 };
 
 /**
@@ -688,12 +697,12 @@ Color.prototype.toBytes = function (result) {
  * @see Color.toRgba
  */
 Color.bytesToRgba = function (red, green, blue, alpha) {
-  // scratchUint32Array and scratchUint8Array share an underlying array buffer
-  scratchUint8Array[0] = red;
-  scratchUint8Array[1] = green;
-  scratchUint8Array[2] = blue;
-  scratchUint8Array[3] = alpha;
-  return scratchUint32Array[0];
+    // scratchUint32Array and scratchUint8Array share an underlying array buffer
+    scratchUint8Array[0] = red;
+    scratchUint8Array[1] = green;
+    scratchUint8Array[2] = blue;
+    scratchUint8Array[3] = alpha;
+    return scratchUint32Array[0];
 };
 
 /**
@@ -709,12 +718,12 @@ Color.bytesToRgba = function (red, green, blue, alpha) {
  * @see Color.fromRgba
  */
 Color.prototype.toRgba = function () {
-  return Color.bytesToRgba(
-    Color.floatToByte(this.red),
-    Color.floatToByte(this.green),
-    Color.floatToByte(this.blue),
-    Color.floatToByte(this.alpha),
-  );
+    return Color.bytesToRgba(
+        Color.floatToByte(this.red),
+        Color.floatToByte(this.green),
+        Color.floatToByte(this.blue),
+        Color.floatToByte(this.alpha),
+    );
 };
 
 /**
@@ -728,18 +737,18 @@ Color.prototype.toRgba = function () {
  * const brightBlue = Cesium.Color.BLUE.brighten(0.5, new Cesium.Color());
  */
 Color.prototype.brighten = function (magnitude, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("magnitude", magnitude);
-  Check.typeOf.number.greaterThanOrEquals("magnitude", magnitude, 0.0);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("magnitude", magnitude);
+    Check.typeOf.number.greaterThanOrEquals("magnitude", magnitude, 0.0);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  magnitude = 1.0 - magnitude;
-  result.red = 1.0 - (1.0 - this.red) * magnitude;
-  result.green = 1.0 - (1.0 - this.green) * magnitude;
-  result.blue = 1.0 - (1.0 - this.blue) * magnitude;
-  result.alpha = this.alpha;
-  return result;
+    magnitude = 1.0 - magnitude;
+    result.red = 1.0 - (1.0 - this.red) * magnitude;
+    result.green = 1.0 - (1.0 - this.green) * magnitude;
+    result.blue = 1.0 - (1.0 - this.blue) * magnitude;
+    result.alpha = this.alpha;
+    return result;
 };
 
 /**
@@ -753,18 +762,18 @@ Color.prototype.brighten = function (magnitude, result) {
  * const darkBlue = Cesium.Color.BLUE.darken(0.5, new Cesium.Color());
  */
 Color.prototype.darken = function (magnitude, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("magnitude", magnitude);
-  Check.typeOf.number.greaterThanOrEquals("magnitude", magnitude, 0.0);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("magnitude", magnitude);
+    Check.typeOf.number.greaterThanOrEquals("magnitude", magnitude, 0.0);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  magnitude = 1.0 - magnitude;
-  result.red = this.red * magnitude;
-  result.green = this.green * magnitude;
-  result.blue = this.blue * magnitude;
-  result.alpha = this.alpha;
-  return result;
+    magnitude = 1.0 - magnitude;
+    result.red = this.red * magnitude;
+    result.green = this.green * magnitude;
+    result.blue = this.blue * magnitude;
+    result.alpha = this.alpha;
+    return result;
 };
 
 /**
@@ -778,7 +787,7 @@ Color.prototype.darken = function (magnitude, result) {
  * @example const translucentRed = Cesium.Color.RED.withAlpha(0.9);
  */
 Color.prototype.withAlpha = function (alpha, result) {
-  return Color.fromAlpha(this, alpha, result);
+    return Color.fromAlpha(this, alpha, result);
 };
 
 /**
@@ -790,17 +799,17 @@ Color.prototype.withAlpha = function (alpha, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.add = function (left, right, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("left", left);
-  Check.typeOf.object("right", right);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("left", left);
+    Check.typeOf.object("right", right);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = left.red + right.red;
-  result.green = left.green + right.green;
-  result.blue = left.blue + right.blue;
-  result.alpha = left.alpha + right.alpha;
-  return result;
+    result.red = left.red + right.red;
+    result.green = left.green + right.green;
+    result.blue = left.blue + right.blue;
+    result.alpha = left.alpha + right.alpha;
+    return result;
 };
 
 /**
@@ -812,17 +821,17 @@ Color.add = function (left, right, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.subtract = function (left, right, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("left", left);
-  Check.typeOf.object("right", right);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("left", left);
+    Check.typeOf.object("right", right);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = left.red - right.red;
-  result.green = left.green - right.green;
-  result.blue = left.blue - right.blue;
-  result.alpha = left.alpha - right.alpha;
-  return result;
+    result.red = left.red - right.red;
+    result.green = left.green - right.green;
+    result.blue = left.blue - right.blue;
+    result.alpha = left.alpha - right.alpha;
+    return result;
 };
 
 /**
@@ -834,17 +843,17 @@ Color.subtract = function (left, right, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.multiply = function (left, right, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("left", left);
-  Check.typeOf.object("right", right);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("left", left);
+    Check.typeOf.object("right", right);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = left.red * right.red;
-  result.green = left.green * right.green;
-  result.blue = left.blue * right.blue;
-  result.alpha = left.alpha * right.alpha;
-  return result;
+    result.red = left.red * right.red;
+    result.green = left.green * right.green;
+    result.blue = left.blue * right.blue;
+    result.alpha = left.alpha * right.alpha;
+    return result;
 };
 
 /**
@@ -856,17 +865,17 @@ Color.multiply = function (left, right, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.divide = function (left, right, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("left", left);
-  Check.typeOf.object("right", right);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("left", left);
+    Check.typeOf.object("right", right);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = left.red / right.red;
-  result.green = left.green / right.green;
-  result.blue = left.blue / right.blue;
-  result.alpha = left.alpha / right.alpha;
-  return result;
+    result.red = left.red / right.red;
+    result.green = left.green / right.green;
+    result.blue = left.blue / right.blue;
+    result.alpha = left.alpha / right.alpha;
+    return result;
 };
 
 /**
@@ -878,17 +887,17 @@ Color.divide = function (left, right, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.mod = function (left, right, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("left", left);
-  Check.typeOf.object("right", right);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("left", left);
+    Check.typeOf.object("right", right);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = left.red % right.red;
-  result.green = left.green % right.green;
-  result.blue = left.blue % right.blue;
-  result.alpha = left.alpha % right.alpha;
-  return result;
+    result.red = left.red % right.red;
+    result.green = left.green % right.green;
+    result.blue = left.blue % right.blue;
+    result.alpha = left.alpha % right.alpha;
+    return result;
 };
 
 /**
@@ -901,18 +910,18 @@ Color.mod = function (left, right, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.lerp = function (start, end, t, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("start", start);
-  Check.typeOf.object("end", end);
-  Check.typeOf.number("t", t);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("start", start);
+    Check.typeOf.object("end", end);
+    Check.typeOf.number("t", t);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = CesiumMath.lerp(start.red, end.red, t);
-  result.green = CesiumMath.lerp(start.green, end.green, t);
-  result.blue = CesiumMath.lerp(start.blue, end.blue, t);
-  result.alpha = CesiumMath.lerp(start.alpha, end.alpha, t);
-  return result;
+    result.red = CesiumMath.lerp(start.red, end.red, t);
+    result.green = CesiumMath.lerp(start.green, end.green, t);
+    result.blue = CesiumMath.lerp(start.blue, end.blue, t);
+    result.alpha = CesiumMath.lerp(start.alpha, end.alpha, t);
+    return result;
 };
 
 /**
@@ -924,17 +933,17 @@ Color.lerp = function (start, end, t, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.multiplyByScalar = function (color, scalar, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("color", color);
-  Check.typeOf.number("scalar", scalar);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("color", color);
+    Check.typeOf.number("scalar", scalar);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = color.red * scalar;
-  result.green = color.green * scalar;
-  result.blue = color.blue * scalar;
-  result.alpha = color.alpha * scalar;
-  return result;
+    result.red = color.red * scalar;
+    result.green = color.green * scalar;
+    result.blue = color.blue * scalar;
+    result.alpha = color.alpha * scalar;
+    return result;
 };
 
 /**
@@ -946,17 +955,17 @@ Color.multiplyByScalar = function (color, scalar, result) {
  * @returns {Color} The modified result parameter.
  */
 Color.divideByScalar = function (color, scalar, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("color", color);
-  Check.typeOf.number("scalar", scalar);
-  Check.typeOf.object("result", result);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("color", color);
+    Check.typeOf.number("scalar", scalar);
+    Check.typeOf.object("result", result);
+    //>>includeEnd('debug');
 
-  result.red = color.red / scalar;
-  result.green = color.green / scalar;
-  result.blue = color.blue / scalar;
-  result.alpha = color.alpha / scalar;
-  return result;
+    result.red = color.red / scalar;
+    result.green = color.green / scalar;
+    result.blue = color.blue / scalar;
+    result.alpha = color.alpha / scalar;
+    return result;
 };
 
 /**

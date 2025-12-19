@@ -19,63 +19,63 @@ import MetadataEntity from "./MetadataEntity.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function ContentMetadata(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const content = options.content;
-  const metadataClass = options.class;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const content = options.content;
+    const metadataClass = options.class;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.content", content);
-  Check.typeOf.object("options.class", metadataClass);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.content", content);
+    Check.typeOf.object("options.class", metadataClass);
+    //>>includeEnd('debug');
 
-  this._class = metadataClass;
-  this._properties = content.properties;
-  this._extensions = content.extensions;
-  this._extras = content.extras;
+    this._class = metadataClass;
+    this._properties = content.properties;
+    this._extensions = content.extensions;
+    this._extras = content.extras;
 }
 
 Object.defineProperties(ContentMetadata.prototype, {
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof ContentMetadata.prototype
-   * @type {MetadataClass}
-   * @readonly
-   * @private
-   */
-  class: {
-    get: function () {
-      return this._class;
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof ContentMetadata.prototype
+     * @type {MetadataClass}
+     * @readonly
+     * @private
+     */
+    class: {
+        get: function () {
+            return this._class;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof ContentMetadata.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof ContentMetadata.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof ContentMetadata.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof ContentMetadata.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 });
 
 /**
@@ -86,7 +86,11 @@ Object.defineProperties(ContentMetadata.prototype, {
  * @private
  */
 ContentMetadata.prototype.hasProperty = function (propertyId) {
-  return MetadataEntity.hasProperty(propertyId, this._properties, this._class);
+    return MetadataEntity.hasProperty(
+        propertyId,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -97,11 +101,11 @@ ContentMetadata.prototype.hasProperty = function (propertyId) {
  * @private
  */
 ContentMetadata.prototype.hasPropertyBySemantic = function (semantic) {
-  return MetadataEntity.hasPropertyBySemantic(
-    semantic,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.hasPropertyBySemantic(
+        semantic,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -112,7 +116,11 @@ ContentMetadata.prototype.hasPropertyBySemantic = function (semantic) {
  * @private
  */
 ContentMetadata.prototype.getPropertyIds = function (results) {
-  return MetadataEntity.getPropertyIds(this._properties, this._class, results);
+    return MetadataEntity.getPropertyIds(
+        this._properties,
+        this._class,
+        results,
+    );
 };
 
 /**
@@ -126,7 +134,11 @@ ContentMetadata.prototype.getPropertyIds = function (results) {
  * @private
  */
 ContentMetadata.prototype.getProperty = function (propertyId) {
-  return MetadataEntity.getProperty(propertyId, this._properties, this._class);
+    return MetadataEntity.getProperty(
+        propertyId,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -141,12 +153,12 @@ ContentMetadata.prototype.getProperty = function (propertyId) {
  * @private
  */
 ContentMetadata.prototype.setProperty = function (propertyId, value) {
-  return MetadataEntity.setProperty(
-    propertyId,
-    value,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.setProperty(
+        propertyId,
+        value,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -157,11 +169,11 @@ ContentMetadata.prototype.setProperty = function (propertyId, value) {
  * @private
  */
 ContentMetadata.prototype.getPropertyBySemantic = function (semantic) {
-  return MetadataEntity.getPropertyBySemantic(
-    semantic,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.getPropertyBySemantic(
+        semantic,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -173,12 +185,12 @@ ContentMetadata.prototype.getPropertyBySemantic = function (semantic) {
  * @private
  */
 ContentMetadata.prototype.setPropertyBySemantic = function (semantic, value) {
-  return MetadataEntity.setPropertyBySemantic(
-    semantic,
-    value,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.setPropertyBySemantic(
+        semantic,
+        value,
+        this._properties,
+        this._class,
+    );
 };
 
 export default ContentMetadata;

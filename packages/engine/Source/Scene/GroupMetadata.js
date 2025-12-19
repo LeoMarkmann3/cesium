@@ -20,81 +20,81 @@ import MetadataEntity from "./MetadataEntity.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function GroupMetadata(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const id = options.id;
-  const group = options.group;
-  const metadataClass = options.class;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const id = options.id;
+    const group = options.group;
+    const metadataClass = options.class;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.group", group);
-  Check.typeOf.object("options.class", metadataClass);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.group", group);
+    Check.typeOf.object("options.class", metadataClass);
+    //>>includeEnd('debug');
 
-  const properties = defined(group.properties) ? group.properties : {};
+    const properties = defined(group.properties) ? group.properties : {};
 
-  this._class = metadataClass;
-  this._properties = properties;
-  this._id = id;
-  this._extras = group.extras;
-  this._extensions = group.extensions;
+    this._class = metadataClass;
+    this._properties = properties;
+    this._id = id;
+    this._extras = group.extras;
+    this._extensions = group.extensions;
 }
 
 Object.defineProperties(GroupMetadata.prototype, {
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof GroupMetadata.prototype
-   * @type {MetadataClass}
-   * @readonly
-   * @private
-   */
-  class: {
-    get: function () {
-      return this._class;
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof GroupMetadata.prototype
+     * @type {MetadataClass}
+     * @readonly
+     * @private
+     */
+    class: {
+        get: function () {
+            return this._class;
+        },
     },
-  },
 
-  /**
-   * The ID of the group.
-   *
-   * @memberof GroupMetadata.prototype
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  id: {
-    get: function () {
-      return this._id;
+    /**
+     * The ID of the group.
+     *
+     * @memberof GroupMetadata.prototype
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    id: {
+        get: function () {
+            return this._id;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof GroupMetadata.prototype
-   * @type {*}
-   * @readonly
-   * @private
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof GroupMetadata.prototype
+     * @type {*}
+     * @readonly
+     * @private
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof GroupMetadata.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof GroupMetadata.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 });
 
 /**
@@ -105,7 +105,11 @@ Object.defineProperties(GroupMetadata.prototype, {
  * @private
  */
 GroupMetadata.prototype.hasProperty = function (propertyId) {
-  return MetadataEntity.hasProperty(propertyId, this._properties, this._class);
+    return MetadataEntity.hasProperty(
+        propertyId,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -116,11 +120,11 @@ GroupMetadata.prototype.hasProperty = function (propertyId) {
  * @private
  */
 GroupMetadata.prototype.hasPropertyBySemantic = function (semantic) {
-  return MetadataEntity.hasPropertyBySemantic(
-    semantic,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.hasPropertyBySemantic(
+        semantic,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -131,7 +135,11 @@ GroupMetadata.prototype.hasPropertyBySemantic = function (semantic) {
  * @private
  */
 GroupMetadata.prototype.getPropertyIds = function (results) {
-  return MetadataEntity.getPropertyIds(this._properties, this._class, results);
+    return MetadataEntity.getPropertyIds(
+        this._properties,
+        this._class,
+        results,
+    );
 };
 
 /**
@@ -145,7 +153,11 @@ GroupMetadata.prototype.getPropertyIds = function (results) {
  * @private
  */
 GroupMetadata.prototype.getProperty = function (propertyId) {
-  return MetadataEntity.getProperty(propertyId, this._properties, this._class);
+    return MetadataEntity.getProperty(
+        propertyId,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -160,12 +172,12 @@ GroupMetadata.prototype.getProperty = function (propertyId) {
  * @private
  */
 GroupMetadata.prototype.setProperty = function (propertyId, value) {
-  return MetadataEntity.setProperty(
-    propertyId,
-    value,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.setProperty(
+        propertyId,
+        value,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -176,11 +188,11 @@ GroupMetadata.prototype.setProperty = function (propertyId, value) {
  * @private
  */
 GroupMetadata.prototype.getPropertyBySemantic = function (semantic) {
-  return MetadataEntity.getPropertyBySemantic(
-    semantic,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.getPropertyBySemantic(
+        semantic,
+        this._properties,
+        this._class,
+    );
 };
 
 /**
@@ -192,12 +204,12 @@ GroupMetadata.prototype.getPropertyBySemantic = function (semantic) {
  * @private
  */
 GroupMetadata.prototype.setPropertyBySemantic = function (semantic, value) {
-  return MetadataEntity.setPropertyBySemantic(
-    semantic,
-    value,
-    this._properties,
-    this._class,
-  );
+    return MetadataEntity.setPropertyBySemantic(
+        semantic,
+        value,
+        this._properties,
+        this._class,
+    );
 };
 
 export default GroupMetadata;

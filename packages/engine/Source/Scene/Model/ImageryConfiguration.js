@@ -11,16 +11,16 @@
  * @private
  */
 class ImageryConfiguration {
-  constructor(imageryLayer) {
-    this.show = imageryLayer.show;
-    this.alpha = imageryLayer.alpha;
-    this.brightness = imageryLayer.brightness;
-    this.contrast = imageryLayer.contrast;
-    this.hue = imageryLayer.hue;
-    this.saturation = imageryLayer.saturation;
-    this.gamma = imageryLayer.gamma;
-    this.colorToAlpha = imageryLayer.colorToAlpha;
-  }
+    constructor(imageryLayer) {
+        this.show = imageryLayer.show;
+        this.alpha = imageryLayer.alpha;
+        this.brightness = imageryLayer.brightness;
+        this.contrast = imageryLayer.contrast;
+        this.hue = imageryLayer.hue;
+        this.saturation = imageryLayer.saturation;
+        this.gamma = imageryLayer.gamma;
+        this.colorToAlpha = imageryLayer.colorToAlpha;
+    }
 }
 
 export default ImageryConfiguration;

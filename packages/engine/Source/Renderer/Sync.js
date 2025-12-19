@@ -17,27 +17,27 @@ import WebGLConstants from "../Core/WebGLConstants.js";
  * @constructor
  */
 function Sync(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const context = options.context;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const context = options.context;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("options.context", context);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("options.context", context);
+    //>>includeEnd('debug');
 
-  if (!context._webgl2) {
-    throw new DeveloperError(
-      "A WebGL 2 context is required to use Sync operations.",
-    );
-  }
+    if (!context._webgl2) {
+        throw new DeveloperError(
+            "A WebGL 2 context is required to use Sync operations.",
+        );
+    }
 
-  const gl = context._gl;
-  const sync = gl.fenceSync(WebGLConstants.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    const gl = context._gl;
+    const sync = gl.fenceSync(WebGLConstants.SYNC_GPU_COMMANDS_COMPLETE, 0);
 
-  this._gl = gl;
-  this._sync = sync;
+    this._gl = gl;
+    this._sync = sync;
 }
 Sync.create = function (options) {
-  return new Sync(options);
+    return new Sync(options);
 };
 /**
  * Query the sync status of this Sync object.
@@ -47,18 +47,18 @@ Sync.create = function (options) {
  * @private
  */
 Sync.prototype.getStatus = function () {
-  const status = this._gl.getSyncParameter(
-    this._sync,
-    WebGLConstants.SYNC_STATUS,
-  );
-  return status;
+    const status = this._gl.getSyncParameter(
+        this._sync,
+        WebGLConstants.SYNC_STATUS,
+    );
+    return status;
 };
 Sync.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 Sync.prototype.destroy = function () {
-  this._gl.deleteSync(this._sync);
-  return destroyObject(this);
+    this._gl.deleteSync(this._sync);
+    return destroyObject(this);
 };
 
 /**
@@ -82,23 +82,23 @@ Sync.prototype.destroy = function () {
  * @exception {RuntimeError} Wait for signal timeout.
  */
 Sync.prototype.waitForSignal = async function (scheduleFunction, ttl) {
-  const self = this;
-  ttl = ttl ?? 10;
-  function waitForSignal0(resolve, reject, ttl) {
-    return () => {
-      const syncStatus = self.getStatus();
-      const signaled = syncStatus === WebGLConstants.SIGNALED;
-      if (signaled) {
-        resolve();
-      } else if (ttl <= 0) {
-        reject(new RuntimeError("Wait for signal timeout"));
-      } else {
-        scheduleFunction(waitForSignal0(resolve, reject, ttl - 1));
-      }
-    };
-  }
-  return new Promise((resolve, reject) => {
-    scheduleFunction(waitForSignal0(resolve, reject, ttl));
-  });
+    const self = this;
+    ttl = ttl ?? 10;
+    function waitForSignal0(resolve, reject, ttl) {
+        return () => {
+            const syncStatus = self.getStatus();
+            const signaled = syncStatus === WebGLConstants.SIGNALED;
+            if (signaled) {
+                resolve();
+            } else if (ttl <= 0) {
+                reject(new RuntimeError("Wait for signal timeout"));
+            } else {
+                scheduleFunction(waitForSignal0(resolve, reject, ttl - 1));
+            }
+        };
+    }
+    return new Promise((resolve, reject) => {
+        scheduleFunction(waitForSignal0(resolve, reject, ttl));
+    });
 };
 export default Sync;

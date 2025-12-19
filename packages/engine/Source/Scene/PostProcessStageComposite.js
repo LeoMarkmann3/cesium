@@ -74,169 +74,169 @@ import destroyObject from "../Core/destroyObject.js";
  * }));
  */
 function PostProcessStageComposite(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("options.stages", options.stages);
-  Check.typeOf.number.greaterThan(
-    "options.stages.length",
-    options.stages.length,
-    0,
-  );
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("options.stages", options.stages);
+    Check.typeOf.number.greaterThan(
+        "options.stages.length",
+        options.stages.length,
+        0,
+    );
+    //>>includeEnd('debug');
 
-  this._stages = options.stages;
-  this._inputPreviousStageTexture = options.inputPreviousStageTexture ?? true;
+    this._stages = options.stages;
+    this._inputPreviousStageTexture = options.inputPreviousStageTexture ?? true;
 
-  let name = options.name;
-  if (!defined(name)) {
-    name = createGuid();
-  }
-  this._name = name;
+    let name = options.name;
+    if (!defined(name)) {
+        name = createGuid();
+    }
+    this._name = name;
 
-  this._uniforms = options.uniforms;
+    this._uniforms = options.uniforms;
 
-  // used by PostProcessStageCollection
-  this._textureCache = undefined;
-  this._index = undefined;
+    // used by PostProcessStageCollection
+    this._textureCache = undefined;
+    this._index = undefined;
 
-  this._selected = undefined;
-  this._selectedShadow = undefined;
-  this._parentSelected = undefined;
-  this._parentSelectedShadow = undefined;
-  this._combinedSelected = undefined;
-  this._combinedSelectedShadow = undefined;
-  this._selectedLength = 0;
-  this._parentSelectedLength = 0;
-  this._selectedDirty = true;
+    this._selected = undefined;
+    this._selectedShadow = undefined;
+    this._parentSelected = undefined;
+    this._parentSelectedShadow = undefined;
+    this._combinedSelected = undefined;
+    this._combinedSelectedShadow = undefined;
+    this._selectedLength = 0;
+    this._parentSelectedLength = 0;
+    this._selectedDirty = true;
 }
 
 Object.defineProperties(PostProcessStageComposite.prototype, {
-  /**
-   * Determines if this post-process stage is ready to be executed.
-   *
-   * @memberof PostProcessStageComposite.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  ready: {
-    get: function () {
-      const stages = this._stages;
-      const length = stages.length;
-      for (let i = 0; i < length; ++i) {
-        if (!stages[i].ready) {
-          return false;
-        }
-      }
-      return true;
+    /**
+     * Determines if this post-process stage is ready to be executed.
+     *
+     * @memberof PostProcessStageComposite.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    ready: {
+        get: function () {
+            const stages = this._stages;
+            const length = stages.length;
+            for (let i = 0; i < length; ++i) {
+                if (!stages[i].ready) {
+                    return false;
+                }
+            }
+            return true;
+        },
     },
-  },
-  /**
-   * The unique name of this post-process stage for reference by other stages in a PostProcessStageComposite.
-   *
-   * @memberof PostProcessStageComposite.prototype
-   * @type {string}
-   * @readonly
-   */
-  name: {
-    get: function () {
-      return this._name;
+    /**
+     * The unique name of this post-process stage for reference by other stages in a PostProcessStageComposite.
+     *
+     * @memberof PostProcessStageComposite.prototype
+     * @type {string}
+     * @readonly
+     */
+    name: {
+        get: function () {
+            return this._name;
+        },
     },
-  },
-  /**
-   * Whether or not to execute this post-process stage when ready.
-   *
-   * @memberof PostProcessStageComposite.prototype
-   * @type {boolean}
-   */
-  enabled: {
-    get: function () {
-      return this._stages[0].enabled;
+    /**
+     * Whether or not to execute this post-process stage when ready.
+     *
+     * @memberof PostProcessStageComposite.prototype
+     * @type {boolean}
+     */
+    enabled: {
+        get: function () {
+            return this._stages[0].enabled;
+        },
+        set: function (value) {
+            const stages = this._stages;
+            const length = stages.length;
+            for (let i = 0; i < length; ++i) {
+                stages[i].enabled = value;
+            }
+        },
     },
-    set: function (value) {
-      const stages = this._stages;
-      const length = stages.length;
-      for (let i = 0; i < length; ++i) {
-        stages[i].enabled = value;
-      }
+    /**
+     * An alias to the uniform values of the post-process stages. May be <code>undefined</code>; in which case, get each stage to set uniform values.
+     * @memberof PostProcessStageComposite.prototype
+     * @type {object}
+     */
+    uniforms: {
+        get: function () {
+            return this._uniforms;
+        },
     },
-  },
-  /**
-   * An alias to the uniform values of the post-process stages. May be <code>undefined</code>; in which case, get each stage to set uniform values.
-   * @memberof PostProcessStageComposite.prototype
-   * @type {object}
-   */
-  uniforms: {
-    get: function () {
-      return this._uniforms;
+    /**
+     * All post-process stages are executed in the order of the array. The input texture changes based on the value of <code>inputPreviousStageTexture</code>.
+     * If <code>inputPreviousStageTexture</code> is <code>true</code>, the input to each stage is the output texture rendered to by the scene or of the stage that executed before it.
+     * If <code>inputPreviousStageTexture</code> is <code>false</code>, the input texture is the same for each stage in the composite. The input texture is the texture rendered to by the scene
+     * or the output texture of the previous stage.
+     *
+     * @memberof PostProcessStageComposite.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    inputPreviousStageTexture: {
+        get: function () {
+            return this._inputPreviousStageTexture;
+        },
     },
-  },
-  /**
-   * All post-process stages are executed in the order of the array. The input texture changes based on the value of <code>inputPreviousStageTexture</code>.
-   * If <code>inputPreviousStageTexture</code> is <code>true</code>, the input to each stage is the output texture rendered to by the scene or of the stage that executed before it.
-   * If <code>inputPreviousStageTexture</code> is <code>false</code>, the input texture is the same for each stage in the composite. The input texture is the texture rendered to by the scene
-   * or the output texture of the previous stage.
-   *
-   * @memberof PostProcessStageComposite.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  inputPreviousStageTexture: {
-    get: function () {
-      return this._inputPreviousStageTexture;
+    /**
+     * The number of post-process stages in this composite.
+     *
+     * @memberof PostProcessStageComposite.prototype
+     * @type {number}
+     * @readonly
+     */
+    length: {
+        get: function () {
+            return this._stages.length;
+        },
     },
-  },
-  /**
-   * The number of post-process stages in this composite.
-   *
-   * @memberof PostProcessStageComposite.prototype
-   * @type {number}
-   * @readonly
-   */
-  length: {
-    get: function () {
-      return this._stages.length;
+    /**
+     * The features selected for applying the post-process.
+     *
+     * @memberof PostProcessStageComposite.prototype
+     * @type {Array}
+     */
+    selected: {
+        get: function () {
+            return this._selected;
+        },
+        set: function (value) {
+            this._selected = value;
+        },
     },
-  },
-  /**
-   * The features selected for applying the post-process.
-   *
-   * @memberof PostProcessStageComposite.prototype
-   * @type {Array}
-   */
-  selected: {
-    get: function () {
-      return this._selected;
+    /**
+     * @private
+     */
+    parentSelected: {
+        get: function () {
+            return this._parentSelected;
+        },
+        set: function (value) {
+            this._parentSelected = value;
+        },
     },
-    set: function (value) {
-      this._selected = value;
-    },
-  },
-  /**
-   * @private
-   */
-  parentSelected: {
-    get: function () {
-      return this._parentSelected;
-    },
-    set: function (value) {
-      this._parentSelected = value;
-    },
-  },
 });
 
 /**
  * @private
  */
 PostProcessStageComposite.prototype._isSupported = function (context) {
-  const stages = this._stages;
-  const length = stages.length;
-  for (let i = 0; i < length; ++i) {
-    if (!stages[i]._isSupported(context)) {
-      return false;
+    const stages = this._stages;
+    const length = stages.length;
+    for (let i = 0; i < length; ++i) {
+        if (!stages[i]._isSupported(context)) {
+            return false;
+        }
     }
-  }
-  return true;
+    return true;
 };
 
 /**
@@ -249,47 +249,49 @@ PostProcessStageComposite.prototype._isSupported = function (context) {
  * @exception {DeveloperError} index must be less than {@link PostProcessStageComposite#length}.
  */
 PostProcessStageComposite.prototype.get = function (index) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number.greaterThanOrEquals("index", index, 0);
-  Check.typeOf.number.lessThan("index", index, this.length);
-  //>>includeEnd('debug');
-  return this._stages[index];
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number.greaterThanOrEquals("index", index, 0);
+    Check.typeOf.number.lessThan("index", index, this.length);
+    //>>includeEnd('debug');
+    return this._stages[index];
 };
 
 function isSelectedTextureDirty(stage) {
-  let length = defined(stage._selected) ? stage._selected.length : 0;
-  const parentLength = defined(stage._parentSelected)
-    ? stage._parentSelected
-    : 0;
-  let dirty =
-    stage._selected !== stage._selectedShadow ||
-    length !== stage._selectedLength;
-  dirty =
-    dirty ||
-    stage._parentSelected !== stage._parentSelectedShadow ||
-    parentLength !== stage._parentSelectedLength;
+    let length = defined(stage._selected) ? stage._selected.length : 0;
+    const parentLength = defined(stage._parentSelected)
+        ? stage._parentSelected
+        : 0;
+    let dirty =
+        stage._selected !== stage._selectedShadow ||
+        length !== stage._selectedLength;
+    dirty =
+        dirty ||
+        stage._parentSelected !== stage._parentSelectedShadow ||
+        parentLength !== stage._parentSelectedLength;
 
-  if (defined(stage._selected) && defined(stage._parentSelected)) {
-    stage._combinedSelected = stage._selected.concat(stage._parentSelected);
-  } else if (defined(stage._parentSelected)) {
-    stage._combinedSelected = stage._parentSelected;
-  } else {
-    stage._combinedSelected = stage._selected;
-  }
-
-  if (!dirty && defined(stage._combinedSelected)) {
-    if (!defined(stage._combinedSelectedShadow)) {
-      return true;
+    if (defined(stage._selected) && defined(stage._parentSelected)) {
+        stage._combinedSelected = stage._selected.concat(stage._parentSelected);
+    } else if (defined(stage._parentSelected)) {
+        stage._combinedSelected = stage._parentSelected;
+    } else {
+        stage._combinedSelected = stage._selected;
     }
 
-    length = stage._combinedSelected.length;
-    for (let i = 0; i < length; ++i) {
-      if (stage._combinedSelected[i] !== stage._combinedSelectedShadow[i]) {
-        return true;
-      }
+    if (!dirty && defined(stage._combinedSelected)) {
+        if (!defined(stage._combinedSelectedShadow)) {
+            return true;
+        }
+
+        length = stage._combinedSelected.length;
+        for (let i = 0; i < length; ++i) {
+            if (
+                stage._combinedSelected[i] !== stage._combinedSelectedShadow[i]
+            ) {
+                return true;
+            }
+        }
     }
-  }
-  return dirty;
+    return dirty;
 }
 
 /**
@@ -299,25 +301,25 @@ function isSelectedTextureDirty(stage) {
  * @private
  */
 PostProcessStageComposite.prototype.update = function (context, useLogDepth) {
-  this._selectedDirty = isSelectedTextureDirty(this);
+    this._selectedDirty = isSelectedTextureDirty(this);
 
-  this._selectedShadow = this._selected;
-  this._parentSelectedShadow = this._parentSelected;
-  this._combinedSelectedShadow = this._combinedSelected;
-  this._selectedLength = defined(this._selected) ? this._selected.length : 0;
-  this._parentSelectedLength = defined(this._parentSelected)
-    ? this._parentSelected.length
-    : 0;
+    this._selectedShadow = this._selected;
+    this._parentSelectedShadow = this._parentSelected;
+    this._combinedSelectedShadow = this._combinedSelected;
+    this._selectedLength = defined(this._selected) ? this._selected.length : 0;
+    this._parentSelectedLength = defined(this._parentSelected)
+        ? this._parentSelected.length
+        : 0;
 
-  const stages = this._stages;
-  const length = stages.length;
-  for (let i = 0; i < length; ++i) {
-    const stage = stages[i];
-    if (this._selectedDirty) {
-      stage.parentSelected = this._combinedSelected;
+    const stages = this._stages;
+    const length = stages.length;
+    for (let i = 0; i < length; ++i) {
+        const stage = stages[i];
+        if (this._selectedDirty) {
+            stage.parentSelected = this._combinedSelected;
+        }
+        stage.update(context, useLogDepth);
     }
-    stage.update(context, useLogDepth);
-  }
 };
 
 /**
@@ -332,7 +334,7 @@ PostProcessStageComposite.prototype.update = function (context, useLogDepth) {
  * @see PostProcessStageComposite#destroy
  */
 PostProcessStageComposite.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -349,11 +351,11 @@ PostProcessStageComposite.prototype.isDestroyed = function () {
  * @see PostProcessStageComposite#isDestroyed
  */
 PostProcessStageComposite.prototype.destroy = function () {
-  const stages = this._stages;
-  const length = stages.length;
-  for (let i = 0; i < length; ++i) {
-    stages[i].destroy();
-  }
-  return destroyObject(this);
+    const stages = this._stages;
+    const length = stages.length;
+    for (let i = 0; i < length; ++i) {
+        stages[i].destroy();
+    }
+    return destroyObject(this);
 };
 export default PostProcessStageComposite;

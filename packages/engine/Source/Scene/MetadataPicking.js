@@ -38,33 +38,33 @@ const MetadataPicking = {};
  * @private
  */
 MetadataPicking.decodeRawMetadataValue = function (
-  componentType,
-  dataView,
-  index,
+    componentType,
+    dataView,
+    index,
 ) {
-  switch (componentType) {
-    case MetadataComponentType.INT8:
-      return dataView.getInt8(index);
-    case MetadataComponentType.UINT8:
-      return dataView.getUint8(index);
-    case MetadataComponentType.INT16:
-      return dataView.getInt16(index, true);
-    case MetadataComponentType.UINT16:
-      return dataView.getUint16(index, true);
-    case MetadataComponentType.INT32:
-      return dataView.getInt32(index, true);
-    case MetadataComponentType.UINT32:
-      return dataView.getUint32(index, true);
-    case MetadataComponentType.INT64:
-      return dataView.getBigInt64(index, true);
-    case MetadataComponentType.UINT64:
-      return dataView.getBigUint64(index, true);
-    case MetadataComponentType.FLOAT32:
-      return dataView.getFloat32(index, true);
-    case MetadataComponentType.FLOAT64:
-      return dataView.getFloat64(index, true);
-  }
-  throw new RuntimeError(`Invalid component type: ${componentType}`);
+    switch (componentType) {
+        case MetadataComponentType.INT8:
+            return dataView.getInt8(index);
+        case MetadataComponentType.UINT8:
+            return dataView.getUint8(index);
+        case MetadataComponentType.INT16:
+            return dataView.getInt16(index, true);
+        case MetadataComponentType.UINT16:
+            return dataView.getUint16(index, true);
+        case MetadataComponentType.INT32:
+            return dataView.getInt32(index, true);
+        case MetadataComponentType.UINT32:
+            return dataView.getUint32(index, true);
+        case MetadataComponentType.INT64:
+            return dataView.getBigInt64(index, true);
+        case MetadataComponentType.UINT64:
+            return dataView.getBigUint64(index, true);
+        case MetadataComponentType.FLOAT32:
+            return dataView.getFloat32(index, true);
+        case MetadataComponentType.FLOAT64:
+            return dataView.getFloat64(index, true);
+    }
+    throw new RuntimeError(`Invalid component type: ${componentType}`);
 };
 
 /**
@@ -88,20 +88,20 @@ MetadataPicking.decodeRawMetadataValue = function (
  * cause an out-of-bounds access
  */
 MetadataPicking.decodeRawMetadataValueComponent = function (
-  classProperty,
-  dataView,
-  dataViewOffset,
-) {
-  const componentType = classProperty.componentType;
-  const component = MetadataPicking.decodeRawMetadataValue(
-    componentType,
+    classProperty,
     dataView,
     dataViewOffset,
-  );
-  if (classProperty.normalized) {
-    return MetadataComponentType.normalize(component, componentType);
-  }
-  return component;
+) {
+    const componentType = classProperty.componentType;
+    const component = MetadataPicking.decodeRawMetadataValue(
+        componentType,
+        dataView,
+        dataViewOffset,
+    );
+    if (classProperty.normalized) {
+        return MetadataComponentType.normalize(component, componentType);
+    }
+    return component;
 };
 
 /**
@@ -130,37 +130,37 @@ MetadataPicking.decodeRawMetadataValueComponent = function (
  *
  */
 MetadataPicking.decodeRawMetadataValueElement = function (
-  classProperty,
-  dataView,
-  elementIndex,
+    classProperty,
+    dataView,
+    elementIndex,
 ) {
-  const componentType = classProperty.componentType;
-  const componentSizeInBytes =
-    MetadataComponentType.getSizeInBytes(componentType);
-  const type = classProperty.type;
-  const componentCount = MetadataType.getComponentCount(type);
-  const elementSizeInBytes = componentSizeInBytes * componentCount;
-  if (componentCount > 1) {
-    const result = Array(componentCount);
-    for (let i = 0; i < componentCount; i++) {
-      const offset =
-        elementIndex * elementSizeInBytes + i * componentSizeInBytes;
-      const component = MetadataPicking.decodeRawMetadataValueComponent(
+    const componentType = classProperty.componentType;
+    const componentSizeInBytes =
+        MetadataComponentType.getSizeInBytes(componentType);
+    const type = classProperty.type;
+    const componentCount = MetadataType.getComponentCount(type);
+    const elementSizeInBytes = componentSizeInBytes * componentCount;
+    if (componentCount > 1) {
+        const result = Array(componentCount);
+        for (let i = 0; i < componentCount; i++) {
+            const offset =
+                elementIndex * elementSizeInBytes + i * componentSizeInBytes;
+            const component = MetadataPicking.decodeRawMetadataValueComponent(
+                classProperty,
+                dataView,
+                offset,
+            );
+            result[i] = component;
+        }
+        return result;
+    }
+    const offset = elementIndex * elementSizeInBytes;
+    const result = MetadataPicking.decodeRawMetadataValueComponent(
         classProperty,
         dataView,
         offset,
-      );
-      result[i] = component;
-    }
+    );
     return result;
-  }
-  const offset = elementIndex * elementSizeInBytes;
-  const result = MetadataPicking.decodeRawMetadataValueComponent(
-    classProperty,
-    dataView,
-    offset,
-  );
-  return result;
 };
 
 /**
@@ -202,33 +202,33 @@ MetadataPicking.decodeRawMetadataValueElement = function (
  * @private
  */
 MetadataPicking.decodeRawMetadataValues = function (
-  classProperty,
-  rawPixelValues,
+    classProperty,
+    rawPixelValues,
 ) {
-  const dataView = new DataView(
-    rawPixelValues.buffer,
-    rawPixelValues.byteOffset,
-    rawPixelValues.byteLength,
-  );
-  if (classProperty.isArray) {
-    const arrayLength = classProperty.arrayLength;
-    const result = Array(arrayLength);
-    for (let i = 0; i < arrayLength; i++) {
-      const element = MetadataPicking.decodeRawMetadataValueElement(
+    const dataView = new DataView(
+        rawPixelValues.buffer,
+        rawPixelValues.byteOffset,
+        rawPixelValues.byteLength,
+    );
+    if (classProperty.isArray) {
+        const arrayLength = classProperty.arrayLength;
+        const result = Array(arrayLength);
+        for (let i = 0; i < arrayLength; i++) {
+            const element = MetadataPicking.decodeRawMetadataValueElement(
+                classProperty,
+                dataView,
+                i,
+            );
+            result[i] = element;
+        }
+        return result;
+    }
+    const result = MetadataPicking.decodeRawMetadataValueElement(
         classProperty,
         dataView,
-        i,
-      );
-      result[i] = element;
-    }
+        0,
+    );
     return result;
-  }
-  const result = MetadataPicking.decodeRawMetadataValueElement(
-    classProperty,
-    dataView,
-    0,
-  );
-  return result;
 };
 
 /**
@@ -248,34 +248,34 @@ MetadataPicking.decodeRawMetadataValues = function (
  * @throws RuntimeError If the type is not a valid `MetadataType`
  */
 MetadataPicking.convertToObjectType = function (type, value) {
-  if (!defined(value)) {
-    return value;
-  }
-  if (
-    type === MetadataType.SCALAR ||
-    type === MetadataType.STRING ||
-    type === MetadataType.BOOLEAN ||
-    type === MetadataType.ENUM
-  ) {
-    return value;
-  }
-  const numbers = value.map((n) => Number(n));
-  switch (type) {
-    case MetadataType.VEC2:
-      return Cartesian2.unpack(numbers, 0, new Cartesian2());
-    case MetadataType.VEC3:
-      return Cartesian3.unpack(numbers, 0, new Cartesian3());
-    case MetadataType.VEC4:
-      return Cartesian4.unpack(numbers, 0, new Cartesian4());
-    case MetadataType.MAT2:
-      return Matrix2.unpack(numbers, 0, new Matrix2());
-    case MetadataType.MAT3:
-      return Matrix3.unpack(numbers, 0, new Matrix3());
-    case MetadataType.MAT4:
-      return Matrix4.unpack(numbers, 0, new Matrix4());
-  }
-  // Should never happen:
-  throw new RuntimeError(`Invalid metadata object type: ${type}`);
+    if (!defined(value)) {
+        return value;
+    }
+    if (
+        type === MetadataType.SCALAR ||
+        type === MetadataType.STRING ||
+        type === MetadataType.BOOLEAN ||
+        type === MetadataType.ENUM
+    ) {
+        return value;
+    }
+    const numbers = value.map((n) => Number(n));
+    switch (type) {
+        case MetadataType.VEC2:
+            return Cartesian2.unpack(numbers, 0, new Cartesian2());
+        case MetadataType.VEC3:
+            return Cartesian3.unpack(numbers, 0, new Cartesian3());
+        case MetadataType.VEC4:
+            return Cartesian4.unpack(numbers, 0, new Cartesian4());
+        case MetadataType.MAT2:
+            return Matrix2.unpack(numbers, 0, new Matrix2());
+        case MetadataType.MAT3:
+            return Matrix3.unpack(numbers, 0, new Matrix3());
+        case MetadataType.MAT4:
+            return Matrix4.unpack(numbers, 0, new Matrix4());
+    }
+    // Should never happen:
+    throw new RuntimeError(`Invalid metadata object type: ${type}`);
 };
 
 /**
@@ -290,33 +290,33 @@ MetadataPicking.convertToObjectType = function (type, value) {
  * @throws RuntimeError If the type is not a valid `MetadataType`
  */
 MetadataPicking.convertFromObjectType = function (type, value) {
-  if (!defined(value)) {
-    return value;
-  }
-  if (
-    type === MetadataType.SCALAR ||
-    type === MetadataType.STRING ||
-    type === MetadataType.BOOLEAN ||
-    type === MetadataType.ENUM
-  ) {
-    return value;
-  }
-  switch (type) {
-    case MetadataType.VEC2:
-      return Cartesian2.pack(value, Array(2));
-    case MetadataType.VEC3:
-      return Cartesian3.pack(value, Array(3));
-    case MetadataType.VEC4:
-      return Cartesian4.pack(value, Array(4));
-    case MetadataType.MAT2:
-      return Matrix2.pack(value, Array(4));
-    case MetadataType.MAT3:
-      return Matrix3.pack(value, Array(9));
-    case MetadataType.MAT4:
-      return Matrix4.pack(value, Array(16));
-  }
-  // Should never happen:
-  throw new RuntimeError(`Invalid metadata object type: ${type}`);
+    if (!defined(value)) {
+        return value;
+    }
+    if (
+        type === MetadataType.SCALAR ||
+        type === MetadataType.STRING ||
+        type === MetadataType.BOOLEAN ||
+        type === MetadataType.ENUM
+    ) {
+        return value;
+    }
+    switch (type) {
+        case MetadataType.VEC2:
+            return Cartesian2.pack(value, Array(2));
+        case MetadataType.VEC3:
+            return Cartesian3.pack(value, Array(3));
+        case MetadataType.VEC4:
+            return Cartesian4.pack(value, Array(4));
+        case MetadataType.MAT2:
+            return Matrix2.pack(value, Array(4));
+        case MetadataType.MAT3:
+            return Matrix3.pack(value, Array(9));
+        case MetadataType.MAT4:
+            return Matrix4.pack(value, Array(16));
+    }
+    // Should never happen:
+    throw new RuntimeError(`Invalid metadata object type: ${type}`);
 };
 
 /**
@@ -339,58 +339,58 @@ MetadataPicking.convertFromObjectType = function (type, value) {
  * @private
  */
 MetadataPicking.decodeMetadataValues = function (
-  classProperty,
-  metadataProperty,
-  rawPixelValues,
-) {
-  let arrayBasedResult = MetadataPicking.decodeRawMetadataValues(
     classProperty,
+    metadataProperty,
     rawPixelValues,
-  );
-
-  if (metadataProperty.hasValueTransform) {
-    // In the MetadataClassProperty, these offset/scale are always in
-    // their array-based form (e.g. a number[3] for `VEC3`). But for
-    // the PropertyTextureProperty and PropertyAttributeProperty,
-    // the type of the offset/scale is defined to be
-    // number|Cartesian2|Cartesian3|Cartesian4|Matrix2|Matrix3|Matrix4
-    // So these types are converted into their array-based form here, before
-    // applying them with `MetadataClassProperty.valueTransformInPlace`
-
-    const offset = MetadataPicking.convertFromObjectType(
-      classProperty.type,
-      metadataProperty.offset,
+) {
+    let arrayBasedResult = MetadataPicking.decodeRawMetadataValues(
+        classProperty,
+        rawPixelValues,
     );
-    const scale = MetadataPicking.convertFromObjectType(
-      classProperty.type,
-      metadataProperty.scale,
-    );
-    arrayBasedResult = MetadataClassProperty.valueTransformInPlace(
-      arrayBasedResult,
-      offset,
-      scale,
-      MetadataComponentType.applyValueTransform,
-    );
-  }
 
-  if (classProperty.isArray) {
-    const arrayLength = classProperty.arrayLength;
-    const result = Array(arrayLength);
-    for (let i = 0; i < arrayLength; i++) {
-      const arrayBasedValue = arrayBasedResult[i];
-      const objectBasedValue = MetadataPicking.convertToObjectType(
-        classProperty.type,
-        arrayBasedValue,
-      );
-      result[i] = objectBasedValue;
+    if (metadataProperty.hasValueTransform) {
+        // In the MetadataClassProperty, these offset/scale are always in
+        // their array-based form (e.g. a number[3] for `VEC3`). But for
+        // the PropertyTextureProperty and PropertyAttributeProperty,
+        // the type of the offset/scale is defined to be
+        // number|Cartesian2|Cartesian3|Cartesian4|Matrix2|Matrix3|Matrix4
+        // So these types are converted into their array-based form here, before
+        // applying them with `MetadataClassProperty.valueTransformInPlace`
+
+        const offset = MetadataPicking.convertFromObjectType(
+            classProperty.type,
+            metadataProperty.offset,
+        );
+        const scale = MetadataPicking.convertFromObjectType(
+            classProperty.type,
+            metadataProperty.scale,
+        );
+        arrayBasedResult = MetadataClassProperty.valueTransformInPlace(
+            arrayBasedResult,
+            offset,
+            scale,
+            MetadataComponentType.applyValueTransform,
+        );
     }
-    return result;
-  }
-  const objectResult = MetadataPicking.convertToObjectType(
-    classProperty.type,
-    arrayBasedResult,
-  );
-  return objectResult;
+
+    if (classProperty.isArray) {
+        const arrayLength = classProperty.arrayLength;
+        const result = Array(arrayLength);
+        for (let i = 0; i < arrayLength; i++) {
+            const arrayBasedValue = arrayBasedResult[i];
+            const objectBasedValue = MetadataPicking.convertToObjectType(
+                classProperty.type,
+                arrayBasedValue,
+            );
+            result[i] = objectBasedValue;
+        }
+        return result;
+    }
+    const objectResult = MetadataPicking.convertToObjectType(
+        classProperty.type,
+        arrayBasedResult,
+    );
+    return objectResult;
 };
 
 export default Object.freeze(MetadataPicking);

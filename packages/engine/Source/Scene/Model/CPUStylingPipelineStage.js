@@ -15,7 +15,7 @@ import ShaderDestination from "../../Renderer/ShaderDestination.js";
  * @private
  */
 const CPUStylingPipelineStage = {
-  name: "CPUStylingPipelineStage", // Helps with debugging
+    name: "CPUStylingPipelineStage", // Helps with debugging
 };
 
 /**
@@ -33,45 +33,49 @@ const CPUStylingPipelineStage = {
  * @private
  */
 CPUStylingPipelineStage.process = function (
-  renderResources,
-  primitive,
-  frameState,
+    renderResources,
+    primitive,
+    frameState,
 ) {
-  const model = renderResources.model;
-  const shaderBuilder = renderResources.shaderBuilder;
+    const model = renderResources.model;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addVertexLines(CPUStylingStageVS);
-  shaderBuilder.addFragmentLines(CPUStylingStageFS);
-  shaderBuilder.addDefine("USE_CPU_STYLING", undefined, ShaderDestination.BOTH);
-
-  // These uniforms may have already been added by the ModelColorStage
-  // if a static color is applied.
-  if (!defined(model.color)) {
-    shaderBuilder.addUniform(
-      "float",
-      ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME,
-      ShaderDestination.FRAGMENT,
+    shaderBuilder.addVertexLines(CPUStylingStageVS);
+    shaderBuilder.addFragmentLines(CPUStylingStageFS);
+    shaderBuilder.addDefine(
+        "USE_CPU_STYLING",
+        undefined,
+        ShaderDestination.BOTH,
     );
-    renderResources.uniformMap[
-      ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME
-    ] = function () {
-      return ColorBlendMode.getColorBlend(
-        model.colorBlendMode,
-        model.colorBlendAmount,
-      );
-    };
-  }
 
-  shaderBuilder.addUniform(
-    "bool",
-    "model_commandTranslucent",
-    ShaderDestination.BOTH,
-  );
-  renderResources.uniformMap.model_commandTranslucent = function () {
-    // Always check the current value, because custom shaders may
-    // change the value with the translucencyMode parameter
-    return renderResources.alphaOptions.pass === Pass.TRANSLUCENT;
-  };
+    // These uniforms may have already been added by the ModelColorStage
+    // if a static color is applied.
+    if (!defined(model.color)) {
+        shaderBuilder.addUniform(
+            "float",
+            ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME,
+            ShaderDestination.FRAGMENT,
+        );
+        renderResources.uniformMap[
+            ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME
+        ] = function () {
+            return ColorBlendMode.getColorBlend(
+                model.colorBlendMode,
+                model.colorBlendAmount,
+            );
+        };
+    }
+
+    shaderBuilder.addUniform(
+        "bool",
+        "model_commandTranslucent",
+        ShaderDestination.BOTH,
+    );
+    renderResources.uniformMap.model_commandTranslucent = function () {
+        // Always check the current value, because custom shaders may
+        // change the value with the translucencyMode parameter
+        return renderResources.alphaOptions.pass === Pass.TRANSLUCENT;
+    };
 };
 
 export default CPUStylingPipelineStage;

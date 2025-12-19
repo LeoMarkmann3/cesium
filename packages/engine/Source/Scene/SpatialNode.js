@@ -22,46 +22,46 @@ import OrientedBoundingBox from "../Core/OrientedBoundingBox.js";
  * @private
  */
 function SpatialNode(level, x, y, z, parent, shape, voxelDimensions) {
-  /**
-   * @type {SpatialNode[]}
-   */
-  this.children = undefined;
-  this.parent = parent;
+    /**
+     * @type {SpatialNode[]}
+     */
+    this.children = undefined;
+    this.parent = parent;
 
-  this.level = level;
-  this.x = x;
-  this.y = y;
-  this.z = z;
+    this.level = level;
+    this.x = x;
+    this.y = y;
+    this.z = z;
 
-  /**
-   * @type {Cartesian3}
-   */
-  this.dimensions = Cartesian3.clone(voxelDimensions);
-  /**
-   * @type {KeyframeNode[]}
-   */
-  this.keyframeNodes = [];
-  /**
-   * @type {KeyframeNode[]}
-   */
-  this.renderableKeyframeNodes = [];
+    /**
+     * @type {Cartesian3}
+     */
+    this.dimensions = Cartesian3.clone(voxelDimensions);
+    /**
+     * @type {KeyframeNode[]}
+     */
+    this.keyframeNodes = [];
+    /**
+     * @type {KeyframeNode[]}
+     */
+    this.renderableKeyframeNodes = [];
 
-  this.renderableKeyframeNodeLerp = 0.0;
-  /**
-   * @type {KeyframeNode}
-   */
-  this.renderableKeyframeNodePrevious = undefined;
-  /**
-   * @type {KeyframeNode}
-   */
-  this.renderableKeyframeNodeNext = undefined;
+    this.renderableKeyframeNodeLerp = 0.0;
+    /**
+     * @type {KeyframeNode}
+     */
+    this.renderableKeyframeNodePrevious = undefined;
+    /**
+     * @type {KeyframeNode}
+     */
+    this.renderableKeyframeNodeNext = undefined;
 
-  this.orientedBoundingBox = new OrientedBoundingBox();
-  this.approximateVoxelSize = 0.0;
-  this.screenSpaceError = 0.0;
-  this.visitedFrameNumber = -1;
+    this.orientedBoundingBox = new OrientedBoundingBox();
+    this.approximateVoxelSize = 0.0;
+    this.screenSpaceError = 0.0;
+    this.visitedFrameNumber = -1;
 
-  this.computeBoundingVolumes(shape);
+    this.computeBoundingVolumes(shape);
 }
 
 const scratchObbHalfScale = new Cartesian3();
@@ -70,21 +70,21 @@ const scratchObbHalfScale = new Cartesian3();
  * @param {VoxelShape} shape
  */
 SpatialNode.prototype.computeBoundingVolumes = function (shape) {
-  this.orientedBoundingBox = shape.computeOrientedBoundingBoxForTile(
-    this.level,
-    this.x,
-    this.y,
-    this.z,
-    this.orientedBoundingBox,
-  );
+    this.orientedBoundingBox = shape.computeOrientedBoundingBoxForTile(
+        this.level,
+        this.x,
+        this.y,
+        this.z,
+        this.orientedBoundingBox,
+    );
 
-  const halfScale = Matrix3.getScale(
-    this.orientedBoundingBox.halfAxes,
-    scratchObbHalfScale,
-  );
-  const maximumScale = 2.0 * Cartesian3.maximumComponent(halfScale);
-  this.approximateVoxelSize =
-    maximumScale / Cartesian3.minimumComponent(this.dimensions);
+    const halfScale = Matrix3.getScale(
+        this.orientedBoundingBox.halfAxes,
+        scratchObbHalfScale,
+    );
+    const maximumScale = 2.0 * Cartesian3.maximumComponent(halfScale);
+    this.approximateVoxelSize =
+        maximumScale / Cartesian3.minimumComponent(this.dimensions);
 };
 
 /**
@@ -92,29 +92,29 @@ SpatialNode.prototype.computeBoundingVolumes = function (shape) {
  * @private
  */
 SpatialNode.prototype.constructChildNodes = function (shape) {
-  const { level, x, y, z } = this;
-  const xMin = x * 2;
-  const yMin = y * 2;
-  const zMin = z * 2;
-  const yMax = yMin + 1;
-  const xMax = xMin + 1;
-  const zMax = zMin + 1;
-  const childLevel = level + 1;
+    const { level, x, y, z } = this;
+    const xMin = x * 2;
+    const yMin = y * 2;
+    const zMin = z * 2;
+    const yMax = yMin + 1;
+    const xMax = xMin + 1;
+    const zMax = zMin + 1;
+    const childLevel = level + 1;
 
-  const childCoords = [
-    [childLevel, xMin, yMin, zMin],
-    [childLevel, xMax, yMin, zMin],
-    [childLevel, xMin, yMax, zMin],
-    [childLevel, xMax, yMax, zMin],
-    [childLevel, xMin, yMin, zMax],
-    [childLevel, xMax, yMin, zMax],
-    [childLevel, xMin, yMax, zMax],
-    [childLevel, xMax, yMax, zMax],
-  ];
+    const childCoords = [
+        [childLevel, xMin, yMin, zMin],
+        [childLevel, xMax, yMin, zMin],
+        [childLevel, xMin, yMax, zMin],
+        [childLevel, xMax, yMax, zMin],
+        [childLevel, xMin, yMin, zMax],
+        [childLevel, xMax, yMin, zMax],
+        [childLevel, xMin, yMax, zMax],
+        [childLevel, xMax, yMax, zMax],
+    ];
 
-  this.children = childCoords.map(([level, x, y, z]) => {
-    return new SpatialNode(level, x, y, z, this, shape, this.dimensions);
-  });
+    this.children = childCoords.map(([level, x, y, z]) => {
+        return new SpatialNode(level, x, y, z, this, shape, this.dimensions);
+    });
 };
 
 /**
@@ -123,9 +123,12 @@ SpatialNode.prototype.constructChildNodes = function (shape) {
  * @returns {number} A plane mask as described in {@link CullingVolume#computeVisibilityWithPlaneMask}.
  */
 SpatialNode.prototype.visibility = function (frameState, visibilityPlaneMask) {
-  const obb = this.orientedBoundingBox;
-  const cullingVolume = frameState.cullingVolume;
-  return cullingVolume.computeVisibilityWithPlaneMask(obb, visibilityPlaneMask);
+    const obb = this.orientedBoundingBox;
+    const cullingVolume = frameState.cullingVolume;
+    return cullingVolume.computeVisibilityWithPlaneMask(
+        obb,
+        visibilityPlaneMask,
+    );
 };
 
 /**
@@ -133,22 +136,23 @@ SpatialNode.prototype.visibility = function (frameState, visibilityPlaneMask) {
  * @param {number} screenSpaceErrorMultiplier
  */
 SpatialNode.prototype.computeScreenSpaceError = function (
-  cameraPosition,
-  screenSpaceErrorMultiplier,
+    cameraPosition,
+    screenSpaceErrorMultiplier,
 ) {
-  const obb = this.orientedBoundingBox;
+    const obb = this.orientedBoundingBox;
 
-  let distance = Math.sqrt(obb.distanceSquaredTo(cameraPosition));
-  // Avoid divide-by-zero when viewer is inside the tile.
-  distance = Math.max(distance, CesiumMath.EPSILON7);
-  const approximateVoxelSize = this.approximateVoxelSize;
-  const error = screenSpaceErrorMultiplier * (approximateVoxelSize / distance);
-  this.screenSpaceError = error;
+    let distance = Math.sqrt(obb.distanceSquaredTo(cameraPosition));
+    // Avoid divide-by-zero when viewer is inside the tile.
+    distance = Math.max(distance, CesiumMath.EPSILON7);
+    const approximateVoxelSize = this.approximateVoxelSize;
+    const error =
+        screenSpaceErrorMultiplier * (approximateVoxelSize / distance);
+    this.screenSpaceError = error;
 };
 
 // This object imitates a KeyframeNode. Only used for binary search function.
 const scratchBinarySearchKeyframeNode = {
-  keyframe: 0,
+    keyframe: 0,
 };
 
 /**
@@ -160,12 +164,12 @@ const scratchBinarySearchKeyframeNode = {
  * @private
  */
 function findKeyframeIndex(keyframe, keyframeNodes) {
-  scratchBinarySearchKeyframeNode.keyframe = keyframe;
-  return binarySearch(
-    keyframeNodes,
-    scratchBinarySearchKeyframeNode,
-    KeyframeNode.searchComparator,
-  );
+    scratchBinarySearchKeyframeNode.keyframe = keyframe;
+    return binarySearch(
+        keyframeNodes,
+        scratchBinarySearchKeyframeNode,
+        KeyframeNode.searchComparator,
+    );
 }
 
 /**
@@ -174,98 +178,101 @@ function findKeyframeIndex(keyframe, keyframeNodes) {
  * @param {number} keyframeLocation
  */
 SpatialNode.prototype.computeSurroundingRenderableKeyframeNodes = function (
-  keyframeLocation,
+    keyframeLocation,
 ) {
-  let spatialNode = this;
-  const startLevel = spatialNode.level;
+    let spatialNode = this;
+    const startLevel = spatialNode.level;
 
-  const targetKeyframePrev = Math.floor(keyframeLocation);
-  const targetKeyframeNext = Math.ceil(keyframeLocation);
+    const targetKeyframePrev = Math.floor(keyframeLocation);
+    const targetKeyframeNext = Math.ceil(keyframeLocation);
 
-  let bestKeyframeNodePrev;
-  let bestKeyframeNodeNext;
-  let minimumDistancePrev = +Number.MAX_VALUE;
-  let minimumDistanceNext = +Number.MAX_VALUE;
+    let bestKeyframeNodePrev;
+    let bestKeyframeNodeNext;
+    let minimumDistancePrev = +Number.MAX_VALUE;
+    let minimumDistanceNext = +Number.MAX_VALUE;
 
-  while (defined(spatialNode)) {
-    const { renderableKeyframeNodes } = spatialNode;
+    while (defined(spatialNode)) {
+        const { renderableKeyframeNodes } = spatialNode;
 
-    if (renderableKeyframeNodes.length >= 1) {
-      const indexPrev = getKeyframeIndexPrev(
-        targetKeyframePrev,
-        renderableKeyframeNodes,
-      );
-      const keyframeNodePrev = renderableKeyframeNodes[indexPrev];
+        if (renderableKeyframeNodes.length >= 1) {
+            const indexPrev = getKeyframeIndexPrev(
+                targetKeyframePrev,
+                renderableKeyframeNodes,
+            );
+            const keyframeNodePrev = renderableKeyframeNodes[indexPrev];
 
-      const indexNext =
-        targetKeyframeNext === targetKeyframePrev ||
-        targetKeyframePrev < keyframeNodePrev.keyframe
-          ? indexPrev
-          : Math.min(indexPrev + 1, renderableKeyframeNodes.length - 1);
-      const keyframeNodeNext = renderableKeyframeNodes[indexNext];
+            const indexNext =
+                targetKeyframeNext === targetKeyframePrev ||
+                targetKeyframePrev < keyframeNodePrev.keyframe
+                    ? indexPrev
+                    : Math.min(
+                          indexPrev + 1,
+                          renderableKeyframeNodes.length - 1,
+                      );
+            const keyframeNodeNext = renderableKeyframeNodes[indexNext];
 
-      const distancePrev = targetKeyframePrev - keyframeNodePrev.keyframe;
-      const weightedDistancePrev = getWeightedKeyframeDistance(
-        startLevel - spatialNode.level,
-        distancePrev,
-      );
-      if (weightedDistancePrev < minimumDistancePrev) {
-        minimumDistancePrev = weightedDistancePrev;
-        bestKeyframeNodePrev = keyframeNodePrev;
-      }
+            const distancePrev = targetKeyframePrev - keyframeNodePrev.keyframe;
+            const weightedDistancePrev = getWeightedKeyframeDistance(
+                startLevel - spatialNode.level,
+                distancePrev,
+            );
+            if (weightedDistancePrev < minimumDistancePrev) {
+                minimumDistancePrev = weightedDistancePrev;
+                bestKeyframeNodePrev = keyframeNodePrev;
+            }
 
-      const distanceNext = keyframeNodeNext.keyframe - targetKeyframeNext;
-      const weightedDistanceNext = getWeightedKeyframeDistance(
-        startLevel - spatialNode.level,
-        distanceNext,
-      );
-      if (weightedDistanceNext < minimumDistanceNext) {
-        minimumDistanceNext = weightedDistanceNext;
-        bestKeyframeNodeNext = keyframeNodeNext;
-      }
+            const distanceNext = keyframeNodeNext.keyframe - targetKeyframeNext;
+            const weightedDistanceNext = getWeightedKeyframeDistance(
+                startLevel - spatialNode.level,
+                distanceNext,
+            );
+            if (weightedDistanceNext < minimumDistanceNext) {
+                minimumDistanceNext = weightedDistanceNext;
+                bestKeyframeNodeNext = keyframeNodeNext;
+            }
 
-      if (distancePrev === 0 && distanceNext === 0) {
-        // Nothing higher up will be better, so break early.
-        break;
-      }
+            if (distancePrev === 0 && distanceNext === 0) {
+                // Nothing higher up will be better, so break early.
+                break;
+            }
+        }
+
+        spatialNode = spatialNode.parent;
     }
 
-    spatialNode = spatialNode.parent;
-  }
+    this.renderableKeyframeNodePrevious = bestKeyframeNodePrev;
+    this.renderableKeyframeNodeNext = bestKeyframeNodeNext;
 
-  this.renderableKeyframeNodePrevious = bestKeyframeNodePrev;
-  this.renderableKeyframeNodeNext = bestKeyframeNodeNext;
+    if (!defined(bestKeyframeNodePrev) || !defined(bestKeyframeNodeNext)) {
+        return;
+    }
 
-  if (!defined(bestKeyframeNodePrev) || !defined(bestKeyframeNodeNext)) {
-    return;
-  }
-
-  const bestKeyframePrev = bestKeyframeNodePrev.keyframe;
-  const bestKeyframeNext = bestKeyframeNodeNext.keyframe;
-  this.renderableKeyframeNodeLerp =
-    bestKeyframePrev === bestKeyframeNext
-      ? 0.0
-      : CesiumMath.clamp(
-          (keyframeLocation - bestKeyframePrev) /
-            (bestKeyframeNext - bestKeyframePrev),
-          0.0,
-          1.0,
-        );
+    const bestKeyframePrev = bestKeyframeNodePrev.keyframe;
+    const bestKeyframeNext = bestKeyframeNodeNext.keyframe;
+    this.renderableKeyframeNodeLerp =
+        bestKeyframePrev === bestKeyframeNext
+            ? 0.0
+            : CesiumMath.clamp(
+                  (keyframeLocation - bestKeyframePrev) /
+                      (bestKeyframeNext - bestKeyframePrev),
+                  0.0,
+                  1.0,
+              );
 };
 
 function getKeyframeIndexPrev(targetKeyframe, keyframeNodes) {
-  const keyframeIndex = findKeyframeIndex(targetKeyframe, keyframeNodes);
-  return keyframeIndex < 0
-    ? CesiumMath.clamp(~keyframeIndex - 1, 0, keyframeNodes.length - 1)
-    : keyframeIndex;
+    const keyframeIndex = findKeyframeIndex(targetKeyframe, keyframeNodes);
+    return keyframeIndex < 0
+        ? CesiumMath.clamp(~keyframeIndex - 1, 0, keyframeNodes.length - 1)
+        : keyframeIndex;
 }
 
 function getWeightedKeyframeDistance(levelDistance, keyframeDistance) {
-  // Balance quality between visual (levelDistance) and temporal (keyframeDistance)
-  const levelWeight = Math.exp(levelDistance * 4.0);
-  // Keyframes on the opposite of the desired direction are deprioritized.
-  const keyframeWeight = keyframeDistance >= 0 ? 1.0 : -200.0;
-  return levelDistance * levelWeight + keyframeDistance * keyframeWeight;
+    // Balance quality between visual (levelDistance) and temporal (keyframeDistance)
+    const levelWeight = Math.exp(levelDistance * 4.0);
+    // Keyframes on the opposite of the desired direction are deprioritized.
+    const keyframeWeight = keyframeDistance >= 0 ? 1.0 : -200.0;
+    return levelDistance * levelWeight + keyframeDistance * keyframeWeight;
 }
 
 /**
@@ -273,19 +280,19 @@ function getWeightedKeyframeDistance(levelDistance, keyframeDistance) {
  * @returns {boolean}
  */
 SpatialNode.prototype.isVisited = function (frameNumber) {
-  return this.visitedFrameNumber === frameNumber;
+    return this.visitedFrameNumber === frameNumber;
 };
 
 /**
  * @param {number} keyframe
  */
 SpatialNode.prototype.createKeyframeNode = function (keyframe) {
-  let index = findKeyframeIndex(keyframe, this.keyframeNodes);
-  if (index < 0) {
-    index = ~index; // convert to insertion index
-    const keyframeNode = new KeyframeNode(this, keyframe);
-    this.keyframeNodes.splice(index, 0, keyframeNode);
-  }
+    let index = findKeyframeIndex(keyframe, this.keyframeNodes);
+    if (index < 0) {
+        index = ~index; // convert to insertion index
+        const keyframeNode = new KeyframeNode(this, keyframe);
+        this.keyframeNodes.splice(index, 0, keyframeNode);
+    }
 };
 
 /**
@@ -293,34 +300,36 @@ SpatialNode.prototype.createKeyframeNode = function (keyframe) {
  * @param {Megatexture[]} megatextures
  */
 SpatialNode.prototype.destroyKeyframeNode = function (
-  keyframeNode,
-  megatextures,
+    keyframeNode,
+    megatextures,
 ) {
-  const keyframe = keyframeNode.keyframe;
-  const keyframeIndex = findKeyframeIndex(keyframe, this.keyframeNodes);
-  if (keyframeIndex < 0) {
-    throw new DeveloperError("Keyframe node does not exist.");
-  }
-
-  this.keyframeNodes.splice(keyframeIndex, 1);
-
-  if (keyframeNode.megatextureIndex !== -1) {
-    for (let i = 0; i < megatextures.length; i++) {
-      megatextures[i].remove(keyframeNode.megatextureIndex);
+    const keyframe = keyframeNode.keyframe;
+    const keyframeIndex = findKeyframeIndex(keyframe, this.keyframeNodes);
+    if (keyframeIndex < 0) {
+        throw new DeveloperError("Keyframe node does not exist.");
     }
 
-    const renderableKeyframeNodeIndex = findKeyframeIndex(
-      keyframe,
-      this.renderableKeyframeNodes,
-    );
-    if (renderableKeyframeNodeIndex < 0) {
-      throw new DeveloperError("Renderable keyframe node does not exist.");
+    this.keyframeNodes.splice(keyframeIndex, 1);
+
+    if (keyframeNode.megatextureIndex !== -1) {
+        for (let i = 0; i < megatextures.length; i++) {
+            megatextures[i].remove(keyframeNode.megatextureIndex);
+        }
+
+        const renderableKeyframeNodeIndex = findKeyframeIndex(
+            keyframe,
+            this.renderableKeyframeNodes,
+        );
+        if (renderableKeyframeNodeIndex < 0) {
+            throw new DeveloperError(
+                "Renderable keyframe node does not exist.",
+            );
+        }
+
+        this.renderableKeyframeNodes.splice(renderableKeyframeNodeIndex, 1);
     }
 
-    this.renderableKeyframeNodes.splice(renderableKeyframeNodeIndex, 1);
-  }
-
-  keyframeNode.unload();
+    keyframeNode.unload();
 };
 
 /**
@@ -328,32 +337,38 @@ SpatialNode.prototype.destroyKeyframeNode = function (
  * @param {Megatexture[]} megatextures
  */
 SpatialNode.prototype.addKeyframeNodeToMegatextures = function (
-  keyframeNode,
-  megatextures,
+    keyframeNode,
+    megatextures,
 ) {
-  if (
-    keyframeNode.megatextureIndex !== -1 ||
-    keyframeNode.content.metadata.length !== megatextures.length
-  ) {
-    throw new DeveloperError("Keyframe node cannot be added to megatexture");
-  }
+    if (
+        keyframeNode.megatextureIndex !== -1 ||
+        keyframeNode.content.metadata.length !== megatextures.length
+    ) {
+        throw new DeveloperError(
+            "Keyframe node cannot be added to megatexture",
+        );
+    }
 
-  const { metadata } = keyframeNode.content;
-  for (let i = 0; i < megatextures.length; i++) {
-    const megatexture = megatextures[i];
-    keyframeNode.megatextureIndex = megatexture.add(metadata[i]);
-  }
+    const { metadata } = keyframeNode.content;
+    for (let i = 0; i < megatextures.length; i++) {
+        const megatexture = megatextures[i];
+        keyframeNode.megatextureIndex = megatexture.add(metadata[i]);
+    }
 
-  const renderableKeyframeNodes = this.renderableKeyframeNodes;
-  let renderableKeyframeNodeIndex = findKeyframeIndex(
-    keyframeNode.keyframe,
-    renderableKeyframeNodes,
-  );
-  if (renderableKeyframeNodeIndex >= 0) {
-    throw new DeveloperError("Keyframe already renderable");
-  }
-  renderableKeyframeNodeIndex = ~renderableKeyframeNodeIndex;
-  renderableKeyframeNodes.splice(renderableKeyframeNodeIndex, 0, keyframeNode);
+    const renderableKeyframeNodes = this.renderableKeyframeNodes;
+    let renderableKeyframeNodeIndex = findKeyframeIndex(
+        keyframeNode.keyframe,
+        renderableKeyframeNodes,
+    );
+    if (renderableKeyframeNodeIndex >= 0) {
+        throw new DeveloperError("Keyframe already renderable");
+    }
+    renderableKeyframeNodeIndex = ~renderableKeyframeNodeIndex;
+    renderableKeyframeNodes.splice(
+        renderableKeyframeNodeIndex,
+        0,
+        keyframeNode,
+    );
 };
 
 /**
@@ -361,17 +376,17 @@ SpatialNode.prototype.addKeyframeNodeToMegatextures = function (
  * @returns {boolean}
  */
 SpatialNode.prototype.isRenderable = function (frameNumber) {
-  const previousNode = this.renderableKeyframeNodePrevious;
-  const nextNode = this.renderableKeyframeNodeNext;
-  const level = this.level;
+    const previousNode = this.renderableKeyframeNodePrevious;
+    const nextNode = this.renderableKeyframeNodeNext;
+    const level = this.level;
 
-  return (
-    defined(previousNode) &&
-    defined(nextNode) &&
-    (previousNode.spatialNode.level === level ||
-      nextNode.spatialNode.level === level) &&
-    this.visitedFrameNumber === frameNumber
-  );
+    return (
+        defined(previousNode) &&
+        defined(nextNode) &&
+        (previousNode.spatialNode.level === level ||
+            nextNode.spatialNode.level === level) &&
+        this.visitedFrameNumber === frameNumber
+    );
 };
 
 export default SpatialNode;

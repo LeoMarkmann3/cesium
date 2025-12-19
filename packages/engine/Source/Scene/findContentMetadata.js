@@ -18,32 +18,32 @@ import oneTimeWarning from "../Core/oneTimeWarning.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function findContentMetadata(tileset, contentHeader) {
-  const metadataJson = hasExtension(contentHeader, "3DTILES_metadata")
-    ? contentHeader.extensions["3DTILES_metadata"]
-    : contentHeader.metadata;
+    const metadataJson = hasExtension(contentHeader, "3DTILES_metadata")
+        ? contentHeader.extensions["3DTILES_metadata"]
+        : contentHeader.metadata;
 
-  if (!defined(metadataJson)) {
+    if (!defined(metadataJson)) {
+        return undefined;
+    }
+
+    if (!defined(tileset.schema)) {
+        findContentMetadata._oneTimeWarning(
+            "findContentMetadata-missing-root-schema",
+            "Could not find a metadata schema for content metadata. For tilesets that contain external tilesets, make sure the schema is added to the root tileset.json.",
+        );
+        return undefined;
+    }
+
+    const classes = tileset.schema.classes ?? Frozen.EMPTY_OBJECT;
+    if (defined(metadataJson.class)) {
+        const contentClass = classes[metadataJson.class];
+        return new ContentMetadata({
+            content: metadataJson,
+            class: contentClass,
+        });
+    }
+
     return undefined;
-  }
-
-  if (!defined(tileset.schema)) {
-    findContentMetadata._oneTimeWarning(
-      "findContentMetadata-missing-root-schema",
-      "Could not find a metadata schema for content metadata. For tilesets that contain external tilesets, make sure the schema is added to the root tileset.json.",
-    );
-    return undefined;
-  }
-
-  const classes = tileset.schema.classes ?? Frozen.EMPTY_OBJECT;
-  if (defined(metadataJson.class)) {
-    const contentClass = classes[metadataJson.class];
-    return new ContentMetadata({
-      content: metadataJson,
-      class: contentClass,
-    });
-  }
-
-  return undefined;
 }
 
 // Exposed for testing

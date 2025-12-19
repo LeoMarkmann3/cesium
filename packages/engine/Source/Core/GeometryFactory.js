@@ -9,7 +9,7 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @abstract
  */
 function GeometryFactory() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 /**
@@ -19,7 +19,7 @@ function GeometryFactory() {
  * @returns {Geometry|undefined} The computed vertices and indices.
  */
 GeometryFactory.createGeometry = function (geometryFactory) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 export default GeometryFactory;

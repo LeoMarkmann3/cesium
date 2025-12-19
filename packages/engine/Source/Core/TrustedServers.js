@@ -24,19 +24,19 @@ let _servers = {};
  * TrustedServers.add('my.server.com', 80);
  */
 TrustedServers.add = function (host, port) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(host)) {
-    throw new DeveloperError("host is required.");
-  }
-  if (!defined(port) || port <= 0) {
-    throw new DeveloperError("port is required to be greater than 0.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(host)) {
+        throw new DeveloperError("host is required.");
+    }
+    if (!defined(port) || port <= 0) {
+        throw new DeveloperError("port is required to be greater than 0.");
+    }
+    //>>includeEnd('debug');
 
-  const authority = `${host.toLowerCase()}:${port}`;
-  if (!defined(_servers[authority])) {
-    _servers[authority] = true;
-  }
+    const authority = `${host.toLowerCase()}:${port}`;
+    if (!defined(_servers[authority])) {
+        _servers[authority] = true;
+    }
 };
 
 /**
@@ -50,54 +50,54 @@ TrustedServers.add = function (host, port) {
  * TrustedServers.remove('my.server.com', 80);
  */
 TrustedServers.remove = function (host, port) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(host)) {
-    throw new DeveloperError("host is required.");
-  }
-  if (!defined(port) || port <= 0) {
-    throw new DeveloperError("port is required to be greater than 0.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(host)) {
+        throw new DeveloperError("host is required.");
+    }
+    if (!defined(port) || port <= 0) {
+        throw new DeveloperError("port is required to be greater than 0.");
+    }
+    //>>includeEnd('debug');
 
-  const authority = `${host.toLowerCase()}:${port}`;
-  if (defined(_servers[authority])) {
-    delete _servers[authority];
-  }
+    const authority = `${host.toLowerCase()}:${port}`;
+    if (defined(_servers[authority])) {
+        delete _servers[authority];
+    }
 };
 
 function getAuthority(url) {
-  const uri = new Uri(url);
-  uri.normalize();
+    const uri = new Uri(url);
+    uri.normalize();
 
-  // Removes username:password@ so we just have host[:port]
-  let authority = uri.authority();
-  if (authority.length === 0) {
-    return undefined; // Relative URL
-  }
-  uri.authority(authority);
-
-  if (authority.indexOf("@") !== -1) {
-    const parts = authority.split("@");
-    authority = parts[1];
-  }
-
-  // If the port is missing add one based on the scheme
-  if (authority.indexOf(":") === -1) {
-    let scheme = uri.scheme();
-    if (scheme.length === 0) {
-      scheme = window.location.protocol;
-      scheme = scheme.substring(0, scheme.length - 1);
+    // Removes username:password@ so we just have host[:port]
+    let authority = uri.authority();
+    if (authority.length === 0) {
+        return undefined; // Relative URL
     }
-    if (scheme === "http") {
-      authority += ":80";
-    } else if (scheme === "https") {
-      authority += ":443";
-    } else {
-      return undefined;
-    }
-  }
+    uri.authority(authority);
 
-  return authority;
+    if (authority.indexOf("@") !== -1) {
+        const parts = authority.split("@");
+        authority = parts[1];
+    }
+
+    // If the port is missing add one based on the scheme
+    if (authority.indexOf(":") === -1) {
+        let scheme = uri.scheme();
+        if (scheme.length === 0) {
+            scheme = window.location.protocol;
+            scheme = scheme.substring(0, scheme.length - 1);
+        }
+        if (scheme === "http") {
+            authority += ":80";
+        } else if (scheme === "https") {
+            authority += ":443";
+        } else {
+            return undefined;
+        }
+    }
+
+    return authority;
 }
 
 /**
@@ -120,17 +120,17 @@ function getAuthority(url) {
  * }
  */
 TrustedServers.contains = function (url) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(url)) {
-    throw new DeveloperError("url is required.");
-  }
-  //>>includeEnd('debug');
-  const authority = getAuthority(url);
-  if (defined(authority) && defined(_servers[authority])) {
-    return true;
-  }
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(url)) {
+        throw new DeveloperError("url is required.");
+    }
+    //>>includeEnd('debug');
+    const authority = getAuthority(url);
+    if (defined(authority) && defined(_servers[authority])) {
+        return true;
+    }
 
-  return false;
+    return false;
 };
 
 /**
@@ -141,6 +141,6 @@ TrustedServers.contains = function (url) {
  * TrustedServers.clear();
  */
 TrustedServers.clear = function () {
-  _servers = {};
+    _servers = {};
 };
 export default TrustedServers;

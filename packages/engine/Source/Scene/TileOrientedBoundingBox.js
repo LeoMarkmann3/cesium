@@ -17,67 +17,67 @@ const scratchW = new Cartesian3();
 const scratchCartesian = new Cartesian3();
 
 function computeMissingVector(a, b, result) {
-  result = Cartesian3.cross(a, b, result);
-  const magnitude = Cartesian3.magnitude(result);
-  return Cartesian3.multiplyByScalar(
-    result,
-    CesiumMath.EPSILON7 / magnitude,
-    result,
-  );
+    result = Cartesian3.cross(a, b, result);
+    const magnitude = Cartesian3.magnitude(result);
+    return Cartesian3.multiplyByScalar(
+        result,
+        CesiumMath.EPSILON7 / magnitude,
+        result,
+    );
 }
 
 function findOrthogonalVector(a, result) {
-  const temp = Cartesian3.normalize(a, scratchCartesian);
-  const b = Cartesian3.equalsEpsilon(
-    temp,
-    Cartesian3.UNIT_X,
-    CesiumMath.EPSILON6,
-  )
-    ? Cartesian3.UNIT_Y
-    : Cartesian3.UNIT_X;
-  return computeMissingVector(a, b, result);
+    const temp = Cartesian3.normalize(a, scratchCartesian);
+    const b = Cartesian3.equalsEpsilon(
+        temp,
+        Cartesian3.UNIT_X,
+        CesiumMath.EPSILON6,
+    )
+        ? Cartesian3.UNIT_Y
+        : Cartesian3.UNIT_X;
+    return computeMissingVector(a, b, result);
 }
 
 function checkHalfAxes(halfAxes) {
-  let u = Matrix3.getColumn(halfAxes, 0, scratchU);
-  let v = Matrix3.getColumn(halfAxes, 1, scratchV);
-  let w = Matrix3.getColumn(halfAxes, 2, scratchW);
+    let u = Matrix3.getColumn(halfAxes, 0, scratchU);
+    let v = Matrix3.getColumn(halfAxes, 1, scratchV);
+    let w = Matrix3.getColumn(halfAxes, 2, scratchW);
 
-  const uZero = Cartesian3.equals(u, Cartesian3.ZERO);
-  const vZero = Cartesian3.equals(v, Cartesian3.ZERO);
-  const wZero = Cartesian3.equals(w, Cartesian3.ZERO);
+    const uZero = Cartesian3.equals(u, Cartesian3.ZERO);
+    const vZero = Cartesian3.equals(v, Cartesian3.ZERO);
+    const wZero = Cartesian3.equals(w, Cartesian3.ZERO);
 
-  if (!uZero && !vZero && !wZero) {
+    if (!uZero && !vZero && !wZero) {
+        return halfAxes;
+    }
+    if (uZero && vZero && wZero) {
+        halfAxes[0] = CesiumMath.EPSILON7;
+        halfAxes[4] = CesiumMath.EPSILON7;
+        halfAxes[8] = CesiumMath.EPSILON7;
+        return halfAxes;
+    }
+    if (uZero && !vZero && !wZero) {
+        u = computeMissingVector(v, w, u);
+    } else if (!uZero && vZero && !wZero) {
+        v = computeMissingVector(u, w, v);
+    } else if (!uZero && !vZero && wZero) {
+        w = computeMissingVector(v, u, w);
+    } else if (!uZero) {
+        v = findOrthogonalVector(u, v);
+        w = computeMissingVector(v, u, w);
+    } else if (!vZero) {
+        u = findOrthogonalVector(v, u);
+        w = computeMissingVector(v, u, w);
+    } else if (!wZero) {
+        u = findOrthogonalVector(w, u);
+        v = computeMissingVector(w, u, v);
+    }
+
+    Matrix3.setColumn(halfAxes, 0, u, halfAxes);
+    Matrix3.setColumn(halfAxes, 1, v, halfAxes);
+    Matrix3.setColumn(halfAxes, 2, w, halfAxes);
+
     return halfAxes;
-  }
-  if (uZero && vZero && wZero) {
-    halfAxes[0] = CesiumMath.EPSILON7;
-    halfAxes[4] = CesiumMath.EPSILON7;
-    halfAxes[8] = CesiumMath.EPSILON7;
-    return halfAxes;
-  }
-  if (uZero && !vZero && !wZero) {
-    u = computeMissingVector(v, w, u);
-  } else if (!uZero && vZero && !wZero) {
-    v = computeMissingVector(u, w, v);
-  } else if (!uZero && !vZero && wZero) {
-    w = computeMissingVector(v, u, w);
-  } else if (!uZero) {
-    v = findOrthogonalVector(u, v);
-    w = computeMissingVector(v, u, w);
-  } else if (!vZero) {
-    u = findOrthogonalVector(v, u);
-    w = computeMissingVector(v, u, w);
-  } else if (!wZero) {
-    u = findOrthogonalVector(w, u);
-    v = computeMissingVector(w, u, v);
-  }
-
-  Matrix3.setColumn(halfAxes, 0, u, halfAxes);
-  Matrix3.setColumn(halfAxes, 1, v, halfAxes);
-  Matrix3.setColumn(halfAxes, 2, w, halfAxes);
-
-  return halfAxes;
 }
 
 /**
@@ -93,40 +93,40 @@ function checkHalfAxes(halfAxes) {
  * @private
  */
 function TileOrientedBoundingBox(center, halfAxes) {
-  halfAxes = checkHalfAxes(halfAxes);
-  this._orientedBoundingBox = new OrientedBoundingBox(center, halfAxes);
-  this._boundingSphere = BoundingSphere.fromOrientedBoundingBox(
-    this._orientedBoundingBox,
-  );
+    halfAxes = checkHalfAxes(halfAxes);
+    this._orientedBoundingBox = new OrientedBoundingBox(center, halfAxes);
+    this._boundingSphere = BoundingSphere.fromOrientedBoundingBox(
+        this._orientedBoundingBox,
+    );
 }
 
 Object.defineProperties(TileOrientedBoundingBox.prototype, {
-  /**
-   * The underlying bounding volume.
-   *
-   * @memberof TileOrientedBoundingBox.prototype
-   *
-   * @type {OrientedBoundingBox}
-   * @readonly
-   */
-  boundingVolume: {
-    get: function () {
-      return this._orientedBoundingBox;
+    /**
+     * The underlying bounding volume.
+     *
+     * @memberof TileOrientedBoundingBox.prototype
+     *
+     * @type {OrientedBoundingBox}
+     * @readonly
+     */
+    boundingVolume: {
+        get: function () {
+            return this._orientedBoundingBox;
+        },
     },
-  },
-  /**
-   * The underlying bounding sphere.
-   *
-   * @memberof TileOrientedBoundingBox.prototype
-   *
-   * @type {BoundingSphere}
-   * @readonly
-   */
-  boundingSphere: {
-    get: function () {
-      return this._boundingSphere;
+    /**
+     * The underlying bounding sphere.
+     *
+     * @memberof TileOrientedBoundingBox.prototype
+     *
+     * @type {BoundingSphere}
+     * @readonly
+     */
+    boundingSphere: {
+        get: function () {
+            return this._boundingSphere;
+        },
     },
-  },
 });
 
 /**
@@ -136,12 +136,14 @@ Object.defineProperties(TileOrientedBoundingBox.prototype, {
  * @returns {number} The distance between the camera and the bounding box in meters. Returns 0 if the camera is inside the bounding volume.
  */
 TileOrientedBoundingBox.prototype.distanceToCamera = function (frameState) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("frameState", frameState);
-  //>>includeEnd('debug');
-  return Math.sqrt(
-    this._orientedBoundingBox.distanceSquaredTo(frameState.camera.positionWC),
-  );
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("frameState", frameState);
+    //>>includeEnd('debug');
+    return Math.sqrt(
+        this._orientedBoundingBox.distanceSquaredTo(
+            frameState.camera.positionWC,
+        ),
+    );
 };
 
 /**
@@ -154,10 +156,10 @@ TileOrientedBoundingBox.prototype.distanceToCamera = function (frameState) {
  *                      intersects the plane.
  */
 TileOrientedBoundingBox.prototype.intersectPlane = function (plane) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("plane", plane);
-  //>>includeEnd('debug');
-  return this._orientedBoundingBox.intersectPlane(plane);
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("plane", plane);
+    //>>includeEnd('debug');
+    return this._orientedBoundingBox.intersectPlane(plane);
 };
 
 /**
@@ -169,13 +171,13 @@ TileOrientedBoundingBox.prototype.intersectPlane = function (plane) {
  *                           cube centered at the origin.
  */
 TileOrientedBoundingBox.prototype.update = function (center, halfAxes) {
-  Cartesian3.clone(center, this._orientedBoundingBox.center);
-  halfAxes = checkHalfAxes(halfAxes);
-  Matrix3.clone(halfAxes, this._orientedBoundingBox.halfAxes);
-  BoundingSphere.fromOrientedBoundingBox(
-    this._orientedBoundingBox,
-    this._boundingSphere,
-  );
+    Cartesian3.clone(center, this._orientedBoundingBox.center);
+    halfAxes = checkHalfAxes(halfAxes);
+    Matrix3.clone(halfAxes, this._orientedBoundingBox.halfAxes);
+    BoundingSphere.fromOrientedBoundingBox(
+        this._orientedBoundingBox,
+        this._boundingSphere,
+    );
 };
 
 /**
@@ -185,35 +187,35 @@ TileOrientedBoundingBox.prototype.update = function (center, halfAxes) {
  * @return {Primitive}
  */
 TileOrientedBoundingBox.prototype.createDebugVolume = function (color) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("color", color);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("color", color);
+    //>>includeEnd('debug');
 
-  const geometry = new BoxOutlineGeometry({
-    // Make a 2x2x2 cube
-    minimum: new Cartesian3(-1.0, -1.0, -1.0),
-    maximum: new Cartesian3(1.0, 1.0, 1.0),
-  });
-  const modelMatrix = Matrix4.fromRotationTranslation(
-    this.boundingVolume.halfAxes,
-    this.boundingVolume.center,
-  );
-  const instance = new GeometryInstance({
-    geometry: geometry,
-    id: "outline",
-    modelMatrix: modelMatrix,
-    attributes: {
-      color: ColorGeometryInstanceAttribute.fromColor(color),
-    },
-  });
+    const geometry = new BoxOutlineGeometry({
+        // Make a 2x2x2 cube
+        minimum: new Cartesian3(-1.0, -1.0, -1.0),
+        maximum: new Cartesian3(1.0, 1.0, 1.0),
+    });
+    const modelMatrix = Matrix4.fromRotationTranslation(
+        this.boundingVolume.halfAxes,
+        this.boundingVolume.center,
+    );
+    const instance = new GeometryInstance({
+        geometry: geometry,
+        id: "outline",
+        modelMatrix: modelMatrix,
+        attributes: {
+            color: ColorGeometryInstanceAttribute.fromColor(color),
+        },
+    });
 
-  return new Primitive({
-    geometryInstances: instance,
-    appearance: new PerInstanceColorAppearance({
-      translucent: false,
-      flat: true,
-    }),
-    asynchronous: false,
-  });
+    return new Primitive({
+        geometryInstances: instance,
+        appearance: new PerInstanceColorAppearance({
+            translucent: false,
+            flat: true,
+        }),
+        asynchronous: false,
+    });
 };
 export default TileOrientedBoundingBox;

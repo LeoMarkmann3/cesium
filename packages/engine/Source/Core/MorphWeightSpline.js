@@ -40,57 +40,61 @@ import Spline from "./Spline.js";
  * @see QuaternionSpline
  */
 function MorphWeightSpline(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const weights = options.weights;
-  const times = options.times;
+    const weights = options.weights;
+    const times = options.times;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("weights", weights);
-  Check.defined("times", times);
-  Check.typeOf.number.greaterThanOrEquals("weights.length", weights.length, 3);
-  if (weights.length % times.length !== 0) {
-    throw new DeveloperError(
-      "times.length must be a factor of weights.length.",
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("weights", weights);
+    Check.defined("times", times);
+    Check.typeOf.number.greaterThanOrEquals(
+        "weights.length",
+        weights.length,
+        3,
     );
-  }
-  //>>includeEnd('debug');
+    if (weights.length % times.length !== 0) {
+        throw new DeveloperError(
+            "times.length must be a factor of weights.length.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  this._times = times;
-  this._weights = weights;
-  this._count = weights.length / times.length;
+    this._times = times;
+    this._weights = weights;
+    this._count = weights.length / times.length;
 
-  this._lastTimeIndex = 0;
+    this._lastTimeIndex = 0;
 }
 
 Object.defineProperties(MorphWeightSpline.prototype, {
-  /**
-   * An array of times for the control weights.
-   *
-   * @memberof WeightSpline.prototype
-   *
-   * @type {number[]}
-   * @readonly
-   */
-  times: {
-    get: function () {
-      return this._times;
+    /**
+     * An array of times for the control weights.
+     *
+     * @memberof WeightSpline.prototype
+     *
+     * @type {number[]}
+     * @readonly
+     */
+    times: {
+        get: function () {
+            return this._times;
+        },
     },
-  },
 
-  /**
-   * An array of floating-point array control weights.
-   *
-   * @memberof WeightSpline.prototype
-   *
-   * @type {number[]}
-   * @readonly
-   */
-  weights: {
-    get: function () {
-      return this._weights;
+    /**
+     * An array of floating-point array control weights.
+     *
+     * @memberof WeightSpline.prototype
+     *
+     * @type {number[]}
+     * @readonly
+     */
+    weights: {
+        get: function () {
+            return this._weights;
+        },
     },
-  },
 });
 
 /**
@@ -106,7 +110,7 @@ Object.defineProperties(MorphWeightSpline.prototype, {
  *                             in the array <code>times</code>.
  */
 MorphWeightSpline.prototype.findTimeInterval =
-  Spline.prototype.findTimeInterval;
+    Spline.prototype.findTimeInterval;
 
 /**
  * Wraps the given time to the period covered by the spline.
@@ -138,24 +142,25 @@ MorphWeightSpline.prototype.clampTime = Spline.prototype.clampTime;
  *                             in the array <code>times</code>.
  */
 MorphWeightSpline.prototype.evaluate = function (time, result) {
-  const weights = this.weights;
-  const times = this.times;
+    const weights = this.weights;
+    const times = this.times;
 
-  const i = (this._lastTimeIndex = this.findTimeInterval(
-    time,
-    this._lastTimeIndex,
-  ));
-  const u = (time - times[i]) / (times[i + 1] - times[i]);
+    const i = (this._lastTimeIndex = this.findTimeInterval(
+        time,
+        this._lastTimeIndex,
+    ));
+    const u = (time - times[i]) / (times[i + 1] - times[i]);
 
-  if (!defined(result)) {
-    result = new Array(this._count);
-  }
+    if (!defined(result)) {
+        result = new Array(this._count);
+    }
 
-  for (let j = 0; j < this._count; j++) {
-    const index = i * this._count + j;
-    result[j] = weights[index] * (1.0 - u) + weights[index + this._count] * u;
-  }
+    for (let j = 0; j < this._count; j++) {
+        const index = i * this._count + j;
+        result[j] =
+            weights[index] * (1.0 - u) + weights[index + this._count] * u;
+    }
 
-  return result;
+    return result;
 };
 export default MorphWeightSpline;

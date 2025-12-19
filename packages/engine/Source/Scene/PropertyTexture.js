@@ -24,124 +24,124 @@ import PropertyTextureProperty from "./PropertyTextureProperty.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function PropertyTexture(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const propertyTexture = options.propertyTexture;
-  const classDefinition = options.class;
-  const textures = options.textures;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const propertyTexture = options.propertyTexture;
+    const classDefinition = options.class;
+    const textures = options.textures;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.propertyTexture", propertyTexture);
-  Check.typeOf.object("options.class", classDefinition);
-  Check.typeOf.object("options.textures", textures);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.propertyTexture", propertyTexture);
+    Check.typeOf.object("options.class", classDefinition);
+    Check.typeOf.object("options.textures", textures);
+    //>>includeEnd('debug');
 
-  const extensions = propertyTexture.extensions;
-  const extras = propertyTexture.extras;
+    const extensions = propertyTexture.extensions;
+    const extras = propertyTexture.extras;
 
-  const properties = {};
-  if (defined(propertyTexture.properties)) {
-    for (const propertyId in propertyTexture.properties) {
-      if (propertyTexture.properties.hasOwnProperty(propertyId)) {
-        properties[propertyId] = new PropertyTextureProperty({
-          property: propertyTexture.properties[propertyId],
-          classProperty: classDefinition.properties[propertyId],
-          textures: textures,
-        });
-      }
+    const properties = {};
+    if (defined(propertyTexture.properties)) {
+        for (const propertyId in propertyTexture.properties) {
+            if (propertyTexture.properties.hasOwnProperty(propertyId)) {
+                properties[propertyId] = new PropertyTextureProperty({
+                    property: propertyTexture.properties[propertyId],
+                    classProperty: classDefinition.properties[propertyId],
+                    textures: textures,
+                });
+            }
+        }
     }
-  }
 
-  this._name = options.name;
-  this._id = options.id;
-  this._class = classDefinition;
-  this._properties = properties;
-  this._extras = extras;
-  this._extensions = extensions;
+    this._name = options.name;
+    this._id = options.id;
+    this._class = classDefinition;
+    this._properties = properties;
+    this._extras = extras;
+    this._extensions = extensions;
 }
 
 Object.defineProperties(PropertyTexture.prototype, {
-  /**
-   * A human-readable name for this texture
-   *
-   * @memberof PropertyTexture.prototype
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  name: {
-    get: function () {
-      return this._name;
+    /**
+     * A human-readable name for this texture
+     *
+     * @memberof PropertyTexture.prototype
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    name: {
+        get: function () {
+            return this._name;
+        },
     },
-  },
-  /**
-   * An identifier for this texture. Useful for debugging.
-   *
-   * @memberof PropertyTexture.prototype
-   * @type {string|number}
-   * @readonly
-   * @private
-   */
-  id: {
-    get: function () {
-      return this._id;
+    /**
+     * An identifier for this texture. Useful for debugging.
+     *
+     * @memberof PropertyTexture.prototype
+     * @type {string|number}
+     * @readonly
+     * @private
+     */
+    id: {
+        get: function () {
+            return this._id;
+        },
     },
-  },
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof PropertyTexture.prototype
-   * @type {MetadataClass}
-   * @readonly
-   * @private
-   */
-  class: {
-    get: function () {
-      return this._class;
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof PropertyTexture.prototype
+     * @type {MetadataClass}
+     * @readonly
+     * @private
+     */
+    class: {
+        get: function () {
+            return this._class;
+        },
     },
-  },
 
-  /**
-   * The properties in this property texture.
-   *
-   * @memberof PropertyTexture.prototype
-   *
-   * @type {PropertyTextureProperty}
-   * @readonly
-   * @private
-   */
-  properties: {
-    get: function () {
-      return this._properties;
+    /**
+     * The properties in this property texture.
+     *
+     * @memberof PropertyTexture.prototype
+     *
+     * @type {PropertyTextureProperty}
+     * @readonly
+     * @private
+     */
+    properties: {
+        get: function () {
+            return this._properties;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof PropertyTexture.prototype
-   * @type {*}
-   * @readonly
-   * @private
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof PropertyTexture.prototype
+     * @type {*}
+     * @readonly
+     * @private
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof PropertyTexture.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof PropertyTexture.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 });
 
 /**
@@ -152,11 +152,11 @@ Object.defineProperties(PropertyTexture.prototype, {
  * @private
  */
 PropertyTexture.prototype.getProperty = function (propertyId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("propertyId", propertyId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("propertyId", propertyId);
+    //>>includeEnd('debug');
 
-  return this._properties[propertyId];
+    return this._properties[propertyId];
 };
 
 export default PropertyTexture;

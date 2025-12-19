@@ -12,10 +12,10 @@ import ShaderDestination from "../../Renderer/ShaderDestination.js";
  * @private
  */
 const ModelColorPipelineStage = {
-  name: "ModelColorPipelineStage", // Helps with debugging
+    name: "ModelColorPipelineStage", // Helps with debugging
 
-  COLOR_UNIFORM_NAME: "model_color",
-  COLOR_BLEND_UNIFORM_NAME: "model_colorBlend",
+    COLOR_UNIFORM_NAME: "model_color",
+    COLOR_BLEND_UNIFORM_NAME: "model_colorBlend",
 };
 
 /**
@@ -35,64 +35,64 @@ const ModelColorPipelineStage = {
  * @private
  */
 ModelColorPipelineStage.process = function (
-  renderResources,
-  model,
-  frameState,
+    renderResources,
+    model,
+    frameState,
 ) {
-  const shaderBuilder = renderResources.shaderBuilder;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addDefine(
-    "HAS_MODEL_COLOR",
-    undefined,
-    ShaderDestination.FRAGMENT,
-  );
-  shaderBuilder.addFragmentLines(ModelColorStageFS);
+    shaderBuilder.addDefine(
+        "HAS_MODEL_COLOR",
+        undefined,
+        ShaderDestination.FRAGMENT,
+    );
+    shaderBuilder.addFragmentLines(ModelColorStageFS);
 
-  const stageUniforms = {};
+    const stageUniforms = {};
 
-  // Pass the model's color as a uniform. Set the pass type to translucent, if needed.
-  const color = model.color;
+    // Pass the model's color as a uniform. Set the pass type to translucent, if needed.
+    const color = model.color;
 
-  if (color.alpha === 0.0 && !model.hasSilhouette(frameState)) {
-    renderResources.renderStateOptions.colorMask = {
-      red: false,
-      green: false,
-      blue: false,
-      alpha: false,
-    };
-  }
+    if (color.alpha === 0.0 && !model.hasSilhouette(frameState)) {
+        renderResources.renderStateOptions.colorMask = {
+            red: false,
+            green: false,
+            blue: false,
+            alpha: false,
+        };
+    }
 
-  if (color.alpha < 1.0) {
-    renderResources.alphaOptions.pass = Pass.TRANSLUCENT;
-  }
+    if (color.alpha < 1.0) {
+        renderResources.alphaOptions.pass = Pass.TRANSLUCENT;
+    }
 
-  shaderBuilder.addUniform(
-    "vec4",
-    ModelColorPipelineStage.COLOR_UNIFORM_NAME,
-    ShaderDestination.FRAGMENT,
-  );
-  stageUniforms[ModelColorPipelineStage.COLOR_UNIFORM_NAME] = function () {
-    return model.color;
-  };
-
-  // Create a colorBlend from the model's colorBlendMode and colorBlendAmount and pass it as a uniform.
-  shaderBuilder.addUniform(
-    "float",
-    ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME,
-    ShaderDestination.FRAGMENT,
-  );
-  stageUniforms[ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME] =
-    function () {
-      return ColorBlendMode.getColorBlend(
-        model.colorBlendMode,
-        model.colorBlendAmount,
-      );
+    shaderBuilder.addUniform(
+        "vec4",
+        ModelColorPipelineStage.COLOR_UNIFORM_NAME,
+        ShaderDestination.FRAGMENT,
+    );
+    stageUniforms[ModelColorPipelineStage.COLOR_UNIFORM_NAME] = function () {
+        return model.color;
     };
 
-  renderResources.uniformMap = combine(
-    stageUniforms,
-    renderResources.uniformMap,
-  );
+    // Create a colorBlend from the model's colorBlendMode and colorBlendAmount and pass it as a uniform.
+    shaderBuilder.addUniform(
+        "float",
+        ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME,
+        ShaderDestination.FRAGMENT,
+    );
+    stageUniforms[ModelColorPipelineStage.COLOR_BLEND_UNIFORM_NAME] =
+        function () {
+            return ColorBlendMode.getColorBlend(
+                model.colorBlendMode,
+                model.colorBlendAmount,
+            );
+        };
+
+    renderResources.uniformMap = combine(
+        stageUniforms,
+        renderResources.uniformMap,
+    );
 };
 
 export default ModelColorPipelineStage;

@@ -40,11 +40,11 @@ ResourceCache.statistics = new ResourceCacheStatistics();
  * @private
  */
 function CacheEntry(resourceLoader) {
-  this.referenceCount = 1;
-  this.resourceLoader = resourceLoader;
+    this.referenceCount = 1;
+    this.resourceLoader = resourceLoader;
 
-  // For unit testing only
-  this._statisticsPromise = undefined;
+    // For unit testing only
+    this._statisticsPromise = undefined;
 }
 
 /**
@@ -57,16 +57,16 @@ function CacheEntry(resourceLoader) {
  * @private
  */
 ResourceCache.get = function (cacheKey) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("cacheKey", cacheKey);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("cacheKey", cacheKey);
+    //>>includeEnd('debug');
 
-  const cacheEntry = ResourceCache.cacheEntries[cacheKey];
-  if (defined(cacheEntry)) {
-    ++cacheEntry.referenceCount;
-    return cacheEntry.resourceLoader;
-  }
-  return undefined;
+    const cacheEntry = ResourceCache.cacheEntries[cacheKey];
+    if (defined(cacheEntry)) {
+        ++cacheEntry.referenceCount;
+        return cacheEntry.resourceLoader;
+    }
+    return undefined;
 };
 
 /**
@@ -79,25 +79,25 @@ ResourceCache.get = function (cacheKey) {
  * @private
  */
 ResourceCache.add = function (resourceLoader) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("resourceLoader", resourceLoader);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("resourceLoader", resourceLoader);
+    //>>includeEnd('debug');
 
-  const cacheKey = resourceLoader.cacheKey;
+    const cacheKey = resourceLoader.cacheKey;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("options.resourceLoader.cacheKey", cacheKey);
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("options.resourceLoader.cacheKey", cacheKey);
 
-  if (defined(ResourceCache.cacheEntries[cacheKey])) {
-    throw new DeveloperError(
-      `Resource with this cacheKey is already in the cache: ${cacheKey}`,
-    );
-  }
-  //>>includeEnd('debug');
+    if (defined(ResourceCache.cacheEntries[cacheKey])) {
+        throw new DeveloperError(
+            `Resource with this cacheKey is already in the cache: ${cacheKey}`,
+        );
+    }
+    //>>includeEnd('debug');
 
-  ResourceCache.cacheEntries[cacheKey] = new CacheEntry(resourceLoader);
+    ResourceCache.cacheEntries[cacheKey] = new CacheEntry(resourceLoader);
 
-  return resourceLoader;
+    return resourceLoader;
 };
 
 /**
@@ -111,26 +111,26 @@ ResourceCache.add = function (resourceLoader) {
  * @private
  */
 ResourceCache.unload = function (resourceLoader) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("resourceLoader", resourceLoader);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("resourceLoader", resourceLoader);
+    //>>includeEnd('debug');
 
-  const cacheKey = resourceLoader.cacheKey;
-  const cacheEntry = ResourceCache.cacheEntries[cacheKey];
+    const cacheKey = resourceLoader.cacheKey;
+    const cacheEntry = ResourceCache.cacheEntries[cacheKey];
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(cacheEntry)) {
-    throw new DeveloperError(`Resource is not in the cache: ${cacheKey}`);
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(cacheEntry)) {
+        throw new DeveloperError(`Resource is not in the cache: ${cacheKey}`);
+    }
+    //>>includeEnd('debug');
 
-  --cacheEntry.referenceCount;
+    --cacheEntry.referenceCount;
 
-  if (cacheEntry.referenceCount === 0) {
-    ResourceCache.statistics.removeLoader(resourceLoader);
-    resourceLoader.destroy();
-    delete ResourceCache.cacheEntries[cacheKey];
-  }
+    if (cacheEntry.referenceCount === 0) {
+        ResourceCache.statistics.removeLoader(resourceLoader);
+        resourceLoader.destroy();
+        delete ResourceCache.cacheEntries[cacheKey];
+    }
 };
 
 /**
@@ -146,34 +146,34 @@ ResourceCache.unload = function (resourceLoader) {
  * @private
  */
 ResourceCache.getSchemaLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { schema, resource } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { schema, resource } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (defined(schema) === defined(resource)) {
-    throw new DeveloperError(
-      "One of options.schema and options.resource must be defined.",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (defined(schema) === defined(resource)) {
+        throw new DeveloperError(
+            "One of options.schema and options.resource must be defined.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getSchemaCacheKey({
-    schema: schema,
-    resource: resource,
-  });
+    const cacheKey = ResourceCacheKey.getSchemaCacheKey({
+        schema: schema,
+        resource: resource,
+    });
 
-  let schemaLoader = ResourceCache.get(cacheKey);
-  if (defined(schemaLoader)) {
-    return schemaLoader;
-  }
+    let schemaLoader = ResourceCache.get(cacheKey);
+    if (defined(schemaLoader)) {
+        return schemaLoader;
+    }
 
-  schemaLoader = new MetadataSchemaLoader({
-    schema: schema,
-    resource: resource,
-    cacheKey: cacheKey,
-  });
+    schemaLoader = new MetadataSchemaLoader({
+        schema: schema,
+        resource: resource,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(schemaLoader);
+    return ResourceCache.add(schemaLoader);
 };
 
 /**
@@ -188,34 +188,34 @@ ResourceCache.getSchemaLoader = function (options) {
  * @private
  */
 ResourceCache.getEmbeddedBufferLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { parentResource, bufferId, typedArray } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { parentResource, bufferId, typedArray } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.parentResource", parentResource);
-  Check.typeOf.number("options.bufferId", bufferId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.parentResource", parentResource);
+    Check.typeOf.number("options.bufferId", bufferId);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getEmbeddedBufferCacheKey({
-    parentResource: parentResource,
-    bufferId: bufferId,
-  });
+    const cacheKey = ResourceCacheKey.getEmbeddedBufferCacheKey({
+        parentResource: parentResource,
+        bufferId: bufferId,
+    });
 
-  let bufferLoader = ResourceCache.get(cacheKey);
-  if (defined(bufferLoader)) {
-    return bufferLoader;
-  }
+    let bufferLoader = ResourceCache.get(cacheKey);
+    if (defined(bufferLoader)) {
+        return bufferLoader;
+    }
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.typedArray", typedArray);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.typedArray", typedArray);
+    //>>includeEnd('debug');
 
-  bufferLoader = new BufferLoader({
-    typedArray: typedArray,
-    cacheKey: cacheKey,
-  });
+    bufferLoader = new BufferLoader({
+        typedArray: typedArray,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(bufferLoader);
+    return ResourceCache.add(bufferLoader);
 };
 
 /**
@@ -228,28 +228,28 @@ ResourceCache.getEmbeddedBufferLoader = function (options) {
  * @private
  */
 ResourceCache.getExternalBufferLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { resource } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { resource } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.resource", resource);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.resource", resource);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getExternalBufferCacheKey({
-    resource: resource,
-  });
+    const cacheKey = ResourceCacheKey.getExternalBufferCacheKey({
+        resource: resource,
+    });
 
-  let bufferLoader = ResourceCache.get(cacheKey);
-  if (defined(bufferLoader)) {
-    return bufferLoader;
-  }
+    let bufferLoader = ResourceCache.get(cacheKey);
+    if (defined(bufferLoader)) {
+        return bufferLoader;
+    }
 
-  bufferLoader = new BufferLoader({
-    resource: resource,
-    cacheKey: cacheKey,
-  });
+    bufferLoader = new BufferLoader({
+        resource: resource,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(bufferLoader);
+    return ResourceCache.add(bufferLoader);
 };
 
 /**
@@ -265,33 +265,33 @@ ResourceCache.getExternalBufferLoader = function (options) {
  * @private
  */
 ResourceCache.getGltfJsonLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { gltfResource, baseResource, typedArray, gltfJson } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { gltfResource, baseResource, typedArray, gltfJson } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getGltfCacheKey({
-    gltfResource: gltfResource,
-  });
+    const cacheKey = ResourceCacheKey.getGltfCacheKey({
+        gltfResource: gltfResource,
+    });
 
-  let gltfJsonLoader = ResourceCache.get(cacheKey);
-  if (defined(gltfJsonLoader)) {
-    return gltfJsonLoader;
-  }
+    let gltfJsonLoader = ResourceCache.get(cacheKey);
+    if (defined(gltfJsonLoader)) {
+        return gltfJsonLoader;
+    }
 
-  gltfJsonLoader = new GltfJsonLoader({
-    resourceCache: ResourceCache,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    typedArray: typedArray,
-    gltfJson: gltfJson,
-    cacheKey: cacheKey,
-  });
+    gltfJsonLoader = new GltfJsonLoader({
+        resourceCache: ResourceCache,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        typedArray: typedArray,
+        gltfJson: gltfJson,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(gltfJsonLoader);
+    return ResourceCache.add(gltfJsonLoader);
 };
 
 /**
@@ -307,38 +307,38 @@ ResourceCache.getGltfJsonLoader = function (options) {
  * @private
  */
 ResourceCache.getBufferViewLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { gltf, bufferViewId, gltfResource, baseResource } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { gltf, bufferViewId, gltfResource, baseResource } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltf", gltf);
-  Check.typeOf.number("options.bufferViewId", bufferViewId);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltf", gltf);
+    Check.typeOf.number("options.bufferViewId", bufferViewId);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getBufferViewCacheKey({
-    gltf: gltf,
-    bufferViewId: bufferViewId,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-  });
+    const cacheKey = ResourceCacheKey.getBufferViewCacheKey({
+        gltf: gltf,
+        bufferViewId: bufferViewId,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+    });
 
-  let bufferViewLoader = ResourceCache.get(cacheKey);
-  if (defined(bufferViewLoader)) {
-    return bufferViewLoader;
-  }
+    let bufferViewLoader = ResourceCache.get(cacheKey);
+    if (defined(bufferViewLoader)) {
+        return bufferViewLoader;
+    }
 
-  bufferViewLoader = new GltfBufferViewLoader({
-    resourceCache: ResourceCache,
-    gltf: gltf,
-    bufferViewId: bufferViewId,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    cacheKey: cacheKey,
-  });
+    bufferViewLoader = new GltfBufferViewLoader({
+        resourceCache: ResourceCache,
+        gltf: gltf,
+        bufferViewId: bufferViewId,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(bufferViewLoader);
+    return ResourceCache.add(bufferViewLoader);
 };
 
 /**
@@ -355,40 +355,40 @@ ResourceCache.getBufferViewLoader = function (options) {
  * @private
  */
 ResourceCache.getDracoLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { gltf, primitive, draco, gltfResource, baseResource } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { gltf, primitive, draco, gltfResource, baseResource } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltf", gltf);
-  Check.typeOf.object("options.primitive", primitive);
-  Check.typeOf.object("options.draco", draco);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltf", gltf);
+    Check.typeOf.object("options.primitive", primitive);
+    Check.typeOf.object("options.draco", draco);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getDracoCacheKey({
-    gltf: gltf,
-    draco: draco,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-  });
+    const cacheKey = ResourceCacheKey.getDracoCacheKey({
+        gltf: gltf,
+        draco: draco,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+    });
 
-  let dracoLoader = ResourceCache.get(cacheKey);
-  if (defined(dracoLoader)) {
-    return dracoLoader;
-  }
+    let dracoLoader = ResourceCache.get(cacheKey);
+    if (defined(dracoLoader)) {
+        return dracoLoader;
+    }
 
-  dracoLoader = new GltfDracoLoader({
-    resourceCache: ResourceCache,
-    gltf: gltf,
-    primitive: primitive,
-    draco: draco,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    cacheKey: cacheKey,
-  });
+    dracoLoader = new GltfDracoLoader({
+        resourceCache: ResourceCache,
+        gltf: gltf,
+        primitive: primitive,
+        draco: draco,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(dracoLoader);
+    return ResourceCache.add(dracoLoader);
 };
 
 /**
@@ -406,40 +406,40 @@ ResourceCache.getDracoLoader = function (options) {
  @private
  * */
 ResourceCache.getSpzLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { gltf, primitive, spz, gltfResource, baseResource } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { gltf, primitive, spz, gltfResource, baseResource } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltf", gltf);
-  Check.typeOf.object("options.primitive", primitive);
-  Check.typeOf.object("options.spz", spz);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltf", gltf);
+    Check.typeOf.object("options.primitive", primitive);
+    Check.typeOf.object("options.spz", spz);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getSpzCacheKey({
-    gltf: gltf,
-    primitive: primitive,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-  });
+    const cacheKey = ResourceCacheKey.getSpzCacheKey({
+        gltf: gltf,
+        primitive: primitive,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+    });
 
-  let spzLoader = ResourceCache.get(cacheKey);
-  if (defined(spzLoader)) {
-    return spzLoader;
-  }
+    let spzLoader = ResourceCache.get(cacheKey);
+    if (defined(spzLoader)) {
+        return spzLoader;
+    }
 
-  spzLoader = new GltfSpzLoader({
-    resourceCache: ResourceCache,
-    gltf: gltf,
-    primitive: primitive,
-    spz: spz,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    cacheKey: cacheKey,
-  });
+    spzLoader = new GltfSpzLoader({
+        resourceCache: ResourceCache,
+        gltf: gltf,
+        primitive: primitive,
+        spz: spz,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(spzLoader);
+    return ResourceCache.add(spzLoader);
 };
 
 /**
@@ -467,120 +467,120 @@ ResourceCache.getSpzLoader = function (options) {
  * @private
  */
 ResourceCache.getVertexBufferLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const {
-    gltf,
-    gltfResource,
-    baseResource,
-    frameState,
-    bufferViewId,
-    primitive,
-    draco,
-    spz,
-    attributeSemantic,
-    accessorId,
-    asynchronous = true,
-    dequantize = false,
-    loadBuffer = false,
-    loadTypedArray = false,
-  } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const {
+        gltf,
+        gltfResource,
+        baseResource,
+        frameState,
+        bufferViewId,
+        primitive,
+        draco,
+        spz,
+        attributeSemantic,
+        accessorId,
+        asynchronous = true,
+        dequantize = false,
+        loadBuffer = false,
+        loadTypedArray = false,
+    } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltf", gltf);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  Check.typeOf.object("options.frameState", frameState);
-  if (!loadBuffer && !loadTypedArray) {
-    throw new DeveloperError(
-      "At least one of loadBuffer and loadTypedArray must be true.",
-    );
-  }
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltf", gltf);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    Check.typeOf.object("options.frameState", frameState);
+    if (!loadBuffer && !loadTypedArray) {
+        throw new DeveloperError(
+            "At least one of loadBuffer and loadTypedArray must be true.",
+        );
+    }
 
-  const hasBufferViewId = defined(bufferViewId);
-  const hasPrimitive = defined(primitive);
-  const hasDraco = hasDracoCompression(draco, attributeSemantic);
-  const hasAttributeSemantic = defined(attributeSemantic);
-  const hasAccessorId = defined(accessorId);
-  const hasSpz = defined(spz);
+    const hasBufferViewId = defined(bufferViewId);
+    const hasPrimitive = defined(primitive);
+    const hasDraco = hasDracoCompression(draco, attributeSemantic);
+    const hasAttributeSemantic = defined(attributeSemantic);
+    const hasAccessorId = defined(accessorId);
+    const hasSpz = defined(spz);
 
-  if (hasBufferViewId === (hasDraco !== hasSpz)) {
-    throw new DeveloperError(
-      "One of options.bufferViewId, options.draco, or options.spz must be defined.",
-    );
-  }
+    if (hasBufferViewId === (hasDraco !== hasSpz)) {
+        throw new DeveloperError(
+            "One of options.bufferViewId, options.draco, or options.spz must be defined.",
+        );
+    }
 
-  if (hasDraco && !hasAttributeSemantic) {
-    throw new DeveloperError(
-      "When options.draco is defined options.attributeSemantic must also be defined.",
-    );
-  }
+    if (hasDraco && !hasAttributeSemantic) {
+        throw new DeveloperError(
+            "When options.draco is defined options.attributeSemantic must also be defined.",
+        );
+    }
 
-  if (hasDraco && !hasAccessorId) {
-    throw new DeveloperError(
-      "When options.draco is defined options.hasAccessorId must also be defined.",
-    );
-  }
+    if (hasDraco && !hasAccessorId) {
+        throw new DeveloperError(
+            "When options.draco is defined options.hasAccessorId must also be defined.",
+        );
+    }
 
-  if (hasDraco && !hasPrimitive) {
-    throw new DeveloperError(
-      "When options.draco is defined options.primitive must also be defined.",
-    );
-  }
+    if (hasDraco && !hasPrimitive) {
+        throw new DeveloperError(
+            "When options.draco is defined options.primitive must also be defined.",
+        );
+    }
 
-  if (hasDraco) {
-    Check.typeOf.object("options.draco", draco);
-    Check.typeOf.string("options.attributeSemantic", attributeSemantic);
-    Check.typeOf.number("options.accessorId", accessorId);
-  }
+    if (hasDraco) {
+        Check.typeOf.object("options.draco", draco);
+        Check.typeOf.string("options.attributeSemantic", attributeSemantic);
+        Check.typeOf.number("options.accessorId", accessorId);
+    }
 
-  //>>includeEnd('debug');
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getVertexBufferCacheKey({
-    gltf: gltf,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    frameState: frameState,
-    bufferViewId: bufferViewId,
-    draco: draco,
-    spz: spz,
-    attributeSemantic: attributeSemantic,
-    dequantize: dequantize,
-    loadBuffer: loadBuffer,
-    loadTypedArray: loadTypedArray,
-  });
+    const cacheKey = ResourceCacheKey.getVertexBufferCacheKey({
+        gltf: gltf,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        frameState: frameState,
+        bufferViewId: bufferViewId,
+        draco: draco,
+        spz: spz,
+        attributeSemantic: attributeSemantic,
+        dequantize: dequantize,
+        loadBuffer: loadBuffer,
+        loadTypedArray: loadTypedArray,
+    });
 
-  let vertexBufferLoader = ResourceCache.get(cacheKey);
-  if (defined(vertexBufferLoader)) {
-    return vertexBufferLoader;
-  }
+    let vertexBufferLoader = ResourceCache.get(cacheKey);
+    if (defined(vertexBufferLoader)) {
+        return vertexBufferLoader;
+    }
 
-  vertexBufferLoader = new GltfVertexBufferLoader({
-    resourceCache: ResourceCache,
-    gltf: gltf,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    bufferViewId: bufferViewId,
-    primitive: primitive,
-    draco: draco,
-    spz: spz,
-    attributeSemantic: attributeSemantic,
-    accessorId: accessorId,
-    cacheKey: cacheKey,
-    asynchronous: asynchronous,
-    dequantize: dequantize,
-    loadBuffer: loadBuffer,
-    loadTypedArray: loadTypedArray,
-  });
+    vertexBufferLoader = new GltfVertexBufferLoader({
+        resourceCache: ResourceCache,
+        gltf: gltf,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        bufferViewId: bufferViewId,
+        primitive: primitive,
+        draco: draco,
+        spz: spz,
+        attributeSemantic: attributeSemantic,
+        accessorId: accessorId,
+        cacheKey: cacheKey,
+        asynchronous: asynchronous,
+        dequantize: dequantize,
+        loadBuffer: loadBuffer,
+        loadTypedArray: loadTypedArray,
+    });
 
-  return ResourceCache.add(vertexBufferLoader);
+    return ResourceCache.add(vertexBufferLoader);
 };
 
 function hasDracoCompression(draco, semantic) {
-  return (
-    defined(draco) &&
-    defined(draco.attributes) &&
-    defined(draco.attributes[semantic])
-  );
+    return (
+        defined(draco) &&
+        defined(draco.attributes) &&
+        defined(draco.attributes[semantic])
+    );
 }
 
 /**
@@ -601,64 +601,64 @@ function hasDracoCompression(draco, semantic) {
  * @private
  */
 ResourceCache.getIndexBufferLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const {
-    gltf,
-    accessorId,
-    gltfResource,
-    baseResource,
-    frameState,
-    primitive,
-    draco,
-    asynchronous = true,
-    loadBuffer = false,
-    loadTypedArray = false,
-  } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const {
+        gltf,
+        accessorId,
+        gltfResource,
+        baseResource,
+        frameState,
+        primitive,
+        draco,
+        asynchronous = true,
+        loadBuffer = false,
+        loadTypedArray = false,
+    } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltf", gltf);
-  Check.typeOf.number("options.accessorId", accessorId);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  Check.typeOf.object("options.frameState", frameState);
-  if (!loadBuffer && !loadTypedArray) {
-    throw new DeveloperError(
-      "At least one of loadBuffer and loadTypedArray must be true.",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltf", gltf);
+    Check.typeOf.number("options.accessorId", accessorId);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    Check.typeOf.object("options.frameState", frameState);
+    if (!loadBuffer && !loadTypedArray) {
+        throw new DeveloperError(
+            "At least one of loadBuffer and loadTypedArray must be true.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getIndexBufferCacheKey({
-    gltf: gltf,
-    accessorId: accessorId,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    frameState: frameState,
-    draco: draco,
-    loadBuffer: loadBuffer,
-    loadTypedArray: loadTypedArray,
-  });
+    const cacheKey = ResourceCacheKey.getIndexBufferCacheKey({
+        gltf: gltf,
+        accessorId: accessorId,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        frameState: frameState,
+        draco: draco,
+        loadBuffer: loadBuffer,
+        loadTypedArray: loadTypedArray,
+    });
 
-  let indexBufferLoader = ResourceCache.get(cacheKey);
-  if (defined(indexBufferLoader)) {
-    return indexBufferLoader;
-  }
+    let indexBufferLoader = ResourceCache.get(cacheKey);
+    if (defined(indexBufferLoader)) {
+        return indexBufferLoader;
+    }
 
-  indexBufferLoader = new GltfIndexBufferLoader({
-    resourceCache: ResourceCache,
-    gltf: gltf,
-    accessorId: accessorId,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    primitive: primitive,
-    draco: draco,
-    cacheKey: cacheKey,
-    asynchronous: asynchronous,
-    loadBuffer: loadBuffer,
-    loadTypedArray: loadTypedArray,
-  });
+    indexBufferLoader = new GltfIndexBufferLoader({
+        resourceCache: ResourceCache,
+        gltf: gltf,
+        accessorId: accessorId,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        primitive: primitive,
+        draco: draco,
+        cacheKey: cacheKey,
+        asynchronous: asynchronous,
+        loadBuffer: loadBuffer,
+        loadTypedArray: loadTypedArray,
+    });
 
-  return ResourceCache.add(indexBufferLoader);
+    return ResourceCache.add(indexBufferLoader);
 };
 
 /**
@@ -674,38 +674,38 @@ ResourceCache.getIndexBufferLoader = function (options) {
  * @private
  */
 ResourceCache.getImageLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const { gltf, imageId, gltfResource, baseResource } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const { gltf, imageId, gltfResource, baseResource } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltf", gltf);
-  Check.typeOf.number("options.imageId", imageId);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltf", gltf);
+    Check.typeOf.number("options.imageId", imageId);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getImageCacheKey({
-    gltf: gltf,
-    imageId: imageId,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-  });
+    const cacheKey = ResourceCacheKey.getImageCacheKey({
+        gltf: gltf,
+        imageId: imageId,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+    });
 
-  let imageLoader = ResourceCache.get(cacheKey);
-  if (defined(imageLoader)) {
-    return imageLoader;
-  }
+    let imageLoader = ResourceCache.get(cacheKey);
+    if (defined(imageLoader)) {
+        return imageLoader;
+    }
 
-  imageLoader = new GltfImageLoader({
-    resourceCache: ResourceCache,
-    gltf: gltf,
-    imageId: imageId,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    cacheKey: cacheKey,
-  });
+    imageLoader = new GltfImageLoader({
+        resourceCache: ResourceCache,
+        gltf: gltf,
+        imageId: imageId,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        cacheKey: cacheKey,
+    });
 
-  return ResourceCache.add(imageLoader);
+    return ResourceCache.add(imageLoader);
 };
 
 /**
@@ -724,52 +724,52 @@ ResourceCache.getImageLoader = function (options) {
  * @private
  */
 ResourceCache.getTextureLoader = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const {
-    gltf,
-    textureInfo,
-    gltfResource,
-    baseResource,
-    supportedImageFormats,
-    frameState,
-    asynchronous = true,
-  } = options;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const {
+        gltf,
+        textureInfo,
+        gltfResource,
+        baseResource,
+        supportedImageFormats,
+        frameState,
+        asynchronous = true,
+    } = options;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.gltf", gltf);
-  Check.typeOf.object("options.textureInfo", textureInfo);
-  Check.typeOf.object("options.gltfResource", gltfResource);
-  Check.typeOf.object("options.baseResource", baseResource);
-  Check.typeOf.object("options.supportedImageFormats", supportedImageFormats);
-  Check.typeOf.object("options.frameState", frameState);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.gltf", gltf);
+    Check.typeOf.object("options.textureInfo", textureInfo);
+    Check.typeOf.object("options.gltfResource", gltfResource);
+    Check.typeOf.object("options.baseResource", baseResource);
+    Check.typeOf.object("options.supportedImageFormats", supportedImageFormats);
+    Check.typeOf.object("options.frameState", frameState);
+    //>>includeEnd('debug');
 
-  const cacheKey = ResourceCacheKey.getTextureCacheKey({
-    gltf: gltf,
-    textureInfo: textureInfo,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    supportedImageFormats: supportedImageFormats,
-    frameState: frameState,
-  });
+    const cacheKey = ResourceCacheKey.getTextureCacheKey({
+        gltf: gltf,
+        textureInfo: textureInfo,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        supportedImageFormats: supportedImageFormats,
+        frameState: frameState,
+    });
 
-  let textureLoader = ResourceCache.get(cacheKey);
-  if (defined(textureLoader)) {
-    return textureLoader;
-  }
+    let textureLoader = ResourceCache.get(cacheKey);
+    if (defined(textureLoader)) {
+        return textureLoader;
+    }
 
-  textureLoader = new GltfTextureLoader({
-    resourceCache: ResourceCache,
-    gltf: gltf,
-    textureInfo: textureInfo,
-    gltfResource: gltfResource,
-    baseResource: baseResource,
-    supportedImageFormats: supportedImageFormats,
-    cacheKey: cacheKey,
-    asynchronous: asynchronous,
-  });
+    textureLoader = new GltfTextureLoader({
+        resourceCache: ResourceCache,
+        gltf: gltf,
+        textureInfo: textureInfo,
+        gltfResource: gltfResource,
+        baseResource: baseResource,
+        supportedImageFormats: supportedImageFormats,
+        cacheKey: cacheKey,
+        asynchronous: asynchronous,
+    });
 
-  return ResourceCache.add(textureLoader);
+    return ResourceCache.add(textureLoader);
 };
 
 /**
@@ -778,47 +778,47 @@ ResourceCache.getTextureLoader = function (options) {
  * @private
  */
 ResourceCache.clearForSpecs = function () {
-  // Unload in the order below. This prevents an unload function from unloading
-  // a resource that has already been unloaded.
-  const precedence = [
-    GltfVertexBufferLoader,
-    GltfIndexBufferLoader,
-    GltfDracoLoader,
-    GltfTextureLoader,
-    GltfImageLoader,
-    GltfBufferViewLoader,
-    BufferLoader,
-    MetadataSchemaLoader,
-    GltfJsonLoader,
-  ];
+    // Unload in the order below. This prevents an unload function from unloading
+    // a resource that has already been unloaded.
+    const precedence = [
+        GltfVertexBufferLoader,
+        GltfIndexBufferLoader,
+        GltfDracoLoader,
+        GltfTextureLoader,
+        GltfImageLoader,
+        GltfBufferViewLoader,
+        BufferLoader,
+        MetadataSchemaLoader,
+        GltfJsonLoader,
+    ];
 
-  let cacheKey;
-  const cacheEntries = ResourceCache.cacheEntries;
+    let cacheKey;
+    const cacheEntries = ResourceCache.cacheEntries;
 
-  const cacheEntriesSorted = [];
-  for (cacheKey in cacheEntries) {
-    if (cacheEntries.hasOwnProperty(cacheKey)) {
-      cacheEntriesSorted.push(cacheEntries[cacheKey]);
+    const cacheEntriesSorted = [];
+    for (cacheKey in cacheEntries) {
+        if (cacheEntries.hasOwnProperty(cacheKey)) {
+            cacheEntriesSorted.push(cacheEntries[cacheKey]);
+        }
     }
-  }
 
-  cacheEntriesSorted.sort(function (a, b) {
-    const indexA = precedence.indexOf(a.resourceLoader.constructor);
-    const indexB = precedence.indexOf(b.resourceLoader.constructor);
-    return indexA - indexB;
-  });
+    cacheEntriesSorted.sort(function (a, b) {
+        const indexA = precedence.indexOf(a.resourceLoader.constructor);
+        const indexB = precedence.indexOf(b.resourceLoader.constructor);
+        return indexA - indexB;
+    });
 
-  const cacheEntriesLength = cacheEntriesSorted.length;
-  for (let i = 0; i < cacheEntriesLength; ++i) {
-    const cacheEntry = cacheEntriesSorted[i];
-    cacheKey = cacheEntry.resourceLoader.cacheKey;
-    if (defined(cacheEntries[cacheKey])) {
-      cacheEntry.resourceLoader.destroy();
-      delete cacheEntries[cacheKey];
+    const cacheEntriesLength = cacheEntriesSorted.length;
+    for (let i = 0; i < cacheEntriesLength; ++i) {
+        const cacheEntry = cacheEntriesSorted[i];
+        cacheKey = cacheEntry.resourceLoader.cacheKey;
+        if (defined(cacheEntries[cacheKey])) {
+            cacheEntry.resourceLoader.destroy();
+            delete cacheEntries[cacheKey];
+        }
     }
-  }
 
-  ResourceCache.statistics.clear();
+    ResourceCache.statistics.clear();
 };
 
 export default ResourceCache;

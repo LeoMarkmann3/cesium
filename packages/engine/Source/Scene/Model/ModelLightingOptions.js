@@ -13,17 +13,17 @@ import LightingModel from "./LightingModel.js";
  * @private
  */
 function ModelLightingOptions(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  /**
-   * The lighting model to use, such as UNLIT or PBR. This is determined by
-   * the primitive's material.
-   *
-   * @type {LightingModel}
-   *
-   * @private
-   */
-  this.lightingModel = options.lightingModel ?? LightingModel.UNLIT;
+    /**
+     * The lighting model to use, such as UNLIT or PBR. This is determined by
+     * the primitive's material.
+     *
+     * @type {LightingModel}
+     *
+     * @private
+     */
+    this.lightingModel = options.lightingModel ?? LightingModel.UNLIT;
 }
 
 export default ModelLightingOptions;

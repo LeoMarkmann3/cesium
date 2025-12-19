@@ -11,7 +11,7 @@ import ShaderDestination from "../../Renderer/ShaderDestination.js";
  * @private
  */
 const ModelClippingPolygonsPipelineStage = {
-  name: "ModelClippingPolygonsPipelineStage", // Helps with debugging
+    name: "ModelClippingPolygonsPipelineStage", // Helps with debugging
 };
 
 /**
@@ -33,66 +33,71 @@ const ModelClippingPolygonsPipelineStage = {
  * @private
  */
 ModelClippingPolygonsPipelineStage.process = function (
-  renderResources,
-  model,
-  frameState,
+    renderResources,
+    model,
+    frameState,
 ) {
-  const clippingPolygons = model.clippingPolygons;
-  const shaderBuilder = renderResources.shaderBuilder;
+    const clippingPolygons = model.clippingPolygons;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addDefine(
-    "ENABLE_CLIPPING_POLYGONS",
-    undefined,
-    ShaderDestination.BOTH,
-  );
-
-  if (clippingPolygons.inverse) {
     shaderBuilder.addDefine(
-      "CLIPPING_INVERSE",
-      undefined,
-      ShaderDestination.FRAGMENT,
+        "ENABLE_CLIPPING_POLYGONS",
+        undefined,
+        ShaderDestination.BOTH,
     );
-  }
 
-  shaderBuilder.addDefine(
-    "CLIPPING_POLYGON_REGIONS_LENGTH",
-    clippingPolygons.extentsCount,
-    ShaderDestination.BOTH,
-  );
+    if (clippingPolygons.inverse) {
+        shaderBuilder.addDefine(
+            "CLIPPING_INVERSE",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
+    }
 
-  shaderBuilder.addUniform(
-    "sampler2D",
-    "model_clippingDistance",
-    ShaderDestination.FRAGMENT,
-  );
+    shaderBuilder.addDefine(
+        "CLIPPING_POLYGON_REGIONS_LENGTH",
+        clippingPolygons.extentsCount,
+        ShaderDestination.BOTH,
+    );
 
-  shaderBuilder.addUniform(
-    "sampler2D",
-    "model_clippingExtents",
-    ShaderDestination.VERTEX,
-  );
+    shaderBuilder.addUniform(
+        "sampler2D",
+        "model_clippingDistance",
+        ShaderDestination.FRAGMENT,
+    );
 
-  shaderBuilder.addVarying("vec2", "v_clippingPosition");
-  shaderBuilder.addVarying("int", "v_regionIndex", "flat");
-  shaderBuilder.addVertexLines(ModelClippingPolygonsStageVS);
-  shaderBuilder.addFragmentLines(ModelClippingPolygonsStageFS);
+    shaderBuilder.addUniform(
+        "sampler2D",
+        "model_clippingExtents",
+        ShaderDestination.VERTEX,
+    );
 
-  const uniformMap = {
-    model_clippingDistance: function () {
-      return (
-        // The later should never happen during a render pass, see https://github.com/CesiumGS/cesium/issues/12725
-        clippingPolygons.clippingTexture ?? frameState.context.defaultTexture
-      );
-    },
-    model_clippingExtents: function () {
-      return (
-        // The later should never happen during a render pass, see https://github.com/CesiumGS/cesium/issues/12725
-        clippingPolygons.extentsTexture ?? frameState.context.defaultTexture
-      );
-    },
-  };
+    shaderBuilder.addVarying("vec2", "v_clippingPosition");
+    shaderBuilder.addVarying("int", "v_regionIndex", "flat");
+    shaderBuilder.addVertexLines(ModelClippingPolygonsStageVS);
+    shaderBuilder.addFragmentLines(ModelClippingPolygonsStageFS);
 
-  renderResources.uniformMap = combine(uniformMap, renderResources.uniformMap);
+    const uniformMap = {
+        model_clippingDistance: function () {
+            return (
+                // The later should never happen during a render pass, see https://github.com/CesiumGS/cesium/issues/12725
+                clippingPolygons.clippingTexture ??
+                frameState.context.defaultTexture
+            );
+        },
+        model_clippingExtents: function () {
+            return (
+                // The later should never happen during a render pass, see https://github.com/CesiumGS/cesium/issues/12725
+                clippingPolygons.extentsTexture ??
+                frameState.context.defaultTexture
+            );
+        },
+    };
+
+    renderResources.uniformMap = combine(
+        uniformMap,
+        renderResources.uniformMap,
+    );
 };
 
 export default ModelClippingPolygonsPipelineStage;

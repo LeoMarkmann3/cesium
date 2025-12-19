@@ -45,42 +45,42 @@ const ITwinData = {};
  * @throws {RuntimeError} If the iTwin API request is not successful
  */
 ITwinData.createTilesetFromIModelId = async function ({
-  iModelId,
-  changesetId,
-  tilesetOptions,
+    iModelId,
+    changesetId,
+    tilesetOptions,
 }) {
-  const { exports } = await ITwinPlatform.getExports(iModelId, changesetId);
+    const { exports } = await ITwinPlatform.getExports(iModelId, changesetId);
 
-  if (
-    exports.length > 0 &&
-    exports.every((exportObj) => {
-      return exportObj.status === ITwinPlatform.ExportStatus.Invalid;
-    })
-  ) {
-    throw new RuntimeError(
-      `All exports for this iModel are Invalid: ${iModelId}`,
-    );
-  }
+    if (
+        exports.length > 0 &&
+        exports.every((exportObj) => {
+            return exportObj.status === ITwinPlatform.ExportStatus.Invalid;
+        })
+    ) {
+        throw new RuntimeError(
+            `All exports for this iModel are Invalid: ${iModelId}`,
+        );
+    }
 
-  const completeExport = exports.find((exportObj) => {
-    return exportObj.status === ITwinPlatform.ExportStatus.Complete;
-  });
+    const completeExport = exports.find((exportObj) => {
+        return exportObj.status === ITwinPlatform.ExportStatus.Complete;
+    });
 
-  if (!defined(completeExport)) {
-    return;
-  }
+    if (!defined(completeExport)) {
+        return;
+    }
 
-  // Convert the link to the tileset url while preserving the search paramaters
-  // This link is only valid 1 hour
-  const baseUrl = new URL(completeExport._links.mesh.href);
-  baseUrl.pathname = `${baseUrl.pathname}/tileset.json`;
-  const tilesetUrl = baseUrl.toString();
+    // Convert the link to the tileset url while preserving the search paramaters
+    // This link is only valid 1 hour
+    const baseUrl = new URL(completeExport._links.mesh.href);
+    baseUrl.pathname = `${baseUrl.pathname}/tileset.json`;
+    const tilesetUrl = baseUrl.toString();
 
-  const resource = new Resource({
-    url: tilesetUrl,
-  });
+    const resource = new Resource({
+        url: tilesetUrl,
+    });
 
-  return Cesium3DTileset.fromUrl(resource, tilesetOptions);
+    return Cesium3DTileset.fromUrl(resource, tilesetOptions);
 };
 
 /**
@@ -107,59 +107,59 @@ ITwinData.createTilesetFromIModelId = async function ({
  * @throws {RuntimeError} if the type of reality data is not supported by this function
  */
 ITwinData.createTilesetForRealityDataId = async function ({
-  iTwinId,
-  realityDataId,
-  type,
-  rootDocument,
-  tilesetOptions,
-}) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("iTwinId", iTwinId);
-  Check.typeOf.string("realityDataId", realityDataId);
-  if (defined(type)) {
-    Check.typeOf.string("type", type);
-  }
-  if (defined(rootDocument)) {
-    Check.typeOf.string("rootDocument", rootDocument);
-  }
-  //>>includeEnd('debug');
-
-  if (!defined(type) || !defined(rootDocument)) {
-    const metadata = await ITwinPlatform.getRealityDataMetadata(
-      iTwinId,
-      realityDataId,
-    );
-    rootDocument = metadata.rootDocument;
-    type = metadata.type;
-  }
-
-  const supportedRealityDataTypes = [
-    ITwinPlatform.RealityDataType.Cesium3DTiles,
-    ITwinPlatform.RealityDataType.PNTS,
-    ITwinPlatform.RealityDataType.RealityMesh3DTiles,
-    ITwinPlatform.RealityDataType.Terrain3DTiles,
-  ];
-
-  if (!supportedRealityDataTypes.includes(type)) {
-    throw new RuntimeError(`Reality data type is not a mesh type: ${type}`);
-  }
-
-  const tilesetAccessUrl = await ITwinPlatform.getRealityDataURL(
     iTwinId,
     realityDataId,
+    type,
     rootDocument,
-  );
+    tilesetOptions,
+}) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("iTwinId", iTwinId);
+    Check.typeOf.string("realityDataId", realityDataId);
+    if (defined(type)) {
+        Check.typeOf.string("type", type);
+    }
+    if (defined(rootDocument)) {
+        Check.typeOf.string("rootDocument", rootDocument);
+    }
+    //>>includeEnd('debug');
 
-  // The maximum screen space error was defined to default to 4 for
-  // reality data tilesets, because they did not show the expected
-  // amount of detail with the default value of 16. Values that are
-  // given in the tilesetOptions should still override that default.
-  const internalTilesetOptions = {
-    maximumScreenSpaceError: 4,
-    ...tilesetOptions,
-  };
+    if (!defined(type) || !defined(rootDocument)) {
+        const metadata = await ITwinPlatform.getRealityDataMetadata(
+            iTwinId,
+            realityDataId,
+        );
+        rootDocument = metadata.rootDocument;
+        type = metadata.type;
+    }
 
-  return Cesium3DTileset.fromUrl(tilesetAccessUrl, internalTilesetOptions);
+    const supportedRealityDataTypes = [
+        ITwinPlatform.RealityDataType.Cesium3DTiles,
+        ITwinPlatform.RealityDataType.PNTS,
+        ITwinPlatform.RealityDataType.RealityMesh3DTiles,
+        ITwinPlatform.RealityDataType.Terrain3DTiles,
+    ];
+
+    if (!supportedRealityDataTypes.includes(type)) {
+        throw new RuntimeError(`Reality data type is not a mesh type: ${type}`);
+    }
+
+    const tilesetAccessUrl = await ITwinPlatform.getRealityDataURL(
+        iTwinId,
+        realityDataId,
+        rootDocument,
+    );
+
+    // The maximum screen space error was defined to default to 4 for
+    // reality data tilesets, because they did not show the expected
+    // amount of detail with the default value of 16. Values that are
+    // given in the tilesetOptions should still override that default.
+    const internalTilesetOptions = {
+        maximumScreenSpaceError: 4,
+        ...tilesetOptions,
+    };
+
+    return Cesium3DTileset.fromUrl(tilesetAccessUrl, internalTilesetOptions);
 };
 
 /**
@@ -179,54 +179,54 @@ ITwinData.createTilesetForRealityDataId = async function ({
  * @throws {RuntimeError} if the type of reality data is not supported by this function
  */
 ITwinData.createDataSourceForRealityDataId = async function ({
-  iTwinId,
-  realityDataId,
-  type,
-  rootDocument,
-}) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("iTwinId", iTwinId);
-  Check.typeOf.string("realityDataId", realityDataId);
-  if (defined(type)) {
-    Check.typeOf.string("type", type);
-  }
-  if (defined(rootDocument)) {
-    Check.typeOf.string("rootDocument", rootDocument);
-  }
-  //>>includeEnd('debug');
-
-  if (!defined(type) || !defined(rootDocument)) {
-    const metadata = await ITwinPlatform.getRealityDataMetadata(
-      iTwinId,
-      realityDataId,
-    );
-    rootDocument = metadata.rootDocument;
-    type = metadata.type;
-  }
-
-  const supportedRealityDataTypes = [
-    ITwinPlatform.RealityDataType.KML,
-    ITwinPlatform.RealityDataType.GeoJSON,
-  ];
-
-  if (!supportedRealityDataTypes.includes(type)) {
-    throw new RuntimeError(
-      `Reality data type is not a data source type: ${type}`,
-    );
-  }
-
-  const tilesetAccessUrl = await ITwinPlatform.getRealityDataURL(
     iTwinId,
     realityDataId,
+    type,
     rootDocument,
-  );
+}) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("iTwinId", iTwinId);
+    Check.typeOf.string("realityDataId", realityDataId);
+    if (defined(type)) {
+        Check.typeOf.string("type", type);
+    }
+    if (defined(rootDocument)) {
+        Check.typeOf.string("rootDocument", rootDocument);
+    }
+    //>>includeEnd('debug');
 
-  if (type === ITwinPlatform.RealityDataType.GeoJSON) {
-    return GeoJsonDataSource.load(tilesetAccessUrl);
-  }
+    if (!defined(type) || !defined(rootDocument)) {
+        const metadata = await ITwinPlatform.getRealityDataMetadata(
+            iTwinId,
+            realityDataId,
+        );
+        rootDocument = metadata.rootDocument;
+        type = metadata.type;
+    }
 
-  // If we get here it's guaranteed to be a KML type
-  return KmlDataSource.load(tilesetAccessUrl);
+    const supportedRealityDataTypes = [
+        ITwinPlatform.RealityDataType.KML,
+        ITwinPlatform.RealityDataType.GeoJSON,
+    ];
+
+    if (!supportedRealityDataTypes.includes(type)) {
+        throw new RuntimeError(
+            `Reality data type is not a data source type: ${type}`,
+        );
+    }
+
+    const tilesetAccessUrl = await ITwinPlatform.getRealityDataURL(
+        iTwinId,
+        realityDataId,
+        rootDocument,
+    );
+
+    if (type === ITwinPlatform.RealityDataType.GeoJSON) {
+        return GeoJsonDataSource.load(tilesetAccessUrl);
+    }
+
+    // If we get here it's guaranteed to be a KML type
+    return KmlDataSource.load(tilesetAccessUrl);
 };
 
 /**
@@ -239,45 +239,45 @@ ITwinData.createDataSourceForRealityDataId = async function ({
  * @returns {Promise<GeoJsonDataSource>}
  */
 ITwinData.loadGeospatialFeatures = async function ({
-  iTwinId,
-  collectionId,
-  limit,
+    iTwinId,
+    collectionId,
+    limit,
 }) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("iTwinId", iTwinId);
-  Check.typeOf.string("collectionId", collectionId);
-  if (defined(limit)) {
-    Check.typeOf.number("limit", limit);
-    Check.typeOf.number.lessThanOrEquals("limit", limit, 10000);
-    Check.typeOf.number.greaterThanOrEquals("limit", limit, 1);
-  }
-  if (
-    !defined(ITwinPlatform.defaultAccessToken) &&
-    !defined(ITwinPlatform.defaultShareKey)
-  ) {
-    throw new DeveloperError(
-      "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("iTwinId", iTwinId);
+    Check.typeOf.string("collectionId", collectionId);
+    if (defined(limit)) {
+        Check.typeOf.number("limit", limit);
+        Check.typeOf.number.lessThanOrEquals("limit", limit, 10000);
+        Check.typeOf.number.greaterThanOrEquals("limit", limit, 1);
+    }
+    if (
+        !defined(ITwinPlatform.defaultAccessToken) &&
+        !defined(ITwinPlatform.defaultShareKey)
+    ) {
+        throw new DeveloperError(
+            "Must set ITwinPlatform.defaultAccessToken or ITwinPlatform.defaultShareKey first",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const pageLimit = limit ?? 10000;
+    const pageLimit = limit ?? 10000;
 
-  const tilesetUrl = `${ITwinPlatform.apiEndpoint}geospatial-features/itwins/${iTwinId}/ogc/collections/${collectionId}/items`;
+    const tilesetUrl = `${ITwinPlatform.apiEndpoint}geospatial-features/itwins/${iTwinId}/ogc/collections/${collectionId}/items`;
 
-  const resource = new Resource({
-    url: tilesetUrl,
-    headers: {
-      Authorization: ITwinPlatform._getAuthorizationHeader(),
-      Accept: "application/vnd.bentley.itwin-platform.v1+json",
-    },
-    queryParameters: {
-      limit: pageLimit,
-      client: "CesiumJS",
-    },
-  });
+    const resource = new Resource({
+        url: tilesetUrl,
+        headers: {
+            Authorization: ITwinPlatform._getAuthorizationHeader(),
+            Accept: "application/vnd.bentley.itwin-platform.v1+json",
+        },
+        queryParameters: {
+            limit: pageLimit,
+            client: "CesiumJS",
+        },
+    });
 
-  return GeoJsonDataSource.load(resource);
+    return GeoJsonDataSource.load(resource);
 };
 
 export default ITwinData;

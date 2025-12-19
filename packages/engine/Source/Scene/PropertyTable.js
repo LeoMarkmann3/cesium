@@ -39,131 +39,131 @@ import addAllToArray from "../Core/addAllToArray.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function PropertyTable(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("options.count", options.count);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("options.count", options.count);
+    //>>includeEnd('debug');
 
-  this._name = options.name;
-  this._id = options.id;
-  this._count = options.count;
-  this._extras = options.extras;
-  this._extensions = options.extensions;
-  this._metadataTable = options.metadataTable;
-  this._jsonMetadataTable = options.jsonMetadataTable;
-  this._batchTableHierarchy = options.batchTableHierarchy;
+    this._name = options.name;
+    this._id = options.id;
+    this._count = options.count;
+    this._extras = options.extras;
+    this._extensions = options.extensions;
+    this._metadataTable = options.metadataTable;
+    this._jsonMetadataTable = options.jsonMetadataTable;
+    this._batchTableHierarchy = options.batchTableHierarchy;
 }
 
 Object.defineProperties(PropertyTable.prototype, {
-  /**
-   * A human-readable name for this table
-   *
-   * @memberof PropertyTable.prototype
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  name: {
-    get: function () {
-      return this._name;
+    /**
+     * A human-readable name for this table
+     *
+     * @memberof PropertyTable.prototype
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    name: {
+        get: function () {
+            return this._name;
+        },
     },
-  },
-  /**
-   * An identifier for this table. Useful for debugging.
-   *
-   * @memberof PropertyTable.prototype
-   * @type {string|number}
-   * @readonly
-   * @private
-   */
-  id: {
-    get: function () {
-      return this._id;
+    /**
+     * An identifier for this table. Useful for debugging.
+     *
+     * @memberof PropertyTable.prototype
+     * @type {string|number}
+     * @readonly
+     * @private
+     */
+    id: {
+        get: function () {
+            return this._id;
+        },
     },
-  },
-  /**
-   * The number of features in the table.
-   *
-   * @memberof PropertyTable.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  count: {
-    get: function () {
-      return this._count;
+    /**
+     * The number of features in the table.
+     *
+     * @memberof PropertyTable.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    count: {
+        get: function () {
+            return this._count;
+        },
     },
-  },
 
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof PropertyTable.prototype
-   * @type {MetadataClass}
-   * @readonly
-   */
-  class: {
-    get: function () {
-      if (defined(this._metadataTable)) {
-        return this._metadataTable.class;
-      }
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof PropertyTable.prototype
+     * @type {MetadataClass}
+     * @readonly
+     */
+    class: {
+        get: function () {
+            if (defined(this._metadataTable)) {
+                return this._metadataTable.class;
+            }
 
-      return undefined;
+            return undefined;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof PropertyTable.prototype
-   * @type {*}
-   * @readonly
-   * @private
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof PropertyTable.prototype
+     * @type {*}
+     * @readonly
+     * @private
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof PropertyTable.prototype
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof PropertyTable.prototype
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 
-  /**
-   * Get the total amount of binary metadata stored in memory. This does
-   * not include JSON metadata
-   *
-   * @memberof PropertyTable.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  byteLength: {
-    get: function () {
-      let totalByteLength = 0;
-      if (defined(this._metadataTable)) {
-        totalByteLength += this._metadataTable.byteLength;
-      }
+    /**
+     * Get the total amount of binary metadata stored in memory. This does
+     * not include JSON metadata
+     *
+     * @memberof PropertyTable.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    byteLength: {
+        get: function () {
+            let totalByteLength = 0;
+            if (defined(this._metadataTable)) {
+                totalByteLength += this._metadataTable.byteLength;
+            }
 
-      if (defined(this._batchTableHierarchy)) {
-        totalByteLength += this._batchTableHierarchy.byteLength;
-      }
+            if (defined(this._batchTableHierarchy)) {
+                totalByteLength += this._batchTableHierarchy.byteLength;
+            }
 
-      return totalByteLength;
+            return totalByteLength;
+        },
     },
-  },
 });
 
 /**
@@ -175,33 +175,33 @@ Object.defineProperties(PropertyTable.prototype, {
  * @private
  */
 PropertyTable.prototype.hasProperty = function (index, propertyId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("index", index);
-  Check.typeOf.string("propertyId", propertyId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("index", index);
+    Check.typeOf.string("propertyId", propertyId);
+    //>>includeEnd('debug');
 
-  if (
-    defined(this._metadataTable) &&
-    this._metadataTable.hasProperty(propertyId)
-  ) {
-    return true;
-  }
+    if (
+        defined(this._metadataTable) &&
+        this._metadataTable.hasProperty(propertyId)
+    ) {
+        return true;
+    }
 
-  if (
-    defined(this._batchTableHierarchy) &&
-    this._batchTableHierarchy.hasProperty(index, propertyId)
-  ) {
-    return true;
-  }
+    if (
+        defined(this._batchTableHierarchy) &&
+        this._batchTableHierarchy.hasProperty(index, propertyId)
+    ) {
+        return true;
+    }
 
-  if (
-    defined(this._jsonMetadataTable) &&
-    this._jsonMetadataTable.hasProperty(propertyId)
-  ) {
-    return true;
-  }
+    if (
+        defined(this._jsonMetadataTable) &&
+        this._jsonMetadataTable.hasProperty(propertyId)
+    ) {
+        return true;
+    }
 
-  return false;
+    return false;
 };
 
 /**
@@ -212,16 +212,16 @@ PropertyTable.prototype.hasProperty = function (index, propertyId) {
  * @private
  */
 PropertyTable.prototype.hasPropertyBySemantic = function (index, semantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("index", index);
-  Check.typeOf.string("semantic", semantic);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("index", index);
+    Check.typeOf.string("semantic", semantic);
+    //>>includeEnd('debug');
 
-  if (defined(this._metadataTable)) {
-    return this._metadataTable.hasPropertyBySemantic(semantic);
-  }
+    if (defined(this._metadataTable)) {
+        return this._metadataTable.hasPropertyBySemantic(semantic);
+    }
 
-  return false;
+    return false;
 };
 
 /**
@@ -234,32 +234,32 @@ PropertyTable.prototype.hasPropertyBySemantic = function (index, semantic) {
  * @private
  */
 PropertyTable.prototype.propertyExists = function (propertyId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("propertyId", propertyId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("propertyId", propertyId);
+    //>>includeEnd('debug');
 
-  if (
-    defined(this._metadataTable) &&
-    this._metadataTable.hasProperty(propertyId)
-  ) {
-    return true;
-  }
+    if (
+        defined(this._metadataTable) &&
+        this._metadataTable.hasProperty(propertyId)
+    ) {
+        return true;
+    }
 
-  if (
-    defined(this._batchTableHierarchy) &&
-    this._batchTableHierarchy.propertyExists(propertyId)
-  ) {
-    return true;
-  }
+    if (
+        defined(this._batchTableHierarchy) &&
+        this._batchTableHierarchy.propertyExists(propertyId)
+    ) {
+        return true;
+    }
 
-  if (
-    defined(this._jsonMetadataTable) &&
-    this._jsonMetadataTable.hasProperty(propertyId)
-  ) {
-    return true;
-  }
+    if (
+        defined(this._jsonMetadataTable) &&
+        this._jsonMetadataTable.hasProperty(propertyId)
+    ) {
+        return true;
+    }
 
-  return false;
+    return false;
 };
 
 /**
@@ -270,15 +270,15 @@ PropertyTable.prototype.propertyExists = function (propertyId) {
  * @private
  */
 PropertyTable.prototype.propertyExistsBySemantic = function (semantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("semantic", semantic);
+    //>>includeEnd('debug');
 
-  if (defined(this._metadataTable)) {
-    return this._metadataTable.hasPropertyBySemantic(semantic);
-  }
+    if (defined(this._metadataTable)) {
+        return this._metadataTable.hasPropertyBySemantic(semantic);
+    }
 
-  return false;
+    return false;
 };
 
 const scratchResults = [];
@@ -292,26 +292,29 @@ const scratchResults = [];
  * @private
  */
 PropertyTable.prototype.getPropertyIds = function (index, results) {
-  results = defined(results) ? results : [];
-  results.length = 0;
+    results = defined(results) ? results : [];
+    results.length = 0;
 
-  if (defined(this._metadataTable)) {
-    // concat in place to avoid unnecessary array allocation
-    const ids = this._metadataTable.getPropertyIds(scratchResults);
-    addAllToArray(results, ids);
-  }
+    if (defined(this._metadataTable)) {
+        // concat in place to avoid unnecessary array allocation
+        const ids = this._metadataTable.getPropertyIds(scratchResults);
+        addAllToArray(results, ids);
+    }
 
-  if (defined(this._batchTableHierarchy)) {
-    const ids = this._batchTableHierarchy.getPropertyIds(index, scratchResults);
-    addAllToArray(results, ids);
-  }
+    if (defined(this._batchTableHierarchy)) {
+        const ids = this._batchTableHierarchy.getPropertyIds(
+            index,
+            scratchResults,
+        );
+        addAllToArray(results, ids);
+    }
 
-  if (defined(this._jsonMetadataTable)) {
-    const ids = this._jsonMetadataTable.getPropertyIds(scratchResults);
-    addAllToArray(results, ids);
-  }
+    if (defined(this._jsonMetadataTable)) {
+        const ids = this._jsonMetadataTable.getPropertyIds(scratchResults);
+        addAllToArray(results, ids);
+    }
 
-  return results;
+    return results;
 };
 
 /**
@@ -326,29 +329,29 @@ PropertyTable.prototype.getPropertyIds = function (index, results) {
  * @private
  */
 PropertyTable.prototype.getProperty = function (index, propertyId) {
-  let result;
-  if (defined(this._metadataTable)) {
-    result = this._metadataTable.getProperty(index, propertyId);
-    if (defined(result)) {
-      return result;
+    let result;
+    if (defined(this._metadataTable)) {
+        result = this._metadataTable.getProperty(index, propertyId);
+        if (defined(result)) {
+            return result;
+        }
     }
-  }
 
-  if (defined(this._batchTableHierarchy)) {
-    result = this._batchTableHierarchy.getProperty(index, propertyId);
-    if (defined(result)) {
-      return result;
+    if (defined(this._batchTableHierarchy)) {
+        result = this._batchTableHierarchy.getProperty(index, propertyId);
+        if (defined(result)) {
+            return result;
+        }
     }
-  }
 
-  if (defined(this._jsonMetadataTable)) {
-    result = this._jsonMetadataTable.getProperty(index, propertyId);
-    if (defined(result)) {
-      return result;
+    if (defined(this._jsonMetadataTable)) {
+        result = this._jsonMetadataTable.getProperty(index, propertyId);
+        if (defined(result)) {
+            return result;
+        }
     }
-  }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -365,30 +368,30 @@ PropertyTable.prototype.getProperty = function (index, propertyId) {
  * @private
  */
 PropertyTable.prototype.setProperty = function (index, propertyId, value) {
-  if (
-    defined(this._metadataTable) &&
-    this._metadataTable.setProperty(index, propertyId, value)
-  ) {
-    return;
-  }
+    if (
+        defined(this._metadataTable) &&
+        this._metadataTable.setProperty(index, propertyId, value)
+    ) {
+        return;
+    }
 
-  if (
-    defined(this._batchTableHierarchy) &&
-    this._batchTableHierarchy.setProperty(index, propertyId, value)
-  ) {
-    return;
-  }
+    if (
+        defined(this._batchTableHierarchy) &&
+        this._batchTableHierarchy.setProperty(index, propertyId, value)
+    ) {
+        return;
+    }
 
-  // Ensure we have a table for JSON properties
-  if (!defined(this._jsonMetadataTable)) {
-    this._jsonMetadataTable = new JsonMetadataTable({
-      count: this._count,
-      properties: {},
-    });
-  }
+    // Ensure we have a table for JSON properties
+    if (!defined(this._jsonMetadataTable)) {
+        this._jsonMetadataTable = new JsonMetadataTable({
+            count: this._count,
+            properties: {},
+        });
+    }
 
-  // JsonMetadataTable will handle creating a new property at runtime.
-  this._jsonMetadataTable.setProperty(index, propertyId, value);
+    // JsonMetadataTable will handle creating a new property at runtime.
+    this._jsonMetadataTable.setProperty(index, propertyId, value);
 };
 
 /**
@@ -405,11 +408,11 @@ PropertyTable.prototype.setProperty = function (index, propertyId, value) {
  * @private
  */
 PropertyTable.prototype.getPropertyBySemantic = function (index, semantic) {
-  if (defined(this._metadataTable)) {
-    return this._metadataTable.getPropertyBySemantic(index, semantic);
-  }
+    if (defined(this._metadataTable)) {
+        return this._metadataTable.getPropertyBySemantic(index, semantic);
+    }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -427,15 +430,19 @@ PropertyTable.prototype.getPropertyBySemantic = function (index, semantic) {
  * @private
  */
 PropertyTable.prototype.setPropertyBySemantic = function (
-  index,
-  semantic,
-  value,
+    index,
+    semantic,
+    value,
 ) {
-  if (defined(this._metadataTable)) {
-    return this._metadataTable.setPropertyBySemantic(index, semantic, value);
-  }
+    if (defined(this._metadataTable)) {
+        return this._metadataTable.setPropertyBySemantic(
+            index,
+            semantic,
+            value,
+        );
+    }
 
-  return false;
+    return false;
 };
 
 /**
@@ -452,15 +459,15 @@ PropertyTable.prototype.setPropertyBySemantic = function (
  * @private
  */
 PropertyTable.prototype.getPropertyTypedArray = function (propertyId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("propertyId", propertyId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("propertyId", propertyId);
+    //>>includeEnd('debug');
 
-  if (defined(this._metadataTable)) {
-    return this._metadataTable.getPropertyTypedArray(propertyId);
-  }
+    if (defined(this._metadataTable)) {
+        return this._metadataTable.getPropertyTypedArray(propertyId);
+    }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -477,60 +484,60 @@ PropertyTable.prototype.getPropertyTypedArray = function (propertyId) {
  * @private
  */
 PropertyTable.prototype.getPropertyTypedArrayBySemantic = function (semantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("semantic", semantic);
+    //>>includeEnd('debug');
 
-  if (defined(this._metadataTable)) {
-    return this._metadataTable.getPropertyTypedArrayBySemantic(semantic);
-  }
+    if (defined(this._metadataTable)) {
+        return this._metadataTable.getPropertyTypedArrayBySemantic(semantic);
+    }
 
-  return undefined;
+    return undefined;
 };
 
 function checkFeatureId(featureId, featuresLength) {
-  if (!defined(featureId) || featureId < 0 || featureId >= featuresLength) {
-    throw new DeveloperError(
-      `featureId is required and must be between zero and featuresLength - 1 (${featuresLength}` -
-        +").",
-    );
-  }
+    if (!defined(featureId) || featureId < 0 || featureId >= featuresLength) {
+        throw new DeveloperError(
+            `featureId is required and must be between zero and featuresLength - 1 (${featuresLength}` -
+                +").",
+        );
+    }
 }
 
 PropertyTable.prototype.isClass = function (featureId, className) {
-  //>>includeStart('debug', pragmas.debug);
-  checkFeatureId(featureId, this.count);
-  Check.typeOf.string("className", className);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    checkFeatureId(featureId, this.count);
+    Check.typeOf.string("className", className);
+    //>>includeEnd('debug');
 
-  const hierarchy = this._batchTableHierarchy;
-  if (!defined(hierarchy)) {
-    return false;
-  }
+    const hierarchy = this._batchTableHierarchy;
+    if (!defined(hierarchy)) {
+        return false;
+    }
 
-  return hierarchy.isClass(featureId, className);
+    return hierarchy.isClass(featureId, className);
 };
 
 PropertyTable.prototype.isExactClass = function (featureId, className) {
-  //>>includeStart('debug', pragmas.debug);
-  checkFeatureId(featureId, this.count);
-  Check.typeOf.string("className", className);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    checkFeatureId(featureId, this.count);
+    Check.typeOf.string("className", className);
+    //>>includeEnd('debug');
 
-  return this.getExactClassName(featureId) === className;
+    return this.getExactClassName(featureId) === className;
 };
 
 PropertyTable.prototype.getExactClassName = function (featureId) {
-  //>>includeStart('debug', pragmas.debug);
-  checkFeatureId(featureId, this.count);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    checkFeatureId(featureId, this.count);
+    //>>includeEnd('debug');
 
-  const hierarchy = this._batchTableHierarchy;
-  if (!defined(hierarchy)) {
-    return undefined;
-  }
+    const hierarchy = this._batchTableHierarchy;
+    if (!defined(hierarchy)) {
+        return undefined;
+    }
 
-  return hierarchy.getClassName(featureId);
+    return hierarchy.getClassName(featureId);
 };
 
 export default PropertyTable;

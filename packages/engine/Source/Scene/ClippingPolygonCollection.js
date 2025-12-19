@@ -58,200 +58,200 @@ import PolygonSignedDistanceFS from "../Shaders/PolygonSignedDistanceFS.js";
  * });
  */
 function ClippingPolygonCollection(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._polygons = [];
-  this._totalPositions = 0;
+    this._polygons = [];
+    this._totalPositions = 0;
 
-  /**
-   * If true, clipping will be enabled.
-   *
-   * @type {boolean}
-   * @default true
-   */
-  this.enabled = options.enabled ?? true;
+    /**
+     * If true, clipping will be enabled.
+     *
+     * @type {boolean}
+     * @default true
+     */
+    this.enabled = options.enabled ?? true;
 
-  /**
-   * If true, a region will be clipped if it is outside of every polygon in the
-   * collection. Otherwise, a region will only be clipped if it is
-   * inside of any polygon.
-   *
-   * @type {boolean}
-   * @default false
-   */
-  this.inverse = options.inverse ?? false;
+    /**
+     * If true, a region will be clipped if it is outside of every polygon in the
+     * collection. Otherwise, a region will only be clipped if it is
+     * inside of any polygon.
+     *
+     * @type {boolean}
+     * @default false
+     */
+    this.inverse = options.inverse ?? false;
 
-  /**
-   * An event triggered when a new clipping polygon is added to the collection.  Event handlers
-   * are passed the new polygon and the index at which it was added.
-   * @type {Event}
-   * @default Event()
-   */
-  this.polygonAdded = new Event();
+    /**
+     * An event triggered when a new clipping polygon is added to the collection.  Event handlers
+     * are passed the new polygon and the index at which it was added.
+     * @type {Event}
+     * @default Event()
+     */
+    this.polygonAdded = new Event();
 
-  /**
-   * An event triggered when a new clipping polygon is removed from the collection.  Event handlers
-   * are passed the new polygon and the index from which it was removed.
-   * @type {Event}
-   * @default Event()
-   */
-  this.polygonRemoved = new Event();
+    /**
+     * An event triggered when a new clipping polygon is removed from the collection.  Event handlers
+     * are passed the new polygon and the index from which it was removed.
+     * @type {Event}
+     * @default Event()
+     */
+    this.polygonRemoved = new Event();
 
-  // If this ClippingPolygonCollection has an owner, only its owner should update or destroy it.
-  // This is because in a Cesium3DTileset multiple models may reference the tileset's ClippingPolygonCollection.
-  this._owner = undefined;
+    // If this ClippingPolygonCollection has an owner, only its owner should update or destroy it.
+    // This is because in a Cesium3DTileset multiple models may reference the tileset's ClippingPolygonCollection.
+    this._owner = undefined;
 
-  this._float32View = undefined;
-  this._extentsFloat32View = undefined;
-  this._extentsCount = 0;
+    this._float32View = undefined;
+    this._extentsFloat32View = undefined;
+    this._extentsCount = 0;
 
-  this._polygonsTexture = undefined;
-  this._extentsTexture = undefined;
-  this._signedDistanceTexture = undefined;
+    this._polygonsTexture = undefined;
+    this._extentsTexture = undefined;
+    this._signedDistanceTexture = undefined;
 
-  this._signedDistanceComputeCommand = undefined;
+    this._signedDistanceComputeCommand = undefined;
 
-  // Add each ClippingPolygon object.
-  const polygons = options.polygons;
-  if (defined(polygons)) {
-    const polygonsLength = polygons.length;
-    for (let i = 0; i < polygonsLength; ++i) {
-      this._polygons.push(polygons[i]);
+    // Add each ClippingPolygon object.
+    const polygons = options.polygons;
+    if (defined(polygons)) {
+        const polygonsLength = polygons.length;
+        for (let i = 0; i < polygonsLength; ++i) {
+            this._polygons.push(polygons[i]);
+        }
     }
-  }
 }
 
 Object.defineProperties(ClippingPolygonCollection.prototype, {
-  /**
-   * Returns the number of polygons in this collection.  This is commonly used with
-   * {@link ClippingPolygonCollection#get} to iterate over all the polygons
-   * in the collection.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @type {number}
-   * @readonly
-   */
-  length: {
-    get: function () {
-      return this._polygons.length;
+    /**
+     * Returns the number of polygons in this collection.  This is commonly used with
+     * {@link ClippingPolygonCollection#get} to iterate over all the polygons
+     * in the collection.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @type {number}
+     * @readonly
+     */
+    length: {
+        get: function () {
+            return this._polygons.length;
+        },
     },
-  },
 
-  /**
-   * Returns the total number of positions in all polygons in the collection.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  totalPositions: {
-    get: function () {
-      return this._totalPositions;
+    /**
+     * Returns the total number of positions in all polygons in the collection.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    totalPositions: {
+        get: function () {
+            return this._totalPositions;
+        },
     },
-  },
 
-  /**
-   * Returns a texture containing the packed computed spherical extents for each polygon
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @type {Texture}
-   * @readonly
-   * @private
-   */
-  extentsTexture: {
-    get: function () {
-      return this._extentsTexture;
+    /**
+     * Returns a texture containing the packed computed spherical extents for each polygon
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @type {Texture}
+     * @readonly
+     * @private
+     */
+    extentsTexture: {
+        get: function () {
+            return this._extentsTexture;
+        },
     },
-  },
 
-  /**
-   * Returns the number of packed extents, which can be fewer than the number of polygons.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  extentsCount: {
-    get: function () {
-      return this._extentsCount;
+    /**
+     * Returns the number of packed extents, which can be fewer than the number of polygons.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    extentsCount: {
+        get: function () {
+            return this._extentsCount;
+        },
     },
-  },
 
-  /**
-   * Returns the number of pixels needed in the texture containing the packed computed spherical extents for each polygon.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  pixelsNeededForExtents: {
-    get: function () {
-      return this.length; // With an RGBA texture, each pixel contains min/max latitude and longitude.
+    /**
+     * Returns the number of pixels needed in the texture containing the packed computed spherical extents for each polygon.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    pixelsNeededForExtents: {
+        get: function () {
+            return this.length; // With an RGBA texture, each pixel contains min/max latitude and longitude.
+        },
     },
-  },
 
-  /**
-   * Returns the number of pixels needed in the texture containing the packed polygon positions.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  pixelsNeededForPolygonPositions: {
-    get: function () {
-      // In an RG FLOAT texture, each polygon position is 2 floats packed to a RG.
-      // Each polygon is the number of positions of that polygon, followed by the list of positions
-      return this.totalPositions + this.length;
+    /**
+     * Returns the number of pixels needed in the texture containing the packed polygon positions.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    pixelsNeededForPolygonPositions: {
+        get: function () {
+            // In an RG FLOAT texture, each polygon position is 2 floats packed to a RG.
+            // Each polygon is the number of positions of that polygon, followed by the list of positions
+            return this.totalPositions + this.length;
+        },
     },
-  },
 
-  /**
-   * Returns a texture containing the computed signed distance of each polygon.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @type {Texture}
-   * @readonly
-   * @private
-   */
-  clippingTexture: {
-    get: function () {
-      return this._signedDistanceTexture;
+    /**
+     * Returns a texture containing the computed signed distance of each polygon.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @type {Texture}
+     * @readonly
+     * @private
+     */
+    clippingTexture: {
+        get: function () {
+            return this._signedDistanceTexture;
+        },
     },
-  },
 
-  /**
-   * A reference to the ClippingPolygonCollection's owner, if any.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @readonly
-   * @private
-   */
-  owner: {
-    get: function () {
-      return this._owner;
+    /**
+     * A reference to the ClippingPolygonCollection's owner, if any.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @readonly
+     * @private
+     */
+    owner: {
+        get: function () {
+            return this._owner;
+        },
     },
-  },
 
-  /**
-   * Returns a number encapsulating the state for this ClippingPolygonCollection.
-   *
-   * Clipping mode is encoded in the sign of the number, which is just the total position count.
-   * If this value changes, then shader regeneration is necessary.
-   *
-   * @memberof ClippingPolygonCollection.prototype
-   * @returns {number} A Number that describes the ClippingPolygonCollection's state.
-   * @readonly
-   * @private
-   */
-  clippingPolygonsState: {
-    get: function () {
-      return this.inverse ? -this.extentsCount : this.extentsCount;
+    /**
+     * Returns a number encapsulating the state for this ClippingPolygonCollection.
+     *
+     * Clipping mode is encoded in the sign of the number, which is just the total position count.
+     * If this value changes, then shader regeneration is necessary.
+     *
+     * @memberof ClippingPolygonCollection.prototype
+     * @returns {number} A Number that describes the ClippingPolygonCollection's state.
+     * @readonly
+     * @private
+     */
+    clippingPolygonsState: {
+        get: function () {
+            return this.inverse ? -this.extentsCount : this.extentsCount;
+        },
     },
-  },
 });
 
 /**
@@ -288,14 +288,14 @@ Object.defineProperties(ClippingPolygonCollection.prototype, {
  * @see ClippingPolygonCollection#removeAll
  */
 ClippingPolygonCollection.prototype.add = function (polygon) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("polygon", polygon);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("polygon", polygon);
+    //>>includeEnd('debug');
 
-  const newPlaneIndex = this._polygons.length;
-  this._polygons.push(polygon);
-  this.polygonAdded.raiseEvent(polygon, newPlaneIndex);
-  return polygon;
+    const newPlaneIndex = this._polygons.length;
+    this._polygons.push(polygon);
+    this.polygonAdded.raiseEvent(polygon, newPlaneIndex);
+    return polygon;
 };
 
 /**
@@ -311,11 +311,11 @@ ClippingPolygonCollection.prototype.add = function (polygon) {
  * @see ClippingPolygonCollection#length
  */
 ClippingPolygonCollection.prototype.get = function (index) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("index", index);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("index", index);
+    //>>includeEnd('debug');
 
-  return this._polygons[index];
+    return this._polygons[index];
 };
 
 /**
@@ -327,11 +327,11 @@ ClippingPolygonCollection.prototype.get = function (index) {
  * @see ClippingPolygonCollection#get
  */
 ClippingPolygonCollection.prototype.contains = function (polygon) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("polygon", polygon);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("polygon", polygon);
+    //>>includeEnd('debug');
 
-  return this._polygons.some((p) => ClippingPolygon.equals(p, polygon));
+    return this._polygons.some((p) => ClippingPolygon.equals(p, polygon));
 };
 
 /**
@@ -345,21 +345,21 @@ ClippingPolygonCollection.prototype.contains = function (polygon) {
  * @see ClippingPolygonCollection#removeAll
  */
 ClippingPolygonCollection.prototype.remove = function (polygon) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("polygon", polygon);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("polygon", polygon);
+    //>>includeEnd('debug');
 
-  const polygons = this._polygons;
-  const index = polygons.findIndex((p) => ClippingPolygon.equals(p, polygon));
+    const polygons = this._polygons;
+    const index = polygons.findIndex((p) => ClippingPolygon.equals(p, polygon));
 
-  if (index === -1) {
-    return false;
-  }
+    if (index === -1) {
+        return false;
+    }
 
-  polygons.splice(index, 1);
+    polygons.splice(index, 1);
 
-  this.polygonRemoved.raiseEvent(polygon, index);
-  return true;
+    this.polygonRemoved.raiseEvent(polygon, index);
+    return true;
 };
 
 const scratchRectangle = new Rectangle();
@@ -367,56 +367,19 @@ const scratchRectangle = new Rectangle();
 // Map the polygons to a list of extents-- Overlapping extents will be merged
 // into a single encompassing extent
 function getExtents(polygons) {
-  const extentsList = [];
-  const polygonIndicesList = [];
+    const extentsList = [];
+    const polygonIndicesList = [];
 
-  const length = polygons.length;
-  for (let polygonIndex = 0; polygonIndex < length; ++polygonIndex) {
-    const polygon = polygons[polygonIndex];
-    const extents = polygon.computeSphericalExtents();
+    const length = polygons.length;
+    for (let polygonIndex = 0; polygonIndex < length; ++polygonIndex) {
+        const polygon = polygons[polygonIndex];
+        const extents = polygon.computeSphericalExtents();
 
-    let height = Math.max(extents.height * 2.5, 0.001);
-    let width = Math.max(extents.width * 2.5, 0.001);
+        let height = Math.max(extents.height * 2.5, 0.001);
+        let width = Math.max(extents.width * 2.5, 0.001);
 
-    // Pad extents to avoid floating point error when fragment culling at edges.
-    let paddedExtents = Rectangle.clone(extents);
-    paddedExtents.south -= height;
-    paddedExtents.west -= width;
-    paddedExtents.north += height;
-    paddedExtents.east += width;
-
-    paddedExtents.south = Math.max(paddedExtents.south, -Math.PI);
-    paddedExtents.west = Math.max(paddedExtents.west, -Math.PI);
-    paddedExtents.north = Math.min(paddedExtents.north, Math.PI);
-    paddedExtents.east = Math.min(paddedExtents.east, Math.PI);
-
-    const polygonIndices = [polygonIndex];
-    for (let i = 0; i < extentsList.length; ++i) {
-      const e = extentsList[i];
-      if (
-        defined(e) &&
-        defined(Rectangle.simpleIntersection(e, paddedExtents)) &&
-        !Rectangle.equals(e, paddedExtents)
-      ) {
-        const intersectingPolygons = polygonIndicesList[i];
-        polygonIndices.push(...intersectingPolygons);
-        intersectingPolygons.reduce(
-          (extents, p) =>
-            Rectangle.union(
-              polygons[p].computeSphericalExtents(scratchRectangle),
-              extents,
-              extents,
-            ),
-          extents,
-        );
-
-        extentsList[i] = undefined;
-        polygonIndicesList[i] = undefined;
-
-        height = Math.max(extents.height * 2.5, 0.001);
-        width = Math.max(extents.width * 2.5, 0.001);
-
-        paddedExtents = Rectangle.clone(extents, paddedExtents);
+        // Pad extents to avoid floating point error when fragment culling at edges.
+        let paddedExtents = Rectangle.clone(extents);
         paddedExtents.south -= height;
         paddedExtents.west -= width;
         paddedExtents.north += height;
@@ -427,26 +390,65 @@ function getExtents(polygons) {
         paddedExtents.north = Math.min(paddedExtents.north, Math.PI);
         paddedExtents.east = Math.min(paddedExtents.east, Math.PI);
 
-        // Reiterate through the extents list until there are no more intersections
-        i = -1;
-      }
+        const polygonIndices = [polygonIndex];
+        for (let i = 0; i < extentsList.length; ++i) {
+            const e = extentsList[i];
+            if (
+                defined(e) &&
+                defined(Rectangle.simpleIntersection(e, paddedExtents)) &&
+                !Rectangle.equals(e, paddedExtents)
+            ) {
+                const intersectingPolygons = polygonIndicesList[i];
+                polygonIndices.push(...intersectingPolygons);
+                intersectingPolygons.reduce(
+                    (extents, p) =>
+                        Rectangle.union(
+                            polygons[p].computeSphericalExtents(
+                                scratchRectangle,
+                            ),
+                            extents,
+                            extents,
+                        ),
+                    extents,
+                );
+
+                extentsList[i] = undefined;
+                polygonIndicesList[i] = undefined;
+
+                height = Math.max(extents.height * 2.5, 0.001);
+                width = Math.max(extents.width * 2.5, 0.001);
+
+                paddedExtents = Rectangle.clone(extents, paddedExtents);
+                paddedExtents.south -= height;
+                paddedExtents.west -= width;
+                paddedExtents.north += height;
+                paddedExtents.east += width;
+
+                paddedExtents.south = Math.max(paddedExtents.south, -Math.PI);
+                paddedExtents.west = Math.max(paddedExtents.west, -Math.PI);
+                paddedExtents.north = Math.min(paddedExtents.north, Math.PI);
+                paddedExtents.east = Math.min(paddedExtents.east, Math.PI);
+
+                // Reiterate through the extents list until there are no more intersections
+                i = -1;
+            }
+        }
+
+        extentsList.push(paddedExtents);
+        polygonIndicesList.push(polygonIndices);
     }
 
-    extentsList.push(paddedExtents);
-    polygonIndicesList.push(polygonIndices);
-  }
+    const extentsIndexByPolygon = new Map();
+    polygonIndicesList
+        .filter(defined)
+        .forEach((polygonIndices, e) =>
+            polygonIndices.forEach((p) => extentsIndexByPolygon.set(p, e)),
+        );
 
-  const extentsIndexByPolygon = new Map();
-  polygonIndicesList
-    .filter(defined)
-    .forEach((polygonIndices, e) =>
-      polygonIndices.forEach((p) => extentsIndexByPolygon.set(p, e)),
-    );
-
-  return {
-    extentsList: extentsList.filter(defined),
-    extentsIndexByPolygon: extentsIndexByPolygon,
-  };
+    return {
+        extentsList: extentsList.filter(defined),
+        extentsIndexByPolygon: extentsIndexByPolygon,
+    };
 }
 
 /**
@@ -456,65 +458,66 @@ function getExtents(polygons) {
  * @see ClippingPolygonCollection#remove
  */
 ClippingPolygonCollection.prototype.removeAll = function () {
-  // Dereference this ClippingPolygonCollection from all ClippingPolygons
-  const polygons = this._polygons;
-  const polygonsCount = polygons.length;
-  for (let i = 0; i < polygonsCount; ++i) {
-    const polygon = polygons[i];
-    this.polygonRemoved.raiseEvent(polygon, i);
-  }
-  this._polygons = [];
+    // Dereference this ClippingPolygonCollection from all ClippingPolygons
+    const polygons = this._polygons;
+    const polygonsCount = polygons.length;
+    for (let i = 0; i < polygonsCount; ++i) {
+        const polygon = polygons[i];
+        this.polygonRemoved.raiseEvent(polygon, i);
+    }
+    this._polygons = [];
 };
 
 function packPolygonsAsFloats(clippingPolygonCollection) {
-  const polygonsFloat32View = clippingPolygonCollection._float32View;
-  const extentsFloat32View = clippingPolygonCollection._extentsFloat32View;
-  const polygons = clippingPolygonCollection._polygons;
+    const polygonsFloat32View = clippingPolygonCollection._float32View;
+    const extentsFloat32View = clippingPolygonCollection._extentsFloat32View;
+    const polygons = clippingPolygonCollection._polygons;
 
-  const { extentsList, extentsIndexByPolygon } = getExtents(polygons);
+    const { extentsList, extentsIndexByPolygon } = getExtents(polygons);
 
-  let floatIndex = 0;
-  for (const [polygonIndex, polygon] of polygons.entries()) {
-    // Pack the length of the polygon into the polygon texture array buffer
-    const length = polygon.length;
-    polygonsFloat32View[floatIndex++] = length;
-    polygonsFloat32View[floatIndex++] = extentsIndexByPolygon.get(polygonIndex);
+    let floatIndex = 0;
+    for (const [polygonIndex, polygon] of polygons.entries()) {
+        // Pack the length of the polygon into the polygon texture array buffer
+        const length = polygon.length;
+        polygonsFloat32View[floatIndex++] = length;
+        polygonsFloat32View[floatIndex++] =
+            extentsIndexByPolygon.get(polygonIndex);
 
-    // Pack the polygon positions into the polygon texture array buffer
-    for (let i = 0; i < length; ++i) {
-      const spherePoint = polygon.positions[i];
+        // Pack the polygon positions into the polygon texture array buffer
+        for (let i = 0; i < length; ++i) {
+            const spherePoint = polygon.positions[i];
 
-      // Project into plane with vertical for latitude
-      const magXY = Math.hypot(spherePoint.x, spherePoint.y);
+            // Project into plane with vertical for latitude
+            const magXY = Math.hypot(spherePoint.x, spherePoint.y);
 
-      // Use fastApproximateAtan2 for alignment with shader
-      const latitudeApproximation = CesiumMath.fastApproximateAtan2(
-        magXY,
-        spherePoint.z,
-      );
-      const longitudeApproximation = CesiumMath.fastApproximateAtan2(
-        spherePoint.x,
-        spherePoint.y,
-      );
+            // Use fastApproximateAtan2 for alignment with shader
+            const latitudeApproximation = CesiumMath.fastApproximateAtan2(
+                magXY,
+                spherePoint.z,
+            );
+            const longitudeApproximation = CesiumMath.fastApproximateAtan2(
+                spherePoint.x,
+                spherePoint.y,
+            );
 
-      polygonsFloat32View[floatIndex++] = latitudeApproximation;
-      polygonsFloat32View[floatIndex++] = longitudeApproximation;
+            polygonsFloat32View[floatIndex++] = latitudeApproximation;
+            polygonsFloat32View[floatIndex++] = longitudeApproximation;
+        }
     }
-  }
 
-  // Pack extents
-  let extentsFloatIndex = 0;
-  for (const extents of extentsList) {
-    const longitudeRangeInverse = 1.0 / (extents.east - extents.west);
-    const latitudeRangeInverse = 1.0 / (extents.north - extents.south);
+    // Pack extents
+    let extentsFloatIndex = 0;
+    for (const extents of extentsList) {
+        const longitudeRangeInverse = 1.0 / (extents.east - extents.west);
+        const latitudeRangeInverse = 1.0 / (extents.north - extents.south);
 
-    extentsFloat32View[extentsFloatIndex++] = extents.south;
-    extentsFloat32View[extentsFloatIndex++] = extents.west;
-    extentsFloat32View[extentsFloatIndex++] = latitudeRangeInverse;
-    extentsFloat32View[extentsFloatIndex++] = longitudeRangeInverse;
-  }
+        extentsFloat32View[extentsFloatIndex++] = extents.south;
+        extentsFloat32View[extentsFloatIndex++] = extents.west;
+        extentsFloat32View[extentsFloatIndex++] = latitudeRangeInverse;
+        extentsFloat32View[extentsFloatIndex++] = longitudeRangeInverse;
+    }
 
-  clippingPolygonCollection._extentsCount = extentsList.length;
+    clippingPolygonCollection._extentsCount = extentsList.length;
 }
 
 const textureResolutionScratch = new Cartesian2();
@@ -528,161 +531,167 @@ const textureResolutionScratch = new Cartesian2();
  * @throws {RuntimeError} ClippingPolygonCollections are only supported for WebGL 2
  */
 ClippingPolygonCollection.prototype.update = function (frameState) {
-  const context = frameState.context;
+    const context = frameState.context;
 
-  if (!ClippingPolygonCollection.isSupported(frameState)) {
-    throw new RuntimeError(
-      "ClippingPolygonCollections are only supported for WebGL 2.",
-    );
-  }
-
-  // It'd be expensive to validate any individual position has changed. Instead verify if the list of polygon positions has had elements added or removed, which should be good enough for most cases.
-  const totalPositions = this._polygons.reduce(
-    (totalPositions, polygon) => totalPositions + polygon.length,
-    0,
-  );
-
-  if (totalPositions === this.totalPositions) {
-    return;
-  }
-
-  this._totalPositions = totalPositions;
-
-  // If there are no clipping polygons, there's nothing to update.
-  if (this.length === 0) {
-    return;
-  }
-
-  if (defined(this._signedDistanceComputeCommand)) {
-    this._signedDistanceComputeCommand.canceled = true;
-    this._signedDistanceComputeCommand = undefined;
-  }
-
-  let polygonsTexture = this._polygonsTexture;
-  let extentsTexture = this._extentsTexture;
-  let signedDistanceTexture = this._signedDistanceTexture;
-  if (defined(polygonsTexture)) {
-    const currentPixelCount = polygonsTexture.width * polygonsTexture.height;
-    // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
-    // Optimization note: this isn't exactly the classic resizeable array algorithm
-    // * not necessarily checking for resize after each add/remove operation
-    // * random-access deletes instead of just pops
-    // * alloc ops likely more expensive than demonstrable via big-O analysis
-    if (
-      currentPixelCount < this.pixelsNeededForPolygonPositions ||
-      this.pixelsNeededForPolygonPositions < 0.25 * currentPixelCount
-    ) {
-      polygonsTexture.destroy();
-      polygonsTexture = undefined;
-      this._polygonsTexture = undefined;
+    if (!ClippingPolygonCollection.isSupported(frameState)) {
+        throw new RuntimeError(
+            "ClippingPolygonCollections are only supported for WebGL 2.",
+        );
     }
-  }
 
-  if (!defined(polygonsTexture)) {
-    const requiredResolution = ClippingPolygonCollection.getTextureResolution(
-      polygonsTexture,
-      this.pixelsNeededForPolygonPositions,
-      textureResolutionScratch,
+    // It'd be expensive to validate any individual position has changed. Instead verify if the list of polygon positions has had elements added or removed, which should be good enough for most cases.
+    const totalPositions = this._polygons.reduce(
+        (totalPositions, polygon) => totalPositions + polygon.length,
+        0,
     );
 
-    polygonsTexture = new Texture({
-      context: context,
-      width: requiredResolution.x,
-      height: requiredResolution.y,
-      pixelFormat: PixelFormat.RG,
-      pixelDatatype: PixelDatatype.FLOAT,
-      sampler: Sampler.NEAREST,
-      flipY: false,
-    });
-    this._float32View = new Float32Array(
-      requiredResolution.x * requiredResolution.y * 2,
-    );
-    this._polygonsTexture = polygonsTexture;
-  }
-
-  if (defined(extentsTexture)) {
-    const currentPixelCount = extentsTexture.width * extentsTexture.height;
-    // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
-    // Optimization note: this isn't exactly the classic resizeable array algorithm
-    // * not necessarily checking for resize after each add/remove operation
-    // * random-access deletes instead of just pops
-    // * alloc ops likely more expensive than demonstrable via big-O analysis
-    if (
-      currentPixelCount < this.pixelsNeededForExtents ||
-      this.pixelsNeededForExtents < 0.25 * currentPixelCount
-    ) {
-      extentsTexture.destroy();
-      extentsTexture = undefined;
-      this._extentsTexture = undefined;
+    if (totalPositions === this.totalPositions) {
+        return;
     }
-  }
 
-  if (!defined(extentsTexture)) {
-    const requiredResolution = ClippingPolygonCollection.getTextureResolution(
-      extentsTexture,
-      this.pixelsNeededForExtents,
-      textureResolutionScratch,
-    );
+    this._totalPositions = totalPositions;
 
-    extentsTexture = new Texture({
-      context: context,
-      width: requiredResolution.x,
-      height: requiredResolution.y,
-      pixelFormat: PixelFormat.RGBA,
-      pixelDatatype: PixelDatatype.FLOAT,
-      sampler: Sampler.NEAREST,
-      flipY: false,
+    // If there are no clipping polygons, there's nothing to update.
+    if (this.length === 0) {
+        return;
+    }
+
+    if (defined(this._signedDistanceComputeCommand)) {
+        this._signedDistanceComputeCommand.canceled = true;
+        this._signedDistanceComputeCommand = undefined;
+    }
+
+    let polygonsTexture = this._polygonsTexture;
+    let extentsTexture = this._extentsTexture;
+    let signedDistanceTexture = this._signedDistanceTexture;
+    if (defined(polygonsTexture)) {
+        const currentPixelCount =
+            polygonsTexture.width * polygonsTexture.height;
+        // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
+        // Optimization note: this isn't exactly the classic resizeable array algorithm
+        // * not necessarily checking for resize after each add/remove operation
+        // * random-access deletes instead of just pops
+        // * alloc ops likely more expensive than demonstrable via big-O analysis
+        if (
+            currentPixelCount < this.pixelsNeededForPolygonPositions ||
+            this.pixelsNeededForPolygonPositions < 0.25 * currentPixelCount
+        ) {
+            polygonsTexture.destroy();
+            polygonsTexture = undefined;
+            this._polygonsTexture = undefined;
+        }
+    }
+
+    if (!defined(polygonsTexture)) {
+        const requiredResolution =
+            ClippingPolygonCollection.getTextureResolution(
+                polygonsTexture,
+                this.pixelsNeededForPolygonPositions,
+                textureResolutionScratch,
+            );
+
+        polygonsTexture = new Texture({
+            context: context,
+            width: requiredResolution.x,
+            height: requiredResolution.y,
+            pixelFormat: PixelFormat.RG,
+            pixelDatatype: PixelDatatype.FLOAT,
+            sampler: Sampler.NEAREST,
+            flipY: false,
+        });
+        this._float32View = new Float32Array(
+            requiredResolution.x * requiredResolution.y * 2,
+        );
+        this._polygonsTexture = polygonsTexture;
+    }
+
+    if (defined(extentsTexture)) {
+        const currentPixelCount = extentsTexture.width * extentsTexture.height;
+        // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
+        // Optimization note: this isn't exactly the classic resizeable array algorithm
+        // * not necessarily checking for resize after each add/remove operation
+        // * random-access deletes instead of just pops
+        // * alloc ops likely more expensive than demonstrable via big-O analysis
+        if (
+            currentPixelCount < this.pixelsNeededForExtents ||
+            this.pixelsNeededForExtents < 0.25 * currentPixelCount
+        ) {
+            extentsTexture.destroy();
+            extentsTexture = undefined;
+            this._extentsTexture = undefined;
+        }
+    }
+
+    if (!defined(extentsTexture)) {
+        const requiredResolution =
+            ClippingPolygonCollection.getTextureResolution(
+                extentsTexture,
+                this.pixelsNeededForExtents,
+                textureResolutionScratch,
+            );
+
+        extentsTexture = new Texture({
+            context: context,
+            width: requiredResolution.x,
+            height: requiredResolution.y,
+            pixelFormat: PixelFormat.RGBA,
+            pixelDatatype: PixelDatatype.FLOAT,
+            sampler: Sampler.NEAREST,
+            flipY: false,
+        });
+        this._extentsFloat32View = new Float32Array(
+            requiredResolution.x * requiredResolution.y * 4,
+        );
+
+        this._extentsTexture = extentsTexture;
+    }
+
+    packPolygonsAsFloats(this);
+
+    extentsTexture.copyFrom({
+        source: {
+            width: extentsTexture.width,
+            height: extentsTexture.height,
+            arrayBufferView: this._extentsFloat32View,
+        },
     });
-    this._extentsFloat32View = new Float32Array(
-      requiredResolution.x * requiredResolution.y * 4,
-    );
 
-    this._extentsTexture = extentsTexture;
-  }
-
-  packPolygonsAsFloats(this);
-
-  extentsTexture.copyFrom({
-    source: {
-      width: extentsTexture.width,
-      height: extentsTexture.height,
-      arrayBufferView: this._extentsFloat32View,
-    },
-  });
-
-  polygonsTexture.copyFrom({
-    source: {
-      width: polygonsTexture.width,
-      height: polygonsTexture.height,
-      arrayBufferView: this._float32View,
-    },
-  });
-
-  if (!defined(signedDistanceTexture)) {
-    const textureDimensions =
-      ClippingPolygonCollection.getClippingDistanceTextureResolution(
-        this,
-        textureResolutionScratch,
-      );
-    signedDistanceTexture = new Texture({
-      context: context,
-      width: textureDimensions.x,
-      height: textureDimensions.y,
-      pixelFormat: context.webgl2 ? PixelFormat.RED : PixelFormat.LUMINANCE,
-      pixelDatatype: PixelDatatype.FLOAT,
-      sampler: new Sampler({
-        wrapS: TextureWrap.CLAMP_TO_EDGE,
-        wrapT: TextureWrap.CLAMP_TO_EDGE,
-        minificationFilter: TextureMinificationFilter.LINEAR,
-        magnificationFilter: TextureMagnificationFilter.LINEAR,
-      }),
-      flipY: false,
+    polygonsTexture.copyFrom({
+        source: {
+            width: polygonsTexture.width,
+            height: polygonsTexture.height,
+            arrayBufferView: this._float32View,
+        },
     });
 
-    this._signedDistanceTexture = signedDistanceTexture;
-  }
+    if (!defined(signedDistanceTexture)) {
+        const textureDimensions =
+            ClippingPolygonCollection.getClippingDistanceTextureResolution(
+                this,
+                textureResolutionScratch,
+            );
+        signedDistanceTexture = new Texture({
+            context: context,
+            width: textureDimensions.x,
+            height: textureDimensions.y,
+            pixelFormat: context.webgl2
+                ? PixelFormat.RED
+                : PixelFormat.LUMINANCE,
+            pixelDatatype: PixelDatatype.FLOAT,
+            sampler: new Sampler({
+                wrapS: TextureWrap.CLAMP_TO_EDGE,
+                wrapT: TextureWrap.CLAMP_TO_EDGE,
+                minificationFilter: TextureMinificationFilter.LINEAR,
+                magnificationFilter: TextureMagnificationFilter.LINEAR,
+            }),
+            flipY: false,
+        });
 
-  this._signedDistanceComputeCommand = createSignedDistanceTextureCommand(this);
+        this._signedDistanceTexture = signedDistanceTexture;
+    }
+
+    this._signedDistanceComputeCommand =
+        createSignedDistanceTextureCommand(this);
 };
 
 /**
@@ -695,38 +704,38 @@ ClippingPolygonCollection.prototype.update = function (frameState) {
  * @param {FrameState} frameState
  */
 ClippingPolygonCollection.prototype.queueCommands = function (frameState) {
-  if (defined(this._signedDistanceComputeCommand)) {
-    frameState.commandList.push(this._signedDistanceComputeCommand);
-  }
+    if (defined(this._signedDistanceComputeCommand)) {
+        frameState.commandList.push(this._signedDistanceComputeCommand);
+    }
 };
 
 function createSignedDistanceTextureCommand(collection) {
-  const polygonTexture = collection._polygonsTexture;
-  const extentsTexture = collection._extentsTexture;
+    const polygonTexture = collection._polygonsTexture;
+    const extentsTexture = collection._extentsTexture;
 
-  return new ComputeCommand({
-    fragmentShaderSource: PolygonSignedDistanceFS,
-    outputTexture: collection._signedDistanceTexture,
-    uniformMap: {
-      u_polygonsLength: function () {
-        return collection.length;
-      },
-      u_extentsLength: function () {
-        return collection.extentsCount;
-      },
-      u_extentsTexture: function () {
-        return extentsTexture;
-      },
-      u_polygonTexture: function () {
-        return polygonTexture;
-      },
-    },
-    persists: false,
-    owner: collection,
-    postExecute: () => {
-      collection._signedDistanceComputeCommand = undefined;
-    },
-  });
+    return new ComputeCommand({
+        fragmentShaderSource: PolygonSignedDistanceFS,
+        outputTexture: collection._signedDistanceTexture,
+        uniformMap: {
+            u_polygonsLength: function () {
+                return collection.length;
+            },
+            u_extentsLength: function () {
+                return collection.extentsCount;
+            },
+            u_extentsTexture: function () {
+                return extentsTexture;
+            },
+            u_polygonTexture: function () {
+                return polygonTexture;
+            },
+        },
+        persists: false,
+        owner: collection,
+        postExecute: () => {
+            collection._signedDistanceComputeCommand = undefined;
+        },
+    });
 }
 
 const scratchRectangleTile = new Rectangle();
@@ -741,53 +750,54 @@ const scratchRectangleIntersection = new Rectangle();
  *                      if the entire volume should be clipped, and {@link Intersect.INTERSECTING} if the volume intersects the polygons and will partially clipped.
  */
 ClippingPolygonCollection.prototype.computeIntersectionWithBoundingVolume =
-  function (tileBoundingVolume, ellipsoid) {
-    const polygons = this._polygons;
-    const length = polygons.length;
+    function (tileBoundingVolume, ellipsoid) {
+        const polygons = this._polygons;
+        const length = polygons.length;
 
-    let intersection = Intersect.OUTSIDE;
-    if (this.inverse) {
-      intersection = Intersect.INSIDE;
-    }
+        let intersection = Intersect.OUTSIDE;
+        if (this.inverse) {
+            intersection = Intersect.INSIDE;
+        }
 
-    for (let i = 0; i < length; ++i) {
-      const polygon = polygons[i];
+        for (let i = 0; i < length; ++i) {
+            const polygon = polygons[i];
 
-      const polygonBoundingRectangle = polygon.computeRectangle();
-      let tileBoundingRectangle = tileBoundingVolume.rectangle;
-      if (
-        !defined(tileBoundingRectangle) &&
-        defined(tileBoundingVolume.boundingVolume?.computeCorners)
-      ) {
-        const points = tileBoundingVolume.boundingVolume.computeCorners();
-        tileBoundingRectangle = Rectangle.fromCartesianArray(
-          points,
-          ellipsoid,
-          scratchRectangleTile,
-        );
-      }
+            const polygonBoundingRectangle = polygon.computeRectangle();
+            let tileBoundingRectangle = tileBoundingVolume.rectangle;
+            if (
+                !defined(tileBoundingRectangle) &&
+                defined(tileBoundingVolume.boundingVolume?.computeCorners)
+            ) {
+                const points =
+                    tileBoundingVolume.boundingVolume.computeCorners();
+                tileBoundingRectangle = Rectangle.fromCartesianArray(
+                    points,
+                    ellipsoid,
+                    scratchRectangleTile,
+                );
+            }
 
-      if (!defined(tileBoundingRectangle)) {
-        tileBoundingRectangle = Rectangle.fromBoundingSphere(
-          tileBoundingVolume.boundingSphere,
-          ellipsoid,
-          scratchRectangleTile,
-        );
-      }
+            if (!defined(tileBoundingRectangle)) {
+                tileBoundingRectangle = Rectangle.fromBoundingSphere(
+                    tileBoundingVolume.boundingSphere,
+                    ellipsoid,
+                    scratchRectangleTile,
+                );
+            }
 
-      const result = Rectangle.simpleIntersection(
-        tileBoundingRectangle,
-        polygonBoundingRectangle,
-        scratchRectangleIntersection,
-      );
+            const result = Rectangle.simpleIntersection(
+                tileBoundingRectangle,
+                polygonBoundingRectangle,
+                scratchRectangleIntersection,
+            );
 
-      if (defined(result)) {
-        intersection = Intersect.INTERSECTING;
-      }
-    }
+            if (defined(result)) {
+                intersection = Intersect.INTERSECTING;
+            }
+        }
 
-    return intersection;
-  };
+        return intersection;
+    };
 
 /**
  * Sets the owner for the input ClippingPolygonCollection if there wasn't another owner.
@@ -799,27 +809,27 @@ ClippingPolygonCollection.prototype.computeIntersectionWithBoundingVolume =
  * @private
  */
 ClippingPolygonCollection.setOwner = function (
-  clippingPolygonsCollection,
-  owner,
-  key,
+    clippingPolygonsCollection,
+    owner,
+    key,
 ) {
-  // Don't destroy the ClippingPolygonCollection if it is already owned by newOwner
-  if (clippingPolygonsCollection === owner[key]) {
-    return;
-  }
-  // Destroy the existing ClippingPolygonCollection, if any
-  owner[key] = owner[key] && owner[key].destroy();
-  if (defined(clippingPolygonsCollection)) {
-    //>>includeStart('debug', pragmas.debug);
-    if (defined(clippingPolygonsCollection._owner)) {
-      throw new DeveloperError(
-        "ClippingPolygonCollection should only be assigned to one object",
-      );
+    // Don't destroy the ClippingPolygonCollection if it is already owned by newOwner
+    if (clippingPolygonsCollection === owner[key]) {
+        return;
     }
-    //>>includeEnd('debug');
-    clippingPolygonsCollection._owner = owner;
-    owner[key] = clippingPolygonsCollection;
-  }
+    // Destroy the existing ClippingPolygonCollection, if any
+    owner[key] = owner[key] && owner[key].destroy();
+    if (defined(clippingPolygonsCollection)) {
+        //>>includeStart('debug', pragmas.debug);
+        if (defined(clippingPolygonsCollection._owner)) {
+            throw new DeveloperError(
+                "ClippingPolygonCollection should only be assigned to one object",
+            );
+        }
+        //>>includeEnd('debug');
+        clippingPolygonsCollection._owner = owner;
+        owner[key] = clippingPolygonsCollection;
+    }
 };
 
 /**
@@ -829,7 +839,7 @@ ClippingPolygonCollection.setOwner = function (
  * @returns {boolean} <code>true</code> if the context supports clipping polygons.
  */
 ClippingPolygonCollection.isSupported = function (scene) {
-  return scene?.context.webgl2;
+    return scene?.context.webgl2;
 };
 
 /**
@@ -844,24 +854,24 @@ ClippingPolygonCollection.isSupported = function (scene) {
  * @private
  */
 ClippingPolygonCollection.getTextureResolution = function (
-  texture,
-  pixelsNeeded,
-  result,
+    texture,
+    pixelsNeeded,
+    result,
 ) {
-  if (defined(texture)) {
-    result.x = texture.width;
-    result.y = texture.height;
+    if (defined(texture)) {
+        result.x = texture.width;
+        result.y = texture.height;
+        return result;
+    }
+
+    const maxSize = ContextLimits.maximumTextureSize;
+    result.x = Math.min(pixelsNeeded, maxSize);
+    result.y = Math.ceil(pixelsNeeded / result.x);
+
+    // Allocate twice as much space as needed to avoid frequent texture reallocation.
+    result.y *= 2;
+
     return result;
-  }
-
-  const maxSize = ContextLimits.maximumTextureSize;
-  result.x = Math.min(pixelsNeeded, maxSize);
-  result.y = Math.ceil(pixelsNeeded / result.x);
-
-  // Allocate twice as much space as needed to avoid frequent texture reallocation.
-  result.y *= 2;
-
-  return result;
 };
 
 /**
@@ -875,20 +885,20 @@ ClippingPolygonCollection.getTextureResolution = function (
  * @private
  */
 ClippingPolygonCollection.getClippingDistanceTextureResolution = function (
-  clippingPolygonCollection,
-  result,
+    clippingPolygonCollection,
+    result,
 ) {
-  const texture = clippingPolygonCollection.signedDistanceTexture;
-  if (defined(texture)) {
-    result.x = texture.width;
-    result.y = texture.height;
+    const texture = clippingPolygonCollection.signedDistanceTexture;
+    if (defined(texture)) {
+        result.x = texture.width;
+        result.y = texture.height;
+        return result;
+    }
+
+    result.x = Math.min(ContextLimits.maximumTextureSize, 4096);
+    result.y = Math.min(ContextLimits.maximumTextureSize, 4096);
+
     return result;
-  }
-
-  result.x = Math.min(ContextLimits.maximumTextureSize, 4096);
-  result.y = Math.min(ContextLimits.maximumTextureSize, 4096);
-
-  return result;
 };
 
 /**
@@ -902,21 +912,21 @@ ClippingPolygonCollection.getClippingDistanceTextureResolution = function (
  * @private
  */
 ClippingPolygonCollection.getClippingExtentsTextureResolution = function (
-  clippingPolygonCollection,
-  result,
-) {
-  const texture = clippingPolygonCollection.extentsTexture;
-  if (defined(texture)) {
-    result.x = texture.width;
-    result.y = texture.height;
-    return result;
-  }
-
-  return ClippingPolygonCollection.getTextureResolution(
-    texture,
-    clippingPolygonCollection.pixelsNeededForExtents,
+    clippingPolygonCollection,
     result,
-  );
+) {
+    const texture = clippingPolygonCollection.extentsTexture;
+    if (defined(texture)) {
+        result.x = texture.width;
+        result.y = texture.height;
+        return result;
+    }
+
+    return ClippingPolygonCollection.getTextureResolution(
+        texture,
+        clippingPolygonCollection.pixelsNeededForExtents,
+        result,
+    );
 };
 
 /**
@@ -930,7 +940,7 @@ ClippingPolygonCollection.getClippingExtentsTextureResolution = function (
  * @see ClippingPolygonCollection#destroy
  */
 ClippingPolygonCollection.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -950,16 +960,17 @@ ClippingPolygonCollection.prototype.isDestroyed = function () {
  * @see ClippingPolygonCollection#isDestroyed
  */
 ClippingPolygonCollection.prototype.destroy = function () {
-  if (defined(this._signedDistanceComputeCommand)) {
-    this._signedDistanceComputeCommand.canceled = true;
-  }
+    if (defined(this._signedDistanceComputeCommand)) {
+        this._signedDistanceComputeCommand.canceled = true;
+    }
 
-  this._polygonsTexture =
-    this._polygonsTexture && this._polygonsTexture.destroy();
-  this._extentsTexture = this._extentsTexture && this._extentsTexture.destroy();
-  this._signedDistanceTexture =
-    this._signedDistanceTexture && this._signedDistanceTexture.destroy();
-  return destroyObject(this);
+    this._polygonsTexture =
+        this._polygonsTexture && this._polygonsTexture.destroy();
+    this._extentsTexture =
+        this._extentsTexture && this._extentsTexture.destroy();
+    this._signedDistanceTexture =
+        this._signedDistanceTexture && this._signedDistanceTexture.destroy();
+    return destroyObject(this);
 };
 
 export default ClippingPolygonCollection;

@@ -14,28 +14,28 @@
  * @see Label#horizontalOrigin
  */
 const HorizontalOrigin = {
-  /**
-   * The origin is at the horizontal center of the object.
-   *
-   * @type {number}
-   * @constant
-   */
-  CENTER: 0,
+    /**
+     * The origin is at the horizontal center of the object.
+     *
+     * @type {number}
+     * @constant
+     */
+    CENTER: 0,
 
-  /**
-   * The origin is on the left side of the object.
-   *
-   * @type {number}
-   * @constant
-   */
-  LEFT: 1,
+    /**
+     * The origin is on the left side of the object.
+     *
+     * @type {number}
+     * @constant
+     */
+    LEFT: 1,
 
-  /**
-   * The origin is on the right side of the object.
-   *
-   * @type {number}
-   * @constant
-   */
-  RIGHT: -1,
+    /**
+     * The origin is on the right side of the object.
+     *
+     * @type {number}
+     * @constant
+     */
+    RIGHT: -1,
 };
 export default Object.freeze(HorizontalOrigin);

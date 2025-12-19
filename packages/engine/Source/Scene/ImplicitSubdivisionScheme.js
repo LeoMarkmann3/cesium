@@ -8,22 +8,22 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 const ImplicitSubdivisionScheme = {
-  /**
-   * A quadtree divides a parent tile into four children, split at the midpoint
-   * of the x and y dimensions of the bounding box
-   * @type {string}
-   * @constant
-   * @private
-   */
-  QUADTREE: "QUADTREE",
-  /**
-   * An octree divides a parent tile into eight children, split at the midpoint
-   * of the x, y, and z dimensions of the bounding box.
-   * @type {string}
-   * @constant
-   * @private
-   */
-  OCTREE: "OCTREE",
+    /**
+     * A quadtree divides a parent tile into four children, split at the midpoint
+     * of the x and y dimensions of the bounding box
+     * @type {string}
+     * @constant
+     * @private
+     */
+    QUADTREE: "QUADTREE",
+    /**
+     * An octree divides a parent tile into eight children, split at the midpoint
+     * of the x, y, and z dimensions of the bounding box.
+     * @type {string}
+     * @constant
+     * @private
+     */
+    OCTREE: "OCTREE",
 };
 
 /**
@@ -33,16 +33,16 @@ const ImplicitSubdivisionScheme = {
  * @private
  */
 ImplicitSubdivisionScheme.getBranchingFactor = function (subdivisionScheme) {
-  switch (subdivisionScheme) {
-    case ImplicitSubdivisionScheme.OCTREE:
-      return 8;
-    case ImplicitSubdivisionScheme.QUADTREE:
-      return 4;
-    //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError("subdivisionScheme is not a valid value.");
-    //>>includeEnd('debug');
-  }
+    switch (subdivisionScheme) {
+        case ImplicitSubdivisionScheme.OCTREE:
+            return 8;
+        case ImplicitSubdivisionScheme.QUADTREE:
+            return 4;
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError("subdivisionScheme is not a valid value.");
+        //>>includeEnd('debug');
+    }
 };
 
 export default Object.freeze(ImplicitSubdivisionScheme);

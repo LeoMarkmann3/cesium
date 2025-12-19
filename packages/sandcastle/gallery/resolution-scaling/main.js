@@ -16,26 +16,26 @@ import * as Cesium from "cesium";
 const viewer = new Cesium.Viewer("cesiumContainer");
 
 const viewModel = {
-  useBrowserRecommendedResolution: false,
-  resolutionScale: 0.25,
+    useBrowserRecommendedResolution: false,
+    resolutionScale: 0.25,
 };
 
 Cesium.knockout.track(viewModel);
 const toolbar = document.getElementById("toolbar");
 Cesium.knockout.applyBindings(viewModel, toolbar);
 for (const name in viewModel) {
-  if (viewModel.hasOwnProperty(name)) {
-    Cesium.knockout.getObservable(viewModel, name).subscribe(update);
-  }
+    if (viewModel.hasOwnProperty(name)) {
+        Cesium.knockout.getObservable(viewModel, name).subscribe(update);
+    }
 }
 
 function update() {
-  viewer.useBrowserRecommendedResolution =
-    viewModel.useBrowserRecommendedResolution;
+    viewer.useBrowserRecommendedResolution =
+        viewModel.useBrowserRecommendedResolution;
 
-  let resolutionScale = Number(viewModel.resolutionScale);
-  resolutionScale = !isNaN(resolutionScale) ? resolutionScale : 1.0;
-  resolutionScale = Cesium.Math.clamp(resolutionScale, 0.1, 2.0);
-  viewer.resolutionScale = resolutionScale;
+    let resolutionScale = Number(viewModel.resolutionScale);
+    resolutionScale = !isNaN(resolutionScale) ? resolutionScale : 1.0;
+    resolutionScale = Cesium.Math.clamp(resolutionScale, 0.1, 2.0);
+    viewer.resolutionScale = resolutionScale;
 }
 update();

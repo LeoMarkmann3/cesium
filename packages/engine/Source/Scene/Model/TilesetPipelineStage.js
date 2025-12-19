@@ -12,7 +12,7 @@ import StencilConstants from "../StencilConstants.js";
  * @private
  */
 const TilesetPipelineStage = {
-  name: "TilesetPipelineStage", // Helps with debugging
+    name: "TilesetPipelineStage", // Helps with debugging
 };
 
 /**
@@ -35,39 +35,39 @@ const TilesetPipelineStage = {
  * @private
  */
 TilesetPipelineStage.process = function (renderResources, model, frameState) {
-  if (model.hasSkipLevelOfDetail(frameState)) {
-    // Make the log-depth depth fragment write account for the polygon offset, too.
-    // Otherwise, the back face commands will cause the higher resolution
-    // tiles to disappear.
-    const shaderBuilder = renderResources.shaderBuilder;
-    shaderBuilder.addDefine(
-      "POLYGON_OFFSET",
-      undefined,
-      ShaderDestination.FRAGMENT,
-    );
+    if (model.hasSkipLevelOfDetail(frameState)) {
+        // Make the log-depth depth fragment write account for the polygon offset, too.
+        // Otherwise, the back face commands will cause the higher resolution
+        // tiles to disappear.
+        const shaderBuilder = renderResources.shaderBuilder;
+        shaderBuilder.addDefine(
+            "POLYGON_OFFSET",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
 
-    // This value will be overriden by the depth-only back face derived command.
-    // We just prepare it in advance so we don't have to recompile the shader.
-    // We don't add a uniform declaration through ShaderBuilder because
-    // this is included in writeLogDepth.glsl
-    const uniformMap = {
-      u_polygonOffset: function () {
-        return Cartesian2.ZERO;
-      },
-    };
+        // This value will be overriden by the depth-only back face derived command.
+        // We just prepare it in advance so we don't have to recompile the shader.
+        // We don't add a uniform declaration through ShaderBuilder because
+        // this is included in writeLogDepth.glsl
+        const uniformMap = {
+            u_polygonOffset: function () {
+                return Cartesian2.ZERO;
+            },
+        };
 
-    renderResources.uniformMap = combine(
-      uniformMap,
-      renderResources.uniformMap,
-    );
-    renderResources.hasSkipLevelOfDetail = true;
-  }
+        renderResources.uniformMap = combine(
+            uniformMap,
+            renderResources.uniformMap,
+        );
+        renderResources.hasSkipLevelOfDetail = true;
+    }
 
-  // Set stencil values for classification on 3D Tiles. This is applied to all
-  // of the derived commands, not just the back-face derived command.
-  const renderStateOptions = renderResources.renderStateOptions;
-  renderStateOptions.stencilTest = StencilConstants.setCesium3DTileBit();
-  renderStateOptions.stencilMask = StencilConstants.CESIUM_3D_TILE_MASK;
+    // Set stencil values for classification on 3D Tiles. This is applied to all
+    // of the derived commands, not just the back-face derived command.
+    const renderStateOptions = renderResources.renderStateOptions;
+    renderStateOptions.stencilTest = StencilConstants.setCesium3DTileBit();
+    renderStateOptions.stencilMask = StencilConstants.CESIUM_3D_TILE_MASK;
 };
 
 export default TilesetPipelineStage;

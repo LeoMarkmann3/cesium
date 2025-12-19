@@ -141,8 +141,8 @@
     "test-e2e-update": "playwright test -c Specs/e2e/playwright.config.js --project=chromium -u",
     "deploy-status": "gulp deployStatus",
     "deploy-set-version": "gulp deploySetVersion",
-    "prettier": "prettier --write \"**/*\"",
-    "prettier-check": "prettier --check \"**/*\"",
+    "prettier": "prettier --write \"**/*.js\"",
+    "prettier-check": "prettier --check \"**/*.js\"",
     "cspell": "npx cspell lint -c .vscode/cspell.json --unique --no-progress"
   },
   "engines": {

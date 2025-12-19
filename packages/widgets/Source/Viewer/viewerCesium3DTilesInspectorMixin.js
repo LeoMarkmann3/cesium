@@ -14,24 +14,24 @@ import Cesium3DTilesInspector from "../Cesium3DTilesInspector/Cesium3DTilesInspe
  * viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
  */
 function viewerCesium3DTilesInspectorMixin(viewer) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("viewer", viewer);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("viewer", viewer);
+    //>>includeEnd('debug');
 
-  const container = document.createElement("div");
-  container.className = "cesium-viewer-cesium3DTilesInspectorContainer";
-  viewer.container.appendChild(container);
-  const cesium3DTilesInspector = new Cesium3DTilesInspector(
-    container,
-    viewer.scene,
-  );
+    const container = document.createElement("div");
+    container.className = "cesium-viewer-cesium3DTilesInspectorContainer";
+    viewer.container.appendChild(container);
+    const cesium3DTilesInspector = new Cesium3DTilesInspector(
+        container,
+        viewer.scene,
+    );
 
-  Object.defineProperties(viewer, {
-    cesium3DTilesInspector: {
-      get: function () {
-        return cesium3DTilesInspector;
-      },
-    },
-  });
+    Object.defineProperties(viewer, {
+        cesium3DTilesInspector: {
+            get: function () {
+                return cesium3DTilesInspector;
+            },
+        },
+    });
 }
 export default viewerCesium3DTilesInspectorMixin;

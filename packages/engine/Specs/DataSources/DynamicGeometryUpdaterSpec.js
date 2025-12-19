@@ -1,82 +1,82 @@
 import {
-  DynamicGeometryUpdater,
-  Entity,
-  GeometryUpdater,
-  PrimitiveCollection,
+    DynamicGeometryUpdater,
+    Entity,
+    GeometryUpdater,
+    PrimitiveCollection,
 } from "../../index.js";
 
 import createScene from "../../../../Specs/createScene.js";
 
 describe("DataSources/DynamicGeometryUpdater", function () {
-  let scene;
+    let scene;
 
-  beforeAll(function () {
-    scene = createScene();
-  });
-
-  afterAll(function () {
-    scene.destroyForSpecs();
-  });
-
-  it("Constructor throws with no updater", function () {
-    expect(function () {
-      return new DynamicGeometryUpdater(
-        undefined,
-        new PrimitiveCollection(),
-        new PrimitiveCollection(),
-      );
-    }).toThrowDeveloperError();
-  });
-
-  it("Constructor throws with no primitives", function () {
-    const updater = new GeometryUpdater({
-      entity: new Entity(),
-      scene: scene,
-      geometryOptions: {},
-      geometryPropertyName: "box",
-      observedPropertyNames: ["availability", "box"],
+    beforeAll(function () {
+        scene = createScene();
     });
-    expect(function () {
-      return new DynamicGeometryUpdater(
-        updater,
-        undefined,
-        new PrimitiveCollection(),
-      );
-    }).toThrowDeveloperError();
-  });
 
-  it("Constructor throws with no groundPrimitives", function () {
-    const updater = new GeometryUpdater({
-      entity: new Entity(),
-      scene: scene,
-      geometryOptions: {},
-      geometryPropertyName: "box",
-      observedPropertyNames: ["availability", "box"],
+    afterAll(function () {
+        scene.destroyForSpecs();
     });
-    expect(function () {
-      return new DynamicGeometryUpdater(
-        updater,
-        undefined,
-        new PrimitiveCollection(),
-      );
-    }).toThrowDeveloperError();
-  });
 
-  it("update throws with no time", function () {
-    const updater = new GeometryUpdater({
-      entity: new Entity(),
-      scene: scene,
-      geometryOptions: {},
-      geometryPropertyName: "box",
-      observedPropertyNames: ["availability", "box"],
+    it("Constructor throws with no updater", function () {
+        expect(function () {
+            return new DynamicGeometryUpdater(
+                undefined,
+                new PrimitiveCollection(),
+                new PrimitiveCollection(),
+            );
+        }).toThrowDeveloperError();
     });
-    const dynamicUpdater = new DynamicGeometryUpdater(
-      updater,
-      new PrimitiveCollection(),
-      new PrimitiveCollection(),
-    );
-    expect(function () {
-      return dynamicUpdater.update();
-    }).toThrowDeveloperError();
-  });
+
+    it("Constructor throws with no primitives", function () {
+        const updater = new GeometryUpdater({
+            entity: new Entity(),
+            scene: scene,
+            geometryOptions: {},
+            geometryPropertyName: "box",
+            observedPropertyNames: ["availability", "box"],
+        });
+        expect(function () {
+            return new DynamicGeometryUpdater(
+                updater,
+                undefined,
+                new PrimitiveCollection(),
+            );
+        }).toThrowDeveloperError();
+    });
+
+    it("Constructor throws with no groundPrimitives", function () {
+        const updater = new GeometryUpdater({
+            entity: new Entity(),
+            scene: scene,
+            geometryOptions: {},
+            geometryPropertyName: "box",
+            observedPropertyNames: ["availability", "box"],
+        });
+        expect(function () {
+            return new DynamicGeometryUpdater(
+                updater,
+                undefined,
+                new PrimitiveCollection(),
+            );
+        }).toThrowDeveloperError();
+    });
+
+    it("update throws with no time", function () {
+        const updater = new GeometryUpdater({
+            entity: new Entity(),
+            scene: scene,
+            geometryOptions: {},
+            geometryPropertyName: "box",
+            observedPropertyNames: ["availability", "box"],
+        });
+        const dynamicUpdater = new DynamicGeometryUpdater(
+            updater,
+            new PrimitiveCollection(),
+            new PrimitiveCollection(),
+        );
+        expect(function () {
+            return dynamicUpdater.update();
+        }).toThrowDeveloperError();
+    });
 });

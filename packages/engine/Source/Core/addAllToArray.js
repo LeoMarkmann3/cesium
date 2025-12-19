@@ -24,17 +24,17 @@ import defined from "./defined.js";
  * // The target is now [ 0, 1, 2, 3, 4, 5 ]
  */
 function addAllToArray(target, source) {
-  if (!defined(source)) {
-    return;
-  }
-  const sourceLength = source.length;
-  if (sourceLength === 0) {
-    return;
-  }
-  const targetLength = target.length;
-  target.length += sourceLength;
-  for (let i = 0; i < sourceLength; i++) {
-    target[targetLength + i] = source[i];
-  }
+    if (!defined(source)) {
+        return;
+    }
+    const sourceLength = source.length;
+    if (sourceLength === 0) {
+        return;
+    }
+    const targetLength = target.length;
+    target.length += sourceLength;
+    for (let i = 0; i < sourceLength; i++) {
+        target[targetLength + i] = source[i];
+    }
 }
 export default addAllToArray;

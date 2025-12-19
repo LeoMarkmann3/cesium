@@ -39,50 +39,52 @@ import CubeMap from "./CubeMap.js";
  * @private
  */
 function loadCubeMap(context, urls, skipColorSpaceConversion) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("context", context);
-  Check.defined("urls", urls);
-  if (
-    Object.values(CubeMap.FaceName).some((faceName) => !defined(urls[faceName]))
-  ) {
-    throw new DeveloperError(
-      "urls must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.",
-    );
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("context", context);
+    Check.defined("urls", urls);
+    if (
+        Object.values(CubeMap.FaceName).some(
+            (faceName) => !defined(urls[faceName]),
+        )
+    ) {
+        throw new DeveloperError(
+            "urls must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  // PERFORMANCE_IDEA: Given the size of some cube maps, we should consider tiling them, which
-  // would prevent hiccups when uploading, for example, six 4096x4096 textures to the GPU.
-  //
-  // Also, it is perhaps acceptable to use the context here in the callbacks, but
-  // ideally, we would do it in the primitive's update function.
-  const flipOptions = {
-    flipY: true,
-    skipColorSpaceConversion: skipColorSpaceConversion,
-    preferImageBitmap: true,
-  };
+    // PERFORMANCE_IDEA: Given the size of some cube maps, we should consider tiling them, which
+    // would prevent hiccups when uploading, for example, six 4096x4096 textures to the GPU.
+    //
+    // Also, it is perhaps acceptable to use the context here in the callbacks, but
+    // ideally, we would do it in the primitive's update function.
+    const flipOptions = {
+        flipY: true,
+        skipColorSpaceConversion: skipColorSpaceConversion,
+        preferImageBitmap: true,
+    };
 
-  const facePromises = [
-    Resource.createIfNeeded(urls.positiveX).fetchImage(flipOptions),
-    Resource.createIfNeeded(urls.negativeX).fetchImage(flipOptions),
-    Resource.createIfNeeded(urls.positiveY).fetchImage(flipOptions),
-    Resource.createIfNeeded(urls.negativeY).fetchImage(flipOptions),
-    Resource.createIfNeeded(urls.positiveZ).fetchImage(flipOptions),
-    Resource.createIfNeeded(urls.negativeZ).fetchImage(flipOptions),
-  ];
+    const facePromises = [
+        Resource.createIfNeeded(urls.positiveX).fetchImage(flipOptions),
+        Resource.createIfNeeded(urls.negativeX).fetchImage(flipOptions),
+        Resource.createIfNeeded(urls.positiveY).fetchImage(flipOptions),
+        Resource.createIfNeeded(urls.negativeY).fetchImage(flipOptions),
+        Resource.createIfNeeded(urls.positiveZ).fetchImage(flipOptions),
+        Resource.createIfNeeded(urls.negativeZ).fetchImage(flipOptions),
+    ];
 
-  return Promise.all(facePromises).then(function (images) {
-    return new CubeMap({
-      context: context,
-      source: {
-        positiveX: images[0],
-        negativeX: images[1],
-        positiveY: images[2],
-        negativeY: images[3],
-        positiveZ: images[4],
-        negativeZ: images[5],
-      },
+    return Promise.all(facePromises).then(function (images) {
+        return new CubeMap({
+            context: context,
+            source: {
+                positiveX: images[0],
+                negativeX: images[1],
+                positiveY: images[2],
+                negativeY: images[3],
+                positiveZ: images[4],
+                negativeZ: images[5],
+            },
+        });
     });
-  });
 }
 export default loadCubeMap;

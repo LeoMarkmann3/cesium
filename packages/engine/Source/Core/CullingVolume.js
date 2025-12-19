@@ -14,14 +14,14 @@ import Plane from "./Plane.js";
  * @param {Cartesian4[]} [planes] An array of clipping planes.
  */
 function CullingVolume(planes) {
-  /**
-   * Each plane is represented by a Cartesian4 object, where the x, y, and z components
-   * define the unit vector normal to the plane, and the w component is the distance of the
-   * plane from the origin.
-   * @type {Cartesian4[]}
-   * @default []
-   */
-  this.planes = planes ?? [];
+    /**
+     * Each plane is represented by a Cartesian4 object, where the x, y, and z components
+     * define the unit vector normal to the plane, and the w component is the distance of the
+     * plane from the origin.
+     * @type {Cartesian4[]}
+     * @default []
+     */
+    this.planes = planes ?? [];
 }
 
 const faces = [new Cartesian3(), new Cartesian3(), new Cartesian3()];
@@ -42,61 +42,61 @@ const scratchPlane = new Plane(new Cartesian3(1.0, 0.0, 0.0), 0.0);
  * @returns {CullingVolume} The culling volume created from the bounding sphere.
  */
 CullingVolume.fromBoundingSphere = function (boundingSphere, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(boundingSphere)) {
-    throw new DeveloperError("boundingSphere is required.");
-  }
-  //>>includeEnd('debug');
-
-  if (!defined(result)) {
-    result = new CullingVolume();
-  }
-
-  const length = faces.length;
-  const planes = result.planes;
-  planes.length = 2 * length;
-
-  const center = boundingSphere.center;
-  const radius = boundingSphere.radius;
-
-  let planeIndex = 0;
-
-  for (let i = 0; i < length; ++i) {
-    const faceNormal = faces[i];
-
-    let plane0 = planes[planeIndex];
-    let plane1 = planes[planeIndex + 1];
-
-    if (!defined(plane0)) {
-      plane0 = planes[planeIndex] = new Cartesian4();
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(boundingSphere)) {
+        throw new DeveloperError("boundingSphere is required.");
     }
-    if (!defined(plane1)) {
-      plane1 = planes[planeIndex + 1] = new Cartesian4();
+    //>>includeEnd('debug');
+
+    if (!defined(result)) {
+        result = new CullingVolume();
     }
 
-    Cartesian3.multiplyByScalar(faceNormal, -radius, scratchPlaneCenter);
-    Cartesian3.add(center, scratchPlaneCenter, scratchPlaneCenter);
+    const length = faces.length;
+    const planes = result.planes;
+    planes.length = 2 * length;
 
-    plane0.x = faceNormal.x;
-    plane0.y = faceNormal.y;
-    plane0.z = faceNormal.z;
-    plane0.w = -Cartesian3.dot(faceNormal, scratchPlaneCenter);
+    const center = boundingSphere.center;
+    const radius = boundingSphere.radius;
 
-    Cartesian3.multiplyByScalar(faceNormal, radius, scratchPlaneCenter);
-    Cartesian3.add(center, scratchPlaneCenter, scratchPlaneCenter);
+    let planeIndex = 0;
 
-    plane1.x = -faceNormal.x;
-    plane1.y = -faceNormal.y;
-    plane1.z = -faceNormal.z;
-    plane1.w = -Cartesian3.dot(
-      Cartesian3.negate(faceNormal, scratchPlaneNormal),
-      scratchPlaneCenter,
-    );
+    for (let i = 0; i < length; ++i) {
+        const faceNormal = faces[i];
 
-    planeIndex += 2;
-  }
+        let plane0 = planes[planeIndex];
+        let plane1 = planes[planeIndex + 1];
 
-  return result;
+        if (!defined(plane0)) {
+            plane0 = planes[planeIndex] = new Cartesian4();
+        }
+        if (!defined(plane1)) {
+            plane1 = planes[planeIndex + 1] = new Cartesian4();
+        }
+
+        Cartesian3.multiplyByScalar(faceNormal, -radius, scratchPlaneCenter);
+        Cartesian3.add(center, scratchPlaneCenter, scratchPlaneCenter);
+
+        plane0.x = faceNormal.x;
+        plane0.y = faceNormal.y;
+        plane0.z = faceNormal.z;
+        plane0.w = -Cartesian3.dot(faceNormal, scratchPlaneCenter);
+
+        Cartesian3.multiplyByScalar(faceNormal, radius, scratchPlaneCenter);
+        Cartesian3.add(center, scratchPlaneCenter, scratchPlaneCenter);
+
+        plane1.x = -faceNormal.x;
+        plane1.y = -faceNormal.y;
+        plane1.z = -faceNormal.z;
+        plane1.w = -Cartesian3.dot(
+            Cartesian3.negate(faceNormal, scratchPlaneNormal),
+            scratchPlaneCenter,
+        );
+
+        planeIndex += 2;
+    }
+
+    return result;
 };
 
 /**
@@ -106,26 +106,26 @@ CullingVolume.fromBoundingSphere = function (boundingSphere, result) {
  * @returns {Intersect}  Intersect.OUTSIDE, Intersect.INTERSECTING, or Intersect.INSIDE.
  */
 CullingVolume.prototype.computeVisibility = function (boundingVolume) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(boundingVolume)) {
-    throw new DeveloperError("boundingVolume is required.");
-  }
-  //>>includeEnd('debug');
-
-  const planes = this.planes;
-  let intersecting = false;
-  for (let k = 0, len = planes.length; k < len; ++k) {
-    const result = boundingVolume.intersectPlane(
-      Plane.fromCartesian4(planes[k], scratchPlane),
-    );
-    if (result === Intersect.OUTSIDE) {
-      return Intersect.OUTSIDE;
-    } else if (result === Intersect.INTERSECTING) {
-      intersecting = true;
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(boundingVolume)) {
+        throw new DeveloperError("boundingVolume is required.");
     }
-  }
+    //>>includeEnd('debug');
 
-  return intersecting ? Intersect.INTERSECTING : Intersect.INSIDE;
+    const planes = this.planes;
+    let intersecting = false;
+    for (let k = 0, len = planes.length; k < len; ++k) {
+        const result = boundingVolume.intersectPlane(
+            Plane.fromCartesian4(planes[k], scratchPlane),
+        );
+        if (result === Intersect.OUTSIDE) {
+            return Intersect.OUTSIDE;
+        } else if (result === Intersect.INTERSECTING) {
+            intersecting = true;
+        }
+    }
+
+    return intersecting ? Intersect.INTERSECTING : Intersect.INSIDE;
 };
 
 /**
@@ -141,50 +141,50 @@ CullingVolume.prototype.computeVisibility = function (boundingVolume) {
  * @private
  */
 CullingVolume.prototype.computeVisibilityWithPlaneMask = function (
-  boundingVolume,
-  parentPlaneMask,
+    boundingVolume,
+    parentPlaneMask,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(boundingVolume)) {
-    throw new DeveloperError("boundingVolume is required.");
-  }
-  if (!defined(parentPlaneMask)) {
-    throw new DeveloperError("parentPlaneMask is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(boundingVolume)) {
+        throw new DeveloperError("boundingVolume is required.");
+    }
+    if (!defined(parentPlaneMask)) {
+        throw new DeveloperError("parentPlaneMask is required.");
+    }
+    //>>includeEnd('debug');
 
-  if (
-    parentPlaneMask === CullingVolume.MASK_OUTSIDE ||
-    parentPlaneMask === CullingVolume.MASK_INSIDE
-  ) {
-    // parent is completely outside or completely inside, so this child is as well.
-    return parentPlaneMask;
-  }
-
-  // Start with MASK_INSIDE (all zeros) so that after the loop, the return value can be compared with MASK_INSIDE.
-  // (Because if there are fewer than 31 planes, the upper bits wont be changed.)
-  let mask = CullingVolume.MASK_INSIDE;
-
-  const planes = this.planes;
-  for (let k = 0, len = planes.length; k < len; ++k) {
-    // For k greater than 31 (since 31 is the maximum number of INSIDE/INTERSECTING bits we can store), skip the optimization.
-    const flag = k < 31 ? 1 << k : 0;
-    if (k < 31 && (parentPlaneMask & flag) === 0) {
-      // boundingVolume is known to be INSIDE this plane.
-      continue;
+    if (
+        parentPlaneMask === CullingVolume.MASK_OUTSIDE ||
+        parentPlaneMask === CullingVolume.MASK_INSIDE
+    ) {
+        // parent is completely outside or completely inside, so this child is as well.
+        return parentPlaneMask;
     }
 
-    const result = boundingVolume.intersectPlane(
-      Plane.fromCartesian4(planes[k], scratchPlane),
-    );
-    if (result === Intersect.OUTSIDE) {
-      return CullingVolume.MASK_OUTSIDE;
-    } else if (result === Intersect.INTERSECTING) {
-      mask |= flag;
-    }
-  }
+    // Start with MASK_INSIDE (all zeros) so that after the loop, the return value can be compared with MASK_INSIDE.
+    // (Because if there are fewer than 31 planes, the upper bits wont be changed.)
+    let mask = CullingVolume.MASK_INSIDE;
 
-  return mask;
+    const planes = this.planes;
+    for (let k = 0, len = planes.length; k < len; ++k) {
+        // For k greater than 31 (since 31 is the maximum number of INSIDE/INTERSECTING bits we can store), skip the optimization.
+        const flag = k < 31 ? 1 << k : 0;
+        if (k < 31 && (parentPlaneMask & flag) === 0) {
+            // boundingVolume is known to be INSIDE this plane.
+            continue;
+        }
+
+        const result = boundingVolume.intersectPlane(
+            Plane.fromCartesian4(planes[k], scratchPlane),
+        );
+        if (result === Intersect.OUTSIDE) {
+            return CullingVolume.MASK_OUTSIDE;
+        } else if (result === Intersect.INTERSECTING) {
+            mask |= flag;
+        }
+    }
+
+    return mask;
 };
 
 /**

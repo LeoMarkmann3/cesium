@@ -9,20 +9,20 @@ document.body.style.background = `
   linear-gradient(to bottom, lightskyblue, lightgreen)`;
 
 Sandcastle.addToolbarButton("New Button", function () {
-  // your code here
+    // your code here
 });
 
 let toggleValue1 = true;
 Sandcastle.addToggleButton("Toggle", toggleValue1, function (checked) {
-  toggleValue1 = checked;
+    toggleValue1 = checked;
 });
 
 const options1 = [
-  {
-    text: "Option 1",
-    onselect: function () {
-      // your code here, the first option is always run at load
+    {
+        text: "Option 1",
+        onselect: function () {
+            // your code here, the first option is always run at load
+        },
     },
-  },
 ];
 Sandcastle.addToolbarMenu(options1);

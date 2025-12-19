@@ -15,25 +15,25 @@ import hasExtension from "./hasExtension.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function findGroupMetadata(tileset, contentHeader) {
-  const metadataExtension = tileset.metadataExtension;
-  if (!defined(metadataExtension)) {
-    return undefined;
-  }
-  const groups = metadataExtension.groups;
+    const metadataExtension = tileset.metadataExtension;
+    if (!defined(metadataExtension)) {
+        return undefined;
+    }
+    const groups = metadataExtension.groups;
 
-  const group = hasExtension(contentHeader, "3DTILES_metadata")
-    ? contentHeader.extensions["3DTILES_metadata"].group
-    : contentHeader.group;
+    const group = hasExtension(contentHeader, "3DTILES_metadata")
+        ? contentHeader.extensions["3DTILES_metadata"].group
+        : contentHeader.group;
 
-  if (typeof group === "number") {
-    return groups[group];
-  }
+    if (typeof group === "number") {
+        return groups[group];
+    }
 
-  const index = metadataExtension.groupIds.findIndex(function (id) {
-    return id === group;
-  });
+    const index = metadataExtension.groupIds.findIndex(function (id) {
+        return id === group;
+    });
 
-  return index >= 0 ? groups[index] : undefined;
+    return index >= 0 ? groups[index] : undefined;
 }
 
 export default findGroupMetadata;

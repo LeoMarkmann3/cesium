@@ -23,123 +23,123 @@ import PropertyAttributeProperty from "./PropertyAttributeProperty.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function PropertyAttribute(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const propertyAttribute = options.propertyAttribute;
-  const classDefinition = options.class;
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const propertyAttribute = options.propertyAttribute;
+    const classDefinition = options.class;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.propertyAttribute", propertyAttribute);
-  Check.typeOf.object("options.class", classDefinition);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.propertyAttribute", propertyAttribute);
+    Check.typeOf.object("options.class", classDefinition);
+    //>>includeEnd('debug');
 
-  const properties = {};
-  if (defined(propertyAttribute.properties)) {
-    for (const propertyId in propertyAttribute.properties) {
-      if (propertyAttribute.properties.hasOwnProperty(propertyId)) {
-        properties[propertyId] = new PropertyAttributeProperty({
-          property: propertyAttribute.properties[propertyId],
-          classProperty: classDefinition.properties[propertyId],
-        });
-      }
+    const properties = {};
+    if (defined(propertyAttribute.properties)) {
+        for (const propertyId in propertyAttribute.properties) {
+            if (propertyAttribute.properties.hasOwnProperty(propertyId)) {
+                properties[propertyId] = new PropertyAttributeProperty({
+                    property: propertyAttribute.properties[propertyId],
+                    classProperty: classDefinition.properties[propertyId],
+                });
+            }
+        }
     }
-  }
 
-  this._name = options.name;
-  this._id = options.id;
-  this._class = classDefinition;
-  this._properties = properties;
-  this._extras = propertyAttribute.extras;
-  this._extensions = propertyAttribute.extensions;
+    this._name = options.name;
+    this._id = options.id;
+    this._class = classDefinition;
+    this._properties = properties;
+    this._extras = propertyAttribute.extras;
+    this._extensions = propertyAttribute.extensions;
 }
 
 Object.defineProperties(PropertyAttribute.prototype, {
-  /**
-   * A human-readable name for this attribute
-   *
-   * @memberof PropertyAttribute.prototype
-   *
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  name: {
-    get: function () {
-      return this._name;
+    /**
+     * A human-readable name for this attribute
+     *
+     * @memberof PropertyAttribute.prototype
+     *
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    name: {
+        get: function () {
+            return this._name;
+        },
     },
-  },
-  /**
-   * An identifier for this attribute. Useful for debugging.
-   *
-   * @memberof PropertyAttribute.prototype
-   *
-   * @type {string|number}
-   * @readonly
-   * @private
-   */
-  id: {
-    get: function () {
-      return this._id;
+    /**
+     * An identifier for this attribute. Useful for debugging.
+     *
+     * @memberof PropertyAttribute.prototype
+     *
+     * @type {string|number}
+     * @readonly
+     * @private
+     */
+    id: {
+        get: function () {
+            return this._id;
+        },
     },
-  },
-  /**
-   * The class that properties conform to.
-   *
-   * @memberof PropertyAttribute.prototype
-   *
-   * @type {MetadataClass}
-   * @readonly
-   * @private
-   */
-  class: {
-    get: function () {
-      return this._class;
+    /**
+     * The class that properties conform to.
+     *
+     * @memberof PropertyAttribute.prototype
+     *
+     * @type {MetadataClass}
+     * @readonly
+     * @private
+     */
+    class: {
+        get: function () {
+            return this._class;
+        },
     },
-  },
 
-  /**
-   * The properties in this property attribute.
-   *
-   * @memberof PropertyAttribute.prototype
-   *
-   * @type {Object<string, PropertyAttributeProperty>}
-   * @readonly
-   * @private
-   */
-  properties: {
-    get: function () {
-      return this._properties;
+    /**
+     * The properties in this property attribute.
+     *
+     * @memberof PropertyAttribute.prototype
+     *
+     * @type {Object<string, PropertyAttributeProperty>}
+     * @readonly
+     * @private
+     */
+    properties: {
+        get: function () {
+            return this._properties;
+        },
     },
-  },
 
-  /**
-   * Extra user-defined properties.
-   *
-   * @memberof PropertyAttribute.prototype
-   *
-   * @type {*}
-   * @readonly
-   * @private
-   */
-  extras: {
-    get: function () {
-      return this._extras;
+    /**
+     * Extra user-defined properties.
+     *
+     * @memberof PropertyAttribute.prototype
+     *
+     * @type {*}
+     * @readonly
+     * @private
+     */
+    extras: {
+        get: function () {
+            return this._extras;
+        },
     },
-  },
 
-  /**
-   * An object containing extensions.
-   *
-   * @memberof PropertyAttribute.prototype
-   *
-   * @type {object}
-   * @readonly
-   * @private
-   */
-  extensions: {
-    get: function () {
-      return this._extensions;
+    /**
+     * An object containing extensions.
+     *
+     * @memberof PropertyAttribute.prototype
+     *
+     * @type {object}
+     * @readonly
+     * @private
+     */
+    extensions: {
+        get: function () {
+            return this._extensions;
+        },
     },
-  },
 });
 
 /**
@@ -150,11 +150,11 @@ Object.defineProperties(PropertyAttribute.prototype, {
  * @private
  */
 PropertyAttribute.prototype.getProperty = function (propertyId) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("propertyId", propertyId);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("propertyId", propertyId);
+    //>>includeEnd('debug');
 
-  return this._properties[propertyId];
+    return this._properties[propertyId];
 };
 
 export default PropertyAttribute;

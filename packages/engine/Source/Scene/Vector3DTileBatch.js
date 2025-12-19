@@ -13,25 +13,25 @@
  * @private
  */
 function Vector3DTileBatch(options) {
-  /**
-   * The offset of the batch into the indices buffer.
-   * @type {number}
-   */
-  this.offset = options.offset;
-  /**
-   * The number of indices in the batch.
-   * @type {number}
-   */
-  this.count = options.count;
-  /**
-   * The color of the geometry in the batch.
-   * @type {Color}
-   */
-  this.color = options.color;
-  /**
-   * An array where each element is the batch id of the geometry in the batch.
-   * @type {number[]}
-   */
-  this.batchIds = options.batchIds;
+    /**
+     * The offset of the batch into the indices buffer.
+     * @type {number}
+     */
+    this.offset = options.offset;
+    /**
+     * The number of indices in the batch.
+     * @type {number}
+     */
+    this.count = options.count;
+    /**
+     * The color of the geometry in the batch.
+     * @type {Color}
+     */
+    this.color = options.color;
+    /**
+     * An array where each element is the batch id of the geometry in the batch.
+     * @type {number[]}
+     */
+    this.batchIds = options.batchIds;
 }
 export default Vector3DTileBatch;

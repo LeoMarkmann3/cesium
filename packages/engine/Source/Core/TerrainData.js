@@ -13,28 +13,28 @@ import DeveloperError from "./DeveloperError.js";
  * @see Cesium3DTilesTerrainData
  */
 function TerrainData() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 Object.defineProperties(TerrainData.prototype, {
-  /**
-   * An array of credits for this tile.
-   * @memberof TerrainData.prototype
-   * @type {Credit[]}
-   */
-  credits: {
-    get: DeveloperError.throwInstantiationError,
-  },
-  /**
-   * The water mask included in this terrain data, if any.  A water mask is a rectangular
-   * Uint8Array or image where a value of 255 indicates water and a value of 0 indicates land.
-   * Values in between 0 and 255 are allowed as well to smoothly blend between land and water.
-   * @memberof TerrainData.prototype
-   * @type {Uint8Array|HTMLImageElement|HTMLCanvasElement|ImageBitmap|undefined}
-   */
-  waterMask: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * An array of credits for this tile.
+     * @memberof TerrainData.prototype
+     * @type {Credit[]}
+     */
+    credits: {
+        get: DeveloperError.throwInstantiationError,
+    },
+    /**
+     * The water mask included in this terrain data, if any.  A water mask is a rectangular
+     * Uint8Array or image where a value of 255 indicates water and a value of 0 indicates land.
+     * Values in between 0 and 255 are allowed as well to smoothly blend between land and water.
+     * @memberof TerrainData.prototype
+     * @type {Uint8Array|HTMLImageElement|HTMLCanvasElement|ImageBitmap|undefined}
+     */
+    waterMask: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 /**
@@ -49,7 +49,7 @@ Object.defineProperties(TerrainData.prototype, {
  *          incorrect for positions far outside the rectangle.
  */
 TerrainData.prototype.interpolateHeight =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * Determines if a given child tile is available, based on the
@@ -113,7 +113,7 @@ TerrainData.prototype.upsample = DeveloperError.throwInstantiationError;
  * @returns {boolean} True if this instance was created by upsampling; otherwise, false.
  */
 TerrainData.prototype.wasCreatedByUpsampling =
-  DeveloperError.throwInstantiationError;
+    DeveloperError.throwInstantiationError;
 
 /**
  * The maximum number of asynchronous tasks used for terrain processing.

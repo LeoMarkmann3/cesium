@@ -9,7 +9,7 @@ import DeveloperError from "./DeveloperError.js";
  * @see DefaultProxy
  */
 function Proxy() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 /**

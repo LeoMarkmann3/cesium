@@ -18,51 +18,51 @@ import PositionProperty from "./PositionProperty.js";
  * @demo {@link https://sandcastle.cesium.com/index.html?src=Callback%20Position%20Property.html|Cesium Sandcastle Callback Position Property Demo}
  */
 function CallbackPositionProperty(callback, isConstant, referenceFrame) {
-  this._callback = undefined;
-  this._isConstant = undefined;
-  this._referenceFrame = referenceFrame ?? ReferenceFrame.FIXED;
-  this._definitionChanged = new Event();
-  this.setCallback(callback, isConstant);
+    this._callback = undefined;
+    this._isConstant = undefined;
+    this._referenceFrame = referenceFrame ?? ReferenceFrame.FIXED;
+    this._definitionChanged = new Event();
+    this.setCallback(callback, isConstant);
 }
 
 Object.defineProperties(CallbackPositionProperty.prototype, {
-  /**
-   * Gets a value indicating if this property is constant.
-   * @memberof CallbackPositionProperty.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   */
-  isConstant: {
-    get: function () {
-      return this._isConstant;
+    /**
+     * Gets a value indicating if this property is constant.
+     * @memberof CallbackPositionProperty.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     */
+    isConstant: {
+        get: function () {
+            return this._isConstant;
+        },
     },
-  },
-  /**
-   * Gets the event that is raised whenever the definition of this property changes.
-   * The definition is considered to have changed if a call to getValue would return
-   * a different result for the same time.
-   * @memberof CallbackPositionProperty.prototype
-   *
-   * @type {Event}
-   * @readonly
-   */
-  definitionChanged: {
-    get: function () {
-      return this._definitionChanged;
+    /**
+     * Gets the event that is raised whenever the definition of this property changes.
+     * The definition is considered to have changed if a call to getValue would return
+     * a different result for the same time.
+     * @memberof CallbackPositionProperty.prototype
+     *
+     * @type {Event}
+     * @readonly
+     */
+    definitionChanged: {
+        get: function () {
+            return this._definitionChanged;
+        },
     },
-  },
-  /**
-   * Gets the reference frame in which the position is defined.
-   * @memberof CallbackPositionProperty.prototype
-   * @type {ReferenceFrame}
-   * @default ReferenceFrame.FIXED;
-   */
-  referenceFrame: {
-    get: function () {
-      return this._referenceFrame;
+    /**
+     * Gets the reference frame in which the position is defined.
+     * @memberof CallbackPositionProperty.prototype
+     * @type {ReferenceFrame}
+     * @default ReferenceFrame.FIXED;
+     */
+    referenceFrame: {
+        get: function () {
+            return this._referenceFrame;
+        },
     },
-  },
 });
 
 const timeScratch = new JulianDate();
@@ -75,10 +75,10 @@ const timeScratch = new JulianDate();
  * @returns {Cartesian3 | undefined} The modified result parameter or a new instance if the result parameter was not supplied.
  */
 CallbackPositionProperty.prototype.getValue = function (time, result) {
-  if (!defined(time)) {
-    time = JulianDate.now(timeScratch);
-  }
-  return this.getValueInReferenceFrame(time, ReferenceFrame.FIXED, result);
+    if (!defined(time)) {
+        time = JulianDate.now(timeScratch);
+    }
+    return this.getValueInReferenceFrame(time, ReferenceFrame.FIXED, result);
 };
 
 /**
@@ -88,27 +88,27 @@ CallbackPositionProperty.prototype.getValue = function (time, result) {
  * @param {boolean} isConstant <code>true</code> when the callback function returns the same value every time, <code>false</code> if the value will change.
  */
 CallbackPositionProperty.prototype.setCallback = function (
-  callback,
-  isConstant,
+    callback,
+    isConstant,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(callback)) {
-    throw new DeveloperError("callback is required.");
-  }
-  if (!defined(isConstant)) {
-    throw new DeveloperError("isConstant is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(callback)) {
+        throw new DeveloperError("callback is required.");
+    }
+    if (!defined(isConstant)) {
+        throw new DeveloperError("isConstant is required.");
+    }
+    //>>includeEnd('debug');
 
-  const changed =
-    this._callback !== callback || this._isConstant !== isConstant;
+    const changed =
+        this._callback !== callback || this._isConstant !== isConstant;
 
-  this._callback = callback;
-  this._isConstant = isConstant;
+    this._callback = callback;
+    this._isConstant = isConstant;
 
-  if (changed) {
-    this._definitionChanged.raiseEvent(this);
-  }
+    if (changed) {
+        this._definitionChanged.raiseEvent(this);
+    }
 };
 
 /**
@@ -120,28 +120,28 @@ CallbackPositionProperty.prototype.setCallback = function (
  * @returns {Cartesian3 | undefined} The modified result parameter or a new instance if the result parameter was not supplied.
  */
 CallbackPositionProperty.prototype.getValueInReferenceFrame = function (
-  time,
-  referenceFrame,
-  result,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(time)) {
-    throw new DeveloperError("time is required.");
-  }
-  if (!defined(referenceFrame)) {
-    throw new DeveloperError("referenceFrame is required.");
-  }
-  //>>includeEnd('debug');
-
-  const value = this._callback(time, result);
-
-  return PositionProperty.convertToReferenceFrame(
     time,
-    value,
-    this._referenceFrame,
     referenceFrame,
     result,
-  );
+) {
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(time)) {
+        throw new DeveloperError("time is required.");
+    }
+    if (!defined(referenceFrame)) {
+        throw new DeveloperError("referenceFrame is required.");
+    }
+    //>>includeEnd('debug');
+
+    const value = this._callback(time, result);
+
+    return PositionProperty.convertToReferenceFrame(
+        time,
+        value,
+        this._referenceFrame,
+        referenceFrame,
+        result,
+    );
 };
 
 /**
@@ -152,13 +152,13 @@ CallbackPositionProperty.prototype.getValueInReferenceFrame = function (
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 CallbackPositionProperty.prototype.equals = function (other) {
-  return (
-    this === other ||
-    (other instanceof CallbackPositionProperty &&
-      this._callback === other._callback &&
-      this._isConstant === other._isConstant &&
-      this._referenceFrame === other._referenceFrame)
-  );
+    return (
+        this === other ||
+        (other instanceof CallbackPositionProperty &&
+            this._callback === other._callback &&
+            this._isConstant === other._isConstant &&
+            this._referenceFrame === other._referenceFrame)
+    );
 };
 
 /**

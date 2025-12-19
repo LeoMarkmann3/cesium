@@ -22,26 +22,26 @@ import PerformanceWatchdog from "../PerformanceWatchdog/PerformanceWatchdog.js";
  * });
  */
 function viewerPerformanceWatchdogMixin(viewer, options) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(viewer)) {
-    throw new DeveloperError("viewer is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(viewer)) {
+        throw new DeveloperError("viewer is required.");
+    }
+    //>>includeEnd('debug');
 
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const performanceWatchdog = new PerformanceWatchdog({
-    scene: viewer.scene,
-    container: viewer.bottomContainer,
-    lowFrameRateMessage: options.lowFrameRateMessage,
-  });
+    const performanceWatchdog = new PerformanceWatchdog({
+        scene: viewer.scene,
+        container: viewer.bottomContainer,
+        lowFrameRateMessage: options.lowFrameRateMessage,
+    });
 
-  Object.defineProperties(viewer, {
-    performanceWatchdog: {
-      get: function () {
-        return performanceWatchdog;
-      },
-    },
-  });
+    Object.defineProperties(viewer, {
+        performanceWatchdog: {
+            get: function () {
+                return performanceWatchdog;
+            },
+        },
+    });
 }
 export default viewerPerformanceWatchdogMixin;

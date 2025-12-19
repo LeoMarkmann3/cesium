@@ -42,60 +42,62 @@ import Spline from "./Spline.js";
  * @see MorphWeightSpline
  */
 function LinearSpline(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const points = options.points;
-  const times = options.times;
+    const points = options.points;
+    const times = options.times;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(points) || !defined(times)) {
-    throw new DeveloperError("points and times are required.");
-  }
-  if (points.length < 2) {
-    throw new DeveloperError(
-      "points.length must be greater than or equal to 2.",
-    );
-  }
-  if (times.length !== points.length) {
-    throw new DeveloperError("times.length must be equal to points.length.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(points) || !defined(times)) {
+        throw new DeveloperError("points and times are required.");
+    }
+    if (points.length < 2) {
+        throw new DeveloperError(
+            "points.length must be greater than or equal to 2.",
+        );
+    }
+    if (times.length !== points.length) {
+        throw new DeveloperError(
+            "times.length must be equal to points.length.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  this._times = times;
-  this._points = points;
-  this._pointType = Spline.getPointType(points[0]);
+    this._times = times;
+    this._points = points;
+    this._pointType = Spline.getPointType(points[0]);
 
-  this._lastTimeIndex = 0;
+    this._lastTimeIndex = 0;
 }
 
 Object.defineProperties(LinearSpline.prototype, {
-  /**
-   * An array of times for the control points.
-   *
-   * @memberof LinearSpline.prototype
-   *
-   * @type {number[]}
-   * @readonly
-   */
-  times: {
-    get: function () {
-      return this._times;
+    /**
+     * An array of times for the control points.
+     *
+     * @memberof LinearSpline.prototype
+     *
+     * @type {number[]}
+     * @readonly
+     */
+    times: {
+        get: function () {
+            return this._times;
+        },
     },
-  },
 
-  /**
-   * An array of {@link Cartesian3} control points.
-   *
-   * @memberof LinearSpline.prototype
-   *
-   * @type {number[]|Cartesian3[]}
-   * @readonly
-   */
-  points: {
-    get: function () {
-      return this._points;
+    /**
+     * An array of {@link Cartesian3} control points.
+     *
+     * @memberof LinearSpline.prototype
+     *
+     * @type {number[]|Cartesian3[]}
+     * @readonly
+     */
+    points: {
+        get: function () {
+            return this._points;
+        },
     },
-  },
 });
 
 /**
@@ -142,25 +144,25 @@ LinearSpline.prototype.clampTime = Spline.prototype.clampTime;
  *                             in the array <code>times</code>.
  */
 LinearSpline.prototype.evaluate = function (time, result) {
-  const points = this.points;
-  const times = this.times;
+    const points = this.points;
+    const times = this.times;
 
-  const i = (this._lastTimeIndex = this.findTimeInterval(
-    time,
-    this._lastTimeIndex,
-  ));
-  const u = (time - times[i]) / (times[i + 1] - times[i]);
+    const i = (this._lastTimeIndex = this.findTimeInterval(
+        time,
+        this._lastTimeIndex,
+    ));
+    const u = (time - times[i]) / (times[i + 1] - times[i]);
 
-  const PointType = this._pointType;
-  if (PointType === Number) {
-    return (1.0 - u) * points[i] + u * points[i + 1];
-  }
+    const PointType = this._pointType;
+    if (PointType === Number) {
+        return (1.0 - u) * points[i] + u * points[i + 1];
+    }
 
-  if (!defined(result)) {
-    result = new Cartesian3();
-  }
+    if (!defined(result)) {
+        result = new Cartesian3();
+    }
 
-  return Cartesian3.lerp(points[i], points[i + 1], u, result);
+    return Cartesian3.lerp(points[i], points[i + 1], u, result);
 };
 
 export default LinearSpline;

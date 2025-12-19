@@ -29,43 +29,46 @@ import TextureWrap from "../../Renderer/TextureWrap.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function TextureUniform(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  //>>includeStart('debug', pragmas.debug);
-  const hasTypedArray = defined(options.typedArray);
-  const hasUrl = defined(options.url);
-  if (hasTypedArray === hasUrl) {
-    throw new DeveloperError(
-      "exactly one of options.typedArray, options.url must be defined",
-    );
-  }
-  if (hasTypedArray && (!defined(options.width) || !defined(options.height))) {
-    throw new DeveloperError(
-      "options.width and options.height are required when options.typedArray is defined",
-    );
-  }
-  //>>includeEnd('debug');
+    options = options ?? Frozen.EMPTY_OBJECT;
+    //>>includeStart('debug', pragmas.debug);
+    const hasTypedArray = defined(options.typedArray);
+    const hasUrl = defined(options.url);
+    if (hasTypedArray === hasUrl) {
+        throw new DeveloperError(
+            "exactly one of options.typedArray, options.url must be defined",
+        );
+    }
+    if (
+        hasTypedArray &&
+        (!defined(options.width) || !defined(options.height))
+    ) {
+        throw new DeveloperError(
+            "options.width and options.height are required when options.typedArray is defined",
+        );
+    }
+    //>>includeEnd('debug');
 
-  this.typedArray = options.typedArray;
-  this.width = options.width;
-  this.height = options.height;
-  this.pixelFormat = options.pixelFormat ?? PixelFormat.RGBA;
-  this.pixelDatatype = options.pixelDatatype ?? PixelDatatype.UNSIGNED_BYTE;
+    this.typedArray = options.typedArray;
+    this.width = options.width;
+    this.height = options.height;
+    this.pixelFormat = options.pixelFormat ?? PixelFormat.RGBA;
+    this.pixelDatatype = options.pixelDatatype ?? PixelDatatype.UNSIGNED_BYTE;
 
-  let resource = options.url;
-  if (typeof resource === "string") {
-    resource = Resource.createIfNeeded(resource);
-  }
-  this.resource = resource;
+    let resource = options.url;
+    if (typeof resource === "string") {
+        resource = Resource.createIfNeeded(resource);
+    }
+    this.resource = resource;
 
-  const repeat = options.repeat ?? true;
-  const wrap = repeat ? TextureWrap.REPEAT : TextureWrap.CLAMP_TO_EDGE;
-  this.sampler = new Sampler({
-    wrapS: wrap,
-    wrapT: wrap,
-    minificationFilter: options.minificationFilter,
-    magnificationFilter: options.magnificationFilter,
-    maximumAnisotropy: options.maximumAnisotropy,
-  });
+    const repeat = options.repeat ?? true;
+    const wrap = repeat ? TextureWrap.REPEAT : TextureWrap.CLAMP_TO_EDGE;
+    this.sampler = new Sampler({
+        wrapS: wrap,
+        wrapT: wrap,
+        minificationFilter: options.minificationFilter,
+        magnificationFilter: options.magnificationFilter,
+        maximumAnisotropy: options.maximumAnisotropy,
+    });
 }
 
 export default TextureUniform;

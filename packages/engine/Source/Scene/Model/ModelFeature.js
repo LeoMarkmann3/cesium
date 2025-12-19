@@ -31,108 +31,108 @@ import defined from "../../Core/defined.js";
  *
  */
 function ModelFeature(options) {
-  this._model = options.model;
+    this._model = options.model;
 
-  // This ModelFeatureTable is not documented as an option since it is
-  // part of the private API and should not appear in the documentation.
-  this._featureTable = options.featureTable;
+    // This ModelFeatureTable is not documented as an option since it is
+    // part of the private API and should not appear in the documentation.
+    this._featureTable = options.featureTable;
 
-  this._featureId = options.featureId;
-  this._color = undefined; // for calling getColor
+    this._featureId = options.featureId;
+    this._color = undefined; // for calling getColor
 }
 
 Object.defineProperties(ModelFeature.prototype, {
-  /**
-   * Gets or sets if the feature will be shown. This is set for all features
-   * when a style's show is evaluated.
-   *
-   * @memberof ModelFeature.prototype
-   *
-   * @type {boolean}
-   *
-   * @default true
-   */
-  show: {
-    get: function () {
-      return this._featureTable.getShow(this._featureId);
+    /**
+     * Gets or sets if the feature will be shown. This is set for all features
+     * when a style's show is evaluated.
+     *
+     * @memberof ModelFeature.prototype
+     *
+     * @type {boolean}
+     *
+     * @default true
+     */
+    show: {
+        get: function () {
+            return this._featureTable.getShow(this._featureId);
+        },
+        set: function (value) {
+            this._featureTable.setShow(this._featureId, value);
+        },
     },
-    set: function (value) {
-      this._featureTable.setShow(this._featureId, value);
-    },
-  },
 
-  /**
-   * Gets or sets the highlight color multiplied with the feature's color.  When
-   * this is white, the feature's color is not changed. This is set for all features
-   * when a style's color is evaluated.
-   *
-   * @memberof ModelFeature.prototype
-   *
-   * @type {Color}
-   *
-   * @default {@link Color.WHITE}
-   */
-  color: {
-    get: function () {
-      if (!defined(this._color)) {
-        this._color = new Color();
-      }
-      return this._featureTable.getColor(this._featureId, this._color);
+    /**
+     * Gets or sets the highlight color multiplied with the feature's color.  When
+     * this is white, the feature's color is not changed. This is set for all features
+     * when a style's color is evaluated.
+     *
+     * @memberof ModelFeature.prototype
+     *
+     * @type {Color}
+     *
+     * @default {@link Color.WHITE}
+     */
+    color: {
+        get: function () {
+            if (!defined(this._color)) {
+                this._color = new Color();
+            }
+            return this._featureTable.getColor(this._featureId, this._color);
+        },
+        set: function (value) {
+            this._featureTable.setColor(this._featureId, value);
+        },
     },
-    set: function (value) {
-      this._featureTable.setColor(this._featureId, value);
+    /**
+     * All objects returned by {@link Scene#pick} have a <code>primitive</code> property. This returns
+     * the model containing the feature.
+     *
+     * @memberof ModelFeature.prototype
+     *
+     * @type {Model}
+     *
+     * @readonly
+     * @private
+     */
+    primitive: {
+        get: function () {
+            return this._model;
+        },
     },
-  },
-  /**
-   * All objects returned by {@link Scene#pick} have a <code>primitive</code> property. This returns
-   * the model containing the feature.
-   *
-   * @memberof ModelFeature.prototype
-   *
-   * @type {Model}
-   *
-   * @readonly
-   * @private
-   */
-  primitive: {
-    get: function () {
-      return this._model;
-    },
-  },
 
-  /**
-   *  The {@link ModelFeatureTable} that this feature belongs to.
-   *
-   * @memberof ModelFeature.prototype
-   *
-   * @type {ModelFeatureTable}
-   *
-   * @readonly
-   * @private
-   */
-  featureTable: {
-    get: function () {
-      return this._featureTable;
+    /**
+     *  The {@link ModelFeatureTable} that this feature belongs to.
+     *
+     * @memberof ModelFeature.prototype
+     *
+     * @type {ModelFeatureTable}
+     *
+     * @readonly
+     * @private
+     */
+    featureTable: {
+        get: function () {
+            return this._featureTable;
+        },
     },
-  },
 
-  /**
-   * Get the feature ID associated with this feature. For 3D Tiles 1.0, the
-   * batch ID is returned. For EXT_mesh_features, this is the feature ID from
-   * the selected feature ID set.
-   *
-   * @memberof ModelFeature.prototype
-   *
-   * @type {number}
-   *
-   * @readonly
-   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
-   */
-  featureId: {
-    get: function () {
-      return this._featureId;
+    /**
+     * Get the feature ID associated with this feature. For 3D Tiles 1.0, the
+     * batch ID is returned. For EXT_mesh_features, this is the feature ID from
+     * the selected feature ID set.
+     *
+     * @memberof ModelFeature.prototype
+     *
+     * @type {number}
+     *
+     * @readonly
+     * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+     */
+    featureId: {
+        get: function () {
+            return this._featureId;
+        },
     },
-  },
 });
 
 /**
@@ -142,7 +142,7 @@ Object.defineProperties(ModelFeature.prototype, {
  * @returns {boolean} Whether the feature contains this property.
  */
 ModelFeature.prototype.hasProperty = function (name) {
-  return this._featureTable.hasProperty(this._featureId, name);
+    return this._featureTable.hasProperty(this._featureId, name);
 };
 
 /**
@@ -161,7 +161,7 @@ ModelFeature.prototype.hasProperty = function (name) {
  * }
  */
 ModelFeature.prototype.getProperty = function (name) {
-  return this._featureTable.getProperty(this._featureId, name);
+    return this._featureTable.getProperty(this._featureId, name);
 };
 
 /**
@@ -184,11 +184,11 @@ ModelFeature.prototype.getProperty = function (name) {
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 ModelFeature.prototype.getPropertyInherited = function (name) {
-  if (this._featureTable.hasPropertyBySemantic(this._featureId, name)) {
-    return this._featureTable.getPropertyBySemantic(this._featureId, name);
-  }
+    if (this._featureTable.hasPropertyBySemantic(this._featureId, name)) {
+        return this._featureTable.getPropertyBySemantic(this._featureId, name);
+    }
 
-  return this._featureTable.getProperty(this._featureId, name);
+    return this._featureTable.getProperty(this._featureId, name);
 };
 
 /**
@@ -198,7 +198,7 @@ ModelFeature.prototype.getPropertyInherited = function (name) {
  * @returns {string[]} The IDs of the feature's properties.
  */
 ModelFeature.prototype.getPropertyIds = function (results) {
-  return this._featureTable.getPropertyIds(results);
+    return this._featureTable.getPropertyIds(results);
 };
 
 /**
@@ -223,7 +223,7 @@ ModelFeature.prototype.getPropertyIds = function (results) {
  * }
  */
 ModelFeature.prototype.setProperty = function (name, value) {
-  return this._featureTable.setProperty(this._featureId, name, value);
+    return this._featureTable.setProperty(this._featureId, name, value);
 };
 
 export default ModelFeature;

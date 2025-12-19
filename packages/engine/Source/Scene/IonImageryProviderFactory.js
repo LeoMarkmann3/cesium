@@ -28,23 +28,23 @@ import Azure2DImageryProvider from "./Azure2DImageryProvider.js";
  * @type {IonImageryProviderFactoryCallback<TileMapServiceImageryProvider>}
  */
 export const defaultFactoryCallback = async (url, endpoint, endpointResource) =>
-  TileMapServiceImageryProvider.fromUrl(
-    new IonResource(endpoint, endpointResource),
-  );
+    TileMapServiceImageryProvider.fromUrl(
+        new IonResource(endpoint, endpointResource),
+    );
 
 /**
  * @private
  * @type {IonImageryProviderFactoryCallback<ArcGisMapServerImageryProvider>}
  */
 export const ARCGIS_MAPSERVER = async (url, { options }) =>
-  ArcGisMapServerImageryProvider.fromUrl(url, options);
+    ArcGisMapServerImageryProvider.fromUrl(url, options);
 
 /**
  * @private
  * @type {IonImageryProviderFactoryCallback<BingMapsImageryProvider>}
  */
 export const BING = async (url, { options }) => {
-  return BingMapsImageryProvider.fromUrl(url, options);
+    return BingMapsImageryProvider.fromUrl(url, options);
 };
 
 /**
@@ -52,9 +52,9 @@ export const BING = async (url, { options }) => {
  * @type {IonImageryProviderFactoryCallback<GoogleEarthEnterpriseMapsProvider>}
  */
 export const GOOGLE_EARTH = async (url, { options }) => {
-  const channel = options.channel;
-  delete options.channel;
-  return GoogleEarthEnterpriseMapsProvider.fromUrl(url, channel, options);
+    const channel = options.channel;
+    delete options.channel;
+    return GoogleEarthEnterpriseMapsProvider.fromUrl(url, channel, options);
 };
 
 /**
@@ -62,10 +62,10 @@ export const GOOGLE_EARTH = async (url, { options }) => {
  * @type {IonImageryProviderFactoryCallback<MapboxImageryProvider>}
  */
 export const MAPBOX = async (url, { options }) => {
-  return new MapboxImageryProvider({
-    url: url,
-    ...options,
-  });
+    return new MapboxImageryProvider({
+        url: url,
+        ...options,
+    });
 };
 
 /**
@@ -73,24 +73,24 @@ export const MAPBOX = async (url, { options }) => {
  * @type {IonImageryProviderFactoryCallback<SingleTileImageryProvider>}
  */
 export const SINGLE_TILE = async (url, { options }) =>
-  SingleTileImageryProvider.fromUrl(url, options);
+    SingleTileImageryProvider.fromUrl(url, options);
 
 /**
  * @private
  * @type {IonImageryProviderFactoryCallback<TileMapServiceImageryProvider>}
  */
 export const TMS = async (url, { options }) =>
-  TileMapServiceImageryProvider.fromUrl(url, options);
+    TileMapServiceImageryProvider.fromUrl(url, options);
 
 /**
  * @private
  * @type {IonImageryProviderFactoryCallback<UrlTemplateImageryProvider>}
  */
 export const URL_TEMPLATE = async (url, { options }) => {
-  return new UrlTemplateImageryProvider({
-    url: url,
-    ...options,
-  });
+    return new UrlTemplateImageryProvider({
+        url: url,
+        ...options,
+    });
 };
 
 /**
@@ -98,10 +98,10 @@ export const URL_TEMPLATE = async (url, { options }) => {
  * @type {IonImageryProviderFactoryCallback<WebMapServiceImageryProvider>}
  */
 export const WMS = async (url, { options }) => {
-  return new WebMapServiceImageryProvider({
-    url: url,
-    ...options,
-  });
+    return new WebMapServiceImageryProvider({
+        url: url,
+        ...options,
+    });
 };
 
 /**
@@ -109,10 +109,10 @@ export const WMS = async (url, { options }) => {
  * @type {IonImageryProviderFactoryCallback<WebMapTileServiceImageryProvider>}
  */
 export const WMTS = async (url, { options }) => {
-  return new WebMapTileServiceImageryProvider({
-    url: url,
-    ...options,
-  });
+    return new WebMapTileServiceImageryProvider({
+        url: url,
+        ...options,
+    });
 };
 
 /**
@@ -120,27 +120,27 @@ export const WMTS = async (url, { options }) => {
  * @type {IonImageryProviderFactoryCallback<Google2DImageryProvider>}
  */
 export const GOOGLE_2D_MAPS = async (url, endpoint, endpointResource) => {
-  delete endpoint.externalType;
-  endpoint.url = url;
-
-  const ionResource = new IonResource(endpoint, endpointResource);
-
-  const callback = (ionRoot, endpoint) => {
     delete endpoint.externalType;
     endpoint.url = url;
 
-    const { options } = endpoint;
-    ionRoot.setQueryParameters({
-      session: options.session,
-      key: options.key,
-    });
-  };
+    const ionResource = new IonResource(endpoint, endpointResource);
 
-  ionResource.refreshCallback = callback;
-  return new Google2DImageryProvider({
-    ...endpoint.options,
-    url: ionResource,
-  });
+    const callback = (ionRoot, endpoint) => {
+        delete endpoint.externalType;
+        endpoint.url = url;
+
+        const { options } = endpoint;
+        ionRoot.setQueryParameters({
+            session: options.session,
+            key: options.key,
+        });
+    };
+
+    ionResource.refreshCallback = callback;
+    return new Google2DImageryProvider({
+        ...endpoint.options,
+        url: ionResource,
+    });
 };
 
 /**
@@ -148,26 +148,26 @@ export const GOOGLE_2D_MAPS = async (url, endpoint, endpointResource) => {
  * @type {IonImageryProviderFactoryCallback<Azure2DImageryProvider>}
  */
 export const AZURE_MAPS = async (url, endpoint, endpointResource) => {
-  delete endpoint.externalType;
-  endpoint.url = url;
-
-  const ionResource = new IonResource(endpoint, endpointResource);
-
-  const callback = (ionRoot, endpoint) => {
     delete endpoint.externalType;
     endpoint.url = url;
 
-    const { options } = endpoint;
-    ionRoot.setQueryParameters({
-      "subscription-key": options["subscription-key"],
-    });
-  };
+    const ionResource = new IonResource(endpoint, endpointResource);
 
-  ionResource.refreshCallback = callback;
-  return new Azure2DImageryProvider({
-    ...endpoint.options,
-    url: ionResource,
-  });
+    const callback = (ionRoot, endpoint) => {
+        delete endpoint.externalType;
+        endpoint.url = url;
+
+        const { options } = endpoint;
+        ionRoot.setQueryParameters({
+            "subscription-key": options["subscription-key"],
+        });
+    };
+
+    ionResource.refreshCallback = callback;
+    return new Azure2DImageryProvider({
+        ...endpoint.options,
+        url: ionResource,
+    });
 };
 
 /**
@@ -177,18 +177,18 @@ export const AZURE_MAPS = async (url, endpoint, endpointResource) => {
  * @type {object<string, IonImageryProviderFactoryCallback>}
  */
 const IonImageryProviderFactory = {
-  ARCGIS_MAPSERVER,
-  BING,
-  GOOGLE_EARTH,
-  MAPBOX,
-  SINGLE_TILE,
-  TMS,
-  URL_TEMPLATE,
-  WMS,
-  WMTS,
-  GOOGLE_2D_MAPS,
-  AZURE_MAPS,
-  defaultFactoryCallback,
+    ARCGIS_MAPSERVER,
+    BING,
+    GOOGLE_EARTH,
+    MAPBOX,
+    SINGLE_TILE,
+    TMS,
+    URL_TEMPLATE,
+    WMS,
+    WMTS,
+    GOOGLE_2D_MAPS,
+    AZURE_MAPS,
+    defaultFactoryCallback,
 };
 
 export default Object.freeze(IonImageryProviderFactory);

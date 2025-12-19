@@ -35,43 +35,43 @@ import Rectangle from "../Core/Rectangle.js";
  * });
  */
 function ClippingPolygon(options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options", options);
-  Check.typeOf.object("options.positions", options.positions);
-  Check.typeOf.number.greaterThanOrEquals(
-    "options.positions.length",
-    options.positions.length,
-    3,
-  );
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options", options);
+    Check.typeOf.object("options.positions", options.positions);
+    Check.typeOf.number.greaterThanOrEquals(
+        "options.positions.length",
+        options.positions.length,
+        3,
+    );
+    //>>includeEnd('debug');
 
-  this._ellipsoid = options.ellipsoid ?? Ellipsoid.default;
-  this._positions = copyArrayCartesian3(options.positions);
+    this._ellipsoid = options.ellipsoid ?? Ellipsoid.default;
+    this._positions = copyArrayCartesian3(options.positions);
 
-  /**
-   * A copy of the input positions.
-   *
-   * This is used to detect modifications of the positions in
-   * <code>coputeRectangle</code>: The rectangle only has
-   * to be re-computed when these positions have changed.
-   *
-   * @type {Cartesian3[]|undefined}
-   * @private
-   */
-  this._cachedPositions = undefined;
+    /**
+     * A copy of the input positions.
+     *
+     * This is used to detect modifications of the positions in
+     * <code>coputeRectangle</code>: The rectangle only has
+     * to be re-computed when these positions have changed.
+     *
+     * @type {Cartesian3[]|undefined}
+     * @private
+     */
+    this._cachedPositions = undefined;
 
-  /**
-   * A cached version of the rectangle that is computed in
-   * <code>computeRectangle</code>.
-   *
-   * This is only re-computed when the positions have changed, as
-   * determined  by comparing the <code>_positions</code> to the
-   * <code>_cachedPositions</code>
-   *
-   * @type {Rectangle|undefined}
-   * @private
-   */
-  this._cachedRectangle = undefined;
+    /**
+     * A cached version of the rectangle that is computed in
+     * <code>computeRectangle</code>.
+     *
+     * This is only re-computed when the positions have changed, as
+     * determined  by comparing the <code>_positions</code> to the
+     * <code>_cachedPositions</code>
+     *
+     * @type {Rectangle|undefined}
+     * @private
+     */
+    this._cachedRectangle = undefined;
 }
 
 /**
@@ -86,15 +86,15 @@ function ClippingPolygon(options) {
  * @returns {Cartesian3[]|undefined} The copy
  */
 function copyArrayCartesian3(input) {
-  if (!defined(input)) {
-    return undefined;
-  }
-  const n = input.length;
-  const output = Array(n);
-  for (let i = 0; i < n; i++) {
-    output[i] = Cartesian3.clone(input[i]);
-  }
-  return output;
+    if (!defined(input)) {
+        return undefined;
+    }
+    const n = input.length;
+    const output = Array(n);
+    for (let i = 0; i < n; i++) {
+        output[i] = Cartesian3.clone(input[i]);
+    }
+    return output;
 }
 
 /**
@@ -112,63 +112,63 @@ function copyArrayCartesian3(input) {
  * @returns {boolean} Whether the arrays are equal
  */
 function equalsArrayCartesian3(a, b) {
-  if (!defined(a) && !defined(b)) {
-    return true;
-  }
-  if (defined(a) !== defined(b)) {
-    return false;
-  }
-  if (a.length !== b.length) {
-    return false;
-  }
-  const n = a.length;
-  for (let i = 0; i < n; i++) {
-    const ca = a[i];
-    const cb = b[i];
-    if (!Cartesian3.equals(ca, cb)) {
-      return false;
+    if (!defined(a) && !defined(b)) {
+        return true;
     }
-  }
-  return true;
+    if (defined(a) !== defined(b)) {
+        return false;
+    }
+    if (a.length !== b.length) {
+        return false;
+    }
+    const n = a.length;
+    for (let i = 0; i < n; i++) {
+        const ca = a[i];
+        const cb = b[i];
+        if (!Cartesian3.equals(ca, cb)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 Object.defineProperties(ClippingPolygon.prototype, {
-  /**
-   * Returns the total number of positions in the polygon, include any holes.
-   *
-   * @memberof ClippingPolygon.prototype
-   * @type {number}
-   * @readonly
-   */
-  length: {
-    get: function () {
-      return this._positions.length;
+    /**
+     * Returns the total number of positions in the polygon, include any holes.
+     *
+     * @memberof ClippingPolygon.prototype
+     * @type {number}
+     * @readonly
+     */
+    length: {
+        get: function () {
+            return this._positions.length;
+        },
     },
-  },
-  /**
-   * Returns the outer ring of positions.
-   *
-   * @memberof ClippingPolygon.prototype
-   * @type {Cartesian3[]}
-   * @readonly
-   */
-  positions: {
-    get: function () {
-      return this._positions;
+    /**
+     * Returns the outer ring of positions.
+     *
+     * @memberof ClippingPolygon.prototype
+     * @type {Cartesian3[]}
+     * @readonly
+     */
+    positions: {
+        get: function () {
+            return this._positions;
+        },
     },
-  },
-  /**
-   * Returns the ellipsoid used to project the polygon onto surfaces when clipping.
-   *
-   * @memberof ClippingPolygon.prototype
-   * @type {Ellipsoid}
-   * @readonly
-   */
-  ellipsoid: {
-    get: function () {
-      return this._ellipsoid;
+    /**
+     * Returns the ellipsoid used to project the polygon onto surfaces when clipping.
+     *
+     * @memberof ClippingPolygon.prototype
+     * @type {Ellipsoid}
+     * @readonly
+     */
+    ellipsoid: {
+        get: function () {
+            return this._ellipsoid;
+        },
     },
-  },
 });
 
 /**
@@ -178,21 +178,21 @@ Object.defineProperties(ClippingPolygon.prototype, {
  * @returns {ClippingPolygon} a clone of the input ClippingPolygon
  */
 ClippingPolygon.clone = function (polygon, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("polygon", polygon);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("polygon", polygon);
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    return new ClippingPolygon({
-      positions: polygon.positions,
-      ellipsoid: polygon.ellipsoid,
-    });
-  }
+    if (!defined(result)) {
+        return new ClippingPolygon({
+            positions: polygon.positions,
+            ellipsoid: polygon.ellipsoid,
+        });
+    }
 
-  result._ellipsoid = polygon.ellipsoid;
-  result._positions.length = 0;
-  result._positions.push(...polygon.positions);
-  return result;
+    result._ellipsoid = polygon.ellipsoid;
+    result._positions.length = 0;
+    result._positions.push(...polygon.positions);
+    return result;
 };
 
 /**
@@ -204,14 +204,15 @@ ClippingPolygon.clone = function (polygon, result) {
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 ClippingPolygon.equals = function (left, right) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("left", left);
-  Check.typeOf.object("right", right);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("left", left);
+    Check.typeOf.object("right", right);
+    //>>includeEnd('debug');
 
-  return (
-    left.ellipsoid.equals(right.ellipsoid) && left.positions === right.positions
-  );
+    return (
+        left.ellipsoid.equals(right.ellipsoid) &&
+        left.positions === right.positions
+    );
 };
 
 /**
@@ -221,18 +222,18 @@ ClippingPolygon.equals = function (left, right) {
  * @returns {Rectangle} The result rectangle
  */
 ClippingPolygon.prototype.computeRectangle = function (result) {
-  if (equalsArrayCartesian3(this._positions, this._cachedPositions)) {
-    return Rectangle.clone(this._cachedRectangle, result);
-  }
-  const rectangle = PolygonGeometry.computeRectangleFromPositions(
-    this.positions,
-    this.ellipsoid,
-    undefined,
-    result,
-  );
-  this._cachedPositions = copyArrayCartesian3(this._positions);
-  this._cachedRectangle = Rectangle.clone(rectangle);
-  return rectangle;
+    if (equalsArrayCartesian3(this._positions, this._cachedPositions)) {
+        return Rectangle.clone(this._cachedRectangle, result);
+    }
+    const rectangle = PolygonGeometry.computeRectangleFromPositions(
+        this.positions,
+        this.ellipsoid,
+        undefined,
+        result,
+    );
+    this._cachedPositions = copyArrayCartesian3(this._positions);
+    this._cachedRectangle = Rectangle.clone(rectangle);
+    return rectangle;
 };
 
 const scratchRectangle = new Rectangle();
@@ -246,55 +247,55 @@ const spherePointScratch = new Cartesian3();
  * @returns {Rectangle} The result rectangle with spherical extents.
  */
 ClippingPolygon.prototype.computeSphericalExtents = function (result) {
-  if (!defined(result)) {
-    result = new Rectangle();
-  }
+    if (!defined(result)) {
+        result = new Rectangle();
+    }
 
-  const rectangle = this.computeRectangle(scratchRectangle);
+    const rectangle = this.computeRectangle(scratchRectangle);
 
-  let spherePoint = Cartographic.toCartesian(
-    Rectangle.southwest(rectangle),
-    this.ellipsoid,
-    spherePointScratch,
-  );
+    let spherePoint = Cartographic.toCartesian(
+        Rectangle.southwest(rectangle),
+        this.ellipsoid,
+        spherePointScratch,
+    );
 
-  // Project into plane with vertical for latitude
-  let magXY = Math.sqrt(
-    spherePoint.x * spherePoint.x + spherePoint.y * spherePoint.y,
-  );
+    // Project into plane with vertical for latitude
+    let magXY = Math.sqrt(
+        spherePoint.x * spherePoint.x + spherePoint.y * spherePoint.y,
+    );
 
-  // Use fastApproximateAtan2 for alignment with shader
-  let sphereLatitude = CesiumMath.fastApproximateAtan2(magXY, spherePoint.z);
-  let sphereLongitude = CesiumMath.fastApproximateAtan2(
-    spherePoint.x,
-    spherePoint.y,
-  );
+    // Use fastApproximateAtan2 for alignment with shader
+    let sphereLatitude = CesiumMath.fastApproximateAtan2(magXY, spherePoint.z);
+    let sphereLongitude = CesiumMath.fastApproximateAtan2(
+        spherePoint.x,
+        spherePoint.y,
+    );
 
-  result.south = sphereLatitude;
-  result.west = sphereLongitude;
+    result.south = sphereLatitude;
+    result.west = sphereLongitude;
 
-  spherePoint = Cartographic.toCartesian(
-    Rectangle.northeast(rectangle),
-    this.ellipsoid,
-    spherePointScratch,
-  );
+    spherePoint = Cartographic.toCartesian(
+        Rectangle.northeast(rectangle),
+        this.ellipsoid,
+        spherePointScratch,
+    );
 
-  // Project into plane with vertical for latitude
-  magXY = Math.sqrt(
-    spherePoint.x * spherePoint.x + spherePoint.y * spherePoint.y,
-  );
+    // Project into plane with vertical for latitude
+    magXY = Math.sqrt(
+        spherePoint.x * spherePoint.x + spherePoint.y * spherePoint.y,
+    );
 
-  // Use fastApproximateAtan2 for alignment with shader
-  sphereLatitude = CesiumMath.fastApproximateAtan2(magXY, spherePoint.z);
-  sphereLongitude = CesiumMath.fastApproximateAtan2(
-    spherePoint.x,
-    spherePoint.y,
-  );
+    // Use fastApproximateAtan2 for alignment with shader
+    sphereLatitude = CesiumMath.fastApproximateAtan2(magXY, spherePoint.z);
+    sphereLongitude = CesiumMath.fastApproximateAtan2(
+        spherePoint.x,
+        spherePoint.y,
+    );
 
-  result.north = sphereLatitude;
-  result.east = sphereLongitude;
+    result.north = sphereLatitude;
+    result.east = sphereLongitude;
 
-  return result;
+    return result;
 };
 
 export default ClippingPolygon;

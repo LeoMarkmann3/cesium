@@ -39,60 +39,62 @@ import Spline from "./Spline.js";
  * @see MorphWeightSpline
  */
 function SteppedSpline(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  const points = options.points;
-  const times = options.times;
+    const points = options.points;
+    const times = options.times;
 
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(points) || !defined(times)) {
-    throw new DeveloperError("points and times are required.");
-  }
-  if (points.length < 2) {
-    throw new DeveloperError(
-      "points.length must be greater than or equal to 2.",
-    );
-  }
-  if (times.length !== points.length) {
-    throw new DeveloperError("times.length must be equal to points.length.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(points) || !defined(times)) {
+        throw new DeveloperError("points and times are required.");
+    }
+    if (points.length < 2) {
+        throw new DeveloperError(
+            "points.length must be greater than or equal to 2.",
+        );
+    }
+    if (times.length !== points.length) {
+        throw new DeveloperError(
+            "times.length must be equal to points.length.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  this._times = times;
-  this._points = points;
-  this._pointType = Spline.getPointType(points[0]);
+    this._times = times;
+    this._points = points;
+    this._pointType = Spline.getPointType(points[0]);
 
-  this._lastTimeIndex = 0;
+    this._lastTimeIndex = 0;
 }
 
 Object.defineProperties(SteppedSpline.prototype, {
-  /**
-   * An array of times for the control points.
-   *
-   * @memberof SteppedSpline.prototype
-   *
-   * @type {number[]}
-   * @readonly
-   */
-  times: {
-    get: function () {
-      return this._times;
+    /**
+     * An array of times for the control points.
+     *
+     * @memberof SteppedSpline.prototype
+     *
+     * @type {number[]}
+     * @readonly
+     */
+    times: {
+        get: function () {
+            return this._times;
+        },
     },
-  },
 
-  /**
-   * An array of control points.
-   *
-   * @memberof SteppedSpline.prototype
-   *
-   * @type {number[]|Cartesian3[]|Quaternion[]}
-   * @readonly
-   */
-  points: {
-    get: function () {
-      return this._points;
+    /**
+     * An array of control points.
+     *
+     * @memberof SteppedSpline.prototype
+     *
+     * @type {number[]|Cartesian3[]|Quaternion[]}
+     * @readonly
+     */
+    points: {
+        get: function () {
+            return this._points;
+        },
     },
-  },
 });
 
 /**
@@ -140,21 +142,21 @@ SteppedSpline.prototype.clampTime = Spline.prototype.clampTime;
  *                             in the array <code>times</code>.
  */
 SteppedSpline.prototype.evaluate = function (time, result) {
-  const points = this.points;
+    const points = this.points;
 
-  this._lastTimeIndex = this.findTimeInterval(time, this._lastTimeIndex);
-  const i = this._lastTimeIndex;
+    this._lastTimeIndex = this.findTimeInterval(time, this._lastTimeIndex);
+    const i = this._lastTimeIndex;
 
-  const PointType = this._pointType;
-  if (PointType === Number) {
-    return points[i];
-  }
+    const PointType = this._pointType;
+    if (PointType === Number) {
+        return points[i];
+    }
 
-  if (!defined(result)) {
-    result = new PointType();
-  }
+    if (!defined(result)) {
+        result = new PointType();
+    }
 
-  return PointType.clone(points[i], result);
+    return PointType.clone(points[i], result);
 };
 
 export default SteppedSpline;

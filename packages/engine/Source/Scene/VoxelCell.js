@@ -37,11 +37,11 @@ import OrientedBoundingBox from "../Core/OrientedBoundingBox.js";
  * @experimental This feature is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function VoxelCell(primitive, tileIndex, sampleIndex) {
-  this._primitive = primitive;
-  this._tileIndex = tileIndex;
-  this._sampleIndex = sampleIndex;
-  this._metadata = {};
-  this._orientedBoundingBox = new OrientedBoundingBox();
+    this._primitive = primitive;
+    this._tileIndex = tileIndex;
+    this._sampleIndex = sampleIndex;
+    this._metadata = {};
+    this._orientedBoundingBox = new OrientedBoundingBox();
 }
 
 /**
@@ -58,28 +58,28 @@ function VoxelCell(primitive, tileIndex, sampleIndex) {
  * @experimental This feature is not final and is subject to change without Cesium's standard deprecation policy.
  */
 VoxelCell.fromKeyframeNode = function (
-  primitive,
-  tileIndex,
-  sampleIndex,
-  keyframeNode,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("primitive", primitive);
-  Check.typeOf.number("tileIndex", tileIndex);
-  Check.typeOf.number("sampleIndex", sampleIndex);
-  Check.typeOf.object("keyframeNode", keyframeNode);
-  //>>includeEnd('debug');
-
-  const voxelCell = new VoxelCell(primitive, tileIndex, sampleIndex);
-  const { spatialNode, content } = keyframeNode;
-  voxelCell._metadata = getMetadataForSample(primitive, content, sampleIndex);
-  voxelCell._orientedBoundingBox = getOrientedBoundingBox(
     primitive,
-    spatialNode,
+    tileIndex,
     sampleIndex,
-    voxelCell._orientedBoundingBox,
-  );
-  return voxelCell;
+    keyframeNode,
+) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("primitive", primitive);
+    Check.typeOf.number("tileIndex", tileIndex);
+    Check.typeOf.number("sampleIndex", sampleIndex);
+    Check.typeOf.object("keyframeNode", keyframeNode);
+    //>>includeEnd('debug');
+
+    const voxelCell = new VoxelCell(primitive, tileIndex, sampleIndex);
+    const { spatialNode, content } = keyframeNode;
+    voxelCell._metadata = getMetadataForSample(primitive, content, sampleIndex);
+    voxelCell._orientedBoundingBox = getOrientedBoundingBox(
+        primitive,
+        spatialNode,
+        sampleIndex,
+        voxelCell._orientedBoundingBox,
+    );
+    return voxelCell;
 };
 
 /**
@@ -90,22 +90,22 @@ VoxelCell.fromKeyframeNode = function (
  * @returns {object}
  */
 function getMetadataForSample(primitive, content, sampleIndex) {
-  if (!defined(content) || !defined(content.metadata)) {
-    return undefined;
-  }
-  const { names, types } = primitive.provider;
-  const { metadata } = content;
-  const metadataMap = {};
-  for (let i = 0; i < names.length; i++) {
-    const name = names[i];
-    const componentCount = MetadataType.getComponentCount(types[i]);
-    const samples = metadata[i].slice(
-      sampleIndex * componentCount,
-      (sampleIndex + 1) * componentCount,
-    );
-    metadataMap[name] = samples;
-  }
-  return metadataMap;
+    if (!defined(content) || !defined(content.metadata)) {
+        return undefined;
+    }
+    const { names, types } = primitive.provider;
+    const { metadata } = content;
+    const metadataMap = {};
+    for (let i = 0; i < names.length; i++) {
+        const name = names[i];
+        const componentCount = MetadataType.getComponentCount(types[i]);
+        const samples = metadata[i].slice(
+            sampleIndex * componentCount,
+            (sampleIndex + 1) * componentCount,
+        );
+        metadataMap[name] = samples;
+    }
+    return metadataMap;
 }
 
 const tileCoordinateScratch = new Cartesian3();
@@ -119,119 +119,119 @@ const tileUvScratch = new Cartesian3();
  * @returns {OrientedBoundingBox}
  */
 function getOrientedBoundingBox(primitive, spatialNode, sampleIndex, result) {
-  // Convert the sample index into a 3D tile coordinate
-  // Note: dimensions from the spatialNode include padding
-  const paddedDimensions = spatialNode.dimensions;
-  const sliceSize = paddedDimensions.x * paddedDimensions.y;
-  const zIndex = Math.floor(sampleIndex / sliceSize);
-  const indexInSlice = sampleIndex - zIndex * sliceSize;
-  const yIndex = Math.floor(indexInSlice / paddedDimensions.x);
-  const xIndex = indexInSlice - yIndex * paddedDimensions.x;
-  const tileCoordinate = Cartesian3.fromElements(
-    xIndex,
-    yIndex,
-    zIndex,
-    tileCoordinateScratch,
-  );
+    // Convert the sample index into a 3D tile coordinate
+    // Note: dimensions from the spatialNode include padding
+    const paddedDimensions = spatialNode.dimensions;
+    const sliceSize = paddedDimensions.x * paddedDimensions.y;
+    const zIndex = Math.floor(sampleIndex / sliceSize);
+    const indexInSlice = sampleIndex - zIndex * sliceSize;
+    const yIndex = Math.floor(indexInSlice / paddedDimensions.x);
+    const xIndex = indexInSlice - yIndex * paddedDimensions.x;
+    const tileCoordinate = Cartesian3.fromElements(
+        xIndex,
+        yIndex,
+        zIndex,
+        tileCoordinateScratch,
+    );
 
-  // Remove padding, and convert to a fraction in [0, 1], where the limits are
-  // the unpadded bounds of the tile
-  const tileUv = Cartesian3.divideComponents(
-    Cartesian3.subtract(
-      tileCoordinate,
-      primitive._paddingBefore,
-      tileCoordinateScratch,
-    ),
-    primitive.dimensions,
-    tileUvScratch,
-  );
+    // Remove padding, and convert to a fraction in [0, 1], where the limits are
+    // the unpadded bounds of the tile
+    const tileUv = Cartesian3.divideComponents(
+        Cartesian3.subtract(
+            tileCoordinate,
+            primitive._paddingBefore,
+            tileCoordinateScratch,
+        ),
+        primitive.dimensions,
+        tileUvScratch,
+    );
 
-  const shape = primitive._shape;
-  return shape.computeOrientedBoundingBoxForSample(
-    spatialNode,
-    primitive.dimensions,
-    tileUv,
-    result,
-  );
+    const shape = primitive._shape;
+    return shape.computeOrientedBoundingBoxForSample(
+        spatialNode,
+        primitive.dimensions,
+        tileUv,
+        result,
+    );
 }
 
 Object.defineProperties(VoxelCell.prototype, {
-  /**
-   * Gets an object of the metadata values for this cell. The object's keys are the metadata names.
-   *
-   * @memberof VoxelCell.prototype
-   *
-   * @type {object}
-   *
-   * @readonly
-   * @private
-   */
-  metadata: {
-    get: function () {
-      return this._metadata;
+    /**
+     * Gets an object of the metadata values for this cell. The object's keys are the metadata names.
+     *
+     * @memberof VoxelCell.prototype
+     *
+     * @type {object}
+     *
+     * @readonly
+     * @private
+     */
+    metadata: {
+        get: function () {
+            return this._metadata;
+        },
     },
-  },
 
-  /**
-   * All objects returned by {@link Scene#pick} have a <code>primitive</code> property. This returns
-   * the VoxelPrimitive containing the cell.
-   *
-   * @memberof VoxelCell.prototype
-   *
-   * @type {VoxelPrimitive}
-   *
-   * @readonly
-   */
-  primitive: {
-    get: function () {
-      return this._primitive;
+    /**
+     * All objects returned by {@link Scene#pick} have a <code>primitive</code> property. This returns
+     * the VoxelPrimitive containing the cell.
+     *
+     * @memberof VoxelCell.prototype
+     *
+     * @type {VoxelPrimitive}
+     *
+     * @readonly
+     */
+    primitive: {
+        get: function () {
+            return this._primitive;
+        },
     },
-  },
 
-  /**
-   * Get the sample index of the cell.
-   *
-   * @memberof VoxelCell.prototype
-   *
-   * @type {number}
-   *
-   * @readonly
-   */
-  sampleIndex: {
-    get: function () {
-      return this._sampleIndex;
+    /**
+     * Get the sample index of the cell.
+     *
+     * @memberof VoxelCell.prototype
+     *
+     * @type {number}
+     *
+     * @readonly
+     */
+    sampleIndex: {
+        get: function () {
+            return this._sampleIndex;
+        },
     },
-  },
 
-  /**
-   * Get the index of the tile containing the cell.
-   *
-   * @memberof VoxelCell.prototype
-   *
-   * @type {number}
-   *
-   * @readonly
-   */
-  tileIndex: {
-    get: function () {
-      return this._tileIndex;
+    /**
+     * Get the index of the tile containing the cell.
+     *
+     * @memberof VoxelCell.prototype
+     *
+     * @type {number}
+     *
+     * @readonly
+     */
+    tileIndex: {
+        get: function () {
+            return this._tileIndex;
+        },
     },
-  },
 
-  /**
-   * Get a copy of the oriented bounding box containing the cell.
-   *
-   * @memberof VoxelCell.prototype
-   *
-   * @type {OrientedBoundingBox}
-   *
-   * @readonly
-   */
-  orientedBoundingBox: {
-    get: function () {
-      return this._orientedBoundingBox.clone();
+    /**
+     * Get a copy of the oriented bounding box containing the cell.
+     *
+     * @memberof VoxelCell.prototype
+     *
+     * @type {OrientedBoundingBox}
+     *
+     * @readonly
+     */
+    orientedBoundingBox: {
+        get: function () {
+            return this._orientedBoundingBox.clone();
+        },
     },
-  },
 });
 
 /**
@@ -241,7 +241,7 @@ Object.defineProperties(VoxelCell.prototype, {
  * @returns {boolean} Whether the feature contains this property.
  */
 VoxelCell.prototype.hasProperty = function (name) {
-  return defined(this._metadata[name]);
+    return defined(this._metadata[name]);
 };
 
 /**
@@ -250,7 +250,7 @@ VoxelCell.prototype.hasProperty = function (name) {
  * @returns {string[]} The IDs of the feature's properties.
  */
 VoxelCell.prototype.getNames = function () {
-  return Object.keys(this._metadata);
+    return Object.keys(this._metadata);
 };
 
 /**
@@ -268,7 +268,7 @@ VoxelCell.prototype.getNames = function () {
  * }
  */
 VoxelCell.prototype.getProperty = function (name) {
-  return this._metadata[name];
+    return this._metadata[name];
 };
 
 export default VoxelCell;

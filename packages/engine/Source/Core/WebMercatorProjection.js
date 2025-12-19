@@ -18,25 +18,25 @@ import CesiumMath from "./Math.js";
  * @see GeographicProjection
  */
 function WebMercatorProjection(ellipsoid) {
-  this._ellipsoid = ellipsoid ?? Ellipsoid.WGS84;
-  this._semimajorAxis = this._ellipsoid.maximumRadius;
-  this._oneOverSemimajorAxis = 1.0 / this._semimajorAxis;
+    this._ellipsoid = ellipsoid ?? Ellipsoid.WGS84;
+    this._semimajorAxis = this._ellipsoid.maximumRadius;
+    this._oneOverSemimajorAxis = 1.0 / this._semimajorAxis;
 }
 
 Object.defineProperties(WebMercatorProjection.prototype, {
-  /**
-   * Gets the {@link Ellipsoid}.
-   *
-   * @memberof WebMercatorProjection.prototype
-   *
-   * @type {Ellipsoid}
-   * @readonly
-   */
-  ellipsoid: {
-    get: function () {
-      return this._ellipsoid;
+    /**
+     * Gets the {@link Ellipsoid}.
+     *
+     * @memberof WebMercatorProjection.prototype
+     *
+     * @type {Ellipsoid}
+     * @readonly
+     */
+    ellipsoid: {
+        get: function () {
+            return this._ellipsoid;
+        },
     },
-  },
 });
 
 /**
@@ -47,9 +47,9 @@ Object.defineProperties(WebMercatorProjection.prototype, {
  * @returns {number} The geodetic latitude in radians.
  */
 WebMercatorProjection.mercatorAngleToGeodeticLatitude = function (
-  mercatorAngle,
+    mercatorAngle,
 ) {
-  return CesiumMath.PI_OVER_TWO - 2.0 * Math.atan(Math.exp(-mercatorAngle));
+    return CesiumMath.PI_OVER_TWO - 2.0 * Math.atan(Math.exp(-mercatorAngle));
 };
 
 /**
@@ -60,14 +60,14 @@ WebMercatorProjection.mercatorAngleToGeodeticLatitude = function (
  * @returns {number} The Mercator angle.
  */
 WebMercatorProjection.geodeticLatitudeToMercatorAngle = function (latitude) {
-  // Clamp the latitude coordinate to the valid Mercator bounds.
-  if (latitude > WebMercatorProjection.MaximumLatitude) {
-    latitude = WebMercatorProjection.MaximumLatitude;
-  } else if (latitude < -WebMercatorProjection.MaximumLatitude) {
-    latitude = -WebMercatorProjection.MaximumLatitude;
-  }
-  const sinLatitude = Math.sin(latitude);
-  return 0.5 * Math.log((1.0 + sinLatitude) / (1.0 - sinLatitude));
+    // Clamp the latitude coordinate to the valid Mercator bounds.
+    if (latitude > WebMercatorProjection.MaximumLatitude) {
+        latitude = WebMercatorProjection.MaximumLatitude;
+    } else if (latitude < -WebMercatorProjection.MaximumLatitude) {
+        latitude = -WebMercatorProjection.MaximumLatitude;
+    }
+    const sinLatitude = Math.sin(latitude);
+    return 0.5 * Math.log((1.0 + sinLatitude) / (1.0 - sinLatitude));
 };
 
 /**
@@ -85,7 +85,7 @@ WebMercatorProjection.geodeticLatitudeToMercatorAngle = function (latitude) {
  * @type {number}
  */
 WebMercatorProjection.MaximumLatitude =
-  WebMercatorProjection.mercatorAngleToGeodeticLatitude(Math.PI);
+    WebMercatorProjection.mercatorAngleToGeodeticLatitude(Math.PI);
 
 /**
  * Converts geodetic ellipsoid coordinates, in radians, to the equivalent Web Mercator
@@ -98,22 +98,22 @@ WebMercatorProjection.MaximumLatitude =
  * @returns {Cartesian3} The equivalent web mercator X, Y, Z coordinates, in meters.
  */
 WebMercatorProjection.prototype.project = function (cartographic, result) {
-  const semimajorAxis = this._semimajorAxis;
-  const x = cartographic.longitude * semimajorAxis;
-  const y =
-    WebMercatorProjection.geodeticLatitudeToMercatorAngle(
-      cartographic.latitude,
-    ) * semimajorAxis;
-  const z = cartographic.height;
+    const semimajorAxis = this._semimajorAxis;
+    const x = cartographic.longitude * semimajorAxis;
+    const y =
+        WebMercatorProjection.geodeticLatitudeToMercatorAngle(
+            cartographic.latitude,
+        ) * semimajorAxis;
+    const z = cartographic.height;
 
-  if (!defined(result)) {
-    return new Cartesian3(x, y, z);
-  }
+    if (!defined(result)) {
+        return new Cartesian3(x, y, z);
+    }
 
-  result.x = x;
-  result.y = y;
-  result.z = z;
-  return result;
+    result.x = x;
+    result.y = y;
+    result.z = z;
+    return result;
 };
 
 /**
@@ -127,26 +127,26 @@ WebMercatorProjection.prototype.project = function (cartographic, result) {
  * @returns {Cartographic} The equivalent cartographic coordinates.
  */
 WebMercatorProjection.prototype.unproject = function (cartesian, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(cartesian)) {
-    throw new DeveloperError("cartesian is required");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(cartesian)) {
+        throw new DeveloperError("cartesian is required");
+    }
+    //>>includeEnd('debug');
 
-  const oneOverEarthSemimajorAxis = this._oneOverSemimajorAxis;
-  const longitude = cartesian.x * oneOverEarthSemimajorAxis;
-  const latitude = WebMercatorProjection.mercatorAngleToGeodeticLatitude(
-    cartesian.y * oneOverEarthSemimajorAxis,
-  );
-  const height = cartesian.z;
+    const oneOverEarthSemimajorAxis = this._oneOverSemimajorAxis;
+    const longitude = cartesian.x * oneOverEarthSemimajorAxis;
+    const latitude = WebMercatorProjection.mercatorAngleToGeodeticLatitude(
+        cartesian.y * oneOverEarthSemimajorAxis,
+    );
+    const height = cartesian.z;
 
-  if (!defined(result)) {
-    return new Cartographic(longitude, latitude, height);
-  }
+    if (!defined(result)) {
+        return new Cartographic(longitude, latitude, height);
+    }
 
-  result.longitude = longitude;
-  result.latitude = latitude;
-  result.height = height;
-  return result;
+    result.longitude = longitude;
+    result.latitude = latitude;
+    result.height = height;
+    return result;
 };
 export default WebMercatorProjection;

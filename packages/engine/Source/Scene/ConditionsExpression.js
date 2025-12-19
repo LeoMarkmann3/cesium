@@ -30,55 +30,55 @@ import Expression from "./Expression.js";
  * expression.evaluateColor(feature, result); // returns a Cesium.Color object
  */
 function ConditionsExpression(conditionsExpression, defines) {
-  this._conditionsExpression = clone(conditionsExpression, true);
-  this._conditions = conditionsExpression.conditions;
-  this._runtimeConditions = undefined;
+    this._conditionsExpression = clone(conditionsExpression, true);
+    this._conditions = conditionsExpression.conditions;
+    this._runtimeConditions = undefined;
 
-  setRuntime(this, defines);
+    setRuntime(this, defines);
 }
 
 Object.defineProperties(ConditionsExpression.prototype, {
-  /**
-   * Gets the conditions expression defined in the 3D Tiles Styling language.
-   *
-   * @memberof ConditionsExpression.prototype
-   *
-   * @type {object}
-   * @readonly
-   *
-   * @default undefined
-   */
-  conditionsExpression: {
-    get: function () {
-      return this._conditionsExpression;
+    /**
+     * Gets the conditions expression defined in the 3D Tiles Styling language.
+     *
+     * @memberof ConditionsExpression.prototype
+     *
+     * @type {object}
+     * @readonly
+     *
+     * @default undefined
+     */
+    conditionsExpression: {
+        get: function () {
+            return this._conditionsExpression;
+        },
     },
-  },
 });
 
 function Statement(condition, expression) {
-  this.condition = condition;
-  this.expression = expression;
+    this.condition = condition;
+    this.expression = expression;
 }
 
 function setRuntime(expression, defines) {
-  const runtimeConditions = [];
-  const conditions = expression._conditions;
-  if (!defined(conditions)) {
-    return;
-  }
-  const length = conditions.length;
-  for (let i = 0; i < length; ++i) {
-    const statement = conditions[i];
-    const cond = String(statement[0]);
-    const condExpression = String(statement[1]);
-    runtimeConditions.push(
-      new Statement(
-        new Expression(cond, defines),
-        new Expression(condExpression, defines),
-      ),
-    );
-  }
-  expression._runtimeConditions = runtimeConditions;
+    const runtimeConditions = [];
+    const conditions = expression._conditions;
+    if (!defined(conditions)) {
+        return;
+    }
+    const length = conditions.length;
+    for (let i = 0; i < length; ++i) {
+        const statement = conditions[i];
+        const cond = String(statement[0]);
+        const condExpression = String(statement[1]);
+        runtimeConditions.push(
+            new Statement(
+                new Expression(cond, defines),
+                new Expression(condExpression, defines),
+            ),
+        );
+    }
+    expression._runtimeConditions = runtimeConditions;
 }
 
 /**
@@ -96,17 +96,17 @@ function setRuntime(expression, defines) {
  * @returns {boolean|number|string|RegExp|Cartesian2|Cartesian3|Cartesian4|Color} The result of evaluating the expression.
  */
 ConditionsExpression.prototype.evaluate = function (feature, result) {
-  const conditions = this._runtimeConditions;
-  if (!defined(conditions)) {
-    return undefined;
-  }
-  const length = conditions.length;
-  for (let i = 0; i < length; ++i) {
-    const statement = conditions[i];
-    if (statement.condition.evaluate(feature)) {
-      return statement.expression.evaluate(feature, result);
+    const conditions = this._runtimeConditions;
+    if (!defined(conditions)) {
+        return undefined;
     }
-  }
+    const length = conditions.length;
+    for (let i = 0; i < length; ++i) {
+        const statement = conditions[i];
+        if (statement.condition.evaluate(feature)) {
+            return statement.expression.evaluate(feature, result);
+        }
+    }
 };
 
 /**
@@ -119,17 +119,17 @@ ConditionsExpression.prototype.evaluate = function (feature, result) {
  * @returns {Color} The modified result parameter or a new Color instance if one was not provided.
  */
 ConditionsExpression.prototype.evaluateColor = function (feature, result) {
-  const conditions = this._runtimeConditions;
-  if (!defined(conditions)) {
-    return undefined;
-  }
-  const length = conditions.length;
-  for (let i = 0; i < length; ++i) {
-    const statement = conditions[i];
-    if (statement.condition.evaluate(feature)) {
-      return statement.expression.evaluateColor(feature, result);
+    const conditions = this._runtimeConditions;
+    if (!defined(conditions)) {
+        return undefined;
     }
-  }
+    const length = conditions.length;
+    for (let i = 0; i < length; ++i) {
+        const statement = conditions[i];
+        if (statement.condition.evaluate(feature)) {
+            return statement.expression.evaluateColor(feature, result);
+        }
+    }
 };
 
 /**
@@ -146,44 +146,44 @@ ConditionsExpression.prototype.evaluateColor = function (feature, result) {
  * @private
  */
 ConditionsExpression.prototype.getShaderFunction = function (
-  functionSignature,
-  variableSubstitutionMap,
-  shaderState,
-  returnType,
+    functionSignature,
+    variableSubstitutionMap,
+    shaderState,
+    returnType,
 ) {
-  const conditions = this._runtimeConditions;
-  if (!defined(conditions) || conditions.length === 0) {
-    return undefined;
-  }
+    const conditions = this._runtimeConditions;
+    if (!defined(conditions) || conditions.length === 0) {
+        return undefined;
+    }
 
-  let shaderFunction = "";
-  const length = conditions.length;
-  for (let i = 0; i < length; ++i) {
-    const statement = conditions[i];
+    let shaderFunction = "";
+    const length = conditions.length;
+    for (let i = 0; i < length; ++i) {
+        const statement = conditions[i];
 
-    const condition = statement.condition.getShaderExpression(
-      variableSubstitutionMap,
-      shaderState,
-    );
-    const expression = statement.expression.getShaderExpression(
-      variableSubstitutionMap,
-      shaderState,
-    );
+        const condition = statement.condition.getShaderExpression(
+            variableSubstitutionMap,
+            shaderState,
+        );
+        const expression = statement.expression.getShaderExpression(
+            variableSubstitutionMap,
+            shaderState,
+        );
 
-    // Build the if/else chain from the list of conditions
-    shaderFunction +=
-      `    ${i === 0 ? "if" : "else if"} (${condition})\n` +
-      `    {\n` +
-      `        return ${expression};\n` +
-      `    }\n`;
-  }
+        // Build the if/else chain from the list of conditions
+        shaderFunction +=
+            `    ${i === 0 ? "if" : "else if"} (${condition})\n` +
+            `    {\n` +
+            `        return ${expression};\n` +
+            `    }\n`;
+    }
 
-  shaderFunction =
-    `${returnType} ${functionSignature}\n` +
-    `{\n${shaderFunction}    return ${returnType}(1.0);\n` + // Return a default value if no conditions are met
-    `}\n`;
+    shaderFunction =
+        `${returnType} ${functionSignature}\n` +
+        `{\n${shaderFunction}    return ${returnType}(1.0);\n` + // Return a default value if no conditions are met
+        `}\n`;
 
-  return shaderFunction;
+    return shaderFunction;
 };
 
 /**
@@ -194,26 +194,26 @@ ConditionsExpression.prototype.getShaderFunction = function (
  * @private
  */
 ConditionsExpression.prototype.getVariables = function () {
-  let variables = [];
+    let variables = [];
 
-  const conditions = this._runtimeConditions;
-  if (!defined(conditions) || conditions.length === 0) {
+    const conditions = this._runtimeConditions;
+    if (!defined(conditions) || conditions.length === 0) {
+        return variables;
+    }
+
+    const length = conditions.length;
+    for (let i = 0; i < length; ++i) {
+        const statement = conditions[i];
+        addAllToArray(variables, statement.condition.getVariables());
+        addAllToArray(variables, statement.expression.getVariables());
+    }
+
+    // Remove duplicates
+    variables = variables.filter(function (variable, index, variables) {
+        return variables.indexOf(variable) === index;
+    });
+
     return variables;
-  }
-
-  const length = conditions.length;
-  for (let i = 0; i < length; ++i) {
-    const statement = conditions[i];
-    addAllToArray(variables, statement.condition.getVariables());
-    addAllToArray(variables, statement.expression.getVariables());
-  }
-
-  // Remove duplicates
-  variables = variables.filter(function (variable, index, variables) {
-    return variables.indexOf(variable) === index;
-  });
-
-  return variables;
 };
 
 export default ConditionsExpression;

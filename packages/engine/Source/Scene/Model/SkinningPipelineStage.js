@@ -12,10 +12,10 @@ import VertexAttributeSemantic from "../VertexAttributeSemantic.js";
  */
 
 const SkinningPipelineStage = {
-  name: "SkinningPipelineStage", // Helps with debugging
+    name: "SkinningPipelineStage", // Helps with debugging
 
-  FUNCTION_ID_GET_SKINNING_MATRIX: "getSkinningMatrix",
-  FUNCTION_SIGNATURE_GET_SKINNING_MATRIX: "mat4 getSkinningMatrix()",
+    FUNCTION_ID_GET_SKINNING_MATRIX: "getSkinningMatrix",
+    FUNCTION_SIGNATURE_GET_SKINNING_MATRIX: "mat4 getSkinningMatrix()",
 };
 
 /**
@@ -34,85 +34,92 @@ const SkinningPipelineStage = {
  * @private
  */
 SkinningPipelineStage.process = function (renderResources, primitive) {
-  const shaderBuilder = renderResources.shaderBuilder;
+    const shaderBuilder = renderResources.shaderBuilder;
 
-  shaderBuilder.addDefine("HAS_SKINNING", undefined, ShaderDestination.VERTEX);
-  addGetSkinningMatrixFunction(shaderBuilder, primitive);
+    shaderBuilder.addDefine(
+        "HAS_SKINNING",
+        undefined,
+        ShaderDestination.VERTEX,
+    );
+    addGetSkinningMatrixFunction(shaderBuilder, primitive);
 
-  const runtimeNode = renderResources.runtimeNode;
-  const jointMatrices = runtimeNode.computedJointMatrices;
+    const runtimeNode = renderResources.runtimeNode;
+    const jointMatrices = runtimeNode.computedJointMatrices;
 
-  shaderBuilder.addUniform(
-    "mat4",
-    `u_jointMatrices[${jointMatrices.length}]`,
-    ShaderDestination.VERTEX,
-  );
+    shaderBuilder.addUniform(
+        "mat4",
+        `u_jointMatrices[${jointMatrices.length}]`,
+        ShaderDestination.VERTEX,
+    );
 
-  shaderBuilder.addVertexLines(SkinningStageVS);
+    shaderBuilder.addVertexLines(SkinningStageVS);
 
-  const uniformMap = {
-    u_jointMatrices: function () {
-      return runtimeNode.computedJointMatrices;
-    },
-  };
+    const uniformMap = {
+        u_jointMatrices: function () {
+            return runtimeNode.computedJointMatrices;
+        },
+    };
 
-  renderResources.uniformMap = combine(uniformMap, renderResources.uniformMap);
+    renderResources.uniformMap = combine(
+        uniformMap,
+        renderResources.uniformMap,
+    );
 };
 
 function getMaximumAttributeSetIndex(primitive) {
-  let setIndex = -1;
-  const attributes = primitive.attributes;
-  const length = attributes.length;
-  for (let i = 0; i < length; i++) {
-    const attribute = attributes[i];
-    const isJointsOrWeights =
-      attribute.semantic === VertexAttributeSemantic.JOINTS ||
-      attribute.semantic === VertexAttributeSemantic.WEIGHTS;
+    let setIndex = -1;
+    const attributes = primitive.attributes;
+    const length = attributes.length;
+    for (let i = 0; i < length; i++) {
+        const attribute = attributes[i];
+        const isJointsOrWeights =
+            attribute.semantic === VertexAttributeSemantic.JOINTS ||
+            attribute.semantic === VertexAttributeSemantic.WEIGHTS;
 
-    if (!isJointsOrWeights) {
-      continue;
+        if (!isJointsOrWeights) {
+            continue;
+        }
+
+        setIndex = Math.max(setIndex, attribute.setIndex);
     }
 
-    setIndex = Math.max(setIndex, attribute.setIndex);
-  }
-
-  return setIndex;
+    return setIndex;
 }
 
 function addGetSkinningMatrixFunction(shaderBuilder, primitive) {
-  shaderBuilder.addFunction(
-    SkinningPipelineStage.FUNCTION_ID_GET_SKINNING_MATRIX,
-    SkinningPipelineStage.FUNCTION_SIGNATURE_GET_SKINNING_MATRIX,
-    ShaderDestination.VERTEX,
-  );
-
-  const initialLine = "mat4 skinnedMatrix = mat4(0);";
-  shaderBuilder.addFunctionLines(
-    SkinningPipelineStage.FUNCTION_ID_GET_SKINNING_MATRIX,
-    [initialLine],
-  );
-
-  let setIndex;
-  let componentIndex;
-  const componentStrings = ["x", "y", "z", "w"];
-  const maximumSetIndex = getMaximumAttributeSetIndex(primitive);
-  for (setIndex = 0; setIndex <= maximumSetIndex; setIndex++) {
-    for (componentIndex = 0; componentIndex <= 3; componentIndex++) {
-      const component = componentStrings[componentIndex];
-      // Example: skinnedMatrix += a_weights_0.x * u_jointMatrices[int(a_joints_0.x)];
-      const line = `skinnedMatrix += a_weights_${setIndex}.${component} * u_jointMatrices[int(a_joints_${setIndex}.${component})];`;
-      shaderBuilder.addFunctionLines(
+    shaderBuilder.addFunction(
         SkinningPipelineStage.FUNCTION_ID_GET_SKINNING_MATRIX,
-        [line],
-      );
-    }
-  }
+        SkinningPipelineStage.FUNCTION_SIGNATURE_GET_SKINNING_MATRIX,
+        ShaderDestination.VERTEX,
+    );
 
-  const returnLine = "return skinnedMatrix;";
-  shaderBuilder.addFunctionLines(
-    SkinningPipelineStage.FUNCTION_ID_GET_SKINNING_MATRIX,
-    [returnLine],
-  );
+    const initialLine = "mat4 skinnedMatrix = mat4(0);";
+    shaderBuilder.addFunctionLines(
+        SkinningPipelineStage.FUNCTION_ID_GET_SKINNING_MATRIX,
+        [initialLine],
+    );
+
+    let setIndex;
+    let componentIndex;
+    const componentStrings = ["x", "y", "z", "w"];
+    const maximumSetIndex = getMaximumAttributeSetIndex(primitive);
+    for (setIndex = 0; setIndex <= maximumSetIndex; setIndex++) {
+        for (componentIndex = 0; componentIndex <= 3; componentIndex++) {
+            const component = componentStrings[componentIndex];
+            // Example: skinnedMatrix += a_weights_0.x * u_jointMatrices[int(a_joints_0.x)];
+            const line = `skinnedMatrix += a_weights_${setIndex}.${component} * u_jointMatrices[int(a_joints_${setIndex}.${component})];`;
+            shaderBuilder.addFunctionLines(
+                SkinningPipelineStage.FUNCTION_ID_GET_SKINNING_MATRIX,
+                [line],
+            );
+        }
+    }
+
+    const returnLine = "return skinnedMatrix;";
+    shaderBuilder.addFunctionLines(
+        SkinningPipelineStage.FUNCTION_ID_GET_SKINNING_MATRIX,
+        [returnLine],
+    );
 }
 
 export default SkinningPipelineStage;

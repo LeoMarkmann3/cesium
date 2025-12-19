@@ -30,69 +30,69 @@ import DeveloperError from "./DeveloperError.js";
  * @see GeometryInstanceAttribute
  */
 function ShowGeometryInstanceAttribute(show) {
-  show = show ?? true;
+    show = show ?? true;
 
-  /**
-   * The values for the attributes stored in a typed array.
-   *
-   * @type Uint8Array
-   *
-   * @default [1.0]
-   */
-  this.value = ShowGeometryInstanceAttribute.toValue(show);
+    /**
+     * The values for the attributes stored in a typed array.
+     *
+     * @type Uint8Array
+     *
+     * @default [1.0]
+     */
+    this.value = ShowGeometryInstanceAttribute.toValue(show);
 }
 
 Object.defineProperties(ShowGeometryInstanceAttribute.prototype, {
-  /**
-   * The datatype of each component in the attribute, e.g., individual elements in
-   * {@link ColorGeometryInstanceAttribute#value}.
-   *
-   * @memberof ShowGeometryInstanceAttribute.prototype
-   *
-   * @type {ComponentDatatype}
-   * @readonly
-   *
-   * @default {@link ComponentDatatype.UNSIGNED_BYTE}
-   */
-  componentDatatype: {
-    get: function () {
-      return ComponentDatatype.UNSIGNED_BYTE;
+    /**
+     * The datatype of each component in the attribute, e.g., individual elements in
+     * {@link ColorGeometryInstanceAttribute#value}.
+     *
+     * @memberof ShowGeometryInstanceAttribute.prototype
+     *
+     * @type {ComponentDatatype}
+     * @readonly
+     *
+     * @default {@link ComponentDatatype.UNSIGNED_BYTE}
+     */
+    componentDatatype: {
+        get: function () {
+            return ComponentDatatype.UNSIGNED_BYTE;
+        },
     },
-  },
 
-  /**
-   * The number of components in the attributes, i.e., {@link ColorGeometryInstanceAttribute#value}.
-   *
-   * @memberof ShowGeometryInstanceAttribute.prototype
-   *
-   * @type {number}
-   * @readonly
-   *
-   * @default 1
-   */
-  componentsPerAttribute: {
-    get: function () {
-      return 1;
+    /**
+     * The number of components in the attributes, i.e., {@link ColorGeometryInstanceAttribute#value}.
+     *
+     * @memberof ShowGeometryInstanceAttribute.prototype
+     *
+     * @type {number}
+     * @readonly
+     *
+     * @default 1
+     */
+    componentsPerAttribute: {
+        get: function () {
+            return 1;
+        },
     },
-  },
 
-  /**
-   * When <code>true</code> and <code>componentDatatype</code> is an integer format,
-   * indicate that the components should be mapped to the range [0, 1] (unsigned)
-   * or [-1, 1] (signed) when they are accessed as floating-point for rendering.
-   *
-   * @memberof ShowGeometryInstanceAttribute.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   *
-   * @default true
-   */
-  normalize: {
-    get: function () {
-      return false;
+    /**
+     * When <code>true</code> and <code>componentDatatype</code> is an integer format,
+     * indicate that the components should be mapped to the range [0, 1] (unsigned)
+     * or [-1, 1] (signed) when they are accessed as floating-point for rendering.
+     *
+     * @memberof ShowGeometryInstanceAttribute.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     *
+     * @default true
+     */
+    normalize: {
+        get: function () {
+            return false;
+        },
     },
-  },
 });
 
 /**
@@ -107,16 +107,16 @@ Object.defineProperties(ShowGeometryInstanceAttribute.prototype, {
  * attributes.show = Cesium.ShowGeometryInstanceAttribute.toValue(true, attributes.show);
  */
 ShowGeometryInstanceAttribute.toValue = function (show, result) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(show)) {
-    throw new DeveloperError("show is required.");
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(show)) {
+        throw new DeveloperError("show is required.");
+    }
+    //>>includeEnd('debug');
 
-  if (!defined(result)) {
-    return new Uint8Array([show]);
-  }
-  result[0] = show;
-  return result;
+    if (!defined(result)) {
+        return new Uint8Array([show]);
+    }
+    result[0] = show;
+    return result;
 };
 export default ShowGeometryInstanceAttribute;

@@ -7,85 +7,85 @@ import Resource from "./Resource.js";
 
 const cesiumScriptRegex = /((?:.*\/)|^)Cesium\.js(?:\?|\#|$)/;
 function getBaseUrlFromCesiumScript() {
-  const scripts = document.getElementsByTagName("script");
-  for (let i = 0, len = scripts.length; i < len; ++i) {
-    const src = scripts[i].getAttribute("src");
-    const result = cesiumScriptRegex.exec(src);
-    if (result !== null) {
-      return result[1];
+    const scripts = document.getElementsByTagName("script");
+    for (let i = 0, len = scripts.length; i < len; ++i) {
+        const src = scripts[i].getAttribute("src");
+        const result = cesiumScriptRegex.exec(src);
+        if (result !== null) {
+            return result[1];
+        }
     }
-  }
-  return undefined;
+    return undefined;
 }
 
 let a;
 function tryMakeAbsolute(url) {
-  if (typeof document === "undefined") {
-    // Node.js and Web Workers. In both cases, the URL will already be absolute.
-    return url;
-  }
+    if (typeof document === "undefined") {
+        // Node.js and Web Workers. In both cases, the URL will already be absolute.
+        return url;
+    }
 
-  if (!defined(a)) {
-    a = document.createElement("a");
-  }
-  a.href = url;
-  return a.href;
+    if (!defined(a)) {
+        a = document.createElement("a");
+    }
+    a.href = url;
+    return a.href;
 }
 
 let baseResource;
 function getCesiumBaseUrl() {
-  if (defined(baseResource)) {
+    if (defined(baseResource)) {
+        return baseResource;
+    }
+
+    let baseUrlString;
+    if (typeof CESIUM_BASE_URL !== "undefined") {
+        baseUrlString = CESIUM_BASE_URL;
+    } else if (defined(import.meta?.url)) {
+        // ESM
+        baseUrlString = getAbsoluteUri(".", import.meta.url);
+    } else if (
+        typeof define === "object" &&
+        defined(define.amd) &&
+        !define.amd.toUrlUndefined &&
+        defined(require.toUrl)
+    ) {
+        // RequireJS
+        baseUrlString = getAbsoluteUri(
+            "..",
+            buildModuleUrl("Core/buildModuleUrl.js"),
+        );
+    } else {
+        // IIFE
+        baseUrlString = getBaseUrlFromCesiumScript();
+    }
+
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(baseUrlString)) {
+        throw new DeveloperError(
+            "Unable to determine Cesium base URL automatically, try defining a global variable called CESIUM_BASE_URL.",
+        );
+    }
+    //>>includeEnd('debug');
+
+    baseResource = new Resource({
+        url: tryMakeAbsolute(baseUrlString),
+    });
+    baseResource.appendForwardSlash();
+
     return baseResource;
-  }
-
-  let baseUrlString;
-  if (typeof CESIUM_BASE_URL !== "undefined") {
-    baseUrlString = CESIUM_BASE_URL;
-  } else if (defined(import.meta?.url)) {
-    // ESM
-    baseUrlString = getAbsoluteUri(".", import.meta.url);
-  } else if (
-    typeof define === "object" &&
-    defined(define.amd) &&
-    !define.amd.toUrlUndefined &&
-    defined(require.toUrl)
-  ) {
-    // RequireJS
-    baseUrlString = getAbsoluteUri(
-      "..",
-      buildModuleUrl("Core/buildModuleUrl.js"),
-    );
-  } else {
-    // IIFE
-    baseUrlString = getBaseUrlFromCesiumScript();
-  }
-
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(baseUrlString)) {
-    throw new DeveloperError(
-      "Unable to determine Cesium base URL automatically, try defining a global variable called CESIUM_BASE_URL.",
-    );
-  }
-  //>>includeEnd('debug');
-
-  baseResource = new Resource({
-    url: tryMakeAbsolute(baseUrlString),
-  });
-  baseResource.appendForwardSlash();
-
-  return baseResource;
 }
 
 function buildModuleUrlFromRequireToUrl(moduleID) {
-  //moduleID will be non-relative, so require it relative to this module, in Core.
-  return tryMakeAbsolute(require.toUrl(`../${moduleID}`));
+    //moduleID will be non-relative, so require it relative to this module, in Core.
+    return tryMakeAbsolute(require.toUrl(`../${moduleID}`));
 }
 
 function buildModuleUrlFromBaseUrl(moduleID) {
-  const resource = getCesiumBaseUrl().getDerivedResource({
-    url: moduleID,
-  });
-  return resource.url;
+    const resource = getCesiumBaseUrl().getDerivedResource({
+        url: moduleID,
+    });
+    return resource.url;
 }
 
 let implementation;
@@ -107,29 +107,29 @@ let implementation;
  * });
  */
 function buildModuleUrl(relativeUrl) {
-  if (!defined(implementation)) {
-    //select implementation
-    if (
-      typeof define === "object" &&
-      defined(define.amd) &&
-      !define.amd.toUrlUndefined &&
-      defined(require.toUrl)
-    ) {
-      implementation = buildModuleUrlFromRequireToUrl;
-    } else {
-      implementation = buildModuleUrlFromBaseUrl;
+    if (!defined(implementation)) {
+        //select implementation
+        if (
+            typeof define === "object" &&
+            defined(define.amd) &&
+            !define.amd.toUrlUndefined &&
+            defined(require.toUrl)
+        ) {
+            implementation = buildModuleUrlFromRequireToUrl;
+        } else {
+            implementation = buildModuleUrlFromBaseUrl;
+        }
     }
-  }
 
-  const url = implementation(relativeUrl);
-  return url;
+    const url = implementation(relativeUrl);
+    return url;
 }
 
 // exposed for testing
 buildModuleUrl._cesiumScriptRegex = cesiumScriptRegex;
 buildModuleUrl._buildModuleUrlFromBaseUrl = buildModuleUrlFromBaseUrl;
 buildModuleUrl._clearBaseResource = function () {
-  baseResource = undefined;
+    baseResource = undefined;
 };
 
 /**
@@ -137,9 +137,9 @@ buildModuleUrl._clearBaseResource = function () {
  * @param {string} value The new base URL.
  */
 buildModuleUrl.setBaseUrl = function (value) {
-  baseResource = Resource.DEFAULT.getDerivedResource({
-    url: value,
-  });
+    baseResource = Resource.DEFAULT.getDerivedResource({
+        url: value,
+    });
 };
 
 /**

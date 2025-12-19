@@ -11,26 +11,26 @@ import defined from "../Core/defined.js";
  * @private
  */
 function ResourceCacheStatistics() {
-  /**
-   * The size of vertex buffers and index buffers loaded in the cache in bytes.
-   *
-   * @type {number}
-   * @private
-   */
-  this.geometryByteLength = 0;
+    /**
+     * The size of vertex buffers and index buffers loaded in the cache in bytes.
+     *
+     * @type {number}
+     * @private
+     */
+    this.geometryByteLength = 0;
 
-  /**
-   * The size of all textures loaded in the cache in bytes
-   *
-   * @type {number}
-   * @private
-   */
-  this.texturesByteLength = 0;
+    /**
+     * The size of all textures loaded in the cache in bytes
+     *
+     * @type {number}
+     * @private
+     */
+    this.texturesByteLength = 0;
 
-  // Track the sizes of resources by cache key. This is important so
-  // removeLoader() can decrement the counts correctly.
-  this._geometrySizes = {};
-  this._textureSizes = {};
+    // Track the sizes of resources by cache key. This is important so
+    // removeLoader() can decrement the counts correctly.
+    this._geometrySizes = {};
+    this._textureSizes = {};
 }
 
 /**
@@ -39,11 +39,11 @@ function ResourceCacheStatistics() {
  * @private
  */
 ResourceCacheStatistics.prototype.clear = function () {
-  this.geometryByteLength = 0;
-  this.texturesByteLength = 0;
+    this.geometryByteLength = 0;
+    this.texturesByteLength = 0;
 
-  this._geometrySizes = {};
-  this._textureSizes = {};
+    this._geometrySizes = {};
+    this._textureSizes = {};
 };
 
 /**
@@ -59,34 +59,34 @@ ResourceCacheStatistics.prototype.clear = function () {
  * @private
  */
 ResourceCacheStatistics.prototype.addGeometryLoader = function (loader) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("loader", loader);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("loader", loader);
+    //>>includeEnd('debug');
 
-  const cacheKey = loader.cacheKey;
+    const cacheKey = loader.cacheKey;
 
-  // Don't double count the same resource.
-  if (this._geometrySizes.hasOwnProperty(cacheKey)) {
-    return;
-  }
+    // Don't double count the same resource.
+    if (this._geometrySizes.hasOwnProperty(cacheKey)) {
+        return;
+    }
 
-  this._geometrySizes[cacheKey] = 0;
+    this._geometrySizes[cacheKey] = 0;
 
-  const buffer = loader.buffer;
-  const typedArray = loader.typedArray;
+    const buffer = loader.buffer;
+    const typedArray = loader.typedArray;
 
-  let totalSize = 0;
+    let totalSize = 0;
 
-  if (defined(buffer)) {
-    totalSize += buffer.sizeInBytes;
-  }
+    if (defined(buffer)) {
+        totalSize += buffer.sizeInBytes;
+    }
 
-  if (defined(typedArray)) {
-    totalSize += typedArray.byteLength;
-  }
+    if (defined(typedArray)) {
+        totalSize += typedArray.byteLength;
+    }
 
-  this.geometryByteLength += totalSize;
-  this._geometrySizes[cacheKey] = totalSize;
+    this.geometryByteLength += totalSize;
+    this._geometrySizes[cacheKey] = totalSize;
 };
 
 /**
@@ -99,21 +99,21 @@ ResourceCacheStatistics.prototype.addGeometryLoader = function (loader) {
  * @private
  */
 ResourceCacheStatistics.prototype.addTextureLoader = function (loader) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("loader", loader);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("loader", loader);
+    //>>includeEnd('debug');
 
-  const cacheKey = loader.cacheKey;
+    const cacheKey = loader.cacheKey;
 
-  // Don't double count the same resource.
-  if (this._textureSizes.hasOwnProperty(cacheKey)) {
-    return;
-  }
+    // Don't double count the same resource.
+    if (this._textureSizes.hasOwnProperty(cacheKey)) {
+        return;
+    }
 
-  this._textureSizes[cacheKey] = 0;
-  const totalSize = loader.texture.sizeInBytes;
-  this.texturesByteLength += loader.texture.sizeInBytes;
-  this._textureSizes[cacheKey] = totalSize;
+    this._textureSizes[cacheKey] = 0;
+    const totalSize = loader.texture.sizeInBytes;
+    this.texturesByteLength += loader.texture.sizeInBytes;
+    this._textureSizes[cacheKey] = totalSize;
 };
 
 /**
@@ -126,24 +126,24 @@ ResourceCacheStatistics.prototype.addTextureLoader = function (loader) {
  * @private
  */
 ResourceCacheStatistics.prototype.removeLoader = function (loader) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("loader", loader);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("loader", loader);
+    //>>includeEnd('debug');
 
-  const cacheKey = loader.cacheKey;
-  const geometrySize = this._geometrySizes[cacheKey];
-  delete this._geometrySizes[cacheKey];
+    const cacheKey = loader.cacheKey;
+    const geometrySize = this._geometrySizes[cacheKey];
+    delete this._geometrySizes[cacheKey];
 
-  if (defined(geometrySize)) {
-    this.geometryByteLength -= geometrySize;
-  }
+    if (defined(geometrySize)) {
+        this.geometryByteLength -= geometrySize;
+    }
 
-  const textureSize = this._textureSizes[cacheKey];
-  delete this._textureSizes[cacheKey];
+    const textureSize = this._textureSizes[cacheKey];
+    delete this._textureSizes[cacheKey];
 
-  if (defined(textureSize)) {
-    this.texturesByteLength -= textureSize;
-  }
+    if (defined(textureSize)) {
+        this.texturesByteLength -= textureSize;
+    }
 };
 
 export default ResourceCacheStatistics;

@@ -16,15 +16,15 @@ const VerticalExaggeration = {};
  * @param {number} relativeHeight The height relative to which terrain is exaggerated. If the value is 0.0 terrain will be exaggerated relative to the ellipsoid surface.
  */
 VerticalExaggeration.getHeight = function (height, scale, relativeHeight) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!Number.isFinite(scale)) {
-    throw new DeveloperError("scale must be a finite number.");
-  }
-  if (!Number.isFinite(relativeHeight)) {
-    throw new DeveloperError("relativeHeight must be a finite number.");
-  }
-  //>>includeEnd('debug');
-  return (height - relativeHeight) * scale + relativeHeight;
+    //>>includeStart('debug', pragmas.debug);
+    if (!Number.isFinite(scale)) {
+        throw new DeveloperError("scale must be a finite number.");
+    }
+    if (!Number.isFinite(relativeHeight)) {
+        throw new DeveloperError("relativeHeight must be a finite number.");
+    }
+    //>>includeEnd('debug');
+    return (height - relativeHeight) * scale + relativeHeight;
 };
 
 const scratchCartographic = new Cartographic();
@@ -39,32 +39,32 @@ const scratchCartographic = new Cartographic();
  * @param {Cartesian3} [result] The object onto which to store the result.
  */
 VerticalExaggeration.getPosition = function (
-  position,
-  ellipsoid,
-  verticalExaggeration,
-  verticalExaggerationRelativeHeight,
-  result,
-) {
-  const cartographic = ellipsoid.cartesianToCartographic(
     position,
-    scratchCartographic,
-  );
-  // If the position is too near the center of the ellipsoid, exaggeration is undefined.
-  if (!defined(cartographic)) {
-    return Cartesian3.clone(position, result);
-  }
-  const newHeight = VerticalExaggeration.getHeight(
-    cartographic.height,
+    ellipsoid,
     verticalExaggeration,
     verticalExaggerationRelativeHeight,
-  );
-  return Cartesian3.fromRadians(
-    cartographic.longitude,
-    cartographic.latitude,
-    newHeight,
-    ellipsoid,
     result,
-  );
+) {
+    const cartographic = ellipsoid.cartesianToCartographic(
+        position,
+        scratchCartographic,
+    );
+    // If the position is too near the center of the ellipsoid, exaggeration is undefined.
+    if (!defined(cartographic)) {
+        return Cartesian3.clone(position, result);
+    }
+    const newHeight = VerticalExaggeration.getHeight(
+        cartographic.height,
+        verticalExaggeration,
+        verticalExaggerationRelativeHeight,
+    );
+    return Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        newHeight,
+        ellipsoid,
+        result,
+    );
 };
 
 export default VerticalExaggeration;

@@ -26,58 +26,61 @@ import formatError from "../Core/formatError.js";
  * @see {@link http://www.w3.org/TR/html5/common-dom-interfaces.html#transferable-objects|Transferable objects}
  */
 function createTaskProcessorWorker(workerFunction) {
-  async function onMessageHandler({ data }) {
-    const transferableObjects = [];
-    const responseMessage = {
-      id: data.id,
-      result: undefined,
-      error: undefined,
-    };
-
-    self.CESIUM_BASE_URL = data.baseUrl;
-
-    try {
-      const result = await workerFunction(data.parameters, transferableObjects);
-      responseMessage.result = result;
-    } catch (error) {
-      if (error instanceof Error) {
-        responseMessage.error = {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
+    async function onMessageHandler({ data }) {
+        const transferableObjects = [];
+        const responseMessage = {
+            id: data.id,
+            result: undefined,
+            error: undefined,
         };
-      } else {
-        responseMessage.error = error;
-      }
+
+        self.CESIUM_BASE_URL = data.baseUrl;
+
+        try {
+            const result = await workerFunction(
+                data.parameters,
+                transferableObjects,
+            );
+            responseMessage.result = result;
+        } catch (error) {
+            if (error instanceof Error) {
+                responseMessage.error = {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                };
+            } else {
+                responseMessage.error = error;
+            }
+        }
+
+        if (!data.canTransferArrayBuffer) {
+            transferableObjects.length = 0;
+        }
+
+        try {
+            postMessage(responseMessage, transferableObjects);
+        } catch (error) {
+            // something went wrong trying to post the message, post a simpler
+            // error that we can be sure will be cloneable
+            responseMessage.result = undefined;
+            responseMessage.error = `postMessage failed with error: ${formatError(
+                error,
+            )}\n  with responseMessage: ${JSON.stringify(responseMessage)}`;
+            postMessage(responseMessage);
+        }
     }
 
-    if (!data.canTransferArrayBuffer) {
-      transferableObjects.length = 0;
+    function onMessageErrorHandler(event) {
+        postMessage({
+            id: event.data?.id,
+            error: `postMessage failed with error: ${JSON.stringify(event)}`,
+        });
     }
 
-    try {
-      postMessage(responseMessage, transferableObjects);
-    } catch (error) {
-      // something went wrong trying to post the message, post a simpler
-      // error that we can be sure will be cloneable
-      responseMessage.result = undefined;
-      responseMessage.error = `postMessage failed with error: ${formatError(
-        error,
-      )}\n  with responseMessage: ${JSON.stringify(responseMessage)}`;
-      postMessage(responseMessage);
-    }
-  }
-
-  function onMessageErrorHandler(event) {
-    postMessage({
-      id: event.data?.id,
-      error: `postMessage failed with error: ${JSON.stringify(event)}`,
-    });
-  }
-
-  self.onmessage = onMessageHandler;
-  self.onmessageerror = onMessageErrorHandler;
-  return self;
+    self.onmessage = onMessageHandler;
+    self.onmessageerror = onMessageErrorHandler;
+    return self;
 }
 
 /**

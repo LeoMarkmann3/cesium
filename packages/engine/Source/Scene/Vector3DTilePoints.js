@@ -36,185 +36,193 @@ import HeightReference from "./HeightReference.js";
  * @private
  */
 function Vector3DTilePoints(options) {
-  // released after the first update
-  this._positions = options.positions;
+    // released after the first update
+    this._positions = options.positions;
 
-  this._batchTable = options.batchTable;
-  this._batchIds = options.batchIds;
+    this._batchTable = options.batchTable;
+    this._batchIds = options.batchIds;
 
-  this._rectangle = options.rectangle;
-  this._minHeight = options.minimumHeight;
-  this._maxHeight = options.maximumHeight;
-  this._heightReference = options.heightReference;
+    this._rectangle = options.rectangle;
+    this._minHeight = options.minimumHeight;
+    this._maxHeight = options.maximumHeight;
+    this._heightReference = options.heightReference;
 
-  this._billboardCollection = new BillboardCollection({
-    batchTable: options.batchTable,
-    scene: options.scene,
-  });
-  this._labelCollection = new LabelCollection({
-    batchTable: options.batchTable,
-    scene: options.scene,
-  });
-  this._polylineCollection = new PolylineCollection();
-  this._polylineCollection._useHighlightColor = true;
+    this._billboardCollection = new BillboardCollection({
+        batchTable: options.batchTable,
+        scene: options.scene,
+    });
+    this._labelCollection = new LabelCollection({
+        batchTable: options.batchTable,
+        scene: options.scene,
+    });
+    this._polylineCollection = new PolylineCollection();
+    this._polylineCollection._useHighlightColor = true;
 
-  this._packedBuffer = undefined;
+    this._packedBuffer = undefined;
 
-  this._ready = false;
-  this._promise = undefined;
-  this._error = undefined;
+    this._ready = false;
+    this._promise = undefined;
+    this._error = undefined;
 }
 
 Object.defineProperties(Vector3DTilePoints.prototype, {
-  /**
-   * Returns true if the points are ready to render
-   *
-   * @memberof Vector3DTilePoints.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @private
-   */
-  ready: {
-    get: function () {
-      return this._ready;
+    /**
+     * Returns true if the points are ready to render
+     *
+     * @memberof Vector3DTilePoints.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @private
+     */
+    ready: {
+        get: function () {
+            return this._ready;
+        },
     },
-  },
 
-  /**
-   * Gets the number of points.
-   *
-   * @memberof Vector3DTilePoints.prototype
-   *
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  pointsLength: {
-    get: function () {
-      return this._billboardCollection.length;
+    /**
+     * Gets the number of points.
+     *
+     * @memberof Vector3DTilePoints.prototype
+     *
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    pointsLength: {
+        get: function () {
+            return this._billboardCollection.length;
+        },
     },
-  },
 
-  /**
-   * Gets the texture atlas memory in bytes.
-   *
-   * @memberof Vector3DTilePoints.prototype
-   *
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  texturesByteLength: {
-    get: function () {
-      const billboardSize = this._billboardCollection.sizeInBytes;
-      const labelSize = this._labelCollection.sizeInBytes;
-      return billboardSize + labelSize;
+    /**
+     * Gets the texture atlas memory in bytes.
+     *
+     * @memberof Vector3DTilePoints.prototype
+     *
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    texturesByteLength: {
+        get: function () {
+            const billboardSize = this._billboardCollection.sizeInBytes;
+            const labelSize = this._labelCollection.sizeInBytes;
+            return billboardSize + labelSize;
+        },
     },
-  },
 });
 
 function packBuffer(points, ellipsoid) {
-  const rectangle = points._rectangle;
-  const minimumHeight = points._minHeight;
-  const maximumHeight = points._maxHeight;
+    const rectangle = points._rectangle;
+    const minimumHeight = points._minHeight;
+    const maximumHeight = points._maxHeight;
 
-  const packedLength = 2 + Rectangle.packedLength + Ellipsoid.packedLength;
-  const packedBuffer = new Float64Array(packedLength);
+    const packedLength = 2 + Rectangle.packedLength + Ellipsoid.packedLength;
+    const packedBuffer = new Float64Array(packedLength);
 
-  let offset = 0;
-  packedBuffer[offset++] = minimumHeight;
-  packedBuffer[offset++] = maximumHeight;
+    let offset = 0;
+    packedBuffer[offset++] = minimumHeight;
+    packedBuffer[offset++] = maximumHeight;
 
-  Rectangle.pack(rectangle, packedBuffer, offset);
-  offset += Rectangle.packedLength;
+    Rectangle.pack(rectangle, packedBuffer, offset);
+    offset += Rectangle.packedLength;
 
-  Ellipsoid.pack(ellipsoid, packedBuffer, offset);
+    Ellipsoid.pack(ellipsoid, packedBuffer, offset);
 
-  return packedBuffer;
+    return packedBuffer;
 }
 
 const createVerticesTaskProcessor = new TaskProcessor(
-  "createVectorTilePoints",
-  5,
+    "createVectorTilePoints",
+    5,
 );
 const scratchPosition = new Cartesian3();
 
 function createPoints(points, ellipsoid) {
-  let positions = points._positions;
-  let packedBuffer = points._packedBuffer;
+    let positions = points._positions;
+    let packedBuffer = points._packedBuffer;
 
-  if (!defined(packedBuffer)) {
-    // Copy because they may be the views on the same buffer.
-    positions = points._positions = positions.slice();
-    points._batchIds = points._batchIds.slice();
+    if (!defined(packedBuffer)) {
+        // Copy because they may be the views on the same buffer.
+        positions = points._positions = positions.slice();
+        points._batchIds = points._batchIds.slice();
 
-    packedBuffer = points._packedBuffer = packBuffer(points, ellipsoid);
-  }
+        packedBuffer = points._packedBuffer = packBuffer(points, ellipsoid);
+    }
 
-  const transferrableObjects = [positions.buffer, packedBuffer.buffer];
-  const parameters = {
-    positions: positions.buffer,
-    packedBuffer: packedBuffer.buffer,
-  };
+    const transferrableObjects = [positions.buffer, packedBuffer.buffer];
+    const parameters = {
+        positions: positions.buffer,
+        packedBuffer: packedBuffer.buffer,
+    };
 
-  const verticesPromise = createVerticesTaskProcessor.scheduleTask(
-    parameters,
-    transferrableObjects,
-  );
-  if (!defined(verticesPromise)) {
-    // Postponed
-    return;
-  }
-
-  return verticesPromise
-    .then((result) => {
-      if (points.isDestroyed()) {
+    const verticesPromise = createVerticesTaskProcessor.scheduleTask(
+        parameters,
+        transferrableObjects,
+    );
+    if (!defined(verticesPromise)) {
+        // Postponed
         return;
-      }
+    }
 
-      points._positions = new Float64Array(result.positions);
-      const billboardCollection = points._billboardCollection;
-      const labelCollection = points._labelCollection;
-      const polylineCollection = points._polylineCollection;
-      positions = points._positions;
-      const batchIds = points._batchIds;
-      const numberOfPoints = positions.length / 3;
+    return verticesPromise
+        .then((result) => {
+            if (points.isDestroyed()) {
+                return;
+            }
 
-      const heightReference = points._heightReference ?? HeightReference.NONE;
+            points._positions = new Float64Array(result.positions);
+            const billboardCollection = points._billboardCollection;
+            const labelCollection = points._labelCollection;
+            const polylineCollection = points._polylineCollection;
+            positions = points._positions;
+            const batchIds = points._batchIds;
+            const numberOfPoints = positions.length / 3;
 
-      for (let i = 0; i < numberOfPoints; ++i) {
-        const id = batchIds[i];
+            const heightReference =
+                points._heightReference ?? HeightReference.NONE;
 
-        const position = Cartesian3.unpack(positions, i * 3, scratchPosition);
+            for (let i = 0; i < numberOfPoints; ++i) {
+                const id = batchIds[i];
 
-        const b = billboardCollection.add();
-        b.position = position;
-        b._batchIndex = id;
-        b.heightReference = heightReference;
+                const position = Cartesian3.unpack(
+                    positions,
+                    i * 3,
+                    scratchPosition,
+                );
 
-        const l = labelCollection.add();
-        l.text = " ";
-        l.position = position;
-        l._batchIndex = id;
-        l.heightReference = heightReference;
+                const b = billboardCollection.add();
+                b.position = position;
+                b._batchIndex = id;
+                b.heightReference = heightReference;
 
-        const p = polylineCollection.add();
-        p.positions = [Cartesian3.clone(position), Cartesian3.clone(position)];
-      }
+                const l = labelCollection.add();
+                l.text = " ";
+                l.position = position;
+                l._batchIndex = id;
+                l.heightReference = heightReference;
 
-      points._positions = undefined;
-      points._packedBuffer = undefined;
-      points._ready = true;
-    })
-    .catch((error) => {
-      if (points.isDestroyed()) {
-        return;
-      }
+                const p = polylineCollection.add();
+                p.positions = [
+                    Cartesian3.clone(position),
+                    Cartesian3.clone(position),
+                ];
+            }
 
-      // Throw the error next frame
-      points._error = error;
-    });
+            points._positions = undefined;
+            points._packedBuffer = undefined;
+            points._ready = true;
+        })
+        .catch((error) => {
+            if (points.isDestroyed()) {
+                return;
+            }
+
+            // Throw the error next frame
+            points._error = error;
+        });
 }
 
 /**
@@ -224,27 +232,27 @@ function createPoints(points, ellipsoid) {
  * @param {Cesium3DTileFeature[]} features An array of features where the point features will be placed.
  */
 Vector3DTilePoints.prototype.createFeatures = function (content, features) {
-  const billboardCollection = this._billboardCollection;
-  const labelCollection = this._labelCollection;
-  const polylineCollection = this._polylineCollection;
+    const billboardCollection = this._billboardCollection;
+    const labelCollection = this._labelCollection;
+    const polylineCollection = this._polylineCollection;
 
-  const batchIds = this._batchIds;
-  const length = batchIds.length;
-  for (let i = 0; i < length; ++i) {
-    const batchId = batchIds[i];
+    const batchIds = this._batchIds;
+    const length = batchIds.length;
+    for (let i = 0; i < length; ++i) {
+        const batchId = batchIds[i];
 
-    const billboard = billboardCollection.get(i);
-    const label = labelCollection.get(i);
-    const polyline = polylineCollection.get(i);
+        const billboard = billboardCollection.get(i);
+        const label = labelCollection.get(i);
+        const polyline = polylineCollection.get(i);
 
-    features[batchId] = new Cesium3DTilePointFeature(
-      content,
-      batchId,
-      billboard,
-      label,
-      polyline,
-    );
-  }
+        features[batchId] = new Cesium3DTilePointFeature(
+            content,
+            batchId,
+            billboard,
+            label,
+            polyline,
+        );
+    }
 };
 
 /**
@@ -254,53 +262,53 @@ Vector3DTilePoints.prototype.createFeatures = function (content, features) {
  * @param {Color} color The debug color.
  */
 Vector3DTilePoints.prototype.applyDebugSettings = function (enabled, color) {
-  if (enabled) {
-    Color.clone(color, this._billboardCollection._highlightColor);
-    Color.clone(color, this._labelCollection._highlightColor);
-    Color.clone(color, this._polylineCollection._highlightColor);
-  } else {
-    Color.clone(Color.WHITE, this._billboardCollection._highlightColor);
-    Color.clone(Color.WHITE, this._labelCollection._highlightColor);
-    Color.clone(Color.WHITE, this._polylineCollection._highlightColor);
-  }
+    if (enabled) {
+        Color.clone(color, this._billboardCollection._highlightColor);
+        Color.clone(color, this._labelCollection._highlightColor);
+        Color.clone(color, this._polylineCollection._highlightColor);
+    } else {
+        Color.clone(Color.WHITE, this._billboardCollection._highlightColor);
+        Color.clone(Color.WHITE, this._labelCollection._highlightColor);
+        Color.clone(Color.WHITE, this._polylineCollection._highlightColor);
+    }
 };
 
 function clearStyle(polygons, features) {
-  const batchIds = polygons._batchIds;
-  const length = batchIds.length;
-  for (let i = 0; i < length; ++i) {
-    const batchId = batchIds[i];
-    const feature = features[batchId];
+    const batchIds = polygons._batchIds;
+    const length = batchIds.length;
+    for (let i = 0; i < length; ++i) {
+        const batchId = batchIds[i];
+        const feature = features[batchId];
 
-    feature.show = true;
-    feature.pointSize = Cesium3DTilePointFeature.defaultPointSize;
-    feature.color = Cesium3DTilePointFeature.defaultColor;
-    feature.pointOutlineColor =
-      Cesium3DTilePointFeature.defaultPointOutlineColor;
-    feature.pointOutlineWidth =
-      Cesium3DTilePointFeature.defaultPointOutlineWidth;
-    feature.labelColor = Color.WHITE;
-    feature.labelOutlineColor = Color.WHITE;
-    feature.labelOutlineWidth = 1.0;
-    feature.font = "30px sans-serif";
-    feature.labelStyle = LabelStyle.FILL;
-    feature.labelText = undefined;
-    feature.backgroundColor = new Color(0.165, 0.165, 0.165, 0.8);
-    feature.backgroundPadding = new Cartesian2(7, 5);
-    feature.backgroundEnabled = false;
-    feature.scaleByDistance = undefined;
-    feature.translucencyByDistance = undefined;
-    feature.distanceDisplayCondition = undefined;
-    feature.heightOffset = 0.0;
-    feature.anchorLineEnabled = false;
-    feature.anchorLineColor = Color.WHITE;
-    feature.image = undefined;
-    feature.disableDepthTestDistance = 0.0;
-    feature.horizontalOrigin = HorizontalOrigin.CENTER;
-    feature.verticalOrigin = VerticalOrigin.CENTER;
-    feature.labelHorizontalOrigin = HorizontalOrigin.RIGHT;
-    feature.labelVerticalOrigin = VerticalOrigin.BASELINE;
-  }
+        feature.show = true;
+        feature.pointSize = Cesium3DTilePointFeature.defaultPointSize;
+        feature.color = Cesium3DTilePointFeature.defaultColor;
+        feature.pointOutlineColor =
+            Cesium3DTilePointFeature.defaultPointOutlineColor;
+        feature.pointOutlineWidth =
+            Cesium3DTilePointFeature.defaultPointOutlineWidth;
+        feature.labelColor = Color.WHITE;
+        feature.labelOutlineColor = Color.WHITE;
+        feature.labelOutlineWidth = 1.0;
+        feature.font = "30px sans-serif";
+        feature.labelStyle = LabelStyle.FILL;
+        feature.labelText = undefined;
+        feature.backgroundColor = new Color(0.165, 0.165, 0.165, 0.8);
+        feature.backgroundPadding = new Cartesian2(7, 5);
+        feature.backgroundEnabled = false;
+        feature.scaleByDistance = undefined;
+        feature.translucencyByDistance = undefined;
+        feature.distanceDisplayCondition = undefined;
+        feature.heightOffset = 0.0;
+        feature.anchorLineEnabled = false;
+        feature.anchorLineColor = Color.WHITE;
+        feature.image = undefined;
+        feature.disableDepthTestDistance = 0.0;
+        feature.horizontalOrigin = HorizontalOrigin.CENTER;
+        feature.verticalOrigin = VerticalOrigin.CENTER;
+        feature.labelHorizontalOrigin = HorizontalOrigin.RIGHT;
+        feature.labelVerticalOrigin = VerticalOrigin.BASELINE;
+    }
 }
 
 const scratchColor = new Color();
@@ -320,196 +328,213 @@ const scratchDistanceDisplayCondition = new DistanceDisplayCondition();
  * @param {Cesium3DTileFeature[]} features The array of features.
  */
 Vector3DTilePoints.prototype.applyStyle = function (style, features) {
-  if (!defined(style)) {
-    clearStyle(this, features);
-    return;
-  }
-
-  const batchIds = this._batchIds;
-  const length = batchIds.length;
-  for (let i = 0; i < length; ++i) {
-    const batchId = batchIds[i];
-    const feature = features[batchId];
-
-    if (defined(style.show)) {
-      feature.show = style.show.evaluate(feature);
+    if (!defined(style)) {
+        clearStyle(this, features);
+        return;
     }
 
-    if (defined(style.pointSize)) {
-      feature.pointSize = style.pointSize.evaluate(feature);
-    }
+    const batchIds = this._batchIds;
+    const length = batchIds.length;
+    for (let i = 0; i < length; ++i) {
+        const batchId = batchIds[i];
+        const feature = features[batchId];
 
-    if (defined(style.color)) {
-      feature.color = style.color.evaluateColor(feature, scratchColor);
-    }
+        if (defined(style.show)) {
+            feature.show = style.show.evaluate(feature);
+        }
 
-    if (defined(style.pointOutlineColor)) {
-      feature.pointOutlineColor = style.pointOutlineColor.evaluateColor(
-        feature,
-        scratchColor2,
-      );
-    }
+        if (defined(style.pointSize)) {
+            feature.pointSize = style.pointSize.evaluate(feature);
+        }
 
-    if (defined(style.pointOutlineWidth)) {
-      feature.pointOutlineWidth = style.pointOutlineWidth.evaluate(feature);
-    }
+        if (defined(style.color)) {
+            feature.color = style.color.evaluateColor(feature, scratchColor);
+        }
 
-    if (defined(style.labelColor)) {
-      feature.labelColor = style.labelColor.evaluateColor(
-        feature,
-        scratchColor3,
-      );
-    }
+        if (defined(style.pointOutlineColor)) {
+            feature.pointOutlineColor = style.pointOutlineColor.evaluateColor(
+                feature,
+                scratchColor2,
+            );
+        }
 
-    if (defined(style.labelOutlineColor)) {
-      feature.labelOutlineColor = style.labelOutlineColor.evaluateColor(
-        feature,
-        scratchColor4,
-      );
-    }
+        if (defined(style.pointOutlineWidth)) {
+            feature.pointOutlineWidth =
+                style.pointOutlineWidth.evaluate(feature);
+        }
 
-    if (defined(style.labelOutlineWidth)) {
-      feature.labelOutlineWidth = style.labelOutlineWidth.evaluate(feature);
-    }
+        if (defined(style.labelColor)) {
+            feature.labelColor = style.labelColor.evaluateColor(
+                feature,
+                scratchColor3,
+            );
+        }
 
-    if (defined(style.font)) {
-      feature.font = style.font.evaluate(feature);
-    }
+        if (defined(style.labelOutlineColor)) {
+            feature.labelOutlineColor = style.labelOutlineColor.evaluateColor(
+                feature,
+                scratchColor4,
+            );
+        }
 
-    if (defined(style.labelStyle)) {
-      feature.labelStyle = style.labelStyle.evaluate(feature);
-    }
+        if (defined(style.labelOutlineWidth)) {
+            feature.labelOutlineWidth =
+                style.labelOutlineWidth.evaluate(feature);
+        }
 
-    if (defined(style.labelText)) {
-      feature.labelText = style.labelText.evaluate(feature);
-    } else {
-      feature.labelText = undefined;
-    }
+        if (defined(style.font)) {
+            feature.font = style.font.evaluate(feature);
+        }
 
-    if (defined(style.backgroundColor)) {
-      feature.backgroundColor = style.backgroundColor.evaluateColor(
-        feature,
-        scratchColor5,
-      );
-    }
+        if (defined(style.labelStyle)) {
+            feature.labelStyle = style.labelStyle.evaluate(feature);
+        }
 
-    if (defined(style.backgroundPadding)) {
-      feature.backgroundPadding = style.backgroundPadding.evaluate(feature);
-    }
+        if (defined(style.labelText)) {
+            feature.labelText = style.labelText.evaluate(feature);
+        } else {
+            feature.labelText = undefined;
+        }
 
-    if (defined(style.backgroundEnabled)) {
-      feature.backgroundEnabled = style.backgroundEnabled.evaluate(feature);
-    }
+        if (defined(style.backgroundColor)) {
+            feature.backgroundColor = style.backgroundColor.evaluateColor(
+                feature,
+                scratchColor5,
+            );
+        }
 
-    if (defined(style.scaleByDistance)) {
-      const scaleByDistanceCart4 = style.scaleByDistance.evaluate(feature);
-      if (defined(scaleByDistanceCart4)) {
-        scratchScaleByDistance.near = scaleByDistanceCart4.x;
-        scratchScaleByDistance.nearValue = scaleByDistanceCart4.y;
-        scratchScaleByDistance.far = scaleByDistanceCart4.z;
-        scratchScaleByDistance.farValue = scaleByDistanceCart4.w;
-        feature.scaleByDistance = scratchScaleByDistance;
-      } else {
-        feature.scaleByDistance = undefined;
-      }
-    } else {
-      feature.scaleByDistance = undefined;
-    }
+        if (defined(style.backgroundPadding)) {
+            feature.backgroundPadding =
+                style.backgroundPadding.evaluate(feature);
+        }
 
-    if (defined(style.translucencyByDistance)) {
-      const translucencyByDistanceCart4 =
-        style.translucencyByDistance.evaluate(feature);
-      if (defined(translucencyByDistanceCart4)) {
-        scratchTranslucencyByDistance.near = translucencyByDistanceCart4.x;
-        scratchTranslucencyByDistance.nearValue = translucencyByDistanceCart4.y;
-        scratchTranslucencyByDistance.far = translucencyByDistanceCart4.z;
-        scratchTranslucencyByDistance.farValue = translucencyByDistanceCart4.w;
-        feature.translucencyByDistance = scratchTranslucencyByDistance;
-      } else {
-        feature.translucencyByDistance = undefined;
-      }
-    } else {
-      feature.translucencyByDistance = undefined;
-    }
+        if (defined(style.backgroundEnabled)) {
+            feature.backgroundEnabled =
+                style.backgroundEnabled.evaluate(feature);
+        }
 
-    if (defined(style.distanceDisplayCondition)) {
-      const distanceDisplayConditionCart2 =
-        style.distanceDisplayCondition.evaluate(feature);
-      if (defined(distanceDisplayConditionCart2)) {
-        scratchDistanceDisplayCondition.near = distanceDisplayConditionCart2.x;
-        scratchDistanceDisplayCondition.far = distanceDisplayConditionCart2.y;
-        feature.distanceDisplayCondition = scratchDistanceDisplayCondition;
-      } else {
-        feature.distanceDisplayCondition = undefined;
-      }
-    } else {
-      feature.distanceDisplayCondition = undefined;
-    }
+        if (defined(style.scaleByDistance)) {
+            const scaleByDistanceCart4 =
+                style.scaleByDistance.evaluate(feature);
+            if (defined(scaleByDistanceCart4)) {
+                scratchScaleByDistance.near = scaleByDistanceCart4.x;
+                scratchScaleByDistance.nearValue = scaleByDistanceCart4.y;
+                scratchScaleByDistance.far = scaleByDistanceCart4.z;
+                scratchScaleByDistance.farValue = scaleByDistanceCart4.w;
+                feature.scaleByDistance = scratchScaleByDistance;
+            } else {
+                feature.scaleByDistance = undefined;
+            }
+        } else {
+            feature.scaleByDistance = undefined;
+        }
 
-    if (defined(style.heightOffset)) {
-      feature.heightOffset = style.heightOffset.evaluate(feature);
-    }
+        if (defined(style.translucencyByDistance)) {
+            const translucencyByDistanceCart4 =
+                style.translucencyByDistance.evaluate(feature);
+            if (defined(translucencyByDistanceCart4)) {
+                scratchTranslucencyByDistance.near =
+                    translucencyByDistanceCart4.x;
+                scratchTranslucencyByDistance.nearValue =
+                    translucencyByDistanceCart4.y;
+                scratchTranslucencyByDistance.far =
+                    translucencyByDistanceCart4.z;
+                scratchTranslucencyByDistance.farValue =
+                    translucencyByDistanceCart4.w;
+                feature.translucencyByDistance = scratchTranslucencyByDistance;
+            } else {
+                feature.translucencyByDistance = undefined;
+            }
+        } else {
+            feature.translucencyByDistance = undefined;
+        }
 
-    if (defined(style.anchorLineEnabled)) {
-      feature.anchorLineEnabled = style.anchorLineEnabled.evaluate(feature);
-    }
+        if (defined(style.distanceDisplayCondition)) {
+            const distanceDisplayConditionCart2 =
+                style.distanceDisplayCondition.evaluate(feature);
+            if (defined(distanceDisplayConditionCart2)) {
+                scratchDistanceDisplayCondition.near =
+                    distanceDisplayConditionCart2.x;
+                scratchDistanceDisplayCondition.far =
+                    distanceDisplayConditionCart2.y;
+                feature.distanceDisplayCondition =
+                    scratchDistanceDisplayCondition;
+            } else {
+                feature.distanceDisplayCondition = undefined;
+            }
+        } else {
+            feature.distanceDisplayCondition = undefined;
+        }
 
-    if (defined(style.anchorLineColor)) {
-      feature.anchorLineColor = style.anchorLineColor.evaluateColor(
-        feature,
-        scratchColor6,
-      );
-    }
+        if (defined(style.heightOffset)) {
+            feature.heightOffset = style.heightOffset.evaluate(feature);
+        }
 
-    if (defined(style.image)) {
-      feature.image = style.image.evaluate(feature);
-    } else {
-      feature.image = undefined;
-    }
+        if (defined(style.anchorLineEnabled)) {
+            feature.anchorLineEnabled =
+                style.anchorLineEnabled.evaluate(feature);
+        }
 
-    if (defined(style.disableDepthTestDistance)) {
-      feature.disableDepthTestDistance =
-        style.disableDepthTestDistance.evaluate(feature);
-    }
+        if (defined(style.anchorLineColor)) {
+            feature.anchorLineColor = style.anchorLineColor.evaluateColor(
+                feature,
+                scratchColor6,
+            );
+        }
 
-    if (defined(style.horizontalOrigin)) {
-      feature.horizontalOrigin = style.horizontalOrigin.evaluate(feature);
-    }
+        if (defined(style.image)) {
+            feature.image = style.image.evaluate(feature);
+        } else {
+            feature.image = undefined;
+        }
 
-    if (defined(style.verticalOrigin)) {
-      feature.verticalOrigin = style.verticalOrigin.evaluate(feature);
-    }
+        if (defined(style.disableDepthTestDistance)) {
+            feature.disableDepthTestDistance =
+                style.disableDepthTestDistance.evaluate(feature);
+        }
 
-    if (defined(style.labelHorizontalOrigin)) {
-      feature.labelHorizontalOrigin =
-        style.labelHorizontalOrigin.evaluate(feature);
-    }
+        if (defined(style.horizontalOrigin)) {
+            feature.horizontalOrigin = style.horizontalOrigin.evaluate(feature);
+        }
 
-    if (defined(style.labelVerticalOrigin)) {
-      feature.labelVerticalOrigin = style.labelVerticalOrigin.evaluate(feature);
+        if (defined(style.verticalOrigin)) {
+            feature.verticalOrigin = style.verticalOrigin.evaluate(feature);
+        }
+
+        if (defined(style.labelHorizontalOrigin)) {
+            feature.labelHorizontalOrigin =
+                style.labelHorizontalOrigin.evaluate(feature);
+        }
+
+        if (defined(style.labelVerticalOrigin)) {
+            feature.labelVerticalOrigin =
+                style.labelVerticalOrigin.evaluate(feature);
+        }
     }
-  }
 };
 
 /**
  * @private
  */
 Vector3DTilePoints.prototype.update = function (frameState) {
-  if (!this._ready) {
-    if (!defined(this._promise)) {
-      this._promise = createPoints(this, frameState.mapProjection.ellipsoid);
+    if (!this._ready) {
+        if (!defined(this._promise)) {
+            this._promise = createPoints(
+                this,
+                frameState.mapProjection.ellipsoid,
+            );
+        }
+
+        if (defined(this._error)) {
+            const error = this._error;
+            this._error = undefined;
+            throw error;
+        }
     }
 
-    if (defined(this._error)) {
-      const error = this._error;
-      this._error = undefined;
-      throw error;
-    }
-  }
-
-  this._polylineCollection.update(frameState);
-  this._billboardCollection.update(frameState);
-  this._labelCollection.update(frameState);
+    this._polylineCollection.update(frameState);
+    this._billboardCollection.update(frameState);
+    this._labelCollection.update(frameState);
 };
 
 /**
@@ -522,7 +547,7 @@ Vector3DTilePoints.prototype.update = function (frameState) {
  * @returns {boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
  */
 Vector3DTilePoints.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -537,12 +562,12 @@ Vector3DTilePoints.prototype.isDestroyed = function () {
  * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
  */
 Vector3DTilePoints.prototype.destroy = function () {
-  this._billboardCollection =
-    this._billboardCollection && this._billboardCollection.destroy();
-  this._labelCollection =
-    this._labelCollection && this._labelCollection.destroy();
-  this._polylineCollection =
-    this._polylineCollection && this._polylineCollection.destroy();
-  return destroyObject(this);
+    this._billboardCollection =
+        this._billboardCollection && this._billboardCollection.destroy();
+    this._labelCollection =
+        this._labelCollection && this._labelCollection.destroy();
+    this._polylineCollection =
+        this._polylineCollection && this._polylineCollection.destroy();
+    return destroyObject(this);
 };
 export default Vector3DTilePoints;

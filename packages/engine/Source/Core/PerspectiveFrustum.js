@@ -33,62 +33,62 @@ import PerspectiveOffCenterFrustum from "./PerspectiveOffCenterFrustum.js";
  * @see PerspectiveOffCenterFrustum
  */
 function PerspectiveFrustum(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._offCenterFrustum = new PerspectiveOffCenterFrustum();
+    this._offCenterFrustum = new PerspectiveOffCenterFrustum();
 
-  /**
-   * The angle of the field of view (FOV), in radians.  This angle will be used
-   * as the horizontal FOV if the width is greater than the height, otherwise
-   * it will be the vertical FOV.
-   * @type {number|undefined}
-   * @default undefined
-   */
-  this.fov = options.fov;
-  this._fov = undefined;
-  this._fovy = undefined;
+    /**
+     * The angle of the field of view (FOV), in radians.  This angle will be used
+     * as the horizontal FOV if the width is greater than the height, otherwise
+     * it will be the vertical FOV.
+     * @type {number|undefined}
+     * @default undefined
+     */
+    this.fov = options.fov;
+    this._fov = undefined;
+    this._fovy = undefined;
 
-  this._sseDenominator = undefined;
+    this._sseDenominator = undefined;
 
-  /**
-   * The aspect ratio of the frustum's width to it's height.
-   * @type {number|undefined}
-   * @default undefined
-   */
-  this.aspectRatio = options.aspectRatio;
-  this._aspectRatio = undefined;
+    /**
+     * The aspect ratio of the frustum's width to it's height.
+     * @type {number|undefined}
+     * @default undefined
+     */
+    this.aspectRatio = options.aspectRatio;
+    this._aspectRatio = undefined;
 
-  /**
-   * The distance of the near plane.
-   * @type {number}
-   * @default 1.0
-   */
-  this.near = options.near ?? 1.0;
-  this._near = this.near;
+    /**
+     * The distance of the near plane.
+     * @type {number}
+     * @default 1.0
+     */
+    this.near = options.near ?? 1.0;
+    this._near = this.near;
 
-  /**
-   * The distance of the far plane.
-   * @type {number}
-   * @default 500000000.0
-   */
-  this.far = options.far ?? 500000000.0;
-  this._far = this.far;
+    /**
+     * The distance of the far plane.
+     * @type {number}
+     * @default 500000000.0
+     */
+    this.far = options.far ?? 500000000.0;
+    this._far = this.far;
 
-  /**
-   * Offsets the frustum in the x direction.
-   * @type {number}
-   * @default 0.0
-   */
-  this.xOffset = options.xOffset ?? 0.0;
-  this._xOffset = this.xOffset;
+    /**
+     * Offsets the frustum in the x direction.
+     * @type {number}
+     * @default 0.0
+     */
+    this.xOffset = options.xOffset ?? 0.0;
+    this._xOffset = this.xOffset;
 
-  /**
-   * Offsets the frustum in the y direction.
-   * @type {number}
-   * @default 0.0
-   */
-  this.yOffset = options.yOffset ?? 0.0;
-  this._yOffset = this.yOffset;
+    /**
+     * Offsets the frustum in the y direction.
+     * @type {number}
+     * @default 0.0
+     */
+    this.yOffset = options.yOffset ?? 0.0;
+    this._yOffset = this.yOffset;
 }
 
 /**
@@ -107,21 +107,21 @@ PerspectiveFrustum.packedLength = 6;
  * @returns {number[]} The array that was packed into
  */
 PerspectiveFrustum.pack = function (value, array, startingIndex) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("value", value);
-  Check.defined("array", array);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("value", value);
+    Check.defined("array", array);
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  array[startingIndex++] = value.fov;
-  array[startingIndex++] = value.aspectRatio;
-  array[startingIndex++] = value.near;
-  array[startingIndex++] = value.far;
-  array[startingIndex++] = value.xOffset;
-  array[startingIndex] = value.yOffset;
+    array[startingIndex++] = value.fov;
+    array[startingIndex++] = value.aspectRatio;
+    array[startingIndex++] = value.near;
+    array[startingIndex++] = value.far;
+    array[startingIndex++] = value.xOffset;
+    array[startingIndex] = value.yOffset;
 
-  return array;
+    return array;
 };
 
 /**
@@ -133,167 +133,168 @@ PerspectiveFrustum.pack = function (value, array, startingIndex) {
  * @returns {PerspectiveFrustum} The modified result parameter or a new PerspectiveFrustum instance if one was not provided.
  */
 PerspectiveFrustum.unpack = function (array, startingIndex, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("array", array);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("array", array);
+    //>>includeEnd('debug');
 
-  startingIndex = startingIndex ?? 0;
+    startingIndex = startingIndex ?? 0;
 
-  if (!defined(result)) {
-    result = new PerspectiveFrustum();
-  }
+    if (!defined(result)) {
+        result = new PerspectiveFrustum();
+    }
 
-  result.fov = array[startingIndex++];
-  result.aspectRatio = array[startingIndex++];
-  result.near = array[startingIndex++];
-  result.far = array[startingIndex++];
-  result.xOffset = array[startingIndex++];
-  result.yOffset = array[startingIndex];
+    result.fov = array[startingIndex++];
+    result.aspectRatio = array[startingIndex++];
+    result.near = array[startingIndex++];
+    result.far = array[startingIndex++];
+    result.xOffset = array[startingIndex++];
+    result.yOffset = array[startingIndex];
 
-  return result;
+    return result;
 };
 
 function update(frustum) {
-  //>>includeStart('debug', pragmas.debug);
-  if (
-    !defined(frustum.fov) ||
-    !defined(frustum.aspectRatio) ||
-    !defined(frustum.near) ||
-    !defined(frustum.far)
-  ) {
-    throw new DeveloperError(
-      "fov, aspectRatio, near, or far parameters are not set.",
+    //>>includeStart('debug', pragmas.debug);
+    if (
+        !defined(frustum.fov) ||
+        !defined(frustum.aspectRatio) ||
+        !defined(frustum.near) ||
+        !defined(frustum.far)
+    ) {
+        throw new DeveloperError(
+            "fov, aspectRatio, near, or far parameters are not set.",
+        );
+    }
+    //>>includeEnd('debug');
+
+    const changed =
+        frustum.fov !== frustum._fov ||
+        frustum.aspectRatio !== frustum._aspectRatio ||
+        frustum.near !== frustum._near ||
+        frustum.far !== frustum._far ||
+        frustum.xOffset !== frustum._xOffset ||
+        frustum.yOffset !== frustum._yOffset;
+
+    if (!changed) {
+        return;
+    }
+
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number.greaterThanOrEquals("fov", frustum.fov, 0.0);
+    Check.typeOf.number.lessThan("fov", frustum.fov, Math.PI);
+
+    Check.typeOf.number.greaterThanOrEquals(
+        "aspectRatio",
+        frustum.aspectRatio,
+        0.0,
     );
-  }
-  //>>includeEnd('debug');
 
-  const changed =
-    frustum.fov !== frustum._fov ||
-    frustum.aspectRatio !== frustum._aspectRatio ||
-    frustum.near !== frustum._near ||
-    frustum.far !== frustum._far ||
-    frustum.xOffset !== frustum._xOffset ||
-    frustum.yOffset !== frustum._yOffset;
+    Check.typeOf.number.greaterThanOrEquals("near", frustum.near, 0.0);
+    if (frustum.near > frustum.far) {
+        throw new DeveloperError("near must be less than far.");
+    }
+    //>>includeEnd('debug');
 
-  if (!changed) {
-    return;
-  }
+    frustum._aspectRatio = frustum.aspectRatio;
+    frustum._fov = frustum.fov;
+    frustum._fovy =
+        frustum.aspectRatio <= 1
+            ? frustum.fov
+            : Math.atan(Math.tan(frustum.fov * 0.5) / frustum.aspectRatio) *
+              2.0;
+    frustum._near = frustum.near;
+    frustum._far = frustum.far;
+    frustum._sseDenominator = 2.0 * Math.tan(0.5 * frustum._fovy);
+    frustum._xOffset = frustum.xOffset;
+    frustum._yOffset = frustum.yOffset;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number.greaterThanOrEquals("fov", frustum.fov, 0.0);
-  Check.typeOf.number.lessThan("fov", frustum.fov, Math.PI);
+    const f = frustum._offCenterFrustum;
 
-  Check.typeOf.number.greaterThanOrEquals(
-    "aspectRatio",
-    frustum.aspectRatio,
-    0.0,
-  );
+    f.top = frustum.near * Math.tan(0.5 * frustum._fovy);
+    f.bottom = -f.top;
+    f.right = frustum.aspectRatio * f.top;
+    f.left = -f.right;
+    f.near = frustum.near;
+    f.far = frustum.far;
 
-  Check.typeOf.number.greaterThanOrEquals("near", frustum.near, 0.0);
-  if (frustum.near > frustum.far) {
-    throw new DeveloperError("near must be less than far.");
-  }
-  //>>includeEnd('debug');
-
-  frustum._aspectRatio = frustum.aspectRatio;
-  frustum._fov = frustum.fov;
-  frustum._fovy =
-    frustum.aspectRatio <= 1
-      ? frustum.fov
-      : Math.atan(Math.tan(frustum.fov * 0.5) / frustum.aspectRatio) * 2.0;
-  frustum._near = frustum.near;
-  frustum._far = frustum.far;
-  frustum._sseDenominator = 2.0 * Math.tan(0.5 * frustum._fovy);
-  frustum._xOffset = frustum.xOffset;
-  frustum._yOffset = frustum.yOffset;
-
-  const f = frustum._offCenterFrustum;
-
-  f.top = frustum.near * Math.tan(0.5 * frustum._fovy);
-  f.bottom = -f.top;
-  f.right = frustum.aspectRatio * f.top;
-  f.left = -f.right;
-  f.near = frustum.near;
-  f.far = frustum.far;
-
-  f.right += frustum.xOffset;
-  f.left += frustum.xOffset;
-  f.top += frustum.yOffset;
-  f.bottom += frustum.yOffset;
+    f.right += frustum.xOffset;
+    f.left += frustum.xOffset;
+    f.top += frustum.yOffset;
+    f.bottom += frustum.yOffset;
 }
 
 Object.defineProperties(PerspectiveFrustum.prototype, {
-  /**
-   * Gets the perspective projection matrix computed from the view frustum.
-   * If necessary, the projection matrix will be recomputed.
-   *
-   * @memberof PerspectiveFrustum.prototype
-   * @type {Matrix4}
-   * @readonly
-   *
-   * @see PerspectiveOffCenterFrustum#projectionMatrix.
-   * @see PerspectiveFrustum#infiniteProjectionMatrix
-   */
-  projectionMatrix: {
-    get: function () {
-      update(this);
-      return this._offCenterFrustum.projectionMatrix;
+    /**
+     * Gets the perspective projection matrix computed from the view frustum.
+     * If necessary, the projection matrix will be recomputed.
+     *
+     * @memberof PerspectiveFrustum.prototype
+     * @type {Matrix4}
+     * @readonly
+     *
+     * @see PerspectiveOffCenterFrustum#projectionMatrix.
+     * @see PerspectiveFrustum#infiniteProjectionMatrix
+     */
+    projectionMatrix: {
+        get: function () {
+            update(this);
+            return this._offCenterFrustum.projectionMatrix;
+        },
     },
-  },
 
-  /**
-   * The perspective projection matrix computed from the view frustum with an infinite far plane.
-   * @memberof PerspectiveFrustum.prototype
-   * @type {Matrix4}
-   * @readonly
-   *
-   * @see PerspectiveFrustum#projectionMatrix
-   */
-  infiniteProjectionMatrix: {
-    get: function () {
-      update(this);
-      return this._offCenterFrustum.infiniteProjectionMatrix;
+    /**
+     * The perspective projection matrix computed from the view frustum with an infinite far plane.
+     * @memberof PerspectiveFrustum.prototype
+     * @type {Matrix4}
+     * @readonly
+     *
+     * @see PerspectiveFrustum#projectionMatrix
+     */
+    infiniteProjectionMatrix: {
+        get: function () {
+            update(this);
+            return this._offCenterFrustum.infiniteProjectionMatrix;
+        },
     },
-  },
 
-  /**
-   * Gets the angle of the vertical field of view, in radians.
-   * @memberof PerspectiveFrustum.prototype
-   * @type {number|undefined}
-   * @readonly
-   * @default undefined
-   */
-  fovy: {
-    get: function () {
-      update(this);
-      return this._fovy;
+    /**
+     * Gets the angle of the vertical field of view, in radians.
+     * @memberof PerspectiveFrustum.prototype
+     * @type {number|undefined}
+     * @readonly
+     * @default undefined
+     */
+    fovy: {
+        get: function () {
+            update(this);
+            return this._fovy;
+        },
     },
-  },
 
-  /**
-   * @readonly
-   * @private
-   */
-  sseDenominator: {
-    get: function () {
-      update(this);
-      return this._sseDenominator;
+    /**
+     * @readonly
+     * @private
+     */
+    sseDenominator: {
+        get: function () {
+            update(this);
+            return this._sseDenominator;
+        },
     },
-  },
 
-  /**
-   * Gets the orthographic projection matrix computed from the view frustum.
-   * @memberof PerspectiveFrustum.prototype
-   * @type {PerspectiveOffCenterFrustum}
-   * @readonly
-   * @private
-   */
-  offCenterFrustum: {
-    get: function () {
-      update(this);
-      return this._offCenterFrustum;
+    /**
+     * Gets the orthographic projection matrix computed from the view frustum.
+     * @memberof PerspectiveFrustum.prototype
+     * @type {PerspectiveOffCenterFrustum}
+     * @readonly
+     * @private
+     */
+    offCenterFrustum: {
+        get: function () {
+            update(this);
+            return this._offCenterFrustum;
+        },
     },
-  },
 });
 
 /**
@@ -310,12 +311,12 @@ Object.defineProperties(PerspectiveFrustum.prototype, {
  * const intersect = cullingVolume.computeVisibility(boundingVolume);
  */
 PerspectiveFrustum.prototype.computeCullingVolume = function (
-  position,
-  direction,
-  up,
+    position,
+    direction,
+    up,
 ) {
-  update(this);
-  return this._offCenterFrustum.computeCullingVolume(position, direction, up);
+    update(this);
+    return this._offCenterFrustum.computeCullingVolume(position, direction, up);
 };
 
 /**
@@ -349,20 +350,20 @@ PerspectiveFrustum.prototype.computeCullingVolume = function (
  * const pixelSize = camera.frustum.getPixelDimensions(scene.drawingBufferWidth, scene.drawingBufferHeight, distance, scene.pixelRatio, new Cesium.Cartesian2());
  */
 PerspectiveFrustum.prototype.getPixelDimensions = function (
-  drawingBufferWidth,
-  drawingBufferHeight,
-  distance,
-  pixelRatio,
-  result,
-) {
-  update(this);
-  return this._offCenterFrustum.getPixelDimensions(
     drawingBufferWidth,
     drawingBufferHeight,
     distance,
     pixelRatio,
     result,
-  );
+) {
+    update(this);
+    return this._offCenterFrustum.getPixelDimensions(
+        drawingBufferWidth,
+        drawingBufferHeight,
+        distance,
+        pixelRatio,
+        result,
+    );
 };
 
 /**
@@ -372,24 +373,24 @@ PerspectiveFrustum.prototype.getPixelDimensions = function (
  * @returns {PerspectiveFrustum} The modified result parameter or a new PerspectiveFrustum instance if one was not provided.
  */
 PerspectiveFrustum.prototype.clone = function (result) {
-  if (!defined(result)) {
-    result = new PerspectiveFrustum();
-  }
+    if (!defined(result)) {
+        result = new PerspectiveFrustum();
+    }
 
-  result.aspectRatio = this.aspectRatio;
-  result.fov = this.fov;
-  result.near = this.near;
-  result.far = this.far;
+    result.aspectRatio = this.aspectRatio;
+    result.fov = this.fov;
+    result.near = this.near;
+    result.far = this.far;
 
-  // force update of clone to compute matrices
-  result._aspectRatio = undefined;
-  result._fov = undefined;
-  result._near = undefined;
-  result._far = undefined;
+    // force update of clone to compute matrices
+    result._aspectRatio = undefined;
+    result._fov = undefined;
+    result._near = undefined;
+    result._far = undefined;
 
-  this._offCenterFrustum.clone(result._offCenterFrustum);
+    this._offCenterFrustum.clone(result._offCenterFrustum);
 
-  return result;
+    return result;
 };
 
 /**
@@ -400,18 +401,18 @@ PerspectiveFrustum.prototype.clone = function (result) {
  * @returns {boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
  */
 PerspectiveFrustum.prototype.equals = function (other) {
-  if (!defined(other) || !(other instanceof PerspectiveFrustum)) {
-    return false;
-  }
+    if (!defined(other) || !(other instanceof PerspectiveFrustum)) {
+        return false;
+    }
 
-  update(this);
-  update(other);
+    update(this);
+    update(other);
 
-  return (
-    this.fov === other.fov &&
-    this.aspectRatio === other.aspectRatio &&
-    this._offCenterFrustum.equals(other._offCenterFrustum)
-  );
+    return (
+        this.fov === other.fov &&
+        this.aspectRatio === other.aspectRatio &&
+        this._offCenterFrustum.equals(other._offCenterFrustum)
+    );
 };
 
 /**
@@ -425,35 +426,35 @@ PerspectiveFrustum.prototype.equals = function (other) {
  * @returns {boolean} <code>true</code> if this and other are within the provided epsilon, <code>false</code> otherwise.
  */
 PerspectiveFrustum.prototype.equalsEpsilon = function (
-  other,
-  relativeEpsilon,
-  absoluteEpsilon,
+    other,
+    relativeEpsilon,
+    absoluteEpsilon,
 ) {
-  if (!defined(other) || !(other instanceof PerspectiveFrustum)) {
-    return false;
-  }
+    if (!defined(other) || !(other instanceof PerspectiveFrustum)) {
+        return false;
+    }
 
-  update(this);
-  update(other);
+    update(this);
+    update(other);
 
-  return (
-    CesiumMath.equalsEpsilon(
-      this.fov,
-      other.fov,
-      relativeEpsilon,
-      absoluteEpsilon,
-    ) &&
-    CesiumMath.equalsEpsilon(
-      this.aspectRatio,
-      other.aspectRatio,
-      relativeEpsilon,
-      absoluteEpsilon,
-    ) &&
-    this._offCenterFrustum.equalsEpsilon(
-      other._offCenterFrustum,
-      relativeEpsilon,
-      absoluteEpsilon,
-    )
-  );
+    return (
+        CesiumMath.equalsEpsilon(
+            this.fov,
+            other.fov,
+            relativeEpsilon,
+            absoluteEpsilon,
+        ) &&
+        CesiumMath.equalsEpsilon(
+            this.aspectRatio,
+            other.aspectRatio,
+            relativeEpsilon,
+            absoluteEpsilon,
+        ) &&
+        this._offCenterFrustum.equalsEpsilon(
+            other._offCenterFrustum,
+            relativeEpsilon,
+            absoluteEpsilon,
+        )
+    );
 };
 export default PerspectiveFrustum;

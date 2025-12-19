@@ -12,33 +12,33 @@ const textureResolutionScratch = new Cartesian2();
  * @private
  */
 function getClippingFunction(clippingPlaneCollection, context) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("clippingPlaneCollection", clippingPlaneCollection);
-  Check.typeOf.object("context", context);
-  //>>includeEnd('debug');
-  const unionClippingRegions = clippingPlaneCollection.unionClippingRegions;
-  const clippingPlanesLength = clippingPlaneCollection.length;
-  const usingFloatTexture = ClippingPlaneCollection.useFloatTexture(context);
-  const textureResolution = ClippingPlaneCollection.getTextureResolution(
-    clippingPlaneCollection,
-    context,
-    textureResolutionScratch,
-  );
-  const width = textureResolution.x;
-  const height = textureResolution.y;
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("clippingPlaneCollection", clippingPlaneCollection);
+    Check.typeOf.object("context", context);
+    //>>includeEnd('debug');
+    const unionClippingRegions = clippingPlaneCollection.unionClippingRegions;
+    const clippingPlanesLength = clippingPlaneCollection.length;
+    const usingFloatTexture = ClippingPlaneCollection.useFloatTexture(context);
+    const textureResolution = ClippingPlaneCollection.getTextureResolution(
+        clippingPlaneCollection,
+        context,
+        textureResolutionScratch,
+    );
+    const width = textureResolution.x;
+    const height = textureResolution.y;
 
-  let functions = usingFloatTexture
-    ? getClippingPlaneFloat(width, height)
-    : getClippingPlaneUint8(width, height);
-  functions += "\n";
-  functions += unionClippingRegions
-    ? clippingFunctionUnion(clippingPlanesLength)
-    : clippingFunctionIntersect(clippingPlanesLength);
-  return functions;
+    let functions = usingFloatTexture
+        ? getClippingPlaneFloat(width, height)
+        : getClippingPlaneUint8(width, height);
+    functions += "\n";
+    functions += unionClippingRegions
+        ? clippingFunctionUnion(clippingPlanesLength)
+        : clippingFunctionIntersect(clippingPlanesLength);
+    return functions;
 }
 
 function clippingFunctionUnion(clippingPlanesLength) {
-  return `float clip(vec4 fragCoord, sampler2D clippingPlanes, mat4 clippingPlanesMatrix)
+    return `float clip(vec4 fragCoord, sampler2D clippingPlanes, mat4 clippingPlanesMatrix)
 {
     vec4 position = czm_windowToEyeCoordinates(fragCoord);
     vec3 clipNormal = vec3(0.0);
@@ -69,7 +69,7 @@ function clippingFunctionUnion(clippingPlanesLength) {
 }
 
 function clippingFunctionIntersect(clippingPlanesLength) {
-  return `float clip(vec4 fragCoord, sampler2D clippingPlanes, mat4 clippingPlanesMatrix)
+    return `float clip(vec4 fragCoord, sampler2D clippingPlanes, mat4 clippingPlanesMatrix)
 {
     bool clipped = true;
     vec4 position = czm_windowToEyeCoordinates(fragCoord);
@@ -96,19 +96,19 @@ function clippingFunctionIntersect(clippingPlanesLength) {
 }
 
 function getClippingPlaneFloat(width, height) {
-  const pixelWidth = 1.0 / width;
-  const pixelHeight = 1.0 / height;
+    const pixelWidth = 1.0 / width;
+    const pixelHeight = 1.0 / height;
 
-  let pixelWidthString = `${pixelWidth}`;
-  if (pixelWidthString.indexOf(".") === -1) {
-    pixelWidthString += ".0";
-  }
-  let pixelHeightString = `${pixelHeight}`;
-  if (pixelHeightString.indexOf(".") === -1) {
-    pixelHeightString += ".0";
-  }
+    let pixelWidthString = `${pixelWidth}`;
+    if (pixelWidthString.indexOf(".") === -1) {
+        pixelWidthString += ".0";
+    }
+    let pixelHeightString = `${pixelHeight}`;
+    if (pixelHeightString.indexOf(".") === -1) {
+        pixelHeightString += ".0";
+    }
 
-  return `vec4 getClippingPlane(highp sampler2D packedClippingPlanes, int clippingPlaneNumber, mat4 transform)
+    return `vec4 getClippingPlane(highp sampler2D packedClippingPlanes, int clippingPlaneNumber, mat4 transform)
 {
     int pixY = clippingPlaneNumber / ${width};
     int pixX = clippingPlaneNumber - (pixY * ${width});
@@ -122,19 +122,19 @@ function getClippingPlaneFloat(width, height) {
 }
 
 function getClippingPlaneUint8(width, height) {
-  const pixelWidth = 1.0 / width;
-  const pixelHeight = 1.0 / height;
+    const pixelWidth = 1.0 / width;
+    const pixelHeight = 1.0 / height;
 
-  let pixelWidthString = `${pixelWidth}`;
-  if (pixelWidthString.indexOf(".") === -1) {
-    pixelWidthString += ".0";
-  }
-  let pixelHeightString = `${pixelHeight}`;
-  if (pixelHeightString.indexOf(".") === -1) {
-    pixelHeightString += ".0";
-  }
+    let pixelWidthString = `${pixelWidth}`;
+    if (pixelWidthString.indexOf(".") === -1) {
+        pixelWidthString += ".0";
+    }
+    let pixelHeightString = `${pixelHeight}`;
+    if (pixelHeightString.indexOf(".") === -1) {
+        pixelHeightString += ".0";
+    }
 
-  return `vec4 getClippingPlane(highp sampler2D packedClippingPlanes, int clippingPlaneNumber, mat4 transform)
+    return `vec4 getClippingPlane(highp sampler2D packedClippingPlanes, int clippingPlaneNumber, mat4 transform)
 {
     int clippingPlaneStartIndex = clippingPlaneNumber * 2;
     int pixY = clippingPlaneStartIndex / ${width};

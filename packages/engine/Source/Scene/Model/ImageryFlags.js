@@ -17,15 +17,15 @@
  * @private
  */
 class ImageryFlags {
-  constructor() {
-    this.alpha = false;
-    this.brightness = false;
-    this.contrast = false;
-    this.hue = false;
-    this.saturation = false;
-    this.gamma = false;
-    this.colorToAlpha = false;
-  }
+    constructor() {
+        this.alpha = false;
+        this.brightness = false;
+        this.contrast = false;
+        this.hue = false;
+        this.saturation = false;
+        this.gamma = false;
+        this.colorToAlpha = false;
+    }
 }
 
 export default ImageryFlags;

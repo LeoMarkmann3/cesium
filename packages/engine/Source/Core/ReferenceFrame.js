@@ -4,20 +4,20 @@
  * @enum {number}
  */
 const ReferenceFrame = {
-  /**
-   * The fixed frame.
-   *
-   * @type {number}
-   * @constant
-   */
-  FIXED: 0,
+    /**
+     * The fixed frame.
+     *
+     * @type {number}
+     * @constant
+     */
+    FIXED: 0,
 
-  /**
-   * The inertial frame.
-   *
-   * @type {number}
-   * @constant
-   */
-  INERTIAL: 1,
+    /**
+     * The inertial frame.
+     *
+     * @type {number}
+     * @constant
+     */
+    INERTIAL: 1,
 };
 export default Object.freeze(ReferenceFrame);

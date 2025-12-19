@@ -39,12 +39,12 @@ import Ellipsoid from "./Ellipsoid.js";
  *
  */
 function createWorldTerrainAsync(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  return CesiumTerrainProvider.fromIonAssetId(1, {
-    requestVertexNormals: options.requestVertexNormals ?? false,
-    requestWaterMask: options.requestWaterMask ?? false,
-    ellipsoid: Ellipsoid.WGS84,
-  });
+    return CesiumTerrainProvider.fromIonAssetId(1, {
+        requestVertexNormals: options.requestVertexNormals ?? false,
+        requestWaterMask: options.requestWaterMask ?? false,
+        ellipsoid: Ellipsoid.WGS84,
+    });
 }
 export default createWorldTerrainAsync;

@@ -37,148 +37,151 @@ import defined from "../Core/defined.js";
  * }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
  */
 function Cesium3DTileFeature(content, batchId) {
-  this._content = content;
-  this._batchId = batchId;
-  this._color = undefined; // for calling getColor
+    this._content = content;
+    this._batchId = batchId;
+    this._color = undefined; // for calling getColor
 }
 
 Object.defineProperties(Cesium3DTileFeature.prototype, {
-  /**
-   * Gets or sets if the feature will be shown. This is set for all features
-   * when a style's show is evaluated.
-   *
-   * @memberof Cesium3DTileFeature.prototype
-   *
-   * @type {boolean}
-   *
-   * @default true
-   */
-  show: {
-    get: function () {
-      return this._content.batchTable.getShow(this._batchId);
+    /**
+     * Gets or sets if the feature will be shown. This is set for all features
+     * when a style's show is evaluated.
+     *
+     * @memberof Cesium3DTileFeature.prototype
+     *
+     * @type {boolean}
+     *
+     * @default true
+     */
+    show: {
+        get: function () {
+            return this._content.batchTable.getShow(this._batchId);
+        },
+        set: function (value) {
+            this._content.batchTable.setShow(this._batchId, value);
+        },
     },
-    set: function (value) {
-      this._content.batchTable.setShow(this._batchId, value);
-    },
-  },
 
-  /**
-   * Gets or sets the highlight color multiplied with the feature's color.  When
-   * this is white, the feature's color is not changed. This is set for all features
-   * when a style's color is evaluated.
-   *
-   * @memberof Cesium3DTileFeature.prototype
-   *
-   * @type {Color}
-   *
-   * @default {@link Color.WHITE}
-   */
-  color: {
-    get: function () {
-      if (!defined(this._color)) {
-        this._color = new Color();
-      }
-      return this._content.batchTable.getColor(this._batchId, this._color);
+    /**
+     * Gets or sets the highlight color multiplied with the feature's color.  When
+     * this is white, the feature's color is not changed. This is set for all features
+     * when a style's color is evaluated.
+     *
+     * @memberof Cesium3DTileFeature.prototype
+     *
+     * @type {Color}
+     *
+     * @default {@link Color.WHITE}
+     */
+    color: {
+        get: function () {
+            if (!defined(this._color)) {
+                this._color = new Color();
+            }
+            return this._content.batchTable.getColor(
+                this._batchId,
+                this._color,
+            );
+        },
+        set: function (value) {
+            this._content.batchTable.setColor(this._batchId, value);
+        },
     },
-    set: function (value) {
-      this._content.batchTable.setColor(this._batchId, value);
-    },
-  },
 
-  /**
-   * Gets a typed array containing the ECEF positions of the polyline.
-   * Returns undefined if {@link Cesium3DTileset#vectorKeepDecodedPositions} is false
-   * or the feature is not a polyline in a vector tile.
-   *
-   * @memberof Cesium3DTileFeature.prototype
-   *
-   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
-   *
-   * @type {Float64Array}
-   */
-  polylinePositions: {
-    get: function () {
-      if (!defined(this._content.getPolylinePositions)) {
-        return undefined;
-      }
+    /**
+     * Gets a typed array containing the ECEF positions of the polyline.
+     * Returns undefined if {@link Cesium3DTileset#vectorKeepDecodedPositions} is false
+     * or the feature is not a polyline in a vector tile.
+     *
+     * @memberof Cesium3DTileFeature.prototype
+     *
+     * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+     *
+     * @type {Float64Array}
+     */
+    polylinePositions: {
+        get: function () {
+            if (!defined(this._content.getPolylinePositions)) {
+                return undefined;
+            }
 
-      return this._content.getPolylinePositions(this._batchId);
+            return this._content.getPolylinePositions(this._batchId);
+        },
     },
-  },
 
-  /**
-   * Gets the content of the tile containing the feature.
-   *
-   * @memberof Cesium3DTileFeature.prototype
-   *
-   * @type {Cesium3DTileContent}
-   *
-   * @readonly
-   * @private
-   */
-  content: {
-    get: function () {
-      return this._content;
+    /**
+     * Gets the content of the tile containing the feature.
+     *
+     * @memberof Cesium3DTileFeature.prototype
+     *
+     * @type {Cesium3DTileContent}
+     *
+     * @readonly
+     * @private
+     */
+    content: {
+        get: function () {
+            return this._content;
+        },
     },
-  },
 
-  /**
-   * Gets the tileset containing the feature.
-   *
-   * @memberof Cesium3DTileFeature.prototype
-   *
-   * @type {Cesium3DTileset}
-   *
-   * @readonly
-   */
-  tileset: {
-    get: function () {
-      return this._content.tileset;
+    /**
+     * Gets the tileset containing the feature.
+     *
+     * @memberof Cesium3DTileFeature.prototype
+     *
+     * @type {Cesium3DTileset}
+     *
+     * @readonly
+     */
+    tileset: {
+        get: function () {
+            return this._content.tileset;
+        },
     },
-  },
 
-  /**
-   * All objects returned by {@link Scene#pick} have a <code>primitive</code> property. This returns
-   * the tileset containing the feature.
-   *
-   * @memberof Cesium3DTileFeature.prototype
-   *
-   * @type {Cesium3DTileset}
-   *
-   * @readonly
-   */
-  primitive: {
-    get: function () {
-      return this._content.tileset;
+    /**
+     * All objects returned by {@link Scene#pick} have a <code>primitive</code> property. This returns
+     * the tileset containing the feature.
+     *
+     * @memberof Cesium3DTileFeature.prototype
+     *
+     * @type {Cesium3DTileset}
+     *
+     * @readonly
+     */
+    primitive: {
+        get: function () {
+            return this._content.tileset;
+        },
     },
-  },
 
-  /**
-   * Get the feature ID associated with this feature. For 3D Tiles 1.0, the
-   * batch ID is returned. For EXT_mesh_features, this is the feature ID from
-   * the selected feature ID set.
-   *
-   * @memberof Cesium3DTileFeature.prototype
-   *
-   * @type {number}
-   *
-   * @readonly
-   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
-   */
-  featureId: {
-    get: function () {
-      return this._batchId;
+    /**
+     * Get the feature ID associated with this feature. For 3D Tiles 1.0, the
+     * batch ID is returned. For EXT_mesh_features, this is the feature ID from
+     * the selected feature ID set.
+     *
+     * @memberof Cesium3DTileFeature.prototype
+     *
+     * @type {number}
+     *
+     * @readonly
+     * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+     */
+    featureId: {
+        get: function () {
+            return this._batchId;
+        },
     },
-  },
 
-  /**
-   * @private
-   */
-  pickId: {
-    get: function () {
-      return this._content.batchTable.getPickColor(this._batchId);
+    /**
+     * @private
+     */
+    pickId: {
+        get: function () {
+            return this._content.batchTable.getPickColor(this._batchId);
+        },
     },
-  },
 });
 
 /**
@@ -191,7 +194,7 @@ Object.defineProperties(Cesium3DTileFeature.prototype, {
  * @returns {boolean} Whether the feature contains this property.
  */
 Cesium3DTileFeature.prototype.hasProperty = function (name) {
-  return this._content.batchTable.hasProperty(this._batchId, name);
+    return this._content.batchTable.hasProperty(this._batchId, name);
 };
 
 /**
@@ -204,7 +207,7 @@ Cesium3DTileFeature.prototype.hasProperty = function (name) {
  * @returns {string[]} The IDs of the feature's properties.
  */
 Cesium3DTileFeature.prototype.getPropertyIds = function (results) {
-  return this._content.batchTable.getPropertyIds(this._batchId, results);
+    return this._content.batchTable.getPropertyIds(this._batchId, results);
 };
 
 /**
@@ -226,7 +229,7 @@ Cesium3DTileFeature.prototype.getPropertyIds = function (results) {
  * }
  */
 Cesium3DTileFeature.prototype.getProperty = function (name) {
-  return this._content.batchTable.getProperty(this._batchId, name);
+    return this._content.batchTable.getProperty(this._batchId, name);
 };
 
 /**
@@ -266,80 +269,80 @@ Cesium3DTileFeature.prototype.getProperty = function (name) {
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 Cesium3DTileFeature.getPropertyInherited = function (content, batchId, name) {
-  const batchTable = content.batchTable;
-  if (defined(batchTable)) {
-    if (batchTable.hasPropertyBySemantic(batchId, name)) {
-      return batchTable.getPropertyBySemantic(batchId, name);
+    const batchTable = content.batchTable;
+    if (defined(batchTable)) {
+        if (batchTable.hasPropertyBySemantic(batchId, name)) {
+            return batchTable.getPropertyBySemantic(batchId, name);
+        }
+
+        if (batchTable.hasProperty(batchId, name)) {
+            return batchTable.getProperty(batchId, name);
+        }
     }
 
-    if (batchTable.hasProperty(batchId, name)) {
-      return batchTable.getProperty(batchId, name);
-    }
-  }
+    const contentMetadata = content.metadata;
+    if (defined(contentMetadata)) {
+        if (contentMetadata.hasPropertyBySemantic(name)) {
+            return contentMetadata.getPropertyBySemantic(name);
+        }
 
-  const contentMetadata = content.metadata;
-  if (defined(contentMetadata)) {
-    if (contentMetadata.hasPropertyBySemantic(name)) {
-      return contentMetadata.getPropertyBySemantic(name);
-    }
-
-    if (contentMetadata.hasProperty(name)) {
-      return contentMetadata.getProperty(name);
-    }
-  }
-
-  const tile = content.tile;
-  const tileMetadata = tile.metadata;
-  if (defined(tileMetadata)) {
-    if (tileMetadata.hasPropertyBySemantic(name)) {
-      return tileMetadata.getPropertyBySemantic(name);
+        if (contentMetadata.hasProperty(name)) {
+            return contentMetadata.getProperty(name);
+        }
     }
 
-    if (tileMetadata.hasProperty(name)) {
-      return tileMetadata.getProperty(name);
-    }
-  }
+    const tile = content.tile;
+    const tileMetadata = tile.metadata;
+    if (defined(tileMetadata)) {
+        if (tileMetadata.hasPropertyBySemantic(name)) {
+            return tileMetadata.getPropertyBySemantic(name);
+        }
 
-  let subtreeMetadata;
-  if (defined(tile.implicitSubtree)) {
-    subtreeMetadata = tile.implicitSubtree.metadata;
-  }
-
-  if (defined(subtreeMetadata)) {
-    if (subtreeMetadata.hasPropertyBySemantic(name)) {
-      return subtreeMetadata.getPropertyBySemantic(name);
+        if (tileMetadata.hasProperty(name)) {
+            return tileMetadata.getProperty(name);
+        }
     }
 
-    if (subtreeMetadata.hasProperty(name)) {
-      return subtreeMetadata.getProperty(name);
-    }
-  }
-
-  const groupMetadata = defined(content.group)
-    ? content.group.metadata
-    : undefined;
-  if (defined(groupMetadata)) {
-    if (groupMetadata.hasPropertyBySemantic(name)) {
-      return groupMetadata.getPropertyBySemantic(name);
+    let subtreeMetadata;
+    if (defined(tile.implicitSubtree)) {
+        subtreeMetadata = tile.implicitSubtree.metadata;
     }
 
-    if (groupMetadata.hasProperty(name)) {
-      return groupMetadata.getProperty(name);
-    }
-  }
+    if (defined(subtreeMetadata)) {
+        if (subtreeMetadata.hasPropertyBySemantic(name)) {
+            return subtreeMetadata.getPropertyBySemantic(name);
+        }
 
-  const tilesetMetadata = content.tileset.metadata;
-  if (defined(tilesetMetadata)) {
-    if (tilesetMetadata.hasPropertyBySemantic(name)) {
-      return tilesetMetadata.getPropertyBySemantic(name);
+        if (subtreeMetadata.hasProperty(name)) {
+            return subtreeMetadata.getProperty(name);
+        }
     }
 
-    if (tilesetMetadata.hasProperty(name)) {
-      return tilesetMetadata.getProperty(name);
-    }
-  }
+    const groupMetadata = defined(content.group)
+        ? content.group.metadata
+        : undefined;
+    if (defined(groupMetadata)) {
+        if (groupMetadata.hasPropertyBySemantic(name)) {
+            return groupMetadata.getPropertyBySemantic(name);
+        }
 
-  return undefined;
+        if (groupMetadata.hasProperty(name)) {
+            return groupMetadata.getProperty(name);
+        }
+    }
+
+    const tilesetMetadata = content.tileset.metadata;
+    if (defined(tilesetMetadata)) {
+        if (tilesetMetadata.hasPropertyBySemantic(name)) {
+            return tilesetMetadata.getPropertyBySemantic(name);
+        }
+
+        if (tilesetMetadata.hasProperty(name)) {
+            return tilesetMetadata.getProperty(name);
+        }
+    }
+
+    return undefined;
 };
 
 /**
@@ -358,11 +361,11 @@ Cesium3DTileFeature.getPropertyInherited = function (content, batchId, name) {
  * @private
  */
 Cesium3DTileFeature.prototype.getPropertyInherited = function (name) {
-  return Cesium3DTileFeature.getPropertyInherited(
-    this._content,
-    this._batchId,
-    name,
-  );
+    return Cesium3DTileFeature.getPropertyInherited(
+        this._content,
+        this._batchId,
+        name,
+    );
 };
 
 /**
@@ -389,12 +392,12 @@ Cesium3DTileFeature.prototype.getPropertyInherited = function (name) {
  * }
  */
 Cesium3DTileFeature.prototype.setProperty = function (name, value) {
-  this._content.batchTable.setProperty(this._batchId, name, value);
+    this._content.batchTable.setProperty(this._batchId, name, value);
 
-  // PERFORMANCE_IDEA: Probably overkill, but maybe only mark the tile dirty if the
-  // property is in one of the style's expressions or - if it can be done quickly -
-  // if the new property value changed the result of an expression.
-  this._content.featurePropertiesDirty = true;
+    // PERFORMANCE_IDEA: Probably overkill, but maybe only mark the tile dirty if the
+    // property is in one of the style's expressions or - if it can be done quickly -
+    // if the new property value changed the result of an expression.
+    this._content.featurePropertiesDirty = true;
 };
 
 /**
@@ -410,7 +413,7 @@ Cesium3DTileFeature.prototype.setProperty = function (name, value) {
  * @private
  */
 Cesium3DTileFeature.prototype.isExactClass = function (className) {
-  return this._content.batchTable.isExactClass(this._batchId, className);
+    return this._content.batchTable.isExactClass(this._batchId, className);
 };
 
 /**
@@ -425,7 +428,7 @@ Cesium3DTileFeature.prototype.isExactClass = function (className) {
  * @private
  */
 Cesium3DTileFeature.prototype.isClass = function (className) {
-  return this._content.batchTable.isClass(this._batchId, className);
+    return this._content.batchTable.isClass(this._batchId, className);
 };
 
 /**
@@ -439,6 +442,6 @@ Cesium3DTileFeature.prototype.isClass = function (className) {
  * @private
  */
 Cesium3DTileFeature.prototype.getExactClassName = function () {
-  return this._content.batchTable.getExactClassName(this._batchId);
+    return this._content.batchTable.getExactClassName(this._batchId);
 };
 export default Cesium3DTileFeature;

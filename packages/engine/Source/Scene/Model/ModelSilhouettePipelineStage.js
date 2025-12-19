@@ -12,7 +12,7 @@ import ModelSilhouetteStageVS from "../../Shaders/Model/ModelSilhouetteStageVS.j
  * @private
  */
 const ModelSilhouettePipelineStage = {
-  name: "ModelSilhouettePipelineStage", // Helps with debugging
+    name: "ModelSilhouettePipelineStage", // Helps with debugging
 };
 
 /**
@@ -49,61 +49,68 @@ ModelSilhouettePipelineStage.silhouettesLength = 0;
  * @private
  */
 ModelSilhouettePipelineStage.process = function (
-  renderResources,
-  model,
-  frameState,
+    renderResources,
+    model,
+    frameState,
 ) {
-  if (!defined(model._silhouetteId)) {
-    model._silhouetteId = ++ModelSilhouettePipelineStage.silhouettesLength;
-  }
+    if (!defined(model._silhouetteId)) {
+        model._silhouetteId = ++ModelSilhouettePipelineStage.silhouettesLength;
+    }
 
-  const shaderBuilder = renderResources.shaderBuilder;
-  shaderBuilder.addDefine("HAS_SILHOUETTE", undefined, ShaderDestination.BOTH);
+    const shaderBuilder = renderResources.shaderBuilder;
+    shaderBuilder.addDefine(
+        "HAS_SILHOUETTE",
+        undefined,
+        ShaderDestination.BOTH,
+    );
 
-  shaderBuilder.addVertexLines(ModelSilhouetteStageVS);
-  shaderBuilder.addFragmentLines(ModelSilhouetteStageFS);
+    shaderBuilder.addVertexLines(ModelSilhouetteStageVS);
+    shaderBuilder.addFragmentLines(ModelSilhouetteStageFS);
 
-  shaderBuilder.addUniform(
-    "vec4",
-    "model_silhouetteColor",
-    ShaderDestination.FRAGMENT,
-  );
+    shaderBuilder.addUniform(
+        "vec4",
+        "model_silhouetteColor",
+        ShaderDestination.FRAGMENT,
+    );
 
-  shaderBuilder.addUniform(
-    "float",
-    "model_silhouetteSize",
-    ShaderDestination.VERTEX,
-  );
+    shaderBuilder.addUniform(
+        "float",
+        "model_silhouetteSize",
+        ShaderDestination.VERTEX,
+    );
 
-  // Rendering silhouettes requires two draw commands:
-  // - First, the model is rendered as normal, writing to the stencil buffer.
-  // - Second, the silhouette is drawn, and the stencil buffer is used to cutout
-  //   the part that overlaps the regular model.
-  //
-  // To avoid creating a second shader program to handle silhouettes, a uniform
-  // is used to distinguish between the two draw commands. The second command will set
-  // this uniform true, such that only it applies the silhouette stage.
-  shaderBuilder.addUniform(
-    "bool",
-    "model_silhouettePass",
-    ShaderDestination.BOTH,
-  );
+    // Rendering silhouettes requires two draw commands:
+    // - First, the model is rendered as normal, writing to the stencil buffer.
+    // - Second, the silhouette is drawn, and the stencil buffer is used to cutout
+    //   the part that overlaps the regular model.
+    //
+    // To avoid creating a second shader program to handle silhouettes, a uniform
+    // is used to distinguish between the two draw commands. The second command will set
+    // this uniform true, such that only it applies the silhouette stage.
+    shaderBuilder.addUniform(
+        "bool",
+        "model_silhouettePass",
+        ShaderDestination.BOTH,
+    );
 
-  const uniformMap = {
-    model_silhouetteColor: function () {
-      return model.silhouetteColor;
-    },
-    model_silhouetteSize: function () {
-      return model.silhouetteSize;
-    },
-    model_silhouettePass: function () {
-      // This will be set to true by the draw command that draws the silhouette.
-      return false;
-    },
-  };
+    const uniformMap = {
+        model_silhouetteColor: function () {
+            return model.silhouetteColor;
+        },
+        model_silhouetteSize: function () {
+            return model.silhouetteSize;
+        },
+        model_silhouettePass: function () {
+            // This will be set to true by the draw command that draws the silhouette.
+            return false;
+        },
+    };
 
-  renderResources.uniformMap = combine(uniformMap, renderResources.uniformMap);
-  renderResources.hasSilhouette = true;
+    renderResources.uniformMap = combine(
+        uniformMap,
+        renderResources.uniformMap,
+    );
+    renderResources.hasSilhouette = true;
 };
 
 export default ModelSilhouettePipelineStage;

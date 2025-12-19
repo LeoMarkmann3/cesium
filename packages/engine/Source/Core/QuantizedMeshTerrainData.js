@@ -92,156 +92,157 @@ import TerrainMesh from "./TerrainMesh.js";
  * @see GoogleEarthEnterpriseTerrainData
  */
 function QuantizedMeshTerrainData(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug)
-  Check.typeOf.object("options.quantizedVertices", options.quantizedVertices);
-  Check.typeOf.object("options.indices", options.indices);
-  Check.typeOf.number("options.minimumHeight", options.minimumHeight);
-  Check.typeOf.number("options.maximumHeight", options.maximumHeight);
-  Check.typeOf.object("options.boundingSphere", options.boundingSphere);
-  Check.typeOf.object(
-    "options.horizonOcclusionPoint",
-    options.horizonOcclusionPoint,
-  );
-  Check.typeOf.object("options.westIndices", options.westIndices);
-  Check.typeOf.object("options.southIndices", options.southIndices);
-  Check.typeOf.object("options.eastIndices", options.eastIndices);
-  Check.typeOf.object("options.northIndices", options.northIndices);
-  Check.typeOf.number("options.westSkirtHeight", options.westSkirtHeight);
-  Check.typeOf.number("options.southSkirtHeight", options.southSkirtHeight);
-  Check.typeOf.number("options.eastSkirtHeight", options.eastSkirtHeight);
-  Check.typeOf.number("options.northSkirtHeight", options.northSkirtHeight);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug)
+    Check.typeOf.object("options.quantizedVertices", options.quantizedVertices);
+    Check.typeOf.object("options.indices", options.indices);
+    Check.typeOf.number("options.minimumHeight", options.minimumHeight);
+    Check.typeOf.number("options.maximumHeight", options.maximumHeight);
+    Check.typeOf.object("options.boundingSphere", options.boundingSphere);
+    Check.typeOf.object(
+        "options.horizonOcclusionPoint",
+        options.horizonOcclusionPoint,
+    );
+    Check.typeOf.object("options.westIndices", options.westIndices);
+    Check.typeOf.object("options.southIndices", options.southIndices);
+    Check.typeOf.object("options.eastIndices", options.eastIndices);
+    Check.typeOf.object("options.northIndices", options.northIndices);
+    Check.typeOf.number("options.westSkirtHeight", options.westSkirtHeight);
+    Check.typeOf.number("options.southSkirtHeight", options.southSkirtHeight);
+    Check.typeOf.number("options.eastSkirtHeight", options.eastSkirtHeight);
+    Check.typeOf.number("options.northSkirtHeight", options.northSkirtHeight);
+    //>>includeEnd('debug');
 
-  this._quantizedVertices = options.quantizedVertices;
-  this._encodedNormals = options.encodedNormals;
-  this._indices = options.indices;
-  this._minimumHeight = options.minimumHeight;
-  this._maximumHeight = options.maximumHeight;
-  this._boundingSphere = options.boundingSphere;
-  this._orientedBoundingBox = options.orientedBoundingBox;
-  this._horizonOcclusionPoint = options.horizonOcclusionPoint;
-  this._credits = options.credits;
+    this._quantizedVertices = options.quantizedVertices;
+    this._encodedNormals = options.encodedNormals;
+    this._indices = options.indices;
+    this._minimumHeight = options.minimumHeight;
+    this._maximumHeight = options.maximumHeight;
+    this._boundingSphere = options.boundingSphere;
+    this._orientedBoundingBox = options.orientedBoundingBox;
+    this._horizonOcclusionPoint = options.horizonOcclusionPoint;
+    this._credits = options.credits;
 
-  const vertexCount = this._quantizedVertices.length / 3;
-  const uValues = (this._uValues = this._quantizedVertices.subarray(
-    0,
-    vertexCount,
-  ));
-  const vValues = (this._vValues = this._quantizedVertices.subarray(
-    vertexCount,
-    2 * vertexCount,
-  ));
-  this._heightValues = this._quantizedVertices.subarray(
-    2 * vertexCount,
-    3 * vertexCount,
-  );
+    const vertexCount = this._quantizedVertices.length / 3;
+    const uValues = (this._uValues = this._quantizedVertices.subarray(
+        0,
+        vertexCount,
+    ));
+    const vValues = (this._vValues = this._quantizedVertices.subarray(
+        vertexCount,
+        2 * vertexCount,
+    ));
+    this._heightValues = this._quantizedVertices.subarray(
+        2 * vertexCount,
+        3 * vertexCount,
+    );
 
-  // We don't assume that we can count on the edge vertices being sorted by u or v.
-  function sortByV(a, b) {
-    return vValues[a] - vValues[b];
-  }
+    // We don't assume that we can count on the edge vertices being sorted by u or v.
+    function sortByV(a, b) {
+        return vValues[a] - vValues[b];
+    }
 
-  function sortByU(a, b) {
-    return uValues[a] - uValues[b];
-  }
+    function sortByU(a, b) {
+        return uValues[a] - uValues[b];
+    }
 
-  this._westIndices = sortIndicesIfNecessary(
-    options.westIndices,
-    sortByV,
-    vertexCount,
-  );
-  this._southIndices = sortIndicesIfNecessary(
-    options.southIndices,
-    sortByU,
-    vertexCount,
-  );
-  this._eastIndices = sortIndicesIfNecessary(
-    options.eastIndices,
-    sortByV,
-    vertexCount,
-  );
-  this._northIndices = sortIndicesIfNecessary(
-    options.northIndices,
-    sortByU,
-    vertexCount,
-  );
+    this._westIndices = sortIndicesIfNecessary(
+        options.westIndices,
+        sortByV,
+        vertexCount,
+    );
+    this._southIndices = sortIndicesIfNecessary(
+        options.southIndices,
+        sortByU,
+        vertexCount,
+    );
+    this._eastIndices = sortIndicesIfNecessary(
+        options.eastIndices,
+        sortByV,
+        vertexCount,
+    );
+    this._northIndices = sortIndicesIfNecessary(
+        options.northIndices,
+        sortByU,
+        vertexCount,
+    );
 
-  this._westSkirtHeight = options.westSkirtHeight;
-  this._southSkirtHeight = options.southSkirtHeight;
-  this._eastSkirtHeight = options.eastSkirtHeight;
-  this._northSkirtHeight = options.northSkirtHeight;
+    this._westSkirtHeight = options.westSkirtHeight;
+    this._southSkirtHeight = options.southSkirtHeight;
+    this._eastSkirtHeight = options.eastSkirtHeight;
+    this._northSkirtHeight = options.northSkirtHeight;
 
-  this._childTileMask = options.childTileMask ?? 15;
+    this._childTileMask = options.childTileMask ?? 15;
 
-  this._createdByUpsampling = options.createdByUpsampling ?? false;
-  this._waterMask = options.waterMask;
+    this._createdByUpsampling = options.createdByUpsampling ?? false;
+    this._waterMask = options.waterMask;
 
-  this._mesh = undefined;
+    this._mesh = undefined;
 }
 
 Object.defineProperties(QuantizedMeshTerrainData.prototype, {
-  /**
-   * An array of credits for this tile.
-   * @memberof QuantizedMeshTerrainData.prototype
-   * @type {Credit[]}
-   */
-  credits: {
-    get: function () {
-      return this._credits;
+    /**
+     * An array of credits for this tile.
+     * @memberof QuantizedMeshTerrainData.prototype
+     * @type {Credit[]}
+     */
+    credits: {
+        get: function () {
+            return this._credits;
+        },
     },
-  },
-  /**
-   * The water mask included in this terrain data, if any.  A water mask is a rectangular
-   * Uint8Array or image where a value of 255 indicates water and a value of 0 indicates land.
-   * Values in between 0 and 255 are allowed as well to smoothly blend between land and water.
-   * @memberof QuantizedMeshTerrainData.prototype
-   * @type {Uint8Array|HTMLImageElement|HTMLCanvasElement|undefined}
-   */
-  waterMask: {
-    get: function () {
-      return this._waterMask;
+    /**
+     * The water mask included in this terrain data, if any.  A water mask is a rectangular
+     * Uint8Array or image where a value of 255 indicates water and a value of 0 indicates land.
+     * Values in between 0 and 255 are allowed as well to smoothly blend between land and water.
+     * @memberof QuantizedMeshTerrainData.prototype
+     * @type {Uint8Array|HTMLImageElement|HTMLCanvasElement|undefined}
+     */
+    waterMask: {
+        get: function () {
+            return this._waterMask;
+        },
     },
-  },
 
-  childTileMask: {
-    get: function () {
-      return this._childTileMask;
+    childTileMask: {
+        get: function () {
+            return this._childTileMask;
+        },
     },
-  },
 
-  canUpsample: {
-    get: function () {
-      return defined(this._mesh);
+    canUpsample: {
+        get: function () {
+            return defined(this._mesh);
+        },
     },
-  },
 });
 
 const arrayScratch = [];
 
 function sortIndicesIfNecessary(indices, sortFunction, vertexCount) {
-  arrayScratch.length = indices.length;
+    arrayScratch.length = indices.length;
 
-  let needsSort = false;
-  for (let i = 0, len = indices.length; i < len; ++i) {
-    arrayScratch[i] = indices[i];
-    needsSort =
-      needsSort || (i > 0 && sortFunction(indices[i - 1], indices[i]) > 0);
-  }
+    let needsSort = false;
+    for (let i = 0, len = indices.length; i < len; ++i) {
+        arrayScratch[i] = indices[i];
+        needsSort =
+            needsSort ||
+            (i > 0 && sortFunction(indices[i - 1], indices[i]) > 0);
+    }
 
-  if (needsSort) {
-    arrayScratch.sort(sortFunction);
-    return IndexDatatype.createTypedArray(vertexCount, arrayScratch);
-  }
-  return indices;
+    if (needsSort) {
+        arrayScratch.sort(sortFunction);
+        return IndexDatatype.createTypedArray(vertexCount, arrayScratch);
+    }
+    return indices;
 }
 
 const createMeshTaskName = "createVerticesFromQuantizedTerrainMesh";
 const createMeshTaskProcessorNoThrottle = new TaskProcessor(createMeshTaskName);
 const createMeshTaskProcessorThrottle = new TaskProcessor(
-  createMeshTaskName,
-  TerrainData.maximumAsynchronousTasks,
+    createMeshTaskName,
+    TerrainData.maximumAsynchronousTasks,
 );
 
 /**
@@ -262,126 +263,127 @@ const createMeshTaskProcessorThrottle = new TaskProcessor(
  *          be retried later.
  */
 QuantizedMeshTerrainData.prototype.createMesh = function (options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("options.tilingScheme", options.tilingScheme);
-  Check.typeOf.number("options.x", options.x);
-  Check.typeOf.number("options.y", options.y);
-  Check.typeOf.number("options.level", options.level);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("options.tilingScheme", options.tilingScheme);
+    Check.typeOf.number("options.x", options.x);
+    Check.typeOf.number("options.y", options.y);
+    Check.typeOf.number("options.level", options.level);
+    //>>includeEnd('debug');
 
-  const tilingScheme = options.tilingScheme;
-  const x = options.x;
-  const y = options.y;
-  const level = options.level;
-  const exaggeration = options.exaggeration ?? 1.0;
-  const exaggerationRelativeHeight = options.exaggerationRelativeHeight ?? 0.0;
-  const throttle = options.throttle ?? true;
+    const tilingScheme = options.tilingScheme;
+    const x = options.x;
+    const y = options.y;
+    const level = options.level;
+    const exaggeration = options.exaggeration ?? 1.0;
+    const exaggerationRelativeHeight =
+        options.exaggerationRelativeHeight ?? 0.0;
+    const throttle = options.throttle ?? true;
 
-  const ellipsoid = tilingScheme.ellipsoid;
-  const rectangle = tilingScheme.tileXYToRectangle(x, y, level);
+    const ellipsoid = tilingScheme.ellipsoid;
+    const rectangle = tilingScheme.tileXYToRectangle(x, y, level);
 
-  const createMeshTaskProcessor = throttle
-    ? createMeshTaskProcessorThrottle
-    : createMeshTaskProcessorNoThrottle;
+    const createMeshTaskProcessor = throttle
+        ? createMeshTaskProcessorThrottle
+        : createMeshTaskProcessorNoThrottle;
 
-  const verticesPromise = createMeshTaskProcessor.scheduleTask({
-    minimumHeight: this._minimumHeight,
-    maximumHeight: this._maximumHeight,
-    quantizedVertices: this._quantizedVertices,
-    octEncodedNormals: this._encodedNormals,
-    includeWebMercatorT: true,
-    indices: this._indices,
-    westIndices: this._westIndices,
-    southIndices: this._southIndices,
-    eastIndices: this._eastIndices,
-    northIndices: this._northIndices,
-    westSkirtHeight: this._westSkirtHeight,
-    southSkirtHeight: this._southSkirtHeight,
-    eastSkirtHeight: this._eastSkirtHeight,
-    northSkirtHeight: this._northSkirtHeight,
-    rectangle: rectangle,
-    relativeToCenter: this._boundingSphere.center,
-    ellipsoid: ellipsoid,
-    exaggeration: exaggeration,
-    exaggerationRelativeHeight: exaggerationRelativeHeight,
-  });
+    const verticesPromise = createMeshTaskProcessor.scheduleTask({
+        minimumHeight: this._minimumHeight,
+        maximumHeight: this._maximumHeight,
+        quantizedVertices: this._quantizedVertices,
+        octEncodedNormals: this._encodedNormals,
+        includeWebMercatorT: true,
+        indices: this._indices,
+        westIndices: this._westIndices,
+        southIndices: this._southIndices,
+        eastIndices: this._eastIndices,
+        northIndices: this._northIndices,
+        westSkirtHeight: this._westSkirtHeight,
+        southSkirtHeight: this._southSkirtHeight,
+        eastSkirtHeight: this._eastSkirtHeight,
+        northSkirtHeight: this._northSkirtHeight,
+        rectangle: rectangle,
+        relativeToCenter: this._boundingSphere.center,
+        ellipsoid: ellipsoid,
+        exaggeration: exaggeration,
+        exaggerationRelativeHeight: exaggerationRelativeHeight,
+    });
 
-  if (!defined(verticesPromise)) {
-    // Postponed
-    return undefined;
-  }
+    if (!defined(verticesPromise)) {
+        // Postponed
+        return undefined;
+    }
 
-  const that = this;
-  return Promise.resolve(verticesPromise).then(function (result) {
-    const vertexCountWithoutSkirts = that._quantizedVertices.length / 3;
-    const vertexCount =
-      vertexCountWithoutSkirts +
-      that._westIndices.length +
-      that._southIndices.length +
-      that._eastIndices.length +
-      that._northIndices.length;
-    const indicesTypedArray = IndexDatatype.createTypedArray(
-      vertexCount,
-      result.indices,
-    );
+    const that = this;
+    return Promise.resolve(verticesPromise).then(function (result) {
+        const vertexCountWithoutSkirts = that._quantizedVertices.length / 3;
+        const vertexCount =
+            vertexCountWithoutSkirts +
+            that._westIndices.length +
+            that._southIndices.length +
+            that._eastIndices.length +
+            that._northIndices.length;
+        const indicesTypedArray = IndexDatatype.createTypedArray(
+            vertexCount,
+            result.indices,
+        );
 
-    const vertices = new Float32Array(result.vertices);
-    const rtc = result.center;
-    const minimumHeight = result.minimumHeight;
-    const maximumHeight = result.maximumHeight;
-    const boundingSphere = that._boundingSphere;
-    const obb = that._orientedBoundingBox;
-    const occludeePointInScaledSpace =
-      Cartesian3.clone(result.occludeePointInScaledSpace) ??
-      that._horizonOcclusionPoint;
-    const stride = result.vertexStride;
-    const terrainEncoding = TerrainEncoding.clone(result.encoding);
+        const vertices = new Float32Array(result.vertices);
+        const rtc = result.center;
+        const minimumHeight = result.minimumHeight;
+        const maximumHeight = result.maximumHeight;
+        const boundingSphere = that._boundingSphere;
+        const obb = that._orientedBoundingBox;
+        const occludeePointInScaledSpace =
+            Cartesian3.clone(result.occludeePointInScaledSpace) ??
+            that._horizonOcclusionPoint;
+        const stride = result.vertexStride;
+        const terrainEncoding = TerrainEncoding.clone(result.encoding);
 
-    // Clone complex result objects because the transfer from the web worker
-    // has stripped them down to JSON-style objects.
-    that._mesh = new TerrainMesh(
-      rtc,
-      vertices,
-      indicesTypedArray,
-      result.indexCountWithoutSkirts,
-      vertexCountWithoutSkirts,
-      minimumHeight,
-      maximumHeight,
-      rectangle,
-      boundingSphere,
-      occludeePointInScaledSpace,
-      stride,
-      obb,
-      terrainEncoding,
-      result.westIndicesSouthToNorth,
-      result.southIndicesEastToWest,
-      result.eastIndicesNorthToSouth,
-      result.northIndicesWestToEast,
-    );
+        // Clone complex result objects because the transfer from the web worker
+        // has stripped them down to JSON-style objects.
+        that._mesh = new TerrainMesh(
+            rtc,
+            vertices,
+            indicesTypedArray,
+            result.indexCountWithoutSkirts,
+            vertexCountWithoutSkirts,
+            minimumHeight,
+            maximumHeight,
+            rectangle,
+            boundingSphere,
+            occludeePointInScaledSpace,
+            stride,
+            obb,
+            terrainEncoding,
+            result.westIndicesSouthToNorth,
+            result.southIndicesEastToWest,
+            result.eastIndicesNorthToSouth,
+            result.northIndicesWestToEast,
+        );
 
-    // Free memory received from server after mesh is created.
-    that._quantizedVertices = undefined;
-    that._encodedNormals = undefined;
-    that._indices = undefined;
+        // Free memory received from server after mesh is created.
+        that._quantizedVertices = undefined;
+        that._encodedNormals = undefined;
+        that._indices = undefined;
 
-    that._uValues = undefined;
-    that._vValues = undefined;
-    that._heightValues = undefined;
+        that._uValues = undefined;
+        that._vValues = undefined;
+        that._heightValues = undefined;
 
-    that._westIndices = undefined;
-    that._southIndices = undefined;
-    that._eastIndices = undefined;
-    that._northIndices = undefined;
+        that._westIndices = undefined;
+        that._southIndices = undefined;
+        that._eastIndices = undefined;
+        that._northIndices = undefined;
 
-    return that._mesh;
-  });
+        return that._mesh;
+    });
 };
 
 const upsampleTaskProcessor = new TaskProcessor(
-  "upsampleQuantizedTerrainMesh",
-  TerrainData.maximumAsynchronousTasks,
+    "upsampleQuantizedTerrainMesh",
+    TerrainData.maximumAsynchronousTasks,
 );
 
 /**
@@ -400,131 +402,133 @@ const upsampleTaskProcessor = new TaskProcessor(
  *          deferred.
  */
 QuantizedMeshTerrainData.prototype.upsample = function (
-  tilingScheme,
-  thisX,
-  thisY,
-  thisLevel,
-  descendantX,
-  descendantY,
-  descendantLevel,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(tilingScheme)) {
-    throw new DeveloperError("tilingScheme is required.");
-  }
-  if (!defined(thisX)) {
-    throw new DeveloperError("thisX is required.");
-  }
-  if (!defined(thisY)) {
-    throw new DeveloperError("thisY is required.");
-  }
-  if (!defined(thisLevel)) {
-    throw new DeveloperError("thisLevel is required.");
-  }
-  if (!defined(descendantX)) {
-    throw new DeveloperError("descendantX is required.");
-  }
-  if (!defined(descendantY)) {
-    throw new DeveloperError("descendantY is required.");
-  }
-  if (!defined(descendantLevel)) {
-    throw new DeveloperError("descendantLevel is required.");
-  }
-  const levelDifference = descendantLevel - thisLevel;
-  if (levelDifference > 1) {
-    throw new DeveloperError(
-      "Upsampling through more than one level at a time is not currently supported.",
-    );
-  }
-  //>>includeEnd('debug');
-
-  const mesh = this._mesh;
-  if (!defined(this._mesh)) {
-    return undefined;
-  }
-
-  const isEastChild = thisX * 2 !== descendantX;
-  const isNorthChild = thisY * 2 === descendantY;
-
-  const ellipsoid = tilingScheme.ellipsoid;
-  const childRectangle = tilingScheme.tileXYToRectangle(
+    tilingScheme,
+    thisX,
+    thisY,
+    thisLevel,
     descendantX,
     descendantY,
     descendantLevel,
-  );
+) {
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(tilingScheme)) {
+        throw new DeveloperError("tilingScheme is required.");
+    }
+    if (!defined(thisX)) {
+        throw new DeveloperError("thisX is required.");
+    }
+    if (!defined(thisY)) {
+        throw new DeveloperError("thisY is required.");
+    }
+    if (!defined(thisLevel)) {
+        throw new DeveloperError("thisLevel is required.");
+    }
+    if (!defined(descendantX)) {
+        throw new DeveloperError("descendantX is required.");
+    }
+    if (!defined(descendantY)) {
+        throw new DeveloperError("descendantY is required.");
+    }
+    if (!defined(descendantLevel)) {
+        throw new DeveloperError("descendantLevel is required.");
+    }
+    const levelDifference = descendantLevel - thisLevel;
+    if (levelDifference > 1) {
+        throw new DeveloperError(
+            "Upsampling through more than one level at a time is not currently supported.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const upsamplePromise = upsampleTaskProcessor.scheduleTask({
-    vertices: mesh.vertices,
-    vertexCountWithoutSkirts: mesh.vertexCountWithoutSkirts,
-    indices: mesh.indices,
-    indexCountWithoutSkirts: mesh.indexCountWithoutSkirts,
-    encoding: mesh.encoding,
-    minimumHeight: this._minimumHeight,
-    maximumHeight: this._maximumHeight,
-    isEastChild: isEastChild,
-    isNorthChild: isNorthChild,
-    childRectangle: childRectangle,
-    ellipsoid: ellipsoid,
-  });
-
-  if (!defined(upsamplePromise)) {
-    // Postponed
-    return undefined;
-  }
-
-  let shortestSkirt = Math.min(this._westSkirtHeight, this._eastSkirtHeight);
-  shortestSkirt = Math.min(shortestSkirt, this._southSkirtHeight);
-  shortestSkirt = Math.min(shortestSkirt, this._northSkirtHeight);
-
-  const westSkirtHeight = isEastChild
-    ? shortestSkirt * 0.5
-    : this._westSkirtHeight;
-  const southSkirtHeight = isNorthChild
-    ? shortestSkirt * 0.5
-    : this._southSkirtHeight;
-  const eastSkirtHeight = isEastChild
-    ? this._eastSkirtHeight
-    : shortestSkirt * 0.5;
-  const northSkirtHeight = isNorthChild
-    ? this._northSkirtHeight
-    : shortestSkirt * 0.5;
-  const credits = this._credits;
-
-  return Promise.resolve(upsamplePromise).then(function (result) {
-    const quantizedVertices = new Uint16Array(result.vertices);
-    const indicesTypedArray = IndexDatatype.createTypedArray(
-      quantizedVertices.length / 3,
-      result.indices,
-    );
-    let encodedNormals;
-    if (defined(result.encodedNormals)) {
-      encodedNormals = new Uint8Array(result.encodedNormals);
+    const mesh = this._mesh;
+    if (!defined(this._mesh)) {
+        return undefined;
     }
 
-    return new QuantizedMeshTerrainData({
-      quantizedVertices: quantizedVertices,
-      indices: indicesTypedArray,
-      encodedNormals: encodedNormals,
-      minimumHeight: result.minimumHeight,
-      maximumHeight: result.maximumHeight,
-      boundingSphere: BoundingSphere.clone(result.boundingSphere),
-      orientedBoundingBox: OrientedBoundingBox.clone(
-        result.orientedBoundingBox,
-      ),
-      horizonOcclusionPoint: Cartesian3.clone(result.horizonOcclusionPoint),
-      westIndices: result.westIndices,
-      southIndices: result.southIndices,
-      eastIndices: result.eastIndices,
-      northIndices: result.northIndices,
-      westSkirtHeight: westSkirtHeight,
-      southSkirtHeight: southSkirtHeight,
-      eastSkirtHeight: eastSkirtHeight,
-      northSkirtHeight: northSkirtHeight,
-      childTileMask: 0,
-      credits: credits,
-      createdByUpsampling: true,
+    const isEastChild = thisX * 2 !== descendantX;
+    const isNorthChild = thisY * 2 === descendantY;
+
+    const ellipsoid = tilingScheme.ellipsoid;
+    const childRectangle = tilingScheme.tileXYToRectangle(
+        descendantX,
+        descendantY,
+        descendantLevel,
+    );
+
+    const upsamplePromise = upsampleTaskProcessor.scheduleTask({
+        vertices: mesh.vertices,
+        vertexCountWithoutSkirts: mesh.vertexCountWithoutSkirts,
+        indices: mesh.indices,
+        indexCountWithoutSkirts: mesh.indexCountWithoutSkirts,
+        encoding: mesh.encoding,
+        minimumHeight: this._minimumHeight,
+        maximumHeight: this._maximumHeight,
+        isEastChild: isEastChild,
+        isNorthChild: isNorthChild,
+        childRectangle: childRectangle,
+        ellipsoid: ellipsoid,
     });
-  });
+
+    if (!defined(upsamplePromise)) {
+        // Postponed
+        return undefined;
+    }
+
+    let shortestSkirt = Math.min(this._westSkirtHeight, this._eastSkirtHeight);
+    shortestSkirt = Math.min(shortestSkirt, this._southSkirtHeight);
+    shortestSkirt = Math.min(shortestSkirt, this._northSkirtHeight);
+
+    const westSkirtHeight = isEastChild
+        ? shortestSkirt * 0.5
+        : this._westSkirtHeight;
+    const southSkirtHeight = isNorthChild
+        ? shortestSkirt * 0.5
+        : this._southSkirtHeight;
+    const eastSkirtHeight = isEastChild
+        ? this._eastSkirtHeight
+        : shortestSkirt * 0.5;
+    const northSkirtHeight = isNorthChild
+        ? this._northSkirtHeight
+        : shortestSkirt * 0.5;
+    const credits = this._credits;
+
+    return Promise.resolve(upsamplePromise).then(function (result) {
+        const quantizedVertices = new Uint16Array(result.vertices);
+        const indicesTypedArray = IndexDatatype.createTypedArray(
+            quantizedVertices.length / 3,
+            result.indices,
+        );
+        let encodedNormals;
+        if (defined(result.encodedNormals)) {
+            encodedNormals = new Uint8Array(result.encodedNormals);
+        }
+
+        return new QuantizedMeshTerrainData({
+            quantizedVertices: quantizedVertices,
+            indices: indicesTypedArray,
+            encodedNormals: encodedNormals,
+            minimumHeight: result.minimumHeight,
+            maximumHeight: result.maximumHeight,
+            boundingSphere: BoundingSphere.clone(result.boundingSphere),
+            orientedBoundingBox: OrientedBoundingBox.clone(
+                result.orientedBoundingBox,
+            ),
+            horizonOcclusionPoint: Cartesian3.clone(
+                result.horizonOcclusionPoint,
+            ),
+            westIndices: result.westIndices,
+            southIndices: result.southIndices,
+            eastIndices: result.eastIndices,
+            northIndices: result.northIndices,
+            westSkirtHeight: westSkirtHeight,
+            southSkirtHeight: southSkirtHeight,
+            eastSkirtHeight: eastSkirtHeight,
+            northSkirtHeight: northSkirtHeight,
+            childTileMask: 0,
+            credits: credits,
+            createdByUpsampling: true,
+        });
+    });
 };
 
 const maxShort = 32767;
@@ -540,36 +544,36 @@ const barycentricCoordinateScratch = new Cartesian3();
  *          the rectangle, so expect incorrect results for positions far outside the rectangle.
  */
 QuantizedMeshTerrainData.prototype.interpolateHeight = function (
-  rectangle,
-  longitude,
-  latitude,
+    rectangle,
+    longitude,
+    latitude,
 ) {
-  let u = CesiumMath.clamp(
-    (longitude - rectangle.west) / rectangle.width,
-    0.0,
-    1.0,
-  );
-  u *= maxShort;
-  let v = CesiumMath.clamp(
-    (latitude - rectangle.south) / rectangle.height,
-    0.0,
-    1.0,
-  );
-  v *= maxShort;
+    let u = CesiumMath.clamp(
+        (longitude - rectangle.west) / rectangle.width,
+        0.0,
+        1.0,
+    );
+    u *= maxShort;
+    let v = CesiumMath.clamp(
+        (latitude - rectangle.south) / rectangle.height,
+        0.0,
+        1.0,
+    );
+    v *= maxShort;
 
-  if (!defined(this._mesh)) {
-    return interpolateHeight(this, u, v);
-  }
+    if (!defined(this._mesh)) {
+        return interpolateHeight(this, u, v);
+    }
 
-  return interpolateMeshHeight(this, u, v);
+    return interpolateMeshHeight(this, u, v);
 };
 
 function pointInBoundingBox(u, v, u0, v0, u1, v1, u2, v2) {
-  const minU = Math.min(u0, u1, u2);
-  const maxU = Math.max(u0, u1, u2);
-  const minV = Math.min(v0, v1, v2);
-  const maxV = Math.max(v0, v1, v2);
-  return u >= minU && u <= maxU && v >= minV && v <= maxV;
+    const minU = Math.min(u0, u1, u2);
+    const maxU = Math.max(u0, u1, u2);
+    const minV = Math.min(v0, v1, v2);
+    const maxV = Math.max(v0, v1, v2);
+    return u >= minU && u <= maxU && v >= minV && v <= maxV;
 }
 
 const texCoordScratch0 = new Cartesian2();
@@ -577,112 +581,116 @@ const texCoordScratch1 = new Cartesian2();
 const texCoordScratch2 = new Cartesian2();
 
 function interpolateMeshHeight(terrainData, u, v) {
-  const mesh = terrainData._mesh;
-  const vertices = mesh.vertices;
-  const encoding = mesh.encoding;
-  const indices = mesh.indices;
+    const mesh = terrainData._mesh;
+    const vertices = mesh.vertices;
+    const encoding = mesh.encoding;
+    const indices = mesh.indices;
 
-  for (let i = 0, len = indices.length; i < len; i += 3) {
-    const i0 = indices[i];
-    const i1 = indices[i + 1];
-    const i2 = indices[i + 2];
+    for (let i = 0, len = indices.length; i < len; i += 3) {
+        const i0 = indices[i];
+        const i1 = indices[i + 1];
+        const i2 = indices[i + 2];
 
-    const uv0 = encoding.decodeTextureCoordinates(
-      vertices,
-      i0,
-      texCoordScratch0,
-    );
-    const uv1 = encoding.decodeTextureCoordinates(
-      vertices,
-      i1,
-      texCoordScratch1,
-    );
-    const uv2 = encoding.decodeTextureCoordinates(
-      vertices,
-      i2,
-      texCoordScratch2,
-    );
+        const uv0 = encoding.decodeTextureCoordinates(
+            vertices,
+            i0,
+            texCoordScratch0,
+        );
+        const uv1 = encoding.decodeTextureCoordinates(
+            vertices,
+            i1,
+            texCoordScratch1,
+        );
+        const uv2 = encoding.decodeTextureCoordinates(
+            vertices,
+            i2,
+            texCoordScratch2,
+        );
 
-    if (pointInBoundingBox(u, v, uv0.x, uv0.y, uv1.x, uv1.y, uv2.x, uv2.y)) {
-      const barycentric = Intersections2D.computeBarycentricCoordinates(
-        u,
-        v,
-        uv0.x,
-        uv0.y,
-        uv1.x,
-        uv1.y,
-        uv2.x,
-        uv2.y,
-        barycentricCoordinateScratch,
-      );
-      if (
-        barycentric.x >= -1e-15 &&
-        barycentric.y >= -1e-15 &&
-        barycentric.z >= -1e-15
-      ) {
-        const h0 = encoding.decodeHeight(vertices, i0);
-        const h1 = encoding.decodeHeight(vertices, i1);
-        const h2 = encoding.decodeHeight(vertices, i2);
-        return barycentric.x * h0 + barycentric.y * h1 + barycentric.z * h2;
-      }
+        if (
+            pointInBoundingBox(u, v, uv0.x, uv0.y, uv1.x, uv1.y, uv2.x, uv2.y)
+        ) {
+            const barycentric = Intersections2D.computeBarycentricCoordinates(
+                u,
+                v,
+                uv0.x,
+                uv0.y,
+                uv1.x,
+                uv1.y,
+                uv2.x,
+                uv2.y,
+                barycentricCoordinateScratch,
+            );
+            if (
+                barycentric.x >= -1e-15 &&
+                barycentric.y >= -1e-15 &&
+                barycentric.z >= -1e-15
+            ) {
+                const h0 = encoding.decodeHeight(vertices, i0);
+                const h1 = encoding.decodeHeight(vertices, i1);
+                const h2 = encoding.decodeHeight(vertices, i2);
+                return (
+                    barycentric.x * h0 + barycentric.y * h1 + barycentric.z * h2
+                );
+            }
+        }
     }
-  }
 
-  // Position does not lie in any triangle in this mesh.
-  return undefined;
+    // Position does not lie in any triangle in this mesh.
+    return undefined;
 }
 
 function interpolateHeight(terrainData, u, v) {
-  const uBuffer = terrainData._uValues;
-  const vBuffer = terrainData._vValues;
-  const heightBuffer = terrainData._heightValues;
+    const uBuffer = terrainData._uValues;
+    const vBuffer = terrainData._vValues;
+    const heightBuffer = terrainData._heightValues;
 
-  const indices = terrainData._indices;
-  for (let i = 0, len = indices.length; i < len; i += 3) {
-    const i0 = indices[i];
-    const i1 = indices[i + 1];
-    const i2 = indices[i + 2];
+    const indices = terrainData._indices;
+    for (let i = 0, len = indices.length; i < len; i += 3) {
+        const i0 = indices[i];
+        const i1 = indices[i + 1];
+        const i2 = indices[i + 2];
 
-    const u0 = uBuffer[i0];
-    const u1 = uBuffer[i1];
-    const u2 = uBuffer[i2];
+        const u0 = uBuffer[i0];
+        const u1 = uBuffer[i1];
+        const u2 = uBuffer[i2];
 
-    const v0 = vBuffer[i0];
-    const v1 = vBuffer[i1];
-    const v2 = vBuffer[i2];
+        const v0 = vBuffer[i0];
+        const v1 = vBuffer[i1];
+        const v2 = vBuffer[i2];
 
-    if (pointInBoundingBox(u, v, u0, v0, u1, v1, u2, v2)) {
-      const barycentric = Intersections2D.computeBarycentricCoordinates(
-        u,
-        v,
-        u0,
-        v0,
-        u1,
-        v1,
-        u2,
-        v2,
-        barycentricCoordinateScratch,
-      );
-      if (
-        barycentric.x >= -1e-15 &&
-        barycentric.y >= -1e-15 &&
-        barycentric.z >= -1e-15
-      ) {
-        const quantizedHeight =
-          barycentric.x * heightBuffer[i0] +
-          barycentric.y * heightBuffer[i1] +
-          barycentric.z * heightBuffer[i2];
-        return CesiumMath.lerp(
-          terrainData._minimumHeight,
-          terrainData._maximumHeight,
-          quantizedHeight / maxShort,
-        );
-      }
+        if (pointInBoundingBox(u, v, u0, v0, u1, v1, u2, v2)) {
+            const barycentric = Intersections2D.computeBarycentricCoordinates(
+                u,
+                v,
+                u0,
+                v0,
+                u1,
+                v1,
+                u2,
+                v2,
+                barycentricCoordinateScratch,
+            );
+            if (
+                barycentric.x >= -1e-15 &&
+                barycentric.y >= -1e-15 &&
+                barycentric.z >= -1e-15
+            ) {
+                const quantizedHeight =
+                    barycentric.x * heightBuffer[i0] +
+                    barycentric.y * heightBuffer[i1] +
+                    barycentric.z * heightBuffer[i2];
+                return CesiumMath.lerp(
+                    terrainData._minimumHeight,
+                    terrainData._maximumHeight,
+                    quantizedHeight / maxShort,
+                );
+            }
+        }
     }
-  }
 
-  // Position does not lie in any triangle in this mesh.
-  return undefined;
+    // Position does not lie in any triangle in this mesh.
+    return undefined;
 }
 
 /**
@@ -698,27 +706,27 @@ function interpolateHeight(terrainData, u, v) {
  * @returns {boolean} True if the child tile is available; otherwise, false.
  */
 QuantizedMeshTerrainData.prototype.isChildAvailable = function (
-  thisX,
-  thisY,
-  childX,
-  childY,
+    thisX,
+    thisY,
+    childX,
+    childY,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("thisX", thisX);
-  Check.typeOf.number("thisY", thisY);
-  Check.typeOf.number("childX", childX);
-  Check.typeOf.number("childY", childY);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("thisX", thisX);
+    Check.typeOf.number("thisY", thisY);
+    Check.typeOf.number("childX", childX);
+    Check.typeOf.number("childY", childY);
+    //>>includeEnd('debug');
 
-  let bitNumber = 2; // northwest child
-  if (childX !== thisX * 2) {
-    ++bitNumber; // east child
-  }
-  if (childY !== thisY * 2) {
-    bitNumber -= 2; // south child
-  }
+    let bitNumber = 2; // northwest child
+    if (childX !== thisX * 2) {
+        ++bitNumber; // east child
+    }
+    if (childY !== thisY * 2) {
+        bitNumber -= 2; // south child
+    }
 
-  return (this._childTileMask & (1 << bitNumber)) !== 0;
+    return (this._childTileMask & (1 << bitNumber)) !== 0;
 };
 
 /**
@@ -730,6 +738,6 @@ QuantizedMeshTerrainData.prototype.isChildAvailable = function (
  * @returns {boolean} True if this instance was created by upsampling; otherwise, false.
  */
 QuantizedMeshTerrainData.prototype.wasCreatedByUpsampling = function () {
-  return this._createdByUpsampling;
+    return this._createdByUpsampling;
 };
 export default QuantizedMeshTerrainData;

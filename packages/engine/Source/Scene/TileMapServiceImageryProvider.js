@@ -74,35 +74,35 @@ import UrlTemplateImageryProvider from "./UrlTemplateImageryProvider.js";
  * });
  */
 function TileMapServiceImageryProvider(options) {
-  UrlTemplateImageryProvider.call(this, options);
+    UrlTemplateImageryProvider.call(this, options);
 }
 
 TileMapServiceImageryProvider._requestMetadata = async function (
-  options,
-  tmsResource,
-  xmlResource,
-  provider,
+    options,
+    tmsResource,
+    xmlResource,
+    provider,
 ) {
-  // Try to load remaining parameters from XML
-  try {
-    const xml = await xmlResource.fetchXML();
-    return TileMapServiceImageryProvider._metadataSuccess(
-      xml,
-      options,
-      tmsResource,
-      xmlResource,
-      provider,
-    );
-  } catch (e) {
-    if (e instanceof RequestErrorEvent) {
-      return TileMapServiceImageryProvider._metadataFailure(
-        options,
-        tmsResource,
-      );
-    }
+    // Try to load remaining parameters from XML
+    try {
+        const xml = await xmlResource.fetchXML();
+        return TileMapServiceImageryProvider._metadataSuccess(
+            xml,
+            options,
+            tmsResource,
+            xmlResource,
+            provider,
+        );
+    } catch (e) {
+        if (e instanceof RequestErrorEvent) {
+            return TileMapServiceImageryProvider._metadataFailure(
+                options,
+                tmsResource,
+            );
+        }
 
-    throw e;
-  }
+        throw e;
+    }
 };
 /**
  * Creates a TileMapServiceImageryProvider from the specified url.
@@ -127,34 +127,34 @@ TileMapServiceImageryProvider._requestMetadata = async function (
  * @exception {RuntimeError} tilemapresource.xml specifies an unsupported profile attribute
  */
 TileMapServiceImageryProvider.fromUrl = async function (url, options) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("url", url);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("url", url);
+    //>>includeEnd('debug');
 
-  const resource = Resource.createIfNeeded(url);
-  resource.appendForwardSlash();
+    const resource = Resource.createIfNeeded(url);
+    resource.appendForwardSlash();
 
-  const tmsResource = resource;
-  const xmlResource = resource.getDerivedResource({
-    url: "tilemapresource.xml",
-  });
+    const tmsResource = resource;
+    const xmlResource = resource.getDerivedResource({
+        url: "tilemapresource.xml",
+    });
 
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const metadata = await TileMapServiceImageryProvider._requestMetadata(
-    options,
-    tmsResource,
-    xmlResource,
-  );
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const metadata = await TileMapServiceImageryProvider._requestMetadata(
+        options,
+        tmsResource,
+        xmlResource,
+    );
 
-  return new TileMapServiceImageryProvider(metadata);
+    return new TileMapServiceImageryProvider(metadata);
 };
 
 if (defined(Object.create)) {
-  TileMapServiceImageryProvider.prototype = Object.create(
-    UrlTemplateImageryProvider.prototype,
-  );
-  TileMapServiceImageryProvider.prototype.constructor =
-    TileMapServiceImageryProvider;
+    TileMapServiceImageryProvider.prototype = Object.create(
+        UrlTemplateImageryProvider.prototype,
+    );
+    TileMapServiceImageryProvider.prototype.constructor =
+        TileMapServiceImageryProvider;
 }
 
 /**
@@ -162,43 +162,44 @@ if (defined(Object.create)) {
  * @private
  */
 function confineRectangleToTilingScheme(rectangle, tilingScheme) {
-  if (rectangle.west < tilingScheme.rectangle.west) {
-    rectangle.west = tilingScheme.rectangle.west;
-  }
-  if (rectangle.east > tilingScheme.rectangle.east) {
-    rectangle.east = tilingScheme.rectangle.east;
-  }
-  if (rectangle.south < tilingScheme.rectangle.south) {
-    rectangle.south = tilingScheme.rectangle.south;
-  }
-  if (rectangle.north > tilingScheme.rectangle.north) {
-    rectangle.north = tilingScheme.rectangle.north;
-  }
-  return rectangle;
+    if (rectangle.west < tilingScheme.rectangle.west) {
+        rectangle.west = tilingScheme.rectangle.west;
+    }
+    if (rectangle.east > tilingScheme.rectangle.east) {
+        rectangle.east = tilingScheme.rectangle.east;
+    }
+    if (rectangle.south < tilingScheme.rectangle.south) {
+        rectangle.south = tilingScheme.rectangle.south;
+    }
+    if (rectangle.north > tilingScheme.rectangle.north) {
+        rectangle.north = tilingScheme.rectangle.north;
+    }
+    return rectangle;
 }
 
 function calculateSafeMinimumDetailLevel(
-  tilingScheme,
-  rectangle,
-  minimumLevel,
+    tilingScheme,
+    rectangle,
+    minimumLevel,
 ) {
-  // Check the number of tiles at the minimum level.  If it's more than four,
-  // try requesting the lower levels anyway, because starting at the higher minimum
-  // level will cause too many tiles to be downloaded and rendered.
-  const swTile = tilingScheme.positionToTileXY(
-    Rectangle.southwest(rectangle),
-    minimumLevel,
-  );
-  const neTile = tilingScheme.positionToTileXY(
-    Rectangle.northeast(rectangle),
-    minimumLevel,
-  );
-  const tileCount =
-    (Math.abs(neTile.x - swTile.x) + 1) * (Math.abs(neTile.y - swTile.y) + 1);
-  if (tileCount > 4) {
-    return 0;
-  }
-  return minimumLevel;
+    // Check the number of tiles at the minimum level.  If it's more than four,
+    // try requesting the lower levels anyway, because starting at the higher minimum
+    // level will cause too many tiles to be downloaded and rendered.
+    const swTile = tilingScheme.positionToTileXY(
+        Rectangle.southwest(rectangle),
+        minimumLevel,
+    );
+    const neTile = tilingScheme.positionToTileXY(
+        Rectangle.northeast(rectangle),
+        minimumLevel,
+    );
+    const tileCount =
+        (Math.abs(neTile.x - swTile.x) + 1) *
+        (Math.abs(neTile.y - swTile.y) + 1);
+    if (tileCount > 4) {
+        return 0;
+    }
+    return minimumLevel;
 }
 
 /**
@@ -212,182 +213,186 @@ function calculateSafeMinimumDetailLevel(
  * @returns {UrlTemplateImageryProvider.ConstructorOptions}
  */
 TileMapServiceImageryProvider._metadataSuccess = function (
-  xml,
-  options,
-  tmsResource,
-  xmlResource,
-  provider,
+    xml,
+    options,
+    tmsResource,
+    xmlResource,
+    provider,
 ) {
-  const tileFormatRegex = /tileformat/i;
-  const tileSetRegex = /tileset/i;
-  const tileSetsRegex = /tilesets/i;
-  const bboxRegex = /boundingbox/i;
-  let format, bbox, tilesets;
-  const tilesetsList = []; //list of TileSets
+    const tileFormatRegex = /tileformat/i;
+    const tileSetRegex = /tileset/i;
+    const tileSetsRegex = /tilesets/i;
+    const bboxRegex = /boundingbox/i;
+    let format, bbox, tilesets;
+    const tilesetsList = []; //list of TileSets
 
-  // Allowing options properties (already copied to that) to override XML values
+    // Allowing options properties (already copied to that) to override XML values
 
-  // Iterate XML Document nodes for properties
-  const nodeList = xml.childNodes[0].childNodes;
-  for (let i = 0; i < nodeList.length; i++) {
-    if (tileFormatRegex.test(nodeList.item(i).nodeName)) {
-      format = nodeList.item(i);
-    } else if (tileSetsRegex.test(nodeList.item(i).nodeName)) {
-      tilesets = nodeList.item(i); // Node list of TileSets
-      const tileSetNodes = nodeList.item(i).childNodes;
-      // Iterate the nodes to find all TileSets
-      for (let j = 0; j < tileSetNodes.length; j++) {
-        if (tileSetRegex.test(tileSetNodes.item(j).nodeName)) {
-          // Add them to tilesets list
-          tilesetsList.push(tileSetNodes.item(j));
+    // Iterate XML Document nodes for properties
+    const nodeList = xml.childNodes[0].childNodes;
+    for (let i = 0; i < nodeList.length; i++) {
+        if (tileFormatRegex.test(nodeList.item(i).nodeName)) {
+            format = nodeList.item(i);
+        } else if (tileSetsRegex.test(nodeList.item(i).nodeName)) {
+            tilesets = nodeList.item(i); // Node list of TileSets
+            const tileSetNodes = nodeList.item(i).childNodes;
+            // Iterate the nodes to find all TileSets
+            for (let j = 0; j < tileSetNodes.length; j++) {
+                if (tileSetRegex.test(tileSetNodes.item(j).nodeName)) {
+                    // Add them to tilesets list
+                    tilesetsList.push(tileSetNodes.item(j));
+                }
+            }
+        } else if (bboxRegex.test(nodeList.item(i).nodeName)) {
+            bbox = nodeList.item(i);
         }
-      }
-    } else if (bboxRegex.test(nodeList.item(i).nodeName)) {
-      bbox = nodeList.item(i);
-    }
-  }
-
-  let message;
-  if (!defined(tilesets) || !defined(bbox)) {
-    message = `Unable to find expected tilesets or bbox attributes in ${xmlResource.url}.`;
-    if (defined(provider)) {
-      TileProviderError.reportError(
-        undefined,
-        provider,
-        provider.errorEvent,
-        message,
-      );
     }
 
-    throw new RuntimeError(message);
-  }
+    let message;
+    if (!defined(tilesets) || !defined(bbox)) {
+        message = `Unable to find expected tilesets or bbox attributes in ${xmlResource.url}.`;
+        if (defined(provider)) {
+            TileProviderError.reportError(
+                undefined,
+                provider,
+                provider.errorEvent,
+                message,
+            );
+        }
 
-  const fileExtension =
-    options.fileExtension ?? format.getAttribute("extension");
-  const tileWidth =
-    options.tileWidth ?? parseInt(format.getAttribute("width"), 10);
-  const tileHeight =
-    options.tileHeight ?? parseInt(format.getAttribute("height"), 10);
-  let minimumLevel =
-    options.minimumLevel ?? parseInt(tilesetsList[0].getAttribute("order"), 10);
-  const maximumLevel =
-    options.maximumLevel ??
-    parseInt(tilesetsList[tilesetsList.length - 1].getAttribute("order"), 10);
-  const tilingSchemeName = tilesets.getAttribute("profile");
-  let tilingScheme = options.tilingScheme;
+        throw new RuntimeError(message);
+    }
 
-  if (!defined(tilingScheme)) {
-    if (
-      tilingSchemeName === "geodetic" ||
-      tilingSchemeName === "global-geodetic"
-    ) {
-      tilingScheme = new GeographicTilingScheme({
-        ellipsoid: options.ellipsoid,
-      });
-    } else if (
-      tilingSchemeName === "mercator" ||
-      tilingSchemeName === "global-mercator"
-    ) {
-      tilingScheme = new WebMercatorTilingScheme({
-        ellipsoid: options.ellipsoid,
-      });
-    } else {
-      message = `${xmlResource.url} specifies an unsupported profile attribute, ${tilingSchemeName}.`;
-      if (defined(provider)) {
-        TileProviderError.reportError(
-          undefined,
-          provider,
-          provider.errorEvent,
-          message,
+    const fileExtension =
+        options.fileExtension ?? format.getAttribute("extension");
+    const tileWidth =
+        options.tileWidth ?? parseInt(format.getAttribute("width"), 10);
+    const tileHeight =
+        options.tileHeight ?? parseInt(format.getAttribute("height"), 10);
+    let minimumLevel =
+        options.minimumLevel ??
+        parseInt(tilesetsList[0].getAttribute("order"), 10);
+    const maximumLevel =
+        options.maximumLevel ??
+        parseInt(
+            tilesetsList[tilesetsList.length - 1].getAttribute("order"),
+            10,
         );
-      }
+    const tilingSchemeName = tilesets.getAttribute("profile");
+    let tilingScheme = options.tilingScheme;
 
-      throw new RuntimeError(message);
-    }
-  }
+    if (!defined(tilingScheme)) {
+        if (
+            tilingSchemeName === "geodetic" ||
+            tilingSchemeName === "global-geodetic"
+        ) {
+            tilingScheme = new GeographicTilingScheme({
+                ellipsoid: options.ellipsoid,
+            });
+        } else if (
+            tilingSchemeName === "mercator" ||
+            tilingSchemeName === "global-mercator"
+        ) {
+            tilingScheme = new WebMercatorTilingScheme({
+                ellipsoid: options.ellipsoid,
+            });
+        } else {
+            message = `${xmlResource.url} specifies an unsupported profile attribute, ${tilingSchemeName}.`;
+            if (defined(provider)) {
+                TileProviderError.reportError(
+                    undefined,
+                    provider,
+                    provider.errorEvent,
+                    message,
+                );
+            }
 
-  // rectangle handling
-  let rectangle = Rectangle.clone(options.rectangle);
-
-  if (!defined(rectangle)) {
-    let sw;
-    let ne;
-    let swXY;
-    let neXY;
-
-    // In older versions of gdal x and y values were flipped, which is why we check for an option to flip
-    // the values here as well. Unfortunately there is no way to autodetect whether flipping is needed.
-    const flipXY = options.flipXY ?? false;
-    if (flipXY) {
-      swXY = new Cartesian2(
-        parseFloat(bbox.getAttribute("miny")),
-        parseFloat(bbox.getAttribute("minx")),
-      );
-      neXY = new Cartesian2(
-        parseFloat(bbox.getAttribute("maxy")),
-        parseFloat(bbox.getAttribute("maxx")),
-      );
-    } else {
-      swXY = new Cartesian2(
-        parseFloat(bbox.getAttribute("minx")),
-        parseFloat(bbox.getAttribute("miny")),
-      );
-      neXY = new Cartesian2(
-        parseFloat(bbox.getAttribute("maxx")),
-        parseFloat(bbox.getAttribute("maxy")),
-      );
+            throw new RuntimeError(message);
+        }
     }
 
-    // Determine based on the profile attribute if this tileset was generated by gdal2tiles.py, which
-    // uses 'mercator' and 'geodetic' profiles, or by a tool compliant with the TMS standard, which is
-    // 'global-mercator' and 'global-geodetic' profiles. In the gdal2Tiles case, X and Y are always in
-    // geodetic degrees.
-    const isGdal2tiles =
-      tilingSchemeName === "geodetic" || tilingSchemeName === "mercator";
-    if (
-      tilingScheme.projection instanceof GeographicProjection ||
-      isGdal2tiles
-    ) {
-      sw = Cartographic.fromDegrees(swXY.x, swXY.y);
-      ne = Cartographic.fromDegrees(neXY.x, neXY.y);
-    } else {
-      const projection = tilingScheme.projection;
-      sw = projection.unproject(swXY);
-      ne = projection.unproject(neXY);
+    // rectangle handling
+    let rectangle = Rectangle.clone(options.rectangle);
+
+    if (!defined(rectangle)) {
+        let sw;
+        let ne;
+        let swXY;
+        let neXY;
+
+        // In older versions of gdal x and y values were flipped, which is why we check for an option to flip
+        // the values here as well. Unfortunately there is no way to autodetect whether flipping is needed.
+        const flipXY = options.flipXY ?? false;
+        if (flipXY) {
+            swXY = new Cartesian2(
+                parseFloat(bbox.getAttribute("miny")),
+                parseFloat(bbox.getAttribute("minx")),
+            );
+            neXY = new Cartesian2(
+                parseFloat(bbox.getAttribute("maxy")),
+                parseFloat(bbox.getAttribute("maxx")),
+            );
+        } else {
+            swXY = new Cartesian2(
+                parseFloat(bbox.getAttribute("minx")),
+                parseFloat(bbox.getAttribute("miny")),
+            );
+            neXY = new Cartesian2(
+                parseFloat(bbox.getAttribute("maxx")),
+                parseFloat(bbox.getAttribute("maxy")),
+            );
+        }
+
+        // Determine based on the profile attribute if this tileset was generated by gdal2tiles.py, which
+        // uses 'mercator' and 'geodetic' profiles, or by a tool compliant with the TMS standard, which is
+        // 'global-mercator' and 'global-geodetic' profiles. In the gdal2Tiles case, X and Y are always in
+        // geodetic degrees.
+        const isGdal2tiles =
+            tilingSchemeName === "geodetic" || tilingSchemeName === "mercator";
+        if (
+            tilingScheme.projection instanceof GeographicProjection ||
+            isGdal2tiles
+        ) {
+            sw = Cartographic.fromDegrees(swXY.x, swXY.y);
+            ne = Cartographic.fromDegrees(neXY.x, neXY.y);
+        } else {
+            const projection = tilingScheme.projection;
+            sw = projection.unproject(swXY);
+            ne = projection.unproject(neXY);
+        }
+
+        rectangle = new Rectangle(
+            sw.longitude,
+            sw.latitude,
+            ne.longitude,
+            ne.latitude,
+        );
     }
 
-    rectangle = new Rectangle(
-      sw.longitude,
-      sw.latitude,
-      ne.longitude,
-      ne.latitude,
+    // The rectangle must not be outside the bounds allowed by the tiling scheme.
+    rectangle = confineRectangleToTilingScheme(rectangle, tilingScheme);
+    // clamp our minimum detail level to something that isn't going to request a ridiculous number of tiles
+    minimumLevel = calculateSafeMinimumDetailLevel(
+        tilingScheme,
+        rectangle,
+        minimumLevel,
     );
-  }
 
-  // The rectangle must not be outside the bounds allowed by the tiling scheme.
-  rectangle = confineRectangleToTilingScheme(rectangle, tilingScheme);
-  // clamp our minimum detail level to something that isn't going to request a ridiculous number of tiles
-  minimumLevel = calculateSafeMinimumDetailLevel(
-    tilingScheme,
-    rectangle,
-    minimumLevel,
-  );
+    const templateResource = tmsResource.getDerivedResource({
+        url: `{z}/{x}/{reverseY}.${fileExtension}`,
+    });
 
-  const templateResource = tmsResource.getDerivedResource({
-    url: `{z}/{x}/{reverseY}.${fileExtension}`,
-  });
-
-  return {
-    url: templateResource,
-    tilingScheme: tilingScheme,
-    rectangle: rectangle,
-    tileWidth: tileWidth,
-    tileHeight: tileHeight,
-    minimumLevel: minimumLevel,
-    maximumLevel: maximumLevel,
-    tileDiscardPolicy: options.tileDiscardPolicy,
-    credit: options.credit,
-  };
+    return {
+        url: templateResource,
+        tilingScheme: tilingScheme,
+        rectangle: rectangle,
+        tileWidth: tileWidth,
+        tileHeight: tileHeight,
+        minimumLevel: minimumLevel,
+        maximumLevel: maximumLevel,
+        tileDiscardPolicy: options.tileDiscardPolicy,
+        credit: options.credit,
+    };
 };
 
 /**
@@ -399,44 +404,44 @@ TileMapServiceImageryProvider._metadataSuccess = function (
  * @returns {UrlTemplateImageryProvider.ConstructorOptions}
  */
 TileMapServiceImageryProvider._metadataFailure = function (
-  options,
-  tmsResource,
+    options,
+    tmsResource,
 ) {
-  // Can't load XML, still allow options and defaults
-  const fileExtension = options.fileExtension ?? "png";
-  const tileWidth = options.tileWidth ?? 256;
-  const tileHeight = options.tileHeight ?? 256;
-  const maximumLevel = options.maximumLevel;
-  const tilingScheme = defined(options.tilingScheme)
-    ? options.tilingScheme
-    : new WebMercatorTilingScheme({ ellipsoid: options.ellipsoid });
+    // Can't load XML, still allow options and defaults
+    const fileExtension = options.fileExtension ?? "png";
+    const tileWidth = options.tileWidth ?? 256;
+    const tileHeight = options.tileHeight ?? 256;
+    const maximumLevel = options.maximumLevel;
+    const tilingScheme = defined(options.tilingScheme)
+        ? options.tilingScheme
+        : new WebMercatorTilingScheme({ ellipsoid: options.ellipsoid });
 
-  let rectangle = options.rectangle ?? tilingScheme.rectangle;
-  // The rectangle must not be outside the bounds allowed by the tiling scheme.
-  rectangle = confineRectangleToTilingScheme(rectangle, tilingScheme);
+    let rectangle = options.rectangle ?? tilingScheme.rectangle;
+    // The rectangle must not be outside the bounds allowed by the tiling scheme.
+    rectangle = confineRectangleToTilingScheme(rectangle, tilingScheme);
 
-  // make sure we use a safe minimum detail level, so we don't request a ridiculous number of tiles
-  const minimumLevel = calculateSafeMinimumDetailLevel(
-    tilingScheme,
-    rectangle,
-    options.minimumLevel,
-  );
+    // make sure we use a safe minimum detail level, so we don't request a ridiculous number of tiles
+    const minimumLevel = calculateSafeMinimumDetailLevel(
+        tilingScheme,
+        rectangle,
+        options.minimumLevel,
+    );
 
-  const templateResource = tmsResource.getDerivedResource({
-    url: `{z}/{x}/{reverseY}.${fileExtension}`,
-  });
+    const templateResource = tmsResource.getDerivedResource({
+        url: `{z}/{x}/{reverseY}.${fileExtension}`,
+    });
 
-  return {
-    url: templateResource,
-    tilingScheme: tilingScheme,
-    rectangle: rectangle,
-    tileWidth: tileWidth,
-    tileHeight: tileHeight,
-    minimumLevel: minimumLevel,
-    maximumLevel: maximumLevel,
-    tileDiscardPolicy: options.tileDiscardPolicy,
-    credit: options.credit,
-  };
+    return {
+        url: templateResource,
+        tilingScheme: tilingScheme,
+        rectangle: rectangle,
+        tileWidth: tileWidth,
+        tileHeight: tileHeight,
+        minimumLevel: minimumLevel,
+        maximumLevel: maximumLevel,
+        tileDiscardPolicy: options.tileDiscardPolicy,
+        credit: options.credit,
+    };
 };
 
 export default TileMapServiceImageryProvider;

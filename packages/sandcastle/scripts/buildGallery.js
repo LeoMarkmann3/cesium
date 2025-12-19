@@ -21,29 +21,29 @@ const requiredMetadataKeys = ["title", "description"];
 const galleryItemConfig = /sandcastle\.(yml|yaml)/;
 
 async function createPagefindIndex() {
-  try {
-    const { index } = await pagefind.createIndex({
-      verbose: true,
-      logfile: join(__dirname, "pagefind-debug.log"),
-    });
+    try {
+        const { index } = await pagefind.createIndex({
+            verbose: true,
+            logfile: join(__dirname, "pagefind-debug.log"),
+        });
 
-    if (!index) {
-      throw new Error("Missing index output.");
+        if (!index) {
+            throw new Error("Missing index output.");
+        }
+
+        return index;
+    } catch (error) {
+        throw new Error(`Could not create search index. ${error.message}`);
     }
-
-    return index;
-  } catch (error) {
-    throw new Error(`Could not create search index. ${error.message}`);
-  }
 }
 
 async function exists(path) {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
+    try {
+        await access(path);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -68,293 +68,299 @@ async function exists(path) {
  * @returns
  */
 export async function buildGalleryList(options = {}) {
-  const rootDirectory = options.rootDirectory ?? defaultRootDirectory;
-  const publicDirectory = options.publicDirectory ?? defaultPublicDirectory;
-  const galleryFilesPattern = options.galleryFiles ?? defaultGalleryFiles;
-  const sourceUrl = options.sourceUrl ?? "";
-  const defaultThumbnail = options.defaultThumbnail ?? defaultThumbnailPath;
-  const searchOptions = options.searchOptions ?? {};
-  const defaultFilters = options.defaultFilters ?? null;
-  const metadataKeys = options.metadata ?? {};
-  const includeDevelopment = options.includeDevelopment ?? true;
+    const rootDirectory = options.rootDirectory ?? defaultRootDirectory;
+    const publicDirectory = options.publicDirectory ?? defaultPublicDirectory;
+    const galleryFilesPattern = options.galleryFiles ?? defaultGalleryFiles;
+    const sourceUrl = options.sourceUrl ?? "";
+    const defaultThumbnail = options.defaultThumbnail ?? defaultThumbnailPath;
+    const searchOptions = options.searchOptions ?? {};
+    const defaultFilters = options.defaultFilters ?? null;
+    const metadataKeys = options.metadata ?? {};
+    const includeDevelopment = options.includeDevelopment ?? true;
 
-  const pagefindIndex = await createPagefindIndex();
+    const pagefindIndex = await createPagefindIndex();
 
-  /**
-   * @typedef GalleryListItem
-   * @property {string} url
-   * @property {string} id
-   * @property {string} title
-   * @property {string} thumbnail
-   * @property {number} lineCount
-   * @property {string} description
-   * @property {string[]} labels
-   */
+    /**
+     * @typedef GalleryListItem
+     * @property {string} url
+     * @property {string} id
+     * @property {string} title
+     * @property {string} thumbnail
+     * @property {number} lineCount
+     * @property {string} description
+     * @property {string[]} labels
+     */
 
-  /**
-   * @typedef GalleryList
-   * @property {GalleryListItem[]} entries
-   * @property {Record<string, string>} legacyIds
-   * @property {Pagefind.SearchOptions} searchOptions
-   * @property {GalleryFilter} defaultFilters
-   */
+    /**
+     * @typedef GalleryList
+     * @property {GalleryListItem[]} entries
+     * @property {Record<string, string>} legacyIds
+     * @property {Pagefind.SearchOptions} searchOptions
+     * @property {GalleryFilter} defaultFilters
+     */
 
-  /**
-   * @type {GalleryList}
-   */
-  const output = {
-    entries: [],
-    legacyIds: {},
-    searchOptions,
-    defaultFilters,
-  };
+    /**
+     * @type {GalleryList}
+     */
+    const output = {
+        entries: [],
+        legacyIds: {},
+        searchOptions,
+        defaultFilters,
+    };
 
-  const errors = [];
-  const check = (condition, messageIfTrue) => {
-    if (condition) {
-      errors.push(new Error(messageIfTrue));
-    }
-    return condition;
-  };
+    const errors = [];
+    const check = (condition, messageIfTrue) => {
+        if (condition) {
+            errors.push(new Error(messageIfTrue));
+        }
+        return condition;
+    };
 
-  const galleryFiles = await globby(
-    galleryFilesPattern.map((pattern) =>
-      // globby can only work with paths using '/' but node on windows uses '\'
-      // convert them right before passing to globby to ensure all joins work as expected
-      join(rootDirectory, pattern, "**/*").replaceAll("\\", "/"),
-    ),
-  );
-  if (galleryFiles.length === 0) {
-    console.warn(
-      "Did not find any gallery files. Please check the configuration is correct",
+    const galleryFiles = await globby(
+        galleryFilesPattern.map((pattern) =>
+            // globby can only work with paths using '/' but node on windows uses '\'
+            // convert them right before passing to globby to ensure all joins work as expected
+            join(rootDirectory, pattern, "**/*").replaceAll("\\", "/"),
+        ),
     );
-  }
-  const yamlFiles = galleryFiles.filter((path) =>
-    basename(path).match(galleryItemConfig),
-  );
-
-  for (const filePath of yamlFiles) {
-    let metadata;
-
-    try {
-      const file = await readFile(filePath, "utf-8");
-      metadata = parse(file);
-    } catch (error) {
-      errors.push(
-        new Error(`Could not read file "${filePath}: ${error.message}"`),
-      );
-      continue;
-    }
-
-    const expectedKeys = [
-      ...requiredMetadataKeys,
-      "thumbnail",
-      ...Object.keys(metadataKeys),
-    ];
-
-    if (!metadata) {
-      errors.push(
-        new Error(
-          `File "${filePath}" is missing keys "${expectedKeys.join(`", "`)}"`,
-        ),
-      );
-      continue;
-    }
-
-    // Check that all keys in a yaml file are values we expect
-    for (const key of Object.keys(metadata)) {
-      if (!expectedKeys.includes(key)) {
-        errors.push(
-          new Error(`File "${filePath}" has unexpected key "${key}"`),
+    if (galleryFiles.length === 0) {
+        console.warn(
+            "Did not find any gallery files. Please check the configuration is correct",
         );
-      }
+    }
+    const yamlFiles = galleryFiles.filter((path) =>
+        basename(path).match(galleryItemConfig),
+    );
+
+    for (const filePath of yamlFiles) {
+        let metadata;
+
+        try {
+            const file = await readFile(filePath, "utf-8");
+            metadata = parse(file);
+        } catch (error) {
+            errors.push(
+                new Error(
+                    `Could not read file "${filePath}: ${error.message}"`,
+                ),
+            );
+            continue;
+        }
+
+        const expectedKeys = [
+            ...requiredMetadataKeys,
+            "thumbnail",
+            ...Object.keys(metadataKeys),
+        ];
+
+        if (!metadata) {
+            errors.push(
+                new Error(
+                    `File "${filePath}" is missing keys "${expectedKeys.join(`", "`)}"`,
+                ),
+            );
+            continue;
+        }
+
+        // Check that all keys in a yaml file are values we expect
+        for (const key of Object.keys(metadata)) {
+            if (!expectedKeys.includes(key)) {
+                errors.push(
+                    new Error(`File "${filePath}" has unexpected key "${key}"`),
+                );
+            }
+        }
+
+        const galleryDirectory = dirname(filePath);
+        const slug = basename(galleryDirectory);
+        const relativePath = relative(rootDirectory, galleryDirectory);
+        const galleryBase = join(rootDirectory, relativePath);
+
+        const { title, description, legacyId, thumbnail, labels, development } =
+            metadata;
+
+        // Validate metadata
+
+        if (
+            check(
+                !/^[a-zA-Z0-9-.]+$/.test(slug),
+                `"${slug}" is not a valid slug`,
+            ) ||
+            check(!title, `${slug} - Missing title`) ||
+            check(!description, `${slug} - Missing description`) ||
+            check(
+                !development && labels.includes("Development"),
+                `${slug} has Development label but not marked as development sandcastle`,
+            )
+        ) {
+            continue;
+        }
+
+        const indexHtml = join(galleryBase, "index.html");
+        const hasIndexHtml = await exists(indexHtml);
+        if (!hasIndexHtml) {
+            errors.push(new Error(`Missing "${indexHtml}"`));
+        }
+
+        const indexJs = join(galleryBase, "main.js");
+        const hasIndexJs = await exists(indexJs);
+        if (!hasIndexJs) {
+            errors.push(new Error(`Missing "${indexJs}"`));
+        }
+
+        const thumbnailImage = thumbnail
+            ? join(relativePath, thumbnail)
+            : defaultThumbnail;
+        const hasThumbnail =
+            !thumbnail || (await exists(join(rootDirectory, thumbnailImage)));
+        if (!hasThumbnail) {
+            errors.push(new Error(`Missing "${thumbnailImage}"`));
+        }
+
+        if (
+            !hasIndexHtml ||
+            !hasIndexJs ||
+            !hasThumbnail ||
+            (development && !includeDevelopment)
+        ) {
+            continue;
+        }
+
+        if (development && !labels.includes("Development")) {
+            labels.push("Development");
+        }
+
+        if (legacyId) {
+            output.legacyIds[legacyId] = slug;
+        }
+
+        try {
+            const jsFile = await readFile(indexJs, "utf-8");
+            const lineCount = jsFile.split("\n").length;
+            const editSourceUrl = join(sourceUrl, relativePath);
+
+            output.entries.push({
+                url: relativePath,
+                id: slug,
+                title: title,
+                thumbnail: thumbnailImage,
+                sourceUrl: editSourceUrl,
+                lineCount: lineCount,
+                description: description,
+                labels: labels,
+            });
+
+            await pagefindIndex.addHTMLFile(
+                createGalleryRecord({
+                    id: slug,
+                    code: jsFile,
+                    title,
+                    description,
+                    image: thumbnailImage,
+                    labels,
+                }),
+            );
+        } catch (error) {
+            errors.push(
+                new Error(
+                    `Could not build gallery record for "${filePath}": ${error.message}`,
+                ),
+            );
+            continue;
+        }
     }
 
-    const galleryDirectory = dirname(filePath);
-    const slug = basename(galleryDirectory);
-    const relativePath = relative(rootDirectory, galleryDirectory);
-    const galleryBase = join(rootDirectory, relativePath);
-
-    const { title, description, legacyId, thumbnail, labels, development } =
-      metadata;
-
-    // Validate metadata
-
-    if (
-      check(!/^[a-zA-Z0-9-.]+$/.test(slug), `"${slug}" is not a valid slug`) ||
-      check(!title, `${slug} - Missing title`) ||
-      check(!description, `${slug} - Missing description`) ||
-      check(
-        !development && labels.includes("Development"),
-        `${slug} has Development label but not marked as development sandcastle`,
-      )
-    ) {
-      continue;
+    if (errors.length > 0) {
+        throw new AggregateError(errors, "Could not build gallery list");
     }
 
-    const indexHtml = join(galleryBase, "index.html");
-    const hasIndexHtml = await exists(indexHtml);
-    if (!hasIndexHtml) {
-      errors.push(new Error(`Missing "${indexHtml}"`));
-    }
+    // Sort alphabetically so the default sort order when loaded is alphabetical,
+    // regardless of if titles match the directory names
+    output.entries.sort((a, b) => a.title.localeCompare(b.title));
 
-    const indexJs = join(galleryBase, "main.js");
-    const hasIndexJs = await exists(indexJs);
-    if (!hasIndexJs) {
-      errors.push(new Error(`Missing "${indexJs}"`));
-    }
+    const outputDirectory = join(rootDirectory, publicDirectory, "gallery");
+    await rimraf(outputDirectory);
+    await mkdir(outputDirectory, { recursive: true });
 
-    const thumbnailImage = thumbnail
-      ? join(relativePath, thumbnail)
-      : defaultThumbnail;
-    const hasThumbnail =
-      !thumbnail || (await exists(join(rootDirectory, thumbnailImage)));
-    if (!hasThumbnail) {
-      errors.push(new Error(`Missing "${thumbnailImage}"`));
-    }
+    await writeFile(join(outputDirectory, "list.json"), JSON.stringify(output));
 
-    if (
-      !hasIndexHtml ||
-      !hasIndexJs ||
-      !hasThumbnail ||
-      (development && !includeDevelopment)
-    ) {
-      continue;
-    }
+    await pagefindIndex.writeFiles({
+        outputPath: join(outputDirectory, "pagefind"),
+    });
 
-    if (development && !labels.includes("Development")) {
-      labels.push("Development");
-    }
-
-    if (legacyId) {
-      output.legacyIds[legacyId] = slug;
-    }
-
+    // Copy all static gallery files
+    const staticGalleryFiles = galleryFiles.filter(
+        (path) => !basename(path).match(galleryItemConfig),
+    );
     try {
-      const jsFile = await readFile(indexJs, "utf-8");
-      const lineCount = jsFile.split("\n").length;
-      const editSourceUrl = join(sourceUrl, relativePath);
-
-      output.entries.push({
-        url: relativePath,
-        id: slug,
-        title: title,
-        thumbnail: thumbnailImage,
-        sourceUrl: editSourceUrl,
-        lineCount: lineCount,
-        description: description,
-        labels: labels,
-      });
-
-      await pagefindIndex.addHTMLFile(
-        createGalleryRecord({
-          id: slug,
-          code: jsFile,
-          title,
-          description,
-          image: thumbnailImage,
-          labels,
-        }),
-      );
+        for (const file of staticGalleryFiles) {
+            const destination = join(
+                rootDirectory,
+                publicDirectory,
+                relative(rootDirectory, file),
+            );
+            await cp(file, destination, { recursive: true });
+        }
     } catch (error) {
-      errors.push(
-        new Error(
-          `Could not build gallery record for "${filePath}": ${error.message}`,
-        ),
-      );
-      continue;
+        console.error(`Error copying gallery files: ${error.message}`);
     }
-  }
 
-  if (errors.length > 0) {
-    throw new AggregateError(errors, "Could not build gallery list");
-  }
-
-  // Sort alphabetically so the default sort order when loaded is alphabetical,
-  // regardless of if titles match the directory names
-  output.entries.sort((a, b) => a.title.localeCompare(b.title));
-
-  const outputDirectory = join(rootDirectory, publicDirectory, "gallery");
-  await rimraf(outputDirectory);
-  await mkdir(outputDirectory, { recursive: true });
-
-  await writeFile(join(outputDirectory, "list.json"), JSON.stringify(output));
-
-  await pagefindIndex.writeFiles({
-    outputPath: join(outputDirectory, "pagefind"),
-  });
-
-  // Copy all static gallery files
-  const staticGalleryFiles = galleryFiles.filter(
-    (path) => !basename(path).match(galleryItemConfig),
-  );
-  try {
-    for (const file of staticGalleryFiles) {
-      const destination = join(
-        rootDirectory,
-        publicDirectory,
-        relative(rootDirectory, file),
-      );
-      await cp(file, destination, { recursive: true });
-    }
-  } catch (error) {
-    console.error(`Error copying gallery files: ${error.message}`);
-  }
-
-  return output;
+    return output;
 }
 
 // If running the script directly using node
 if (import.meta.url.endsWith(`${pathToFileURL(process.argv[1])}`)) {
-  const argv = yargs(hideBin(process.argv)).parse();
+    const argv = yargs(hideBin(process.argv)).parse();
 
-  const configPath = argv.config ?? join(__dirname, "../sandcastle.config.js");
-  let buildGalleryOptions;
+    const configPath =
+        argv.config ?? join(__dirname, "../sandcastle.config.js");
+    let buildGalleryOptions;
 
-  try {
-    const config = await import(pathToFileURL(configPath).href);
-    const { root, publicDirectory, gallery, sourceUrl } = config.default;
+    try {
+        const config = await import(pathToFileURL(configPath).href);
+        const { root, publicDirectory, gallery, sourceUrl } = config.default;
 
-    // Paths are specified relative to the config file
-    const configDir = dirname(configPath);
-    const configRoot = root ? join(configDir, root) : configDir;
-    const {
-      files,
-      includeDevelopment,
-      defaultThumbnail,
-      searchOptions,
-      defaultFilters,
-      metadata,
-    } = gallery ?? {};
+        // Paths are specified relative to the config file
+        const configDir = dirname(configPath);
+        const configRoot = root ? join(configDir, root) : configDir;
+        const {
+            files,
+            includeDevelopment,
+            defaultThumbnail,
+            searchOptions,
+            defaultFilters,
+            metadata,
+        } = gallery ?? {};
 
-    buildGalleryOptions = {
-      rootDirectory: configRoot,
-      publicDirectory: publicDirectory,
-      galleryFiles: files,
-      sourceUrl,
-      defaultThumbnail,
-      searchOptions,
-      defaultFilters,
-      metadata,
-      includeDevelopment,
-    };
-  } catch (error) {
-    console.error(`Could not read config file: ${error.message}`, {
-      cause: error,
-    });
-    exit(1);
-  }
+        buildGalleryOptions = {
+            rootDirectory: configRoot,
+            publicDirectory: publicDirectory,
+            galleryFiles: files,
+            sourceUrl,
+            defaultThumbnail,
+            searchOptions,
+            defaultFilters,
+            metadata,
+            includeDevelopment,
+        };
+    } catch (error) {
+        console.error(`Could not read config file: ${error.message}`, {
+            cause: error,
+        });
+        exit(1);
+    }
 
-  let output;
-  try {
-    output = await buildGalleryList(buildGalleryOptions);
-    console.log("Successfully built gallery list.");
-  } catch (error) {
-    console.error(error);
-    exit(1);
-  }
+    let output;
+    try {
+        output = await buildGalleryList(buildGalleryOptions);
+        console.log("Successfully built gallery list.");
+    } catch (error) {
+        console.error(error);
+        exit(1);
+    }
 
-  if (output) {
-    console.log(`Processed ${output.entries.length} gallery examples.`);
-  }
+    if (output) {
+        console.log(`Processed ${output.entries.length} gallery examples.`);
+    }
 }

@@ -43,132 +43,132 @@ import Resource from "../Core/Resource.js";
  * @demo {@link https://sandcastle.cesium.com/index.html?src=Imagery%20Layers%20Manipulation.html|Cesium Sandcastle Imagery Manipulation Demo}
  */
 function ImageryProvider() {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 }
 
 Object.defineProperties(ImageryProvider.prototype, {
-  /**
-   * Gets the rectangle, in radians, of the imagery provided by the instance.
-   * @memberof ImageryProvider.prototype
-   * @type {Rectangle}
-   * @readonly
-   */
-  rectangle: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the rectangle, in radians, of the imagery provided by the instance.
+     * @memberof ImageryProvider.prototype
+     * @type {Rectangle}
+     * @readonly
+     */
+    rectangle: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the width of each tile, in pixels.
-   * @memberof ImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  tileWidth: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the width of each tile, in pixels.
+     * @memberof ImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    tileWidth: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the height of each tile, in pixels.
-   * @memberof ImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  tileHeight: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the height of each tile, in pixels.
+     * @memberof ImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    tileHeight: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the maximum level-of-detail that can be requested.
-   * @memberof ImageryProvider.prototype
-   * @type {number|undefined}
-   * @readonly
-   */
-  maximumLevel: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the maximum level-of-detail that can be requested.
+     * @memberof ImageryProvider.prototype
+     * @type {number|undefined}
+     * @readonly
+     */
+    maximumLevel: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the minimum level-of-detail that can be requested.  Generally,
-   * a minimum level should only be used when the rectangle of the imagery is small
-   * enough that the number of tiles at the minimum level is small.  An imagery
-   * provider with more than a few tiles at the minimum level will lead to
-   * rendering problems.
-   * @memberof ImageryProvider.prototype
-   * @type {number}
-   * @readonly
-   */
-  minimumLevel: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the minimum level-of-detail that can be requested.  Generally,
+     * a minimum level should only be used when the rectangle of the imagery is small
+     * enough that the number of tiles at the minimum level is small.  An imagery
+     * provider with more than a few tiles at the minimum level will lead to
+     * rendering problems.
+     * @memberof ImageryProvider.prototype
+     * @type {number}
+     * @readonly
+     */
+    minimumLevel: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the tiling scheme used by the provider.
-   * @memberof ImageryProvider.prototype
-   * @type {TilingScheme}
-   * @readonly
-   */
-  tilingScheme: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the tiling scheme used by the provider.
+     * @memberof ImageryProvider.prototype
+     * @type {TilingScheme}
+     * @readonly
+     */
+    tilingScheme: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the tile discard policy.  If not undefined, the discard policy is responsible
-   * for filtering out "missing" tiles via its shouldDiscardImage function.  If this function
-   * returns undefined, no tiles are filtered.
-   * @memberof ImageryProvider.prototype
-   * @type {TileDiscardPolicy}
-   * @readonly
-   */
-  tileDiscardPolicy: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the tile discard policy.  If not undefined, the discard policy is responsible
+     * for filtering out "missing" tiles via its shouldDiscardImage function.  If this function
+     * returns undefined, no tiles are filtered.
+     * @memberof ImageryProvider.prototype
+     * @type {TileDiscardPolicy}
+     * @readonly
+     */
+    tileDiscardPolicy: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets an event that is raised when the imagery provider encounters an asynchronous error.  By subscribing
-   * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
-   * are passed an instance of {@link TileProviderError}.
-   * @memberof ImageryProvider.prototype
-   * @type {Event}
-   * @readonly
-   */
-  errorEvent: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets an event that is raised when the imagery provider encounters an asynchronous error.  By subscribing
+     * to the event, you will be notified of the error and can potentially recover from it.  Event listeners
+     * are passed an instance of {@link TileProviderError}.
+     * @memberof ImageryProvider.prototype
+     * @type {Event}
+     * @readonly
+     */
+    errorEvent: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the credit to display when this imagery provider is active.  Typically this is used to credit
-   * the source of the imagery.
-   * @memberof ImageryProvider.prototype
-   * @type {Credit}
-   * @readonly
-   */
-  credit: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the credit to display when this imagery provider is active.  Typically this is used to credit
+     * the source of the imagery.
+     * @memberof ImageryProvider.prototype
+     * @type {Credit}
+     * @readonly
+     */
+    credit: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets the proxy used by this provider.
-   * @memberof ImageryProvider.prototype
-   * @type {Proxy}
-   * @readonly
-   */
-  proxy: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets the proxy used by this provider.
+     * @memberof ImageryProvider.prototype
+     * @type {Proxy}
+     * @readonly
+     */
+    proxy: {
+        get: DeveloperError.throwInstantiationError,
+    },
 
-  /**
-   * Gets a value indicating whether or not the images provided by this imagery provider
-   * include an alpha channel.  If this property is false, an alpha channel, if present, will
-   * be ignored.  If this property is true, any images without an alpha channel will be treated
-   * as if their alpha is 1.0 everywhere.  When this property is false, memory usage
-   * and texture upload time are reduced.
-   * @memberof ImageryProvider.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  hasAlphaChannel: {
-    get: DeveloperError.throwInstantiationError,
-  },
+    /**
+     * Gets a value indicating whether or not the images provided by this imagery provider
+     * include an alpha channel.  If this property is false, an alpha channel, if present, will
+     * be ignored.  If this property is true, any images without an alpha channel will be treated
+     * as if their alpha is 1.0 everywhere.  When this property is false, memory usage
+     * and texture upload time are reduced.
+     * @memberof ImageryProvider.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    hasAlphaChannel: {
+        get: DeveloperError.throwInstantiationError,
+    },
 });
 
 /**
@@ -180,7 +180,7 @@ Object.defineProperties(ImageryProvider.prototype, {
  * @returns {Credit[]} The credits to be displayed when the tile is displayed.
  */
 ImageryProvider.prototype.getTileCredits = function (x, y, level) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -194,7 +194,7 @@ ImageryProvider.prototype.getTileCredits = function (x, y, level) {
  *          undefined if there are too many active requests to the server, and the request should be retried later.
  */
 ImageryProvider.prototype.requestImage = function (x, y, level, request) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 /**
@@ -216,13 +216,13 @@ ImageryProvider.prototype.requestImage = function (x, y, level, request) {
  *
  */
 ImageryProvider.prototype.pickFeatures = function (
-  x,
-  y,
-  level,
-  longitude,
-  latitude,
+    x,
+    y,
+    level,
+    longitude,
+    latitude,
 ) {
-  DeveloperError.throwInstantiationError();
+    DeveloperError.throwInstantiationError();
 };
 
 const ktx2Regex = /\.ktx2$/i;
@@ -238,30 +238,30 @@ const ktx2Regex = /\.ktx2$/i;
  *          undefined if there are too many active requests to the server, and the request should be retried later.
  */
 ImageryProvider.loadImage = function (imageryProvider, url) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("url", url);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("url", url);
+    //>>includeEnd('debug');
 
-  const resource = Resource.createIfNeeded(url);
+    const resource = Resource.createIfNeeded(url);
 
-  if (ktx2Regex.test(resource.url)) {
-    // Resolves with `CompressedTextureBuffer`
-    return loadKTX2(resource);
-  } else if (
-    defined(imageryProvider) &&
-    defined(imageryProvider.tileDiscardPolicy)
-  ) {
-    // Resolves with `HTMLImageElement` or `ImageBitmap`
+    if (ktx2Regex.test(resource.url)) {
+        // Resolves with `CompressedTextureBuffer`
+        return loadKTX2(resource);
+    } else if (
+        defined(imageryProvider) &&
+        defined(imageryProvider.tileDiscardPolicy)
+    ) {
+        // Resolves with `HTMLImageElement` or `ImageBitmap`
+        return resource.fetchImage({
+            preferBlob: true,
+            preferImageBitmap: true,
+            flipY: true,
+        });
+    }
+
     return resource.fetchImage({
-      preferBlob: true,
-      preferImageBitmap: true,
-      flipY: true,
+        preferImageBitmap: true,
+        flipY: true,
     });
-  }
-
-  return resource.fetchImage({
-    preferImageBitmap: true,
-    flipY: true,
-  });
 };
 export default ImageryProvider;

@@ -11,22 +11,22 @@
  * @private
  */
 function Iau2006XysSample(x, y, s) {
-  /**
-   * The X value.
-   * @type {number}
-   */
-  this.x = x;
+    /**
+     * The X value.
+     * @type {number}
+     */
+    this.x = x;
 
-  /**
-   * The Y value.
-   * @type {number}
-   */
-  this.y = y;
+    /**
+     * The Y value.
+     * @type {number}
+     */
+    this.y = y;
 
-  /**
-   * The S value.
-   * @type {number}
-   */
-  this.s = s;
+    /**
+     * The S value.
+     * @type {number}
+     */
+    this.s = s;
 }
 export default Iau2006XysSample;

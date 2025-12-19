@@ -11,41 +11,41 @@ import Pass from "../../Renderer/Pass.js";
  * @private
  */
 const AlphaPipelineStage = {
-  name: "AlphaPipelineStage", // Helps with debugging
+    name: "AlphaPipelineStage", // Helps with debugging
 };
 
 AlphaPipelineStage.process = function (renderResources, primitive, frameState) {
-  const alphaOptions = renderResources.alphaOptions;
+    const alphaOptions = renderResources.alphaOptions;
 
-  // Ensure the pass is defined
-  const model = renderResources.model;
-  alphaOptions.pass = alphaOptions.pass ?? model.opaquePass;
+    // Ensure the pass is defined
+    const model = renderResources.model;
+    alphaOptions.pass = alphaOptions.pass ?? model.opaquePass;
 
-  const renderStateOptions = renderResources.renderStateOptions;
-  if (alphaOptions.pass === Pass.TRANSLUCENT) {
-    renderStateOptions.cull.enabled = false;
-    renderStateOptions.depthMask = false;
-    renderStateOptions.blending = BlendingState.ALPHA_BLEND;
-  }
+    const renderStateOptions = renderResources.renderStateOptions;
+    if (alphaOptions.pass === Pass.TRANSLUCENT) {
+        renderStateOptions.cull.enabled = false;
+        renderStateOptions.depthMask = false;
+        renderStateOptions.blending = BlendingState.ALPHA_BLEND;
+    }
 
-  const shaderBuilder = renderResources.shaderBuilder;
-  const uniformMap = renderResources.uniformMap;
+    const shaderBuilder = renderResources.shaderBuilder;
+    const uniformMap = renderResources.uniformMap;
 
-  if (defined(alphaOptions.alphaCutoff)) {
-    shaderBuilder.addDefine(
-      "ALPHA_MODE_MASK",
-      undefined,
-      ShaderDestination.FRAGMENT,
-    );
-    shaderBuilder.addUniform(
-      "float",
-      "u_alphaCutoff",
-      ShaderDestination.FRAGMENT,
-    );
-    uniformMap.u_alphaCutoff = function () {
-      return alphaOptions.alphaCutoff;
-    };
-  }
+    if (defined(alphaOptions.alphaCutoff)) {
+        shaderBuilder.addDefine(
+            "ALPHA_MODE_MASK",
+            undefined,
+            ShaderDestination.FRAGMENT,
+        );
+        shaderBuilder.addUniform(
+            "float",
+            "u_alphaCutoff",
+            ShaderDestination.FRAGMENT,
+        );
+        uniformMap.u_alphaCutoff = function () {
+            return alphaOptions.alphaCutoff;
+        };
+    }
 };
 
 export default AlphaPipelineStage;

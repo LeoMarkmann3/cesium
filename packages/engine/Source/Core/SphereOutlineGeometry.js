@@ -28,17 +28,17 @@ import EllipsoidOutlineGeometry from "./EllipsoidOutlineGeometry.js";
  * const geometry = Cesium.SphereOutlineGeometry.createGeometry(sphere);
  */
 function SphereOutlineGeometry(options) {
-  const radius = options.radius ?? 1.0;
-  const radii = new Cartesian3(radius, radius, radius);
-  const ellipsoidOptions = {
-    radii: radii,
-    stackPartitions: options.stackPartitions,
-    slicePartitions: options.slicePartitions,
-    subdivisions: options.subdivisions,
-  };
+    const radius = options.radius ?? 1.0;
+    const radii = new Cartesian3(radius, radius, radius);
+    const ellipsoidOptions = {
+        radii: radii,
+        stackPartitions: options.stackPartitions,
+        slicePartitions: options.slicePartitions,
+        subdivisions: options.subdivisions,
+    };
 
-  this._ellipsoidGeometry = new EllipsoidOutlineGeometry(ellipsoidOptions);
-  this._workerName = "createSphereOutlineGeometry";
+    this._ellipsoidGeometry = new EllipsoidOutlineGeometry(ellipsoidOptions);
+    this._workerName = "createSphereOutlineGeometry";
 }
 
 /**
@@ -57,24 +57,24 @@ SphereOutlineGeometry.packedLength = EllipsoidOutlineGeometry.packedLength;
  * @returns {number[]} The array that was packed into
  */
 SphereOutlineGeometry.pack = function (value, array, startingIndex) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("value", value);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("value", value);
+    //>>includeEnd('debug');
 
-  return EllipsoidOutlineGeometry.pack(
-    value._ellipsoidGeometry,
-    array,
-    startingIndex,
-  );
+    return EllipsoidOutlineGeometry.pack(
+        value._ellipsoidGeometry,
+        array,
+        startingIndex,
+    );
 };
 
 const scratchEllipsoidGeometry = new EllipsoidOutlineGeometry();
 const scratchOptions = {
-  radius: undefined,
-  radii: new Cartesian3(),
-  stackPartitions: undefined,
-  slicePartitions: undefined,
-  subdivisions: undefined,
+    radius: undefined,
+    radii: new Cartesian3(),
+    stackPartitions: undefined,
+    slicePartitions: undefined,
+    subdivisions: undefined,
 };
 
 /**
@@ -86,23 +86,23 @@ const scratchOptions = {
  * @returns {SphereOutlineGeometry} The modified result parameter or a new SphereOutlineGeometry instance if one was not provided.
  */
 SphereOutlineGeometry.unpack = function (array, startingIndex, result) {
-  const ellipsoidGeometry = EllipsoidOutlineGeometry.unpack(
-    array,
-    startingIndex,
-    scratchEllipsoidGeometry,
-  );
-  scratchOptions.stackPartitions = ellipsoidGeometry._stackPartitions;
-  scratchOptions.slicePartitions = ellipsoidGeometry._slicePartitions;
-  scratchOptions.subdivisions = ellipsoidGeometry._subdivisions;
+    const ellipsoidGeometry = EllipsoidOutlineGeometry.unpack(
+        array,
+        startingIndex,
+        scratchEllipsoidGeometry,
+    );
+    scratchOptions.stackPartitions = ellipsoidGeometry._stackPartitions;
+    scratchOptions.slicePartitions = ellipsoidGeometry._slicePartitions;
+    scratchOptions.subdivisions = ellipsoidGeometry._subdivisions;
 
-  if (!defined(result)) {
-    scratchOptions.radius = ellipsoidGeometry._radii.x;
-    return new SphereOutlineGeometry(scratchOptions);
-  }
+    if (!defined(result)) {
+        scratchOptions.radius = ellipsoidGeometry._radii.x;
+        return new SphereOutlineGeometry(scratchOptions);
+    }
 
-  Cartesian3.clone(ellipsoidGeometry._radii, scratchOptions.radii);
-  result._ellipsoidGeometry = new EllipsoidOutlineGeometry(scratchOptions);
-  return result;
+    Cartesian3.clone(ellipsoidGeometry._radii, scratchOptions.radii);
+    result._ellipsoidGeometry = new EllipsoidOutlineGeometry(scratchOptions);
+    return result;
 };
 
 /**
@@ -112,8 +112,8 @@ SphereOutlineGeometry.unpack = function (array, startingIndex, result) {
  * @returns {Geometry|undefined} The computed vertices and indices.
  */
 SphereOutlineGeometry.createGeometry = function (sphereGeometry) {
-  return EllipsoidOutlineGeometry.createGeometry(
-    sphereGeometry._ellipsoidGeometry,
-  );
+    return EllipsoidOutlineGeometry.createGeometry(
+        sphereGeometry._ellipsoidGeometry,
+    );
 };
 export default SphereOutlineGeometry;

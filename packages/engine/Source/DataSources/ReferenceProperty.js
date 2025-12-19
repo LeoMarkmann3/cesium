@@ -5,44 +5,44 @@ import JulianDate from "../Core/JulianDate.js";
 import Property from "./Property.js";
 
 function resolve(that) {
-  let targetProperty = that._targetProperty;
+    let targetProperty = that._targetProperty;
 
-  if (!defined(targetProperty)) {
-    let targetEntity = that._targetEntity;
+    if (!defined(targetProperty)) {
+        let targetEntity = that._targetEntity;
 
-    if (!defined(targetEntity)) {
-      targetEntity = that._targetCollection.getById(that._targetId);
+        if (!defined(targetEntity)) {
+            targetEntity = that._targetCollection.getById(that._targetId);
 
-      if (!defined(targetEntity)) {
-        // target entity not found
-        that._targetEntity = that._targetProperty = undefined;
-        return;
-      }
+            if (!defined(targetEntity)) {
+                // target entity not found
+                that._targetEntity = that._targetProperty = undefined;
+                return;
+            }
 
-      // target entity was found. listen for changes to entity definition
-      targetEntity.definitionChanged.addEventListener(
-        ReferenceProperty.prototype._onTargetEntityDefinitionChanged,
-        that,
-      );
-      that._targetEntity = targetEntity;
+            // target entity was found. listen for changes to entity definition
+            targetEntity.definitionChanged.addEventListener(
+                ReferenceProperty.prototype._onTargetEntityDefinitionChanged,
+                that,
+            );
+            that._targetEntity = targetEntity;
+        }
+
+        // walk the list of property names and resolve properties
+        const targetPropertyNames = that._targetPropertyNames;
+        targetProperty = that._targetEntity;
+        for (
+            let i = 0, len = targetPropertyNames.length;
+            i < len && defined(targetProperty);
+            ++i
+        ) {
+            targetProperty = targetProperty[targetPropertyNames[i]];
+        }
+
+        // target property may or may not be defined, depending on if it was found
+        that._targetProperty = targetProperty;
     }
 
-    // walk the list of property names and resolve properties
-    const targetPropertyNames = that._targetPropertyNames;
-    targetProperty = that._targetEntity;
-    for (
-      let i = 0, len = targetPropertyNames.length;
-      i < len && defined(targetProperty);
-      ++i
-    ) {
-      targetProperty = targetProperty[targetPropertyNames[i]];
-    }
-
-    // target property may or may not be defined, depending on if it was found
-    that._targetProperty = targetProperty;
-  }
-
-  return targetProperty;
+    return targetProperty;
 }
 
 /**
@@ -88,118 +88,118 @@ function resolve(that) {
  * collection.add(object5);
  */
 function ReferenceProperty(targetCollection, targetId, targetPropertyNames) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(targetCollection)) {
-    throw new DeveloperError("targetCollection is required.");
-  }
-  if (!defined(targetId) || targetId === "") {
-    throw new DeveloperError("targetId is required.");
-  }
-  if (!defined(targetPropertyNames) || targetPropertyNames.length === 0) {
-    throw new DeveloperError("targetPropertyNames is required.");
-  }
-  for (let i = 0; i < targetPropertyNames.length; i++) {
-    const item = targetPropertyNames[i];
-    if (!defined(item) || item === "") {
-      throw new DeveloperError("reference contains invalid properties.");
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(targetCollection)) {
+        throw new DeveloperError("targetCollection is required.");
     }
-  }
-  //>>includeEnd('debug');
+    if (!defined(targetId) || targetId === "") {
+        throw new DeveloperError("targetId is required.");
+    }
+    if (!defined(targetPropertyNames) || targetPropertyNames.length === 0) {
+        throw new DeveloperError("targetPropertyNames is required.");
+    }
+    for (let i = 0; i < targetPropertyNames.length; i++) {
+        const item = targetPropertyNames[i];
+        if (!defined(item) || item === "") {
+            throw new DeveloperError("reference contains invalid properties.");
+        }
+    }
+    //>>includeEnd('debug');
 
-  this._targetCollection = targetCollection;
-  this._targetId = targetId;
-  this._targetPropertyNames = targetPropertyNames;
-  this._targetProperty = undefined;
-  this._targetEntity = undefined;
-  this._definitionChanged = new Event();
+    this._targetCollection = targetCollection;
+    this._targetId = targetId;
+    this._targetPropertyNames = targetPropertyNames;
+    this._targetProperty = undefined;
+    this._targetEntity = undefined;
+    this._definitionChanged = new Event();
 
-  targetCollection.collectionChanged.addEventListener(
-    ReferenceProperty.prototype._onCollectionChanged,
-    this,
-  );
+    targetCollection.collectionChanged.addEventListener(
+        ReferenceProperty.prototype._onCollectionChanged,
+        this,
+    );
 }
 
 Object.defineProperties(ReferenceProperty.prototype, {
-  /**
-   * Gets a value indicating if this property is constant.
-   * @memberof ReferenceProperty.prototype
-   * @type {boolean}
-   * @readonly
-   */
-  isConstant: {
-    get: function () {
-      return Property.isConstant(resolve(this));
+    /**
+     * Gets a value indicating if this property is constant.
+     * @memberof ReferenceProperty.prototype
+     * @type {boolean}
+     * @readonly
+     */
+    isConstant: {
+        get: function () {
+            return Property.isConstant(resolve(this));
+        },
     },
-  },
-  /**
-   * Gets the event that is raised whenever the definition of this property changes.
-   * The definition is changed whenever the referenced property's definition is changed.
-   * @memberof ReferenceProperty.prototype
-   * @type {Event}
-   * @readonly
-   */
-  definitionChanged: {
-    get: function () {
-      return this._definitionChanged;
+    /**
+     * Gets the event that is raised whenever the definition of this property changes.
+     * The definition is changed whenever the referenced property's definition is changed.
+     * @memberof ReferenceProperty.prototype
+     * @type {Event}
+     * @readonly
+     */
+    definitionChanged: {
+        get: function () {
+            return this._definitionChanged;
+        },
     },
-  },
-  /**
-   * Gets the reference frame that the position is defined in.
-   * This property is only valid if the referenced property is a {@link PositionProperty}.
-   * @memberof ReferenceProperty.prototype
-   * @type {ReferenceFrame}
-   * @readonly
-   */
-  referenceFrame: {
-    get: function () {
-      const target = resolve(this);
-      return defined(target) ? target.referenceFrame : undefined;
+    /**
+     * Gets the reference frame that the position is defined in.
+     * This property is only valid if the referenced property is a {@link PositionProperty}.
+     * @memberof ReferenceProperty.prototype
+     * @type {ReferenceFrame}
+     * @readonly
+     */
+    referenceFrame: {
+        get: function () {
+            const target = resolve(this);
+            return defined(target) ? target.referenceFrame : undefined;
+        },
     },
-  },
-  /**
-   * Gets the id of the entity being referenced.
-   * @memberof ReferenceProperty.prototype
-   * @type {string}
-   * @readonly
-   */
-  targetId: {
-    get: function () {
-      return this._targetId;
+    /**
+     * Gets the id of the entity being referenced.
+     * @memberof ReferenceProperty.prototype
+     * @type {string}
+     * @readonly
+     */
+    targetId: {
+        get: function () {
+            return this._targetId;
+        },
     },
-  },
-  /**
-   * Gets the collection containing the entity being referenced.
-   * @memberof ReferenceProperty.prototype
-   * @type {EntityCollection}
-   * @readonly
-   */
-  targetCollection: {
-    get: function () {
-      return this._targetCollection;
+    /**
+     * Gets the collection containing the entity being referenced.
+     * @memberof ReferenceProperty.prototype
+     * @type {EntityCollection}
+     * @readonly
+     */
+    targetCollection: {
+        get: function () {
+            return this._targetCollection;
+        },
     },
-  },
-  /**
-   * Gets the array of property names used to retrieve the referenced property.
-   * @memberof ReferenceProperty.prototype
-   * @type {}
-   * @readonly
-   */
-  targetPropertyNames: {
-    get: function () {
-      return this._targetPropertyNames;
+    /**
+     * Gets the array of property names used to retrieve the referenced property.
+     * @memberof ReferenceProperty.prototype
+     * @type {}
+     * @readonly
+     */
+    targetPropertyNames: {
+        get: function () {
+            return this._targetPropertyNames;
+        },
     },
-  },
-  /**
-   * Gets the resolved instance of the underlying referenced property.
-   * @memberof ReferenceProperty.prototype
-   * @type {Property|undefined}
-   * @readonly
-   */
-  resolvedProperty: {
-    get: function () {
-      return resolve(this);
+    /**
+     * Gets the resolved instance of the underlying referenced property.
+     * @memberof ReferenceProperty.prototype
+     * @type {Property|undefined}
+     * @readonly
+     */
+    resolvedProperty: {
+        get: function () {
+            return resolve(this);
+        },
     },
-  },
 });
 
 /**
@@ -216,43 +216,43 @@ Object.defineProperties(ReferenceProperty.prototype, {
  * @exception {DeveloperError} invalid referenceString.
  */
 ReferenceProperty.fromString = function (targetCollection, referenceString) {
-  //>>includeStart('debug', pragmas.debug);
-  if (!defined(targetCollection)) {
-    throw new DeveloperError("targetCollection is required.");
-  }
-  if (!defined(referenceString)) {
-    throw new DeveloperError("referenceString is required.");
-  }
-  //>>includeEnd('debug');
-
-  let identifier;
-  const values = [];
-
-  let inIdentifier = true;
-  let isEscaped = false;
-  let token = "";
-  for (let i = 0; i < referenceString.length; ++i) {
-    const c = referenceString.charAt(i);
-
-    if (isEscaped) {
-      token += c;
-      isEscaped = false;
-    } else if (c === "\\") {
-      isEscaped = true;
-    } else if (inIdentifier && c === "#") {
-      identifier = token;
-      inIdentifier = false;
-      token = "";
-    } else if (!inIdentifier && c === ".") {
-      values.push(token);
-      token = "";
-    } else {
-      token += c;
+    //>>includeStart('debug', pragmas.debug);
+    if (!defined(targetCollection)) {
+        throw new DeveloperError("targetCollection is required.");
     }
-  }
-  values.push(token);
+    if (!defined(referenceString)) {
+        throw new DeveloperError("referenceString is required.");
+    }
+    //>>includeEnd('debug');
 
-  return new ReferenceProperty(targetCollection, identifier, values);
+    let identifier;
+    const values = [];
+
+    let inIdentifier = true;
+    let isEscaped = false;
+    let token = "";
+    for (let i = 0; i < referenceString.length; ++i) {
+        const c = referenceString.charAt(i);
+
+        if (isEscaped) {
+            token += c;
+            isEscaped = false;
+        } else if (c === "\\") {
+            isEscaped = true;
+        } else if (inIdentifier && c === "#") {
+            identifier = token;
+            inIdentifier = false;
+            token = "";
+        } else if (!inIdentifier && c === ".") {
+            values.push(token);
+            token = "";
+        } else {
+            token += c;
+        }
+    }
+    values.push(token);
+
+    return new ReferenceProperty(targetCollection, identifier, values);
 };
 
 const timeScratch = new JulianDate();
@@ -265,11 +265,11 @@ const timeScratch = new JulianDate();
  * @returns {object} The modified result parameter or a new instance if the result parameter was not supplied.
  */
 ReferenceProperty.prototype.getValue = function (time, result) {
-  const target = resolve(this);
-  if (!defined(time)) {
-    time = JulianDate.now(timeScratch);
-  }
-  return defined(target) ? target.getValue(time, result) : undefined;
+    const target = resolve(this);
+    if (!defined(time)) {
+        time = JulianDate.now(timeScratch);
+    }
+    return defined(target) ? target.getValue(time, result) : undefined;
 };
 
 /**
@@ -282,14 +282,14 @@ ReferenceProperty.prototype.getValue = function (time, result) {
  * @returns {Cartesian3} The modified result parameter or a new instance if the result parameter was not supplied.
  */
 ReferenceProperty.prototype.getValueInReferenceFrame = function (
-  time,
-  referenceFrame,
-  result,
+    time,
+    referenceFrame,
+    result,
 ) {
-  const target = resolve(this);
-  return defined(target)
-    ? target.getValueInReferenceFrame(time, referenceFrame, result)
-    : undefined;
+    const target = resolve(this);
+    return defined(target)
+        ? target.getValueInReferenceFrame(time, referenceFrame, result)
+        : undefined;
 };
 
 /**
@@ -300,8 +300,8 @@ ReferenceProperty.prototype.getValueInReferenceFrame = function (
  * @returns {string} The type of material.
  */
 ReferenceProperty.prototype.getType = function (time) {
-  const target = resolve(this);
-  return defined(target) ? target.getType(time) : undefined;
+    const target = resolve(this);
+    return defined(target) ? target.getType(time) : undefined;
 };
 
 /**
@@ -312,60 +312,63 @@ ReferenceProperty.prototype.getType = function (time) {
  * @returns {boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
  */
 ReferenceProperty.prototype.equals = function (other) {
-  if (this === other) {
-    return true;
-  }
-
-  const names = this._targetPropertyNames;
-  const otherNames = other._targetPropertyNames;
-
-  if (
-    this._targetCollection !== other._targetCollection || //
-    this._targetId !== other._targetId || //
-    names.length !== otherNames.length
-  ) {
-    return false;
-  }
-
-  const length = this._targetPropertyNames.length;
-  for (let i = 0; i < length; i++) {
-    if (names[i] !== otherNames[i]) {
-      return false;
+    if (this === other) {
+        return true;
     }
-  }
 
-  return true;
+    const names = this._targetPropertyNames;
+    const otherNames = other._targetPropertyNames;
+
+    if (
+        this._targetCollection !== other._targetCollection || //
+        this._targetId !== other._targetId || //
+        names.length !== otherNames.length
+    ) {
+        return false;
+    }
+
+    const length = this._targetPropertyNames.length;
+    for (let i = 0; i < length; i++) {
+        if (names[i] !== otherNames[i]) {
+            return false;
+        }
+    }
+
+    return true;
 };
 
 ReferenceProperty.prototype._onTargetEntityDefinitionChanged = function (
-  targetEntity,
-  name,
-  value,
-  oldValue,
+    targetEntity,
+    name,
+    value,
+    oldValue,
 ) {
-  if (defined(this._targetProperty) && this._targetPropertyNames[0] === name) {
-    this._targetProperty = undefined;
-    this._definitionChanged.raiseEvent(this);
-  }
+    if (
+        defined(this._targetProperty) &&
+        this._targetPropertyNames[0] === name
+    ) {
+        this._targetProperty = undefined;
+        this._definitionChanged.raiseEvent(this);
+    }
 };
 
 ReferenceProperty.prototype._onCollectionChanged = function (
-  collection,
-  added,
-  removed,
+    collection,
+    added,
+    removed,
 ) {
-  let targetEntity = this._targetEntity;
-  if (defined(targetEntity) && removed.indexOf(targetEntity) !== -1) {
-    targetEntity.definitionChanged.removeEventListener(
-      ReferenceProperty.prototype._onTargetEntityDefinitionChanged,
-      this,
-    );
-    this._targetEntity = this._targetProperty = undefined;
-  } else if (!defined(targetEntity)) {
-    targetEntity = resolve(this);
-    if (defined(targetEntity)) {
-      this._definitionChanged.raiseEvent(this);
+    let targetEntity = this._targetEntity;
+    if (defined(targetEntity) && removed.indexOf(targetEntity) !== -1) {
+        targetEntity.definitionChanged.removeEventListener(
+            ReferenceProperty.prototype._onTargetEntityDefinitionChanged,
+            this,
+        );
+        this._targetEntity = this._targetProperty = undefined;
+    } else if (!defined(targetEntity)) {
+        targetEntity = resolve(this);
+        if (defined(targetEntity)) {
+            this._definitionChanged.raiseEvent(this);
+        }
     }
-  }
 };
 export default ReferenceProperty;

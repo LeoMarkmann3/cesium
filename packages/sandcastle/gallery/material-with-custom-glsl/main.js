@@ -4,17 +4,17 @@ const boxSize = 25;
 
 // Create a Material Appearance using custom shader code.
 function createMaterialAppearance() {
-  // Create custom materials.
-  const customMaterial = new Cesium.Material({
-    translucent: false,
-    fabric: {
-      type: "CustomBoxShader",
-      // NOTE: Uniforms in the Material fabric can only be used directly in the fabric shader source.
-      // In the final shader code, the variable name will be overwritten.
-      uniforms: {
-        time: 0.0,
-      },
-      source: `
+    // Create custom materials.
+    const customMaterial = new Cesium.Material({
+        translucent: false,
+        fabric: {
+            type: "CustomBoxShader",
+            // NOTE: Uniforms in the Material fabric can only be used directly in the fabric shader source.
+            // In the final shader code, the variable name will be overwritten.
+            uniforms: {
+                time: 0.0,
+            },
+            source: `
                     // Uniform variables added by the fabric need to be explicitly declared.
                     uniform float time;
 
@@ -33,16 +33,16 @@ function createMaterialAppearance() {
                         return material;
                     }
                     `,
-    },
-  });
+        },
+    });
 
-  const appearance = new Cesium.MaterialAppearance({
-    material: customMaterial,
-    flat: false,
-    faceForward: true,
-    translucent: true,
-    closed: true,
-    vertexShaderSource: `
+    const appearance = new Cesium.MaterialAppearance({
+        material: customMaterial,
+        flat: false,
+        faceForward: true,
+        translucent: true,
+        closed: true,
+        vertexShaderSource: `
                 in vec3 position3DHigh;
                 in vec3 position3DLow;
                 in vec3 normal;
@@ -90,7 +90,7 @@ function createMaterialAppearance() {
 
                     gl_Position = czm_modelViewProjectionRelativeToEye * p;
                 }`,
-    fragmentShaderSource: `
+        fragmentShaderSource: `
                 in vec3 v_positionEC;
                 in vec3 v_normalEC;
                 in vec2 v_st;
@@ -137,55 +137,55 @@ function createMaterialAppearance() {
                 #endif              
                 }
                 `,
-    materialCacheKey: "my-box-material-appearance",
-  });
+        materialCacheKey: "my-box-material-appearance",
+    });
 
-  // Add uniform variables in the MaterialAppearance layer.
-  // These can be used directly in both vertex and fragment shaders.
-  // The name of the variable will not change in the final shader.
-  const color = new Cesium.Color(1.0, 1.0, 0.0, 1.0);
-  appearance.uniforms = {
-    frameNumber: 1.0, // Used in vertex shader.
-    customColor: color, // Used in fragment shader.
-    boxSize: boxSize, // Used in fragment shader.
-  };
+    // Add uniform variables in the MaterialAppearance layer.
+    // These can be used directly in both vertex and fragment shaders.
+    // The name of the variable will not change in the final shader.
+    const color = new Cesium.Color(1.0, 1.0, 0.0, 1.0);
+    appearance.uniforms = {
+        frameNumber: 1.0, // Used in vertex shader.
+        customColor: color, // Used in fragment shader.
+        boxSize: boxSize, // Used in fragment shader.
+    };
 
-  return appearance;
+    return appearance;
 }
 
 // Create a Box primitive with custom material appearance.
 function createBoxPrimitive(destination, appearance) {
-  const boxGeometry = Cesium.BoxGeometry.fromDimensions({
-    dimensions: new Cesium.Cartesian3(boxSize, boxSize, boxSize),
-  });
+    const boxGeometry = Cesium.BoxGeometry.fromDimensions({
+        dimensions: new Cesium.Cartesian3(boxSize, boxSize, boxSize),
+    });
 
-  const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(destination);
+    const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(destination);
 
-  // Wrap the geometry as GeometryInstance.
-  const boxInstance = new Cesium.GeometryInstance({
-    geometry: boxGeometry,
-  });
+    // Wrap the geometry as GeometryInstance.
+    const boxInstance = new Cesium.GeometryInstance({
+        geometry: boxGeometry,
+    });
 
-  // Create a Primitive and add it to the scene.
-  const primitive = new Cesium.Primitive({
-    geometryInstances: boxInstance,
-    appearance: appearance,
-    asynchronous: false,
-    modelMatrix: modelMatrix,
-  });
+    // Create a Primitive and add it to the scene.
+    const primitive = new Cesium.Primitive({
+        geometryInstances: boxInstance,
+        appearance: appearance,
+        asynchronous: false,
+        modelMatrix: modelMatrix,
+    });
 
-  return primitive;
+    return primitive;
 }
 
 // Update uniforms every frame.
 function updateAppearance(appearance) {
-  const t = appearance.material.uniforms.time++;
-  appearance.uniforms.frameNumber++;
+    const t = appearance.material.uniforms.time++;
+    appearance.uniforms.frameNumber++;
 
-  const { customColor } = appearance.uniforms;
-  customColor.red = Math.sin(t * 0.01) ** 2 / 1.5;
-  customColor.green = Math.sin(t * 0.01 + (2 * Math.PI) / 3) ** 2 / 1.5;
-  customColor.blue = Math.sin(t * 0.01 + (4 * Math.PI) / 3) ** 2 / 1.5;
+    const { customColor } = appearance.uniforms;
+    customColor.red = Math.sin(t * 0.01) ** 2 / 1.5;
+    customColor.green = Math.sin(t * 0.01 + (2 * Math.PI) / 3) ** 2 / 1.5;
+    customColor.blue = Math.sin(t * 0.01 + (4 * Math.PI) / 3) ** 2 / 1.5;
 }
 
 // Initialize Viewer.
@@ -197,19 +197,19 @@ scene.globe.enableLighting = true;
 scene.fog.enabled = true;
 
 const destination = {
-  x: -2280236.925141378,
-  y: 5006991.049189922,
-  z: 3215839.258024074,
+    x: -2280236.925141378,
+    y: 5006991.049189922,
+    z: 3215839.258024074,
 };
 
 const appearance = createMaterialAppearance();
 const primitive = createBoxPrimitive(destination, appearance);
 scene.preRender.addEventListener(() => {
-  updateAppearance(appearance);
+    updateAppearance(appearance);
 });
 
 viewer.scene.primitives.add(primitive);
 viewer.camera.lookAt(
-  destination,
-  new Cesium.HeadingPitchRange(6.283185307179577, -0.4706003213405664, 100),
+    destination,
+    new Cesium.HeadingPitchRange(6.283185307179577, -0.4706003213405664, 100),
 );

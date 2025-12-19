@@ -3,18 +3,18 @@
  * @param {createSpecCallback} createSpecs
  */
 export default function createWebglVersionHelper(createSpecs) {
-  describe("with WebGL 1", function () {
-    createSpecs({
-      requestWebgl1: true,
+    describe("with WebGL 1", function () {
+        createSpecs({
+            requestWebgl1: true,
+        });
     });
-  });
 
-  describe("with WebGL 2", function () {
-    // Don't repeat tests unless WebGL 2 is supported
-    if (typeof WebGL2RenderingContext !== "undefined") {
-      createSpecs();
-    }
-  });
+    describe("with WebGL 2", function () {
+        // Don't repeat tests unless WebGL 2 is supported
+        if (typeof WebGL2RenderingContext !== "undefined") {
+            createSpecs();
+        }
+    });
 }
 
 /**

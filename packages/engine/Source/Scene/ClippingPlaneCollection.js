@@ -66,204 +66,204 @@ import ClippingPlane from "./ClippingPlane.js";
  * viewer.zoomTo(entity);
  */
 function ClippingPlaneCollection(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
+    options = options ?? Frozen.EMPTY_OBJECT;
 
-  this._planes = [];
+    this._planes = [];
 
-  // Do partial texture updates if just one plane is dirty.
-  // If many planes are dirty, refresh the entire texture.
-  this._dirtyIndex = -1;
-  this._multipleDirtyPlanes = false;
+    // Do partial texture updates if just one plane is dirty.
+    // If many planes are dirty, refresh the entire texture.
+    this._dirtyIndex = -1;
+    this._multipleDirtyPlanes = false;
 
-  this._enabled = options.enabled ?? true;
+    this._enabled = options.enabled ?? true;
 
-  /**
-   * The 4x4 transformation matrix specifying an additional transform relative to the clipping planes
-   * original coordinate system.
-   *
-   * @type {Matrix4}
-   * @default Matrix4.IDENTITY
-   */
-  this.modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
+    /**
+     * The 4x4 transformation matrix specifying an additional transform relative to the clipping planes
+     * original coordinate system.
+     *
+     * @type {Matrix4}
+     * @default Matrix4.IDENTITY
+     */
+    this.modelMatrix = Matrix4.clone(options.modelMatrix ?? Matrix4.IDENTITY);
 
-  /**
-   * The color applied to highlight the edge along which an object is clipped.
-   *
-   * @type {Color}
-   * @default Color.WHITE
-   */
-  this.edgeColor = Color.clone(options.edgeColor ?? Color.WHITE);
+    /**
+     * The color applied to highlight the edge along which an object is clipped.
+     *
+     * @type {Color}
+     * @default Color.WHITE
+     */
+    this.edgeColor = Color.clone(options.edgeColor ?? Color.WHITE);
 
-  /**
-   * The width, in pixels, of the highlight applied to the edge along which an object is clipped.
-   *
-   * @type {number}
-   * @default 0.0
-   */
-  this.edgeWidth = options.edgeWidth ?? 0.0;
+    /**
+     * The width, in pixels, of the highlight applied to the edge along which an object is clipped.
+     *
+     * @type {number}
+     * @default 0.0
+     */
+    this.edgeWidth = options.edgeWidth ?? 0.0;
 
-  /**
-   * An event triggered when a new clipping plane is added to the collection.  Event handlers
-   * are passed the new plane and the index at which it was added.
-   * @type {Event}
-   * @readonly
-   */
-  this.planeAdded = new Event();
+    /**
+     * An event triggered when a new clipping plane is added to the collection.  Event handlers
+     * are passed the new plane and the index at which it was added.
+     * @type {Event}
+     * @readonly
+     */
+    this.planeAdded = new Event();
 
-  /**
-   * An event triggered when a new clipping plane is removed from the collection.  Event handlers
-   * are passed the new plane and the index from which it was removed.
-   * @type {Event}
-   * @readonly
-   */
-  this.planeRemoved = new Event();
+    /**
+     * An event triggered when a new clipping plane is removed from the collection.  Event handlers
+     * are passed the new plane and the index from which it was removed.
+     * @type {Event}
+     * @readonly
+     */
+    this.planeRemoved = new Event();
 
-  // If this ClippingPlaneCollection has an owner, only its owner should update or destroy it.
-  // This is because in a Cesium3DTileset multiple models may reference the tileset's ClippingPlaneCollection.
-  this._owner = undefined;
+    // If this ClippingPlaneCollection has an owner, only its owner should update or destroy it.
+    // This is because in a Cesium3DTileset multiple models may reference the tileset's ClippingPlaneCollection.
+    this._owner = undefined;
 
-  const unionClippingRegions = options.unionClippingRegions ?? false;
-  this._unionClippingRegions = unionClippingRegions;
-  this._testIntersection = unionClippingRegions
-    ? unionIntersectFunction
-    : defaultIntersectFunction;
+    const unionClippingRegions = options.unionClippingRegions ?? false;
+    this._unionClippingRegions = unionClippingRegions;
+    this._testIntersection = unionClippingRegions
+        ? unionIntersectFunction
+        : defaultIntersectFunction;
 
-  this._uint8View = undefined;
-  this._float32View = undefined;
+    this._uint8View = undefined;
+    this._float32View = undefined;
 
-  this._clippingPlanesTexture = undefined;
+    this._clippingPlanesTexture = undefined;
 
-  // Add each ClippingPlane object.
-  const planes = options.planes;
-  if (defined(planes)) {
-    const planesLength = planes.length;
-    for (let i = 0; i < planesLength; ++i) {
-      this.add(planes[i]);
+    // Add each ClippingPlane object.
+    const planes = options.planes;
+    if (defined(planes)) {
+        const planesLength = planes.length;
+        for (let i = 0; i < planesLength; ++i) {
+            this.add(planes[i]);
+        }
     }
-  }
 }
 
 function unionIntersectFunction(value) {
-  return value === Intersect.OUTSIDE;
+    return value === Intersect.OUTSIDE;
 }
 
 function defaultIntersectFunction(value) {
-  return value === Intersect.INSIDE;
+    return value === Intersect.INSIDE;
 }
 
 Object.defineProperties(ClippingPlaneCollection.prototype, {
-  /**
-   * Returns the number of planes in this collection.  This is commonly used with
-   * {@link ClippingPlaneCollection#get} to iterate over all the planes
-   * in the collection.
-   *
-   * @memberof ClippingPlaneCollection.prototype
-   * @type {number}
-   * @readonly
-   */
-  length: {
-    get: function () {
-      return this._planes.length;
+    /**
+     * Returns the number of planes in this collection.  This is commonly used with
+     * {@link ClippingPlaneCollection#get} to iterate over all the planes
+     * in the collection.
+     *
+     * @memberof ClippingPlaneCollection.prototype
+     * @type {number}
+     * @readonly
+     */
+    length: {
+        get: function () {
+            return this._planes.length;
+        },
     },
-  },
 
-  /**
-   * If true, a region will be clipped if it is on the outside of any plane in the
-   * collection. Otherwise, a region will only be clipped if it is on the
-   * outside of every plane.
-   *
-   * @memberof ClippingPlaneCollection.prototype
-   * @type {boolean}
-   * @default false
-   */
-  unionClippingRegions: {
-    get: function () {
-      return this._unionClippingRegions;
+    /**
+     * If true, a region will be clipped if it is on the outside of any plane in the
+     * collection. Otherwise, a region will only be clipped if it is on the
+     * outside of every plane.
+     *
+     * @memberof ClippingPlaneCollection.prototype
+     * @type {boolean}
+     * @default false
+     */
+    unionClippingRegions: {
+        get: function () {
+            return this._unionClippingRegions;
+        },
+        set: function (value) {
+            if (this._unionClippingRegions === value) {
+                return;
+            }
+            this._unionClippingRegions = value;
+            this._testIntersection = value
+                ? unionIntersectFunction
+                : defaultIntersectFunction;
+        },
     },
-    set: function (value) {
-      if (this._unionClippingRegions === value) {
-        return;
-      }
-      this._unionClippingRegions = value;
-      this._testIntersection = value
-        ? unionIntersectFunction
-        : defaultIntersectFunction;
-    },
-  },
 
-  /**
-   * If true, clipping will be enabled.
-   *
-   * @memberof ClippingPlaneCollection.prototype
-   * @type {boolean}
-   * @default true
-   */
-  enabled: {
-    get: function () {
-      return this._enabled;
+    /**
+     * If true, clipping will be enabled.
+     *
+     * @memberof ClippingPlaneCollection.prototype
+     * @type {boolean}
+     * @default true
+     */
+    enabled: {
+        get: function () {
+            return this._enabled;
+        },
+        set: function (value) {
+            if (this._enabled === value) {
+                return;
+            }
+            this._enabled = value;
+        },
     },
-    set: function (value) {
-      if (this._enabled === value) {
-        return;
-      }
-      this._enabled = value;
-    },
-  },
 
-  /**
-   * Returns a texture containing packed, untransformed clipping planes.
-   *
-   * @memberof ClippingPlaneCollection.prototype
-   * @type {Texture}
-   * @readonly
-   * @private
-   */
-  texture: {
-    get: function () {
-      return this._clippingPlanesTexture;
+    /**
+     * Returns a texture containing packed, untransformed clipping planes.
+     *
+     * @memberof ClippingPlaneCollection.prototype
+     * @type {Texture}
+     * @readonly
+     * @private
+     */
+    texture: {
+        get: function () {
+            return this._clippingPlanesTexture;
+        },
     },
-  },
 
-  /**
-   * A reference to the ClippingPlaneCollection's owner, if any.
-   *
-   * @memberof ClippingPlaneCollection.prototype
-   * @readonly
-   * @private
-   */
-  owner: {
-    get: function () {
-      return this._owner;
+    /**
+     * A reference to the ClippingPlaneCollection's owner, if any.
+     *
+     * @memberof ClippingPlaneCollection.prototype
+     * @readonly
+     * @private
+     */
+    owner: {
+        get: function () {
+            return this._owner;
+        },
     },
-  },
 
-  /**
-   * Returns a Number encapsulating the state for this ClippingPlaneCollection.
-   *
-   * Clipping mode is encoded in the sign of the number, which is just the plane count.
-   * If this value changes, then shader regeneration is necessary.
-   *
-   * @memberof ClippingPlaneCollection.prototype
-   * @returns {number} A Number that describes the ClippingPlaneCollection's state.
-   * @readonly
-   * @private
-   */
-  clippingPlanesState: {
-    get: function () {
-      return this._unionClippingRegions
-        ? this._planes.length
-        : -this._planes.length;
+    /**
+     * Returns a Number encapsulating the state for this ClippingPlaneCollection.
+     *
+     * Clipping mode is encoded in the sign of the number, which is just the plane count.
+     * If this value changes, then shader regeneration is necessary.
+     *
+     * @memberof ClippingPlaneCollection.prototype
+     * @returns {number} A Number that describes the ClippingPlaneCollection's state.
+     * @readonly
+     * @private
+     */
+    clippingPlanesState: {
+        get: function () {
+            return this._unionClippingRegions
+                ? this._planes.length
+                : -this._planes.length;
+        },
     },
-  },
 });
 
 function setIndexDirty(collection, index) {
-  // If there's already a different _dirtyIndex set, more than one plane has changed since update.
-  // Entire texture must be reloaded
-  collection._multipleDirtyPlanes =
-    collection._multipleDirtyPlanes ||
-    (collection._dirtyIndex !== -1 && collection._dirtyIndex !== index);
-  collection._dirtyIndex = index;
+    // If there's already a different _dirtyIndex set, more than one plane has changed since update.
+    // Entire texture must be reloaded
+    collection._multipleDirtyPlanes =
+        collection._multipleDirtyPlanes ||
+        (collection._dirtyIndex !== -1 && collection._dirtyIndex !== index);
+    collection._dirtyIndex = index;
 }
 
 /**
@@ -278,17 +278,17 @@ function setIndexDirty(collection, index) {
  * @see ClippingPlaneCollection#removeAll
  */
 ClippingPlaneCollection.prototype.add = function (plane) {
-  const newPlaneIndex = this._planes.length;
+    const newPlaneIndex = this._planes.length;
 
-  const that = this;
-  plane.onChangeCallback = function (index) {
-    setIndexDirty(that, index);
-  };
-  plane.index = newPlaneIndex;
+    const that = this;
+    plane.onChangeCallback = function (index) {
+        setIndexDirty(that, index);
+    };
+    plane.index = newPlaneIndex;
 
-  setIndexDirty(this, newPlaneIndex);
-  this._planes.push(plane);
-  this.planeAdded.raiseEvent(plane, newPlaneIndex);
+    setIndexDirty(this, newPlaneIndex);
+    this._planes.push(plane);
+    this.planeAdded.raiseEvent(plane, newPlaneIndex);
 };
 
 /**
@@ -304,22 +304,22 @@ ClippingPlaneCollection.prototype.add = function (plane) {
  * @see ClippingPlaneCollection#length
  */
 ClippingPlaneCollection.prototype.get = function (index) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number("index", index);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number("index", index);
+    //>>includeEnd('debug');
 
-  return this._planes[index];
+    return this._planes[index];
 };
 
 function indexOf(planes, plane) {
-  const length = planes.length;
-  for (let i = 0; i < length; ++i) {
-    if (Plane.equals(planes[i], plane)) {
-      return i;
+    const length = planes.length;
+    for (let i = 0; i < length; ++i) {
+        if (Plane.equals(planes[i], plane)) {
+            return i;
+        }
     }
-  }
 
-  return -1;
+    return -1;
 }
 
 /**
@@ -331,7 +331,7 @@ function indexOf(planes, plane) {
  * @see ClippingPlaneCollection#get
  */
 ClippingPlaneCollection.prototype.contains = function (clippingPlane) {
-  return indexOf(this._planes, clippingPlane) !== -1;
+    return indexOf(this._planes, clippingPlane) !== -1;
 };
 
 /**
@@ -345,36 +345,36 @@ ClippingPlaneCollection.prototype.contains = function (clippingPlane) {
  * @see ClippingPlaneCollection#removeAll
  */
 ClippingPlaneCollection.prototype.remove = function (clippingPlane) {
-  const planes = this._planes;
-  const index = indexOf(planes, clippingPlane);
+    const planes = this._planes;
+    const index = indexOf(planes, clippingPlane);
 
-  if (index === -1) {
-    return false;
-  }
-
-  // Unlink this ClippingPlaneCollection from the ClippingPlane
-  if (clippingPlane instanceof ClippingPlane) {
-    clippingPlane.onChangeCallback = undefined;
-    clippingPlane.index = -1;
-  }
-
-  // Shift and update indices
-  const length = planes.length - 1;
-  for (let i = index; i < length; ++i) {
-    const planeToKeep = planes[i + 1];
-    planes[i] = planeToKeep;
-    if (planeToKeep instanceof ClippingPlane) {
-      planeToKeep.index = i;
+    if (index === -1) {
+        return false;
     }
-  }
 
-  // Indicate planes texture is dirty
-  this._multipleDirtyPlanes = true;
-  planes.length = length;
+    // Unlink this ClippingPlaneCollection from the ClippingPlane
+    if (clippingPlane instanceof ClippingPlane) {
+        clippingPlane.onChangeCallback = undefined;
+        clippingPlane.index = -1;
+    }
 
-  this.planeRemoved.raiseEvent(clippingPlane, index);
+    // Shift and update indices
+    const length = planes.length - 1;
+    for (let i = index; i < length; ++i) {
+        const planeToKeep = planes[i + 1];
+        planes[i] = planeToKeep;
+        if (planeToKeep instanceof ClippingPlane) {
+            planeToKeep.index = i;
+        }
+    }
 
-  return true;
+    // Indicate planes texture is dirty
+    this._multipleDirtyPlanes = true;
+    planes.length = length;
+
+    this.planeRemoved.raiseEvent(clippingPlane, index);
+
+    return true;
 };
 
 /**
@@ -384,76 +384,76 @@ ClippingPlaneCollection.prototype.remove = function (clippingPlane) {
  * @see ClippingPlaneCollection#remove
  */
 ClippingPlaneCollection.prototype.removeAll = function () {
-  // Dereference this ClippingPlaneCollection from all ClippingPlanes
-  const planes = this._planes;
-  const planesCount = planes.length;
-  for (let i = 0; i < planesCount; ++i) {
-    const plane = planes[i];
-    if (plane instanceof ClippingPlane) {
-      plane.onChangeCallback = undefined;
-      plane.index = -1;
+    // Dereference this ClippingPlaneCollection from all ClippingPlanes
+    const planes = this._planes;
+    const planesCount = planes.length;
+    for (let i = 0; i < planesCount; ++i) {
+        const plane = planes[i];
+        if (plane instanceof ClippingPlane) {
+            plane.onChangeCallback = undefined;
+            plane.index = -1;
+        }
+        this.planeRemoved.raiseEvent(plane, i);
     }
-    this.planeRemoved.raiseEvent(plane, i);
-  }
-  this._multipleDirtyPlanes = true;
-  this._planes = [];
+    this._multipleDirtyPlanes = true;
+    this._planes = [];
 };
 
 const distanceEncodeScratch = new Cartesian4();
 const oct32EncodeScratch = new Cartesian4();
 function packPlanesAsUint8(clippingPlaneCollection, startIndex, endIndex) {
-  const uint8View = clippingPlaneCollection._uint8View;
-  const planes = clippingPlaneCollection._planes;
-  let byteIndex = 0;
-  for (let i = startIndex; i < endIndex; ++i) {
-    const plane = planes[i];
+    const uint8View = clippingPlaneCollection._uint8View;
+    const planes = clippingPlaneCollection._planes;
+    let byteIndex = 0;
+    for (let i = startIndex; i < endIndex; ++i) {
+        const plane = planes[i];
 
-    const oct32Normal = AttributeCompression.octEncodeToCartesian4(
-      plane.normal,
-      oct32EncodeScratch,
-    );
-    uint8View[byteIndex] = oct32Normal.x;
-    uint8View[byteIndex + 1] = oct32Normal.y;
-    uint8View[byteIndex + 2] = oct32Normal.z;
-    uint8View[byteIndex + 3] = oct32Normal.w;
+        const oct32Normal = AttributeCompression.octEncodeToCartesian4(
+            plane.normal,
+            oct32EncodeScratch,
+        );
+        uint8View[byteIndex] = oct32Normal.x;
+        uint8View[byteIndex + 1] = oct32Normal.y;
+        uint8View[byteIndex + 2] = oct32Normal.z;
+        uint8View[byteIndex + 3] = oct32Normal.w;
 
-    const encodedDistance = Cartesian4.packFloat(
-      plane.distance,
-      distanceEncodeScratch,
-    );
-    uint8View[byteIndex + 4] = encodedDistance.x;
-    uint8View[byteIndex + 5] = encodedDistance.y;
-    uint8View[byteIndex + 6] = encodedDistance.z;
-    uint8View[byteIndex + 7] = encodedDistance.w;
+        const encodedDistance = Cartesian4.packFloat(
+            plane.distance,
+            distanceEncodeScratch,
+        );
+        uint8View[byteIndex + 4] = encodedDistance.x;
+        uint8View[byteIndex + 5] = encodedDistance.y;
+        uint8View[byteIndex + 6] = encodedDistance.z;
+        uint8View[byteIndex + 7] = encodedDistance.w;
 
-    byteIndex += 8;
-  }
+        byteIndex += 8;
+    }
 }
 
 // Pack starting at the beginning of the buffer to allow partial update
 function packPlanesAsFloats(clippingPlaneCollection, startIndex, endIndex) {
-  const float32View = clippingPlaneCollection._float32View;
-  const planes = clippingPlaneCollection._planes;
+    const float32View = clippingPlaneCollection._float32View;
+    const planes = clippingPlaneCollection._planes;
 
-  let floatIndex = 0;
-  for (let i = startIndex; i < endIndex; ++i) {
-    const plane = planes[i];
-    const normal = plane.normal;
+    let floatIndex = 0;
+    for (let i = startIndex; i < endIndex; ++i) {
+        const plane = planes[i];
+        const normal = plane.normal;
 
-    float32View[floatIndex] = normal.x;
-    float32View[floatIndex + 1] = normal.y;
-    float32View[floatIndex + 2] = normal.z;
-    float32View[floatIndex + 3] = plane.distance;
+        float32View[floatIndex] = normal.x;
+        float32View[floatIndex + 1] = normal.y;
+        float32View[floatIndex + 2] = normal.z;
+        float32View[floatIndex + 3] = plane.distance;
 
-    floatIndex += 4; // each plane is 4 floats
-  }
+        floatIndex += 4; // each plane is 4 floats
+    }
 }
 
 function computeTextureResolution(pixelsNeeded, result) {
-  const maxSize = ContextLimits.maximumTextureSize;
-  result.x = Math.min(pixelsNeeded, maxSize);
-  result.y = Math.ceil(pixelsNeeded / result.x);
-  return result;
+    const maxSize = ContextLimits.maximumTextureSize;
+    result.x = Math.min(pixelsNeeded, maxSize);
+    result.y = Math.ceil(pixelsNeeded / result.x);
+    return result;
 }
 
 const textureResolutionScratch = new Cartesian2();
@@ -465,140 +465,144 @@ const textureResolutionScratch = new Cartesian2();
  * </p>
  */
 ClippingPlaneCollection.prototype.update = function (frameState) {
-  let clippingPlanesTexture = this._clippingPlanesTexture;
-  const context = frameState.context;
-  const useFloatTexture = ClippingPlaneCollection.useFloatTexture(context);
+    let clippingPlanesTexture = this._clippingPlanesTexture;
+    const context = frameState.context;
+    const useFloatTexture = ClippingPlaneCollection.useFloatTexture(context);
 
-  // Compute texture requirements for current planes
-  // In RGBA FLOAT, A plane is 4 floats packed to a RGBA.
-  // In RGBA UNSIGNED_BYTE, A plane is a float in [0, 1) packed to RGBA and an Oct32 quantized normal,
-  // so 8 bytes or 2 pixels in RGBA.
-  const pixelsNeeded = useFloatTexture ? this.length : this.length * 2;
+    // Compute texture requirements for current planes
+    // In RGBA FLOAT, A plane is 4 floats packed to a RGBA.
+    // In RGBA UNSIGNED_BYTE, A plane is a float in [0, 1) packed to RGBA and an Oct32 quantized normal,
+    // so 8 bytes or 2 pixels in RGBA.
+    const pixelsNeeded = useFloatTexture ? this.length : this.length * 2;
 
-  if (defined(clippingPlanesTexture)) {
-    const currentPixelCount =
-      clippingPlanesTexture.width * clippingPlanesTexture.height;
-    // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
-    // Optimization note: this isn't exactly the classic resizeable array algorithm
-    // * not necessarily checking for resize after each add/remove operation
-    // * random-access deletes instead of just pops
-    // * alloc ops likely more expensive than demonstrable via big-O analysis
-    if (
-      currentPixelCount < pixelsNeeded ||
-      pixelsNeeded < 0.25 * currentPixelCount
-    ) {
-      clippingPlanesTexture.destroy();
-      clippingPlanesTexture = undefined;
-      this._clippingPlanesTexture = undefined;
+    if (defined(clippingPlanesTexture)) {
+        const currentPixelCount =
+            clippingPlanesTexture.width * clippingPlanesTexture.height;
+        // Recreate the texture to double current requirement if it isn't big enough or is 4 times larger than it needs to be.
+        // Optimization note: this isn't exactly the classic resizeable array algorithm
+        // * not necessarily checking for resize after each add/remove operation
+        // * random-access deletes instead of just pops
+        // * alloc ops likely more expensive than demonstrable via big-O analysis
+        if (
+            currentPixelCount < pixelsNeeded ||
+            pixelsNeeded < 0.25 * currentPixelCount
+        ) {
+            clippingPlanesTexture.destroy();
+            clippingPlanesTexture = undefined;
+            this._clippingPlanesTexture = undefined;
+        }
     }
-  }
 
-  // If there are no clipping planes, there's nothing to update.
-  if (this.length === 0) {
-    return;
-  }
+    // If there are no clipping planes, there's nothing to update.
+    if (this.length === 0) {
+        return;
+    }
 
-  if (!defined(clippingPlanesTexture)) {
-    const requiredResolution = computeTextureResolution(
-      pixelsNeeded,
-      textureResolutionScratch,
-    );
-    // Allocate twice as much space as needed to avoid frequent texture reallocation.
-    // Allocate in the Y direction, since texture may be as wide as context texture support.
-    requiredResolution.y *= 2;
+    if (!defined(clippingPlanesTexture)) {
+        const requiredResolution = computeTextureResolution(
+            pixelsNeeded,
+            textureResolutionScratch,
+        );
+        // Allocate twice as much space as needed to avoid frequent texture reallocation.
+        // Allocate in the Y direction, since texture may be as wide as context texture support.
+        requiredResolution.y *= 2;
 
-    if (useFloatTexture) {
-      clippingPlanesTexture = new Texture({
-        context: context,
-        width: requiredResolution.x,
-        height: requiredResolution.y,
-        pixelFormat: PixelFormat.RGBA,
-        pixelDatatype: PixelDatatype.FLOAT,
-        sampler: Sampler.NEAREST,
-        flipY: false,
-      });
-      this._float32View = new Float32Array(
-        requiredResolution.x * requiredResolution.y * 4,
-      );
+        if (useFloatTexture) {
+            clippingPlanesTexture = new Texture({
+                context: context,
+                width: requiredResolution.x,
+                height: requiredResolution.y,
+                pixelFormat: PixelFormat.RGBA,
+                pixelDatatype: PixelDatatype.FLOAT,
+                sampler: Sampler.NEAREST,
+                flipY: false,
+            });
+            this._float32View = new Float32Array(
+                requiredResolution.x * requiredResolution.y * 4,
+            );
+        } else {
+            clippingPlanesTexture = new Texture({
+                context: context,
+                width: requiredResolution.x,
+                height: requiredResolution.y,
+                pixelFormat: PixelFormat.RGBA,
+                pixelDatatype: PixelDatatype.UNSIGNED_BYTE,
+                sampler: Sampler.NEAREST,
+                flipY: false,
+            });
+            this._uint8View = new Uint8Array(
+                requiredResolution.x * requiredResolution.y * 4,
+            );
+        }
+
+        this._clippingPlanesTexture = clippingPlanesTexture;
+        this._multipleDirtyPlanes = true;
+    }
+
+    const dirtyIndex = this._dirtyIndex;
+    if (!this._multipleDirtyPlanes && dirtyIndex === -1) {
+        return;
+    }
+    if (!this._multipleDirtyPlanes) {
+        // partial updates possible
+        let offsetX = 0;
+        let offsetY = 0;
+        if (useFloatTexture) {
+            offsetY = Math.floor(dirtyIndex / clippingPlanesTexture.width);
+            offsetX = Math.floor(
+                dirtyIndex - offsetY * clippingPlanesTexture.width,
+            );
+
+            packPlanesAsFloats(this, dirtyIndex, dirtyIndex + 1);
+            clippingPlanesTexture.copyFrom({
+                source: {
+                    width: 1,
+                    height: 1,
+                    arrayBufferView: this._float32View,
+                },
+                xOffset: offsetX,
+                yOffset: offsetY,
+            });
+        } else {
+            offsetY = Math.floor(
+                (dirtyIndex * 2) / clippingPlanesTexture.width,
+            );
+            offsetX = Math.floor(
+                dirtyIndex * 2 - offsetY * clippingPlanesTexture.width,
+            );
+            packPlanesAsUint8(this, dirtyIndex, dirtyIndex + 1);
+            clippingPlanesTexture.copyFrom({
+                source: {
+                    width: 2,
+                    height: 1,
+                    arrayBufferView: this._uint8View,
+                },
+                xOffset: offsetX,
+                yOffset: offsetY,
+            });
+        }
+    } else if (useFloatTexture) {
+        packPlanesAsFloats(this, 0, this._planes.length);
+        clippingPlanesTexture.copyFrom({
+            source: {
+                width: clippingPlanesTexture.width,
+                height: clippingPlanesTexture.height,
+                arrayBufferView: this._float32View,
+            },
+        });
     } else {
-      clippingPlanesTexture = new Texture({
-        context: context,
-        width: requiredResolution.x,
-        height: requiredResolution.y,
-        pixelFormat: PixelFormat.RGBA,
-        pixelDatatype: PixelDatatype.UNSIGNED_BYTE,
-        sampler: Sampler.NEAREST,
-        flipY: false,
-      });
-      this._uint8View = new Uint8Array(
-        requiredResolution.x * requiredResolution.y * 4,
-      );
+        packPlanesAsUint8(this, 0, this._planes.length);
+        clippingPlanesTexture.copyFrom({
+            source: {
+                width: clippingPlanesTexture.width,
+                height: clippingPlanesTexture.height,
+                arrayBufferView: this._uint8View,
+            },
+        });
     }
 
-    this._clippingPlanesTexture = clippingPlanesTexture;
-    this._multipleDirtyPlanes = true;
-  }
-
-  const dirtyIndex = this._dirtyIndex;
-  if (!this._multipleDirtyPlanes && dirtyIndex === -1) {
-    return;
-  }
-  if (!this._multipleDirtyPlanes) {
-    // partial updates possible
-    let offsetX = 0;
-    let offsetY = 0;
-    if (useFloatTexture) {
-      offsetY = Math.floor(dirtyIndex / clippingPlanesTexture.width);
-      offsetX = Math.floor(dirtyIndex - offsetY * clippingPlanesTexture.width);
-
-      packPlanesAsFloats(this, dirtyIndex, dirtyIndex + 1);
-      clippingPlanesTexture.copyFrom({
-        source: {
-          width: 1,
-          height: 1,
-          arrayBufferView: this._float32View,
-        },
-        xOffset: offsetX,
-        yOffset: offsetY,
-      });
-    } else {
-      offsetY = Math.floor((dirtyIndex * 2) / clippingPlanesTexture.width);
-      offsetX = Math.floor(
-        dirtyIndex * 2 - offsetY * clippingPlanesTexture.width,
-      );
-      packPlanesAsUint8(this, dirtyIndex, dirtyIndex + 1);
-      clippingPlanesTexture.copyFrom({
-        source: {
-          width: 2,
-          height: 1,
-          arrayBufferView: this._uint8View,
-        },
-        xOffset: offsetX,
-        yOffset: offsetY,
-      });
-    }
-  } else if (useFloatTexture) {
-    packPlanesAsFloats(this, 0, this._planes.length);
-    clippingPlanesTexture.copyFrom({
-      source: {
-        width: clippingPlanesTexture.width,
-        height: clippingPlanesTexture.height,
-        arrayBufferView: this._float32View,
-      },
-    });
-  } else {
-    packPlanesAsUint8(this, 0, this._planes.length);
-    clippingPlanesTexture.copyFrom({
-      source: {
-        width: clippingPlanesTexture.width,
-        height: clippingPlanesTexture.height,
-        arrayBufferView: this._uint8View,
-      },
-    });
-  }
-
-  this._multipleDirtyPlanes = false;
-  this._dirtyIndex = -1;
+    this._multipleDirtyPlanes = false;
+    this._dirtyIndex = -1;
 };
 
 const scratchMatrix = new Matrix4();
@@ -615,39 +619,43 @@ const scratchPlane = new Plane(Cartesian3.UNIT_X, 0.0);
  *                      {@link Intersect.INTERSECTING} if the volume intersects the planes.
  */
 ClippingPlaneCollection.prototype.computeIntersectionWithBoundingVolume =
-  function (tileBoundingVolume, transform) {
-    const planes = this._planes;
-    const length = planes.length;
+    function (tileBoundingVolume, transform) {
+        const planes = this._planes;
+        const length = planes.length;
 
-    let modelMatrix = this.modelMatrix;
-    if (defined(transform)) {
-      modelMatrix = Matrix4.multiply(transform, modelMatrix, scratchMatrix);
-    }
+        let modelMatrix = this.modelMatrix;
+        if (defined(transform)) {
+            modelMatrix = Matrix4.multiply(
+                transform,
+                modelMatrix,
+                scratchMatrix,
+            );
+        }
 
-    // If the collection is not set to union the clipping regions, the volume must be outside of all planes to be
-    // considered completely clipped. If the collection is set to union the clipping regions, if the volume can be
-    // outside any the planes, it is considered completely clipped.
-    // Lastly, if not completely clipped, if any plane is intersecting, more calculations must be performed.
-    let intersection = Intersect.INSIDE;
-    if (!this.unionClippingRegions && length > 0) {
-      intersection = Intersect.OUTSIDE;
-    }
+        // If the collection is not set to union the clipping regions, the volume must be outside of all planes to be
+        // considered completely clipped. If the collection is set to union the clipping regions, if the volume can be
+        // outside any the planes, it is considered completely clipped.
+        // Lastly, if not completely clipped, if any plane is intersecting, more calculations must be performed.
+        let intersection = Intersect.INSIDE;
+        if (!this.unionClippingRegions && length > 0) {
+            intersection = Intersect.OUTSIDE;
+        }
 
-    for (let i = 0; i < length; ++i) {
-      const plane = planes[i];
+        for (let i = 0; i < length; ++i) {
+            const plane = planes[i];
 
-      Plane.transform(plane, modelMatrix, scratchPlane); // ClippingPlane can be used for Plane math
+            Plane.transform(plane, modelMatrix, scratchPlane); // ClippingPlane can be used for Plane math
 
-      const value = tileBoundingVolume.intersectPlane(scratchPlane);
-      if (value === Intersect.INTERSECTING) {
-        intersection = value;
-      } else if (this._testIntersection(value)) {
-        return value;
-      }
-    }
+            const value = tileBoundingVolume.intersectPlane(scratchPlane);
+            if (value === Intersect.INTERSECTING) {
+                intersection = value;
+            } else if (this._testIntersection(value)) {
+                return value;
+            }
+        }
 
-    return intersection;
-  };
+        return intersection;
+    };
 
 /**
  * Sets the owner for the input ClippingPlaneCollection if there wasn't another owner.
@@ -659,27 +667,27 @@ ClippingPlaneCollection.prototype.computeIntersectionWithBoundingVolume =
  * @private
  */
 ClippingPlaneCollection.setOwner = function (
-  clippingPlaneCollection,
-  owner,
-  key,
+    clippingPlaneCollection,
+    owner,
+    key,
 ) {
-  // Don't destroy the ClippingPlaneCollection if it is already owned by newOwner
-  if (clippingPlaneCollection === owner[key]) {
-    return;
-  }
-  // Destroy the existing ClippingPlaneCollection, if any
-  owner[key] = owner[key] && owner[key].destroy();
-  if (defined(clippingPlaneCollection)) {
-    //>>includeStart('debug', pragmas.debug);
-    if (defined(clippingPlaneCollection._owner)) {
-      throw new DeveloperError(
-        "ClippingPlaneCollection should only be assigned to one object",
-      );
+    // Don't destroy the ClippingPlaneCollection if it is already owned by newOwner
+    if (clippingPlaneCollection === owner[key]) {
+        return;
     }
-    //>>includeEnd('debug');
-    clippingPlaneCollection._owner = owner;
-    owner[key] = clippingPlaneCollection;
-  }
+    // Destroy the existing ClippingPlaneCollection, if any
+    owner[key] = owner[key] && owner[key].destroy();
+    if (defined(clippingPlaneCollection)) {
+        //>>includeStart('debug', pragmas.debug);
+        if (defined(clippingPlaneCollection._owner)) {
+            throw new DeveloperError(
+                "ClippingPlaneCollection should only be assigned to one object",
+            );
+        }
+        //>>includeEnd('debug');
+        clippingPlaneCollection._owner = owner;
+        owner[key] = clippingPlaneCollection;
+    }
 };
 
 /**
@@ -690,7 +698,7 @@ ClippingPlaneCollection.setOwner = function (
  * @private
  */
 ClippingPlaneCollection.useFloatTexture = function (context) {
-  return context.floatingPointTexture;
+    return context.floatingPointTexture;
 };
 
 /**
@@ -705,25 +713,25 @@ ClippingPlaneCollection.useFloatTexture = function (context) {
  * @private
  */
 ClippingPlaneCollection.getTextureResolution = function (
-  clippingPlaneCollection,
-  context,
-  result,
+    clippingPlaneCollection,
+    context,
+    result,
 ) {
-  const texture = clippingPlaneCollection.texture;
-  if (defined(texture)) {
-    result.x = texture.width;
-    result.y = texture.height;
-    return result;
-  }
+    const texture = clippingPlaneCollection.texture;
+    if (defined(texture)) {
+        result.x = texture.width;
+        result.y = texture.height;
+        return result;
+    }
 
-  const pixelsNeeded = ClippingPlaneCollection.useFloatTexture(context)
-    ? clippingPlaneCollection.length
-    : clippingPlaneCollection.length * 2;
-  const requiredResolution = computeTextureResolution(pixelsNeeded, result);
+    const pixelsNeeded = ClippingPlaneCollection.useFloatTexture(context)
+        ? clippingPlaneCollection.length
+        : clippingPlaneCollection.length * 2;
+    const requiredResolution = computeTextureResolution(pixelsNeeded, result);
 
-  // Allocate twice as much space as needed to avoid frequent texture reallocation.
-  requiredResolution.y *= 2;
-  return requiredResolution;
+    // Allocate twice as much space as needed to avoid frequent texture reallocation.
+    requiredResolution.y *= 2;
+    return requiredResolution;
 };
 
 /**
@@ -737,7 +745,7 @@ ClippingPlaneCollection.getTextureResolution = function (
  * @see ClippingPlaneCollection#destroy
  */
 ClippingPlaneCollection.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -757,8 +765,8 @@ ClippingPlaneCollection.prototype.isDestroyed = function () {
  * @see ClippingPlaneCollection#isDestroyed
  */
 ClippingPlaneCollection.prototype.destroy = function () {
-  this._clippingPlanesTexture =
-    this._clippingPlanesTexture && this._clippingPlanesTexture.destroy();
-  return destroyObject(this);
+    this._clippingPlanesTexture =
+        this._clippingPlanesTexture && this._clippingPlanesTexture.destroy();
+    return destroyObject(this);
 };
 export default ClippingPlaneCollection;

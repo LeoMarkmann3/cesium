@@ -14,16 +14,16 @@ import I3SBuildingSceneLayerExplorerViewModel from "./I3SBuildingSceneLayerExplo
  * @demo {@link https://sandcastle.cesium.com/index.html?src=I3S%20Building%20Scene%20Layer.html|I3S Building Scene Layer}
  */
 function I3SBuildingSceneLayerExplorer(containerId, i3sProvider) {
-  const container = document.getElementById(containerId);
+    const container = document.getElementById(containerId);
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("container", container);
-  Check.defined("i3sProvider", i3sProvider);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("container", container);
+    Check.defined("i3sProvider", i3sProvider);
+    //>>includeEnd('debug');
 
-  const htmlWrapper = document.createElement("div");
-  htmlWrapper.classList.add("cesium-viewer-i3s-explorer");
-  htmlWrapper.innerHTML = `
+    const htmlWrapper = document.createElement("div");
+    htmlWrapper.classList.add("cesium-viewer-i3s-explorer");
+    htmlWrapper.innerHTML = `
         <h3>Building explorer</h3>
         <select
           data-bind="options: topLayers, optionsText: 'name', optionsAfterRender: setOptionDisable, value: currentLayer"
@@ -66,16 +66,16 @@ function I3SBuildingSceneLayerExplorer(containerId, i3sProvider) {
             </ul>
           </ul>
         </div>`;
-  container.appendChild(htmlWrapper);
+    container.appendChild(htmlWrapper);
 
-  const viewModel = new I3SBuildingSceneLayerExplorerViewModel(i3sProvider);
+    const viewModel = new I3SBuildingSceneLayerExplorerViewModel(i3sProvider);
 
-  knockout.track(viewModel);
-  knockout.applyBindings(viewModel, container);
+    knockout.track(viewModel);
+    knockout.applyBindings(viewModel, container);
 
-  if (defined(viewModel.defaultLayer)) {
-    // Select a model by default
-    viewModel.currentLayer = viewModel.defaultLayer;
-  }
+    if (defined(viewModel.defaultLayer)) {
+        // Select a model by default
+        viewModel.currentLayer = viewModel.defaultLayer;
+    }
 }
 export default I3SBuildingSceneLayerExplorer;

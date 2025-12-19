@@ -37,159 +37,159 @@ const defaultInitialDimensions = 16;
  * @private
  */
 function TextureAtlas(options) {
-  options = options ?? Frozen.EMPTY_OBJECT;
-  const borderWidthInPixels = options.borderWidthInPixels ?? 1.0;
-  const initialSize =
-    options.initialSize ??
-    new Cartesian2(defaultInitialDimensions, defaultInitialDimensions);
+    options = options ?? Frozen.EMPTY_OBJECT;
+    const borderWidthInPixels = options.borderWidthInPixels ?? 1.0;
+    const initialSize =
+        options.initialSize ??
+        new Cartesian2(defaultInitialDimensions, defaultInitialDimensions);
 
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number.greaterThanOrEquals(
-    "options.borderWidthInPixels",
-    borderWidthInPixels,
-    0,
-  );
-  Check.typeOf.number.greaterThan("options.initialSize.x", initialSize.x, 0);
-  Check.typeOf.number.greaterThan("options.initialSize.y", initialSize.y, 0);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number.greaterThanOrEquals(
+        "options.borderWidthInPixels",
+        borderWidthInPixels,
+        0,
+    );
+    Check.typeOf.number.greaterThan("options.initialSize.x", initialSize.x, 0);
+    Check.typeOf.number.greaterThan("options.initialSize.y", initialSize.y, 0);
+    //>>includeEnd('debug');
 
-  this._pixelFormat = options.pixelFormat ?? PixelFormat.RGBA;
-  this._sampler = options.sampler;
-  this._borderWidthInPixels = borderWidthInPixels;
-  this._initialSize = initialSize;
+    this._pixelFormat = options.pixelFormat ?? PixelFormat.RGBA;
+    this._sampler = options.sampler;
+    this._borderWidthInPixels = borderWidthInPixels;
+    this._initialSize = initialSize;
 
-  this._texturePacker = undefined;
-  /** @type {BoundingRectangle[]} */
-  this._rectangles = [];
-  /** @type {Map<number, number>} */
-  this._subRegions = new Map();
-  this._guid = createGuid();
+    this._texturePacker = undefined;
+    /** @type {BoundingRectangle[]} */
+    this._rectangles = [];
+    /** @type {Map<number, number>} */
+    this._subRegions = new Map();
+    this._guid = createGuid();
 
-  this._imagesToAddQueue = [];
-  /** @type {Map<string, number>} */
-  this._indexById = new Map();
-  /** @type {Map<string, Promise<number>>} */
-  this._indexPromiseById = new Map();
-  this._nextIndex = 0;
+    this._imagesToAddQueue = [];
+    /** @type {Map<string, number>} */
+    this._indexById = new Map();
+    /** @type {Map<string, Promise<number>>} */
+    this._indexPromiseById = new Map();
+    this._nextIndex = 0;
 }
 
 Object.defineProperties(TextureAtlas.prototype, {
-  /**
-   * The amount of spacing between adjacent images in pixels.
-   * @memberof TextureAtlas.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  borderWidthInPixels: {
-    get: function () {
-      return this._borderWidthInPixels;
+    /**
+     * The amount of spacing between adjacent images in pixels.
+     * @memberof TextureAtlas.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    borderWidthInPixels: {
+        get: function () {
+            return this._borderWidthInPixels;
+        },
     },
-  },
 
-  /**
-   * An array of {@link BoundingRectangle} pixel offset and dimensions for all the images in the texture atlas.
-   * The x and y values of the rectangle correspond to the bottom-left corner of the texture coordinate.
-   * If the index is a subregion of an existing image, thea and y values are specified as offsets relative to the parent.
-   * The coordinates are in the order that the corresponding images were added to the atlas.
-   * @memberof TextureAtlas.prototype
-   * @type {BoundingRectangle[]}
-   * @readonly
-   * @private
-   */
-  rectangles: {
-    get: function () {
-      return this._rectangles;
+    /**
+     * An array of {@link BoundingRectangle} pixel offset and dimensions for all the images in the texture atlas.
+     * The x and y values of the rectangle correspond to the bottom-left corner of the texture coordinate.
+     * If the index is a subregion of an existing image, thea and y values are specified as offsets relative to the parent.
+     * The coordinates are in the order that the corresponding images were added to the atlas.
+     * @memberof TextureAtlas.prototype
+     * @type {BoundingRectangle[]}
+     * @readonly
+     * @private
+     */
+    rectangles: {
+        get: function () {
+            return this._rectangles;
+        },
     },
-  },
 
-  /**
-   * The texture that all of the images are being written to. The value will be <code>undefined</code> until the first update.
-   * @memberof TextureAtlas.prototype
-   * @type {Texture|undefined}
-   * @readonly
-   * @private
-   */
-  texture: {
-    get: function () {
-      return this._texture;
+    /**
+     * The texture that all of the images are being written to. The value will be <code>undefined</code> until the first update.
+     * @memberof TextureAtlas.prototype
+     * @type {Texture|undefined}
+     * @readonly
+     * @private
+     */
+    texture: {
+        get: function () {
+            return this._texture;
+        },
     },
-  },
 
-  /**
-   * The pixel format of the texture.
-   * @memberof TextureAtlas.prototype
-   * @type {PixelFormat}
-   * @readonly
-   * @private
-   */
-  pixelFormat: {
-    get: function () {
-      return this._pixelFormat;
+    /**
+     * The pixel format of the texture.
+     * @memberof TextureAtlas.prototype
+     * @type {PixelFormat}
+     * @readonly
+     * @private
+     */
+    pixelFormat: {
+        get: function () {
+            return this._pixelFormat;
+        },
     },
-  },
 
-  /**
-   * The sampler to use when sampling this texture. If <code>undefined</code>, the default sampler is used.
-   * @memberof TextureAtlas.prototype
-   * @type {Sampler|undefined}
-   * @readonly
-   * @private
-   */
-  sampler: {
-    get: function () {
-      return this._sampler;
+    /**
+     * The sampler to use when sampling this texture. If <code>undefined</code>, the default sampler is used.
+     * @memberof TextureAtlas.prototype
+     * @type {Sampler|undefined}
+     * @readonly
+     * @private
+     */
+    sampler: {
+        get: function () {
+            return this._sampler;
+        },
     },
-  },
 
-  /**
-   * The number of images in the texture atlas. This value increases
-   * every time addImage or addImageSubRegion is called.
-   * Texture coordinates are subject to change if the texture atlas resizes, so it is
-   * important to check {@link TextureAtlas#guid} before using old values.
-   * @memberof TextureAtlas.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  numberOfImages: {
-    get: function () {
-      return this._nextIndex;
+    /**
+     * The number of images in the texture atlas. This value increases
+     * every time addImage or addImageSubRegion is called.
+     * Texture coordinates are subject to change if the texture atlas resizes, so it is
+     * important to check {@link TextureAtlas#guid} before using old values.
+     * @memberof TextureAtlas.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    numberOfImages: {
+        get: function () {
+            return this._nextIndex;
+        },
     },
-  },
 
-  /**
-   * The atlas' globally unique identifier (GUID).
-   * The GUID changes whenever the texture atlas is modified.
-   * Classes that use a texture atlas should check if the GUID
-   * has changed before processing the atlas data.
-   * @memberof TextureAtlas.prototype
-   * @type {string}
-   * @readonly
-   * @private
-   */
-  guid: {
-    get: function () {
-      return this._guid;
+    /**
+     * The atlas' globally unique identifier (GUID).
+     * The GUID changes whenever the texture atlas is modified.
+     * Classes that use a texture atlas should check if the GUID
+     * has changed before processing the atlas data.
+     * @memberof TextureAtlas.prototype
+     * @type {string}
+     * @readonly
+     * @private
+     */
+    guid: {
+        get: function () {
+            return this._guid;
+        },
     },
-  },
 
-  /**
-   * Returns the size in bytes of the texture.
-   * @memberof TextureAtlas.prototype
-   * @type {number}
-   * @readonly
-   * @private
-   */
-  sizeInBytes: {
-    get: function () {
-      if (!defined(this._texture)) {
-        return 0;
-      }
+    /**
+     * Returns the size in bytes of the texture.
+     * @memberof TextureAtlas.prototype
+     * @type {number}
+     * @readonly
+     * @private
+     */
+    sizeInBytes: {
+        get: function () {
+            if (!defined(this._texture)) {
+                return 0;
+            }
 
-      return this._texture.sizeInBytes;
+            return this._texture.sizeInBytes;
+        },
     },
-  },
 });
 
 /**
@@ -204,48 +204,48 @@ Object.defineProperties(TextureAtlas.prototype, {
  * BoundingRectangle.pack(rectangle, bufferView);
  */
 TextureAtlas.prototype.computeTextureCoordinates = function (index, result) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number.greaterThanOrEquals("index", index, 0);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number.greaterThanOrEquals("index", index, 0);
+    //>>includeEnd('debug');
 
-  const texture = this._texture;
-  const rectangle = this._rectangles[index];
+    const texture = this._texture;
+    const rectangle = this._rectangles[index];
 
-  if (!defined(result)) {
-    result = new BoundingRectangle();
-  }
+    if (!defined(result)) {
+        result = new BoundingRectangle();
+    }
 
-  if (!defined(rectangle)) {
-    result.x = 0;
-    result.y = 0;
-    result.width = 0;
-    result.height = 0;
+    if (!defined(rectangle)) {
+        result.x = 0;
+        result.y = 0;
+        result.width = 0;
+        result.height = 0;
+
+        return result;
+    }
+
+    const atlasWidth = texture.width;
+    const atlasHeight = texture.height;
+
+    const width = rectangle.width;
+    const height = rectangle.height;
+    let x = rectangle.x;
+    let y = rectangle.y;
+
+    const parentIndex = this._subRegions.get(index);
+    if (defined(parentIndex)) {
+        const parentRectangle = this._rectangles[parentIndex];
+
+        x += parentRectangle.x;
+        y += parentRectangle.y;
+    }
+
+    result.x = x / atlasWidth;
+    result.y = y / atlasHeight;
+    result.width = width / atlasWidth;
+    result.height = height / atlasHeight;
 
     return result;
-  }
-
-  const atlasWidth = texture.width;
-  const atlasHeight = texture.height;
-
-  const width = rectangle.width;
-  const height = rectangle.height;
-  let x = rectangle.x;
-  let y = rectangle.y;
-
-  const parentIndex = this._subRegions.get(index);
-  if (defined(parentIndex)) {
-    const parentRectangle = this._rectangles[parentIndex];
-
-    x += parentRectangle.x;
-    y += parentRectangle.y;
-  }
-
-  result.x = x / atlasWidth;
-  result.y = y / atlasHeight;
-  result.width = width / atlasWidth;
-  result.height = height / atlasHeight;
-
-  return result;
 };
 
 /**
@@ -258,71 +258,71 @@ TextureAtlas.prototype.computeTextureCoordinates = function (index, result) {
  * @private
  */
 TextureAtlas.prototype._copyFromTexture = function (
-  context,
-  width,
-  height,
-  rectangles,
-) {
-  const pixelFormat = this._pixelFormat;
-  const sampler = this._sampler;
-  const newTexture = new Texture({
     context,
-    height,
     width,
-    pixelFormat,
-    sampler,
-  });
+    height,
+    rectangles,
+) {
+    const pixelFormat = this._pixelFormat;
+    const sampler = this._sampler;
+    const newTexture = new Texture({
+        context,
+        height,
+        width,
+        pixelFormat,
+        sampler,
+    });
 
-  const gl = context._gl;
-  const target = newTexture._textureTarget;
+    const gl = context._gl;
+    const target = newTexture._textureTarget;
 
-  const oldTexture = this._texture;
-  const framebuffer = new Framebuffer({
-    context,
-    colorTextures: [oldTexture],
-    destroyAttachments: false,
-  });
+    const oldTexture = this._texture;
+    const framebuffer = new Framebuffer({
+        context,
+        colorTextures: [oldTexture],
+        destroyAttachments: false,
+    });
 
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(target, newTexture._texture);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(target, newTexture._texture);
 
-  framebuffer._bind();
+    framebuffer._bind();
 
-  // Copy any textures from the old atlas to its new position in the new atlas
-  const oldRectangles = this.rectangles;
-  const subRegions = this._subRegions;
-  for (let index = 0; index < oldRectangles.length; ++index) {
-    const rectangle = rectangles[index];
-    const frameBufferOffset = oldRectangles[index];
+    // Copy any textures from the old atlas to its new position in the new atlas
+    const oldRectangles = this.rectangles;
+    const subRegions = this._subRegions;
+    for (let index = 0; index < oldRectangles.length; ++index) {
+        const rectangle = rectangles[index];
+        const frameBufferOffset = oldRectangles[index];
 
-    if (
-      !defined(rectangle) ||
-      !defined(frameBufferOffset) ||
-      defined(subRegions.get(index)) // The rectangle corresponds to a subregion of a parent image
-    ) {
-      continue;
+        if (
+            !defined(rectangle) ||
+            !defined(frameBufferOffset) ||
+            defined(subRegions.get(index)) // The rectangle corresponds to a subregion of a parent image
+        ) {
+            continue;
+        }
+
+        const { x, y, width, height } = rectangle;
+        gl.copyTexSubImage2D(
+            target,
+            0,
+            x,
+            y,
+            frameBufferOffset.x,
+            frameBufferOffset.y,
+            width,
+            height,
+        );
     }
 
-    const { x, y, width, height } = rectangle;
-    gl.copyTexSubImage2D(
-      target,
-      0,
-      x,
-      y,
-      frameBufferOffset.x,
-      frameBufferOffset.y,
-      width,
-      height,
-    );
-  }
+    gl.bindTexture(target, null);
+    newTexture._initialized = true;
 
-  gl.bindTexture(target, null);
-  newTexture._initialized = true;
+    framebuffer._unBind();
+    framebuffer.destroy();
 
-  framebuffer._unBind();
-  framebuffer.destroy();
-
-  return newTexture;
+    return newTexture;
 };
 
 /**
@@ -332,106 +332,111 @@ TextureAtlas.prototype._copyFromTexture = function (
  * @private
  */
 TextureAtlas.prototype._resize = function (context, queueOffset = 0) {
-  const borderPadding = this._borderWidthInPixels;
-  const oldRectangles = this._rectangles;
-  const queue = this._imagesToAddQueue;
+    const borderPadding = this._borderWidthInPixels;
+    const oldRectangles = this._rectangles;
+    const queue = this._imagesToAddQueue;
 
-  const oldTexture = this._texture;
-  let width = oldTexture.width;
-  let height = oldTexture.height;
+    const oldTexture = this._texture;
+    let width = oldTexture.width;
+    let height = oldTexture.height;
 
-  // Get the rectangles (width and height) of the current set of images,
-  // ignoring the subregions, which don't get packed
-  const subRegions = this._subRegions;
-  const toPack = oldRectangles
-    .map((image, index) => {
-      return new AddImageRequest({ index, image });
-    })
-    .filter(
-      (request, index) =>
-        defined(request.image) && !defined(subRegions.get(index)),
+    // Get the rectangles (width and height) of the current set of images,
+    // ignoring the subregions, which don't get packed
+    const subRegions = this._subRegions;
+    const toPack = oldRectangles
+        .map((image, index) => {
+            return new AddImageRequest({ index, image });
+        })
+        .filter(
+            (request, index) =>
+                defined(request.image) && !defined(subRegions.get(index)),
+        );
+
+    // Add the new set of images
+    let maxWidth = 0;
+    let maxHeight = 0;
+    let areaQueued = 0;
+    for (let i = queueOffset; i < queue.length; ++i) {
+        const { width, height } = queue[i].image;
+        maxWidth = Math.max(maxWidth, width);
+        maxHeight = Math.max(maxHeight, height);
+        areaQueued += width * height;
+        toPack.push(queue[i]);
+    }
+
+    // At minimum, atlas must fit its largest input images. Texture coordinates are
+    // compressed to 0–1 with 12-bit precision, so use power-of-two size to align pixels.
+    width = CesiumMath.nextPowerOfTwo(Math.max(maxWidth, width));
+    height = CesiumMath.nextPowerOfTwo(Math.max(maxHeight, height));
+
+    // Iteratively double the smallest dimension until atlas area is (approximately) sufficient.
+    while (areaQueued >= width * height) {
+        if (width > height) {
+            height *= 2;
+        } else {
+            width *= 2;
+        }
+    }
+
+    toPack.sort(
+        ({ image: imageA }, { image: imageB }) =>
+            imageB.height * imageB.width - imageA.height * imageA.width,
     );
 
-  // Add the new set of images
-  let maxWidth = 0;
-  let maxHeight = 0;
-  let areaQueued = 0;
-  for (let i = queueOffset; i < queue.length; ++i) {
-    const { width, height } = queue[i].image;
-    maxWidth = Math.max(maxWidth, width);
-    maxHeight = Math.max(maxHeight, height);
-    areaQueued += width * height;
-    toPack.push(queue[i]);
-  }
-
-  // At minimum, atlas must fit its largest input images. Texture coordinates are
-  // compressed to 0–1 with 12-bit precision, so use power-of-two size to align pixels.
-  width = CesiumMath.nextPowerOfTwo(Math.max(maxWidth, width));
-  height = CesiumMath.nextPowerOfTwo(Math.max(maxHeight, height));
-
-  // Iteratively double the smallest dimension until atlas area is (approximately) sufficient.
-  while (areaQueued >= width * height) {
-    if (width > height) {
-      height *= 2;
-    } else {
-      width *= 2;
+    const newRectangles = new Array(this._nextIndex);
+    for (const index of this._subRegions.keys()) {
+        // Subregions are specified relative to their parents,
+        // so we can copy them directly
+        if (defined(subRegions.get(index))) {
+            newRectangles[index] = oldRectangles[index];
+        }
     }
-  }
 
-  toPack.sort(
-    ({ image: imageA }, { image: imageB }) =>
-      imageB.height * imageB.width - imageA.height * imageA.width,
-  );
+    let texturePacker,
+        packed = false;
+    while (!packed) {
+        texturePacker = new TexturePacker({ height, width, borderPadding });
 
-  const newRectangles = new Array(this._nextIndex);
-  for (const index of this._subRegions.keys()) {
-    // Subregions are specified relative to their parents,
-    // so we can copy them directly
-    if (defined(subRegions.get(index))) {
-      newRectangles[index] = oldRectangles[index];
-    }
-  }
+        let i;
+        for (i = 0; i < toPack.length; ++i) {
+            const { index, image } = toPack[i];
+            if (!defined(image)) {
+                continue;
+            }
 
-  let texturePacker,
-    packed = false;
-  while (!packed) {
-    texturePacker = new TexturePacker({ height, width, borderPadding });
+            const repackedNode = texturePacker.pack(index, image);
+            if (!defined(repackedNode)) {
+                // Could not fit everything into the new texture.
+                // Scale texture size and try again
+                if (width > height) {
+                    // Resize height
+                    height *= 2.0;
+                } else {
+                    // Resize width
+                    width *= 2.0;
+                }
 
-    let i;
-    for (i = 0; i < toPack.length; ++i) {
-      const { index, image } = toPack[i];
-      if (!defined(image)) {
-        continue;
-      }
+                break;
+            }
 
-      const repackedNode = texturePacker.pack(index, image);
-      if (!defined(repackedNode)) {
-        // Could not fit everything into the new texture.
-        // Scale texture size and try again
-        if (width > height) {
-          // Resize height
-          height *= 2.0;
-        } else {
-          // Resize width
-          width *= 2.0;
+            newRectangles[index] = repackedNode.rectangle;
         }
 
-        break;
-      }
-
-      newRectangles[index] = repackedNode.rectangle;
+        packed = i === toPack.length;
     }
 
-    packed = i === toPack.length;
-  }
+    this._texturePacker = texturePacker;
+    this._texture = this._copyFromTexture(
+        context,
+        width,
+        height,
+        newRectangles,
+    );
 
-  this._texturePacker = texturePacker;
-  this._texture = this._copyFromTexture(context, width, height, newRectangles);
+    oldTexture.destroy();
 
-  oldTexture.destroy();
-
-  this._rectangles = newRectangles;
-  this._guid = createGuid();
+    this._rectangles = newRectangles;
+    this._guid = createGuid();
 };
 
 /**
@@ -441,11 +446,11 @@ TextureAtlas.prototype._resize = function (context, queueOffset = 0) {
  * @private
  */
 TextureAtlas.prototype.getImageIndex = function (id) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("id", id);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("id", id);
+    //>>includeEnd('debug');
 
-  return this._indexById.get(id);
+    return this._indexById.get(id);
 };
 
 /**
@@ -454,30 +459,30 @@ TextureAtlas.prototype.getImageIndex = function (id) {
  * @private
  */
 TextureAtlas.prototype._copyImageToTexture = function ({
-  index,
-  image,
-  resolve,
-  reject,
+    index,
+    image,
+    resolve,
+    reject,
 }) {
-  const texture = this._texture;
-  const rectangle = this._rectangles[index];
+    const texture = this._texture;
+    const rectangle = this._rectangles[index];
 
-  try {
-    texture.copyFrom({
-      source: image,
-      xOffset: rectangle.x,
-      yOffset: rectangle.y,
-    });
+    try {
+        texture.copyFrom({
+            source: image,
+            xOffset: rectangle.x,
+            yOffset: rectangle.y,
+        });
 
-    if (defined(resolve)) {
-      resolve(index);
+        if (defined(resolve)) {
+            resolve(index);
+        }
+    } catch (e) {
+        if (defined(reject)) {
+            reject(e);
+            return;
+        }
     }
-  } catch (e) {
-    if (defined(reject)) {
-      reject(e);
-      return;
-    }
-  }
 };
 
 /**
@@ -491,11 +496,11 @@ TextureAtlas.prototype._copyImageToTexture = function ({
  * @param {function} [options.reject] The promise rejecter
  */
 function AddImageRequest({ index, image, resolve, reject }) {
-  this.index = index;
-  this.image = image;
-  this.resolve = resolve;
-  this.reject = reject;
-  this.rectangle = undefined;
+    this.index = index;
+    this.image = image;
+    this.resolve = resolve;
+    this.reject = reject;
+    this.rectangle = undefined;
 }
 
 /**
@@ -508,26 +513,26 @@ function AddImageRequest({ index, image, resolve, reject }) {
  * @returns {Promise<number>} Promise which resolves to the image index once the image has been added, or rejects if there was an error. The promise resolves to <code>-1</code> if the texture atlas is destoyed in the interim.
  */
 TextureAtlas.prototype._addImage = function (index, image) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.number.greaterThanOrEquals("index", index, 0);
-  Check.defined("image", image);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.number.greaterThanOrEquals("index", index, 0);
+    Check.defined("image", image);
+    //>>includeEnd('debug');
 
-  return new Promise((resolve, reject) => {
-    this._imagesToAddQueue.push(
-      new AddImageRequest({
-        index,
-        image,
-        resolve,
-        reject,
-      }),
-    );
+    return new Promise((resolve, reject) => {
+        this._imagesToAddQueue.push(
+            new AddImageRequest({
+                index,
+                image,
+                resolve,
+                reject,
+            }),
+        );
 
-    this._imagesToAddQueue.sort(
-      ({ image: imageA }, { image: imageB }) =>
-        imageB.height * imageB.width - imageA.height * imageA.width,
-    );
-  });
+        this._imagesToAddQueue.sort(
+            ({ image: imageA }, { image: imageB }) =>
+                imageB.height * imageB.width - imageA.height * imageA.width,
+        );
+    });
 };
 
 /**
@@ -537,53 +542,53 @@ TextureAtlas.prototype._addImage = function (index, image) {
  * @return {boolean} true if the texture was updated this frame
  */
 TextureAtlas.prototype._processImageQueue = function (context) {
-  const queue = this._imagesToAddQueue;
-  if (queue.length === 0) {
-    return false;
-  }
-
-  this._rectangles.length = this._nextIndex;
-
-  let i, error;
-  for (i = 0; i < queue.length; ++i) {
-    const imageRequest = queue[i];
-    const { image, index } = imageRequest;
-    const node = this._texturePacker.pack(index, image);
-    if (!defined(node)) {
-      // Atlas cannot fit all images in the queue
-      // Bail early and resize
-      try {
-        this._resize(context, i);
-      } catch (e) {
-        error = e;
-
-        if (defined(imageRequest.reject)) {
-          imageRequest.reject(error);
-        }
-      }
-      break;
+    const queue = this._imagesToAddQueue;
+    if (queue.length === 0) {
+        return false;
     }
-    this._rectangles[index] = node.rectangle;
-  }
 
-  if (defined(error)) {
-    for (i = i + 1; i < queue.length; ++i) {
-      const { resolve } = queue[i];
-      if (defined(resolve)) {
-        resolve(-1);
-      }
+    this._rectangles.length = this._nextIndex;
+
+    let i, error;
+    for (i = 0; i < queue.length; ++i) {
+        const imageRequest = queue[i];
+        const { image, index } = imageRequest;
+        const node = this._texturePacker.pack(index, image);
+        if (!defined(node)) {
+            // Atlas cannot fit all images in the queue
+            // Bail early and resize
+            try {
+                this._resize(context, i);
+            } catch (e) {
+                error = e;
+
+                if (defined(imageRequest.reject)) {
+                    imageRequest.reject(error);
+                }
+            }
+            break;
+        }
+        this._rectangles[index] = node.rectangle;
+    }
+
+    if (defined(error)) {
+        for (i = i + 1; i < queue.length; ++i) {
+            const { resolve } = queue[i];
+            if (defined(resolve)) {
+                resolve(-1);
+            }
+        }
+
+        queue.length = 0;
+        return false;
+    }
+
+    for (let i = 0; i < queue.length; ++i) {
+        this._copyImageToTexture(queue[i]);
     }
 
     queue.length = 0;
-    return false;
-  }
-
-  for (let i = 0; i < queue.length; ++i) {
-    this._copyImageToTexture(queue[i]);
-  }
-
-  queue.length = 0;
-  return true;
+    return true;
 };
 
 /**
@@ -593,43 +598,43 @@ TextureAtlas.prototype._processImageQueue = function (context) {
  * @return {boolean} true if rendering resources were updated.
  */
 TextureAtlas.prototype.update = function (context) {
-  if (!defined(this._texture)) {
-    const width = this._initialSize.x;
-    const height = this._initialSize.y;
-    const pixelFormat = this._pixelFormat;
-    const sampler = this._sampler;
-    const borderPadding = this._borderWidthInPixels;
+    if (!defined(this._texture)) {
+        const width = this._initialSize.x;
+        const height = this._initialSize.y;
+        const pixelFormat = this._pixelFormat;
+        const sampler = this._sampler;
+        const borderPadding = this._borderWidthInPixels;
 
-    this._texture = new Texture({
-      context,
-      width,
-      height,
-      pixelFormat,
-      sampler,
-    });
+        this._texture = new Texture({
+            context,
+            width,
+            height,
+            pixelFormat,
+            sampler,
+        });
 
-    this._texturePacker = new TexturePacker({
-      height,
-      width,
-      borderPadding,
-    });
-  }
+        this._texturePacker = new TexturePacker({
+            height,
+            width,
+            borderPadding,
+        });
+    }
 
-  return this._processImageQueue(context);
+    return this._processImageQueue(context);
 };
 
 async function resolveImage(image, id) {
-  if (typeof image === "function") {
-    image = image(id);
-  }
+    if (typeof image === "function") {
+        image = image(id);
+    }
 
-  if (typeof image === "string" || image instanceof Resource) {
-    // Fetch the resource
-    const resource = Resource.createIfNeeded(image);
-    image = resource.fetchImage();
-  }
+    if (typeof image === "string" || image instanceof Resource) {
+        // Fetch the resource
+        const resource = Resource.createIfNeeded(image);
+        image = resource.fetchImage();
+    }
 
-  return image;
+    return image;
 }
 
 /**
@@ -644,51 +649,51 @@ async function resolveImage(image, id) {
  * @returns {Promise<number>} A Promise that resolves to the image region index, or -1 if resources are in the process of being destroyed.
  */
 TextureAtlas.prototype.addImage = function (id, image, width, height) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("id", id);
-  Check.defined("image", image);
-  //>>includeEnd('debug');
-
-  let promise = this._indexPromiseById.get(id);
-  let index = this._indexById.get(id);
-  if (defined(promise)) {
-    // This image is already being added
-    return promise;
-  }
-  if (defined(index)) {
-    // This image has already been added and resolved
-    return Promise.resolve(index);
-  }
-
-  index = this._nextIndex++;
-  this._indexById.set(id, index);
-
-  const resolveAndAddImage = async () => {
-    const resolvedImage = await resolveImage(image, id);
     //>>includeStart('debug', pragmas.debug);
-    Check.defined("image", resolvedImage);
+    Check.typeOf.string("id", id);
+    Check.defined("image", image);
     //>>includeEnd('debug');
 
-    if (this.isDestroyed() || !defined(resolvedImage)) {
-      this._indexPromiseById.delete(id);
-      return -1;
+    let promise = this._indexPromiseById.get(id);
+    let index = this._indexById.get(id);
+    if (defined(promise)) {
+        // This image is already being added
+        return promise;
+    }
+    if (defined(index)) {
+        // This image has already been added and resolved
+        return Promise.resolve(index);
     }
 
-    if (defined(width)) {
-      resolvedImage.width = width;
-    }
-    if (defined(height)) {
-      resolvedImage.height = height;
-    }
+    index = this._nextIndex++;
+    this._indexById.set(id, index);
 
-    const imageIndex = await this._addImage(index, resolvedImage);
-    this._indexPromiseById.delete(id);
-    return imageIndex;
-  };
+    const resolveAndAddImage = async () => {
+        const resolvedImage = await resolveImage(image, id);
+        //>>includeStart('debug', pragmas.debug);
+        Check.defined("image", resolvedImage);
+        //>>includeEnd('debug');
 
-  promise = resolveAndAddImage();
-  this._indexPromiseById.set(id, promise);
-  return promise;
+        if (this.isDestroyed() || !defined(resolvedImage)) {
+            this._indexPromiseById.delete(id);
+            return -1;
+        }
+
+        if (defined(width)) {
+            resolvedImage.width = width;
+        }
+        if (defined(height)) {
+            resolvedImage.height = height;
+        }
+
+        const imageIndex = await this._addImage(index, resolvedImage);
+        this._indexPromiseById.delete(id);
+        return imageIndex;
+    };
+
+    promise = resolveAndAddImage();
+    this._indexPromiseById.set(id, promise);
+    return promise;
 };
 
 /**
@@ -700,25 +705,25 @@ TextureAtlas.prototype.addImage = function (id, image, width, height) {
  * @returns {Promise<number> | number | undefined} The existing subRegion index, or undefined if not yet added.
  */
 TextureAtlas.prototype.getCachedImageSubRegion = function (
-  id,
-  subRegion,
-  imageIndex,
+    id,
+    subRegion,
+    imageIndex,
 ) {
-  const imagePromise = this._indexPromiseById.get(id);
-  for (const [index, parentIndex] of this._subRegions.entries()) {
-    if (imageIndex === parentIndex) {
-      const boundingRegion = this._rectangles[index];
-      if (boundingRegion.equals(subRegion)) {
-        // The subregion is already being tracked
-        if (imagePromise) {
-          return imagePromise.then((resolvedImageIndex) =>
-            resolvedImageIndex === -1 ? -1 : index,
-          );
+    const imagePromise = this._indexPromiseById.get(id);
+    for (const [index, parentIndex] of this._subRegions.entries()) {
+        if (imageIndex === parentIndex) {
+            const boundingRegion = this._rectangles[index];
+            if (boundingRegion.equals(subRegion)) {
+                // The subregion is already being tracked
+                if (imagePromise) {
+                    return imagePromise.then((resolvedImageIndex) =>
+                        resolvedImageIndex === -1 ? -1 : index,
+                    );
+                }
+                return index;
+            }
         }
-        return index;
-      }
     }
-  }
 };
 
 /**
@@ -729,60 +734,60 @@ TextureAtlas.prototype.getCachedImageSubRegion = function (
  * @returns {number | Promise<number>} The resolved image region index, or a Promise that resolves to it. -1 is returned if resources are in the process of being destroyed.
  */
 TextureAtlas.prototype.addImageSubRegion = function (id, subRegion) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("id", id);
-  Check.defined("subRegion", subRegion);
-  //>>includeEnd('debug');
-  const imageIndex = this._indexById.get(id);
-  if (!defined(imageIndex)) {
-    throw new RuntimeError(`image with id "${id}" not found in the atlas.`);
-  }
-
-  let index = this.getCachedImageSubRegion(id, subRegion, imageIndex);
-  if (defined(index)) {
-    return index;
-  }
-
-  index = this._nextIndex++;
-  this._subRegions.set(index, imageIndex);
-  this._rectangles[index] = subRegion.clone();
-
-  const indexPromise =
-    this._indexPromiseById.get(id) ?? Promise.resolve(imageIndex);
-
-  return indexPromise.then((imageIndex) => {
-    if (imageIndex === -1) {
-      // The atlas has been destroyed
-      return -1;
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("id", id);
+    Check.defined("subRegion", subRegion);
+    //>>includeEnd('debug');
+    const imageIndex = this._indexById.get(id);
+    if (!defined(imageIndex)) {
+        throw new RuntimeError(`image with id "${id}" not found in the atlas.`);
     }
 
-    const rectangle = this._rectangles[imageIndex];
+    let index = this.getCachedImageSubRegion(id, subRegion, imageIndex);
+    if (defined(index)) {
+        return index;
+    }
 
-    //>>includeStart('debug', pragmas.debug);
-    Check.typeOf.number.lessThanOrEquals(
-      "subRegion.x",
-      subRegion.x,
-      rectangle.width,
-    );
-    Check.typeOf.number.lessThanOrEquals(
-      "subRegion.x + subRegion.width",
-      subRegion.x + subRegion.width,
-      rectangle.width,
-    );
-    Check.typeOf.number.lessThanOrEquals(
-      "subRegion.y",
-      subRegion.y,
-      rectangle.height,
-    );
-    Check.typeOf.number.lessThanOrEquals(
-      "subRegion.y + subRegion.height",
-      subRegion.y + subRegion.height,
-      rectangle.height,
-    );
-    //>>includeEnd('debug');
+    index = this._nextIndex++;
+    this._subRegions.set(index, imageIndex);
+    this._rectangles[index] = subRegion.clone();
 
-    return index;
-  });
+    const indexPromise =
+        this._indexPromiseById.get(id) ?? Promise.resolve(imageIndex);
+
+    return indexPromise.then((imageIndex) => {
+        if (imageIndex === -1) {
+            // The atlas has been destroyed
+            return -1;
+        }
+
+        const rectangle = this._rectangles[imageIndex];
+
+        //>>includeStart('debug', pragmas.debug);
+        Check.typeOf.number.lessThanOrEquals(
+            "subRegion.x",
+            subRegion.x,
+            rectangle.width,
+        );
+        Check.typeOf.number.lessThanOrEquals(
+            "subRegion.x + subRegion.width",
+            subRegion.x + subRegion.width,
+            rectangle.width,
+        );
+        Check.typeOf.number.lessThanOrEquals(
+            "subRegion.y",
+            subRegion.y,
+            rectangle.height,
+        );
+        Check.typeOf.number.lessThanOrEquals(
+            "subRegion.y + subRegion.height",
+            subRegion.y + subRegion.height,
+            rectangle.height,
+        );
+        //>>includeEnd('debug');
+
+        return index;
+    });
 };
 
 /**
@@ -795,7 +800,7 @@ TextureAtlas.prototype.addImageSubRegion = function (id, subRegion) {
  * @see TextureAtlas#destroy
  */
 TextureAtlas.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 /**
@@ -812,14 +817,14 @@ TextureAtlas.prototype.isDestroyed = function () {
  * @see TextureAtlas#isDestroyed
  */
 TextureAtlas.prototype.destroy = function () {
-  this._texture = this._texture && this._texture.destroy();
-  this._imagesToAddQueue.forEach(({ resolve }) => {
-    if (defined(resolve)) {
-      resolve(-1);
-    }
-  });
+    this._texture = this._texture && this._texture.destroy();
+    this._imagesToAddQueue.forEach(({ resolve }) => {
+        if (defined(resolve)) {
+            resolve(-1);
+        }
+    });
 
-  return destroyObject(this);
+    return destroyObject(this);
 };
 
 /**

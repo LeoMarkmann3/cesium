@@ -10,112 +10,112 @@ import DeveloperError from "../Core/DeveloperError.js";
  * @private
  */
 const VertexAttributeSemantic = {
-  /**
-   * Per-vertex position.
-   *
-   * @type {string}
-   * @constant
-   */
-  POSITION: "POSITION",
+    /**
+     * Per-vertex position.
+     *
+     * @type {string}
+     * @constant
+     */
+    POSITION: "POSITION",
 
-  /**
-   * Per-vertex normal.
-   *
-   * @type {string}
-   * @constant
-   */
-  NORMAL: "NORMAL",
+    /**
+     * Per-vertex normal.
+     *
+     * @type {string}
+     * @constant
+     */
+    NORMAL: "NORMAL",
 
-  /**
-   * Per-vertex tangent.
-   *
-   * @type {string}
-   * @constant
-   */
-  TANGENT: "TANGENT",
+    /**
+     * Per-vertex tangent.
+     *
+     * @type {string}
+     * @constant
+     */
+    TANGENT: "TANGENT",
 
-  /**
-   * Per-vertex texture coordinates.
-   *
-   * @type {string}
-   * @constant
-   */
-  TEXCOORD: "TEXCOORD",
+    /**
+     * Per-vertex texture coordinates.
+     *
+     * @type {string}
+     * @constant
+     */
+    TEXCOORD: "TEXCOORD",
 
-  /**
-   * Per-vertex color.
-   *
-   * @type {string}
-   * @constant
-   */
-  COLOR: "COLOR",
+    /**
+     * Per-vertex color.
+     *
+     * @type {string}
+     * @constant
+     */
+    COLOR: "COLOR",
 
-  /**
-   * Per-vertex joint IDs for skinning.
-   *
-   * @type {string}
-   * @constant
-   */
-  JOINTS: "JOINTS",
+    /**
+     * Per-vertex joint IDs for skinning.
+     *
+     * @type {string}
+     * @constant
+     */
+    JOINTS: "JOINTS",
 
-  /**
-   * Per-vertex joint weights for skinning.
-   *
-   * @type {string}
-   * @constant
-   */
-  WEIGHTS: "WEIGHTS",
+    /**
+     * Per-vertex joint weights for skinning.
+     *
+     * @type {string}
+     * @constant
+     */
+    WEIGHTS: "WEIGHTS",
 
-  /**
-   * Per-vertex feature ID.
-   *
-   * @type {string}
-   * @constant
-   */
-  FEATURE_ID: "_FEATURE_ID",
-  /**
-   * Gaussian Splat Scale
-   *
-   * @type {string}
-   * @constant
-   */
-  SCALE: "KHR_gaussian_splatting:SCALE",
-  /**
-   * Gaussian Splat Rotation
-   *
-   * @type {string}
-   * @constant
-   */
-  ROTATION: "KHR_gaussian_splatting:ROTATION",
+    /**
+     * Per-vertex feature ID.
+     *
+     * @type {string}
+     * @constant
+     */
+    FEATURE_ID: "_FEATURE_ID",
+    /**
+     * Gaussian Splat Scale
+     *
+     * @type {string}
+     * @constant
+     */
+    SCALE: "KHR_gaussian_splatting:SCALE",
+    /**
+     * Gaussian Splat Rotation
+     *
+     * @type {string}
+     * @constant
+     */
+    ROTATION: "KHR_gaussian_splatting:ROTATION",
 };
 
 function semanticToVariableName(semantic) {
-  switch (semantic) {
-    case VertexAttributeSemantic.POSITION:
-      return "positionMC";
-    case VertexAttributeSemantic.NORMAL:
-      return "normalMC";
-    case VertexAttributeSemantic.TANGENT:
-      return "tangentMC";
-    case VertexAttributeSemantic.TEXCOORD:
-      return "texCoord";
-    case VertexAttributeSemantic.COLOR:
-      return "color";
-    case VertexAttributeSemantic.JOINTS:
-      return "joints";
-    case VertexAttributeSemantic.WEIGHTS:
-      return "weights";
-    case VertexAttributeSemantic.FEATURE_ID:
-      return "featureId";
-    case VertexAttributeSemantic.SCALE:
-      return "scale";
-    case VertexAttributeSemantic.ROTATION:
-      return "rotation";
-    //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError("semantic is not a valid value.");
-    //>>includeEnd('debug');
-  }
+    switch (semantic) {
+        case VertexAttributeSemantic.POSITION:
+            return "positionMC";
+        case VertexAttributeSemantic.NORMAL:
+            return "normalMC";
+        case VertexAttributeSemantic.TANGENT:
+            return "tangentMC";
+        case VertexAttributeSemantic.TEXCOORD:
+            return "texCoord";
+        case VertexAttributeSemantic.COLOR:
+            return "color";
+        case VertexAttributeSemantic.JOINTS:
+            return "joints";
+        case VertexAttributeSemantic.WEIGHTS:
+            return "weights";
+        case VertexAttributeSemantic.FEATURE_ID:
+            return "featureId";
+        case VertexAttributeSemantic.SCALE:
+            return "scale";
+        case VertexAttributeSemantic.ROTATION:
+            return "rotation";
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError("semantic is not a valid value.");
+        //>>includeEnd('debug');
+    }
 }
 
 /**
@@ -128,28 +128,28 @@ function semanticToVariableName(semantic) {
  * @private
  */
 VertexAttributeSemantic.hasSetIndex = function (semantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  //>>includeEnd('debug');
-
-  switch (semantic) {
-    case VertexAttributeSemantic.POSITION:
-    case VertexAttributeSemantic.NORMAL:
-    case VertexAttributeSemantic.TANGENT:
-      return false;
-    case VertexAttributeSemantic.TEXCOORD:
-    case VertexAttributeSemantic.COLOR:
-    case VertexAttributeSemantic.JOINTS:
-    case VertexAttributeSemantic.WEIGHTS:
-    case VertexAttributeSemantic.FEATURE_ID:
-    case VertexAttributeSemantic.SCALE:
-    case VertexAttributeSemantic.ROTATION:
-      return true;
     //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError("semantic is not a valid value.");
+    Check.typeOf.string("semantic", semantic);
     //>>includeEnd('debug');
-  }
+
+    switch (semantic) {
+        case VertexAttributeSemantic.POSITION:
+        case VertexAttributeSemantic.NORMAL:
+        case VertexAttributeSemantic.TANGENT:
+            return false;
+        case VertexAttributeSemantic.TEXCOORD:
+        case VertexAttributeSemantic.COLOR:
+        case VertexAttributeSemantic.JOINTS:
+        case VertexAttributeSemantic.WEIGHTS:
+        case VertexAttributeSemantic.FEATURE_ID:
+        case VertexAttributeSemantic.SCALE:
+        case VertexAttributeSemantic.ROTATION:
+            return true;
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError("semantic is not a valid value.");
+        //>>includeEnd('debug');
+    }
 };
 
 /**
@@ -162,45 +162,45 @@ VertexAttributeSemantic.hasSetIndex = function (semantic) {
  * @private
  */
 VertexAttributeSemantic.fromGltfSemantic = function (gltfSemantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("gltfSemantic", gltfSemantic);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("gltfSemantic", gltfSemantic);
+    //>>includeEnd('debug');
 
-  let semantic = gltfSemantic;
+    let semantic = gltfSemantic;
 
-  // Strip the set index from the semantic
-  const setIndexRegex = /^(\w+)_\d+$/;
-  const setIndexMatch = setIndexRegex.exec(gltfSemantic);
-  if (setIndexMatch !== null) {
-    semantic = setIndexMatch[1];
-  }
+    // Strip the set index from the semantic
+    const setIndexRegex = /^(\w+)_\d+$/;
+    const setIndexMatch = setIndexRegex.exec(gltfSemantic);
+    if (setIndexMatch !== null) {
+        semantic = setIndexMatch[1];
+    }
 
-  switch (semantic) {
-    case "POSITION":
-      return VertexAttributeSemantic.POSITION;
-    case "NORMAL":
-      return VertexAttributeSemantic.NORMAL;
-    case "TANGENT":
-      return VertexAttributeSemantic.TANGENT;
-    case "TEXCOORD":
-      return VertexAttributeSemantic.TEXCOORD;
-    case "COLOR":
-      return VertexAttributeSemantic.COLOR;
-    case "JOINTS":
-      return VertexAttributeSemantic.JOINTS;
-    case "WEIGHTS":
-      return VertexAttributeSemantic.WEIGHTS;
-    case "_FEATURE_ID":
-      return VertexAttributeSemantic.FEATURE_ID;
-    case "KHR_gaussian_splatting:SCALE":
-    case "_SCALE":
-      return VertexAttributeSemantic.SCALE;
-    case "KHR_gaussian_splatting:ROTATION":
-    case "_ROTATION":
-      return VertexAttributeSemantic.ROTATION;
-  }
+    switch (semantic) {
+        case "POSITION":
+            return VertexAttributeSemantic.POSITION;
+        case "NORMAL":
+            return VertexAttributeSemantic.NORMAL;
+        case "TANGENT":
+            return VertexAttributeSemantic.TANGENT;
+        case "TEXCOORD":
+            return VertexAttributeSemantic.TEXCOORD;
+        case "COLOR":
+            return VertexAttributeSemantic.COLOR;
+        case "JOINTS":
+            return VertexAttributeSemantic.JOINTS;
+        case "WEIGHTS":
+            return VertexAttributeSemantic.WEIGHTS;
+        case "_FEATURE_ID":
+            return VertexAttributeSemantic.FEATURE_ID;
+        case "KHR_gaussian_splatting:SCALE":
+        case "_SCALE":
+            return VertexAttributeSemantic.SCALE;
+        case "KHR_gaussian_splatting:ROTATION":
+        case "_ROTATION":
+            return VertexAttributeSemantic.ROTATION;
+    }
 
-  return undefined;
+    return undefined;
 };
 
 /**
@@ -213,28 +213,28 @@ VertexAttributeSemantic.fromGltfSemantic = function (gltfSemantic) {
  * @private
  */
 VertexAttributeSemantic.fromPntsSemantic = function (pntsSemantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("pntsSemantic", pntsSemantic);
-  //>>includeEnd('debug');
-
-  switch (pntsSemantic) {
-    case "POSITION":
-    case "POSITION_QUANTIZED":
-      return VertexAttributeSemantic.POSITION;
-    case "RGBA":
-    case "RGB":
-    case "RGB565":
-      return VertexAttributeSemantic.COLOR;
-    case "NORMAL":
-    case "NORMAL_OCT16P":
-      return VertexAttributeSemantic.NORMAL;
-    case "BATCH_ID":
-      return VertexAttributeSemantic.FEATURE_ID;
     //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError("pntsSemantic is not a valid value.");
+    Check.typeOf.string("pntsSemantic", pntsSemantic);
     //>>includeEnd('debug');
-  }
+
+    switch (pntsSemantic) {
+        case "POSITION":
+        case "POSITION_QUANTIZED":
+            return VertexAttributeSemantic.POSITION;
+        case "RGBA":
+        case "RGB":
+        case "RGB565":
+            return VertexAttributeSemantic.COLOR;
+        case "NORMAL":
+        case "NORMAL_OCT16P":
+            return VertexAttributeSemantic.NORMAL;
+        case "BATCH_ID":
+            return VertexAttributeSemantic.FEATURE_ID;
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError("pntsSemantic is not a valid value.");
+        //>>includeEnd('debug');
+    }
 };
 
 /**
@@ -248,36 +248,36 @@ VertexAttributeSemantic.fromPntsSemantic = function (pntsSemantic) {
  * @private
  */
 VertexAttributeSemantic.getGlslType = function (semantic) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  //>>includeEnd('debug');
-
-  switch (semantic) {
-    case VertexAttributeSemantic.POSITION:
-    case VertexAttributeSemantic.NORMAL:
-    case VertexAttributeSemantic.TANGENT:
-      return "vec3";
-    case VertexAttributeSemantic.TEXCOORD:
-      return "vec2";
-    case VertexAttributeSemantic.COLOR:
-      return "vec4";
-    case VertexAttributeSemantic.JOINTS:
-      return "ivec4";
-    case VertexAttributeSemantic.WEIGHTS:
-      return "vec4";
-    case VertexAttributeSemantic.FEATURE_ID:
-      return "int";
-    case VertexAttributeSemantic.SCALE:
-      return "vec3";
-    case VertexAttributeSemantic.ROTATION:
-      return "vec4";
-    case VertexAttributeSemantic.OPACITY:
-      return "float";
     //>>includeStart('debug', pragmas.debug);
-    default:
-      throw new DeveloperError("semantic is not a valid value.");
+    Check.typeOf.string("semantic", semantic);
     //>>includeEnd('debug');
-  }
+
+    switch (semantic) {
+        case VertexAttributeSemantic.POSITION:
+        case VertexAttributeSemantic.NORMAL:
+        case VertexAttributeSemantic.TANGENT:
+            return "vec3";
+        case VertexAttributeSemantic.TEXCOORD:
+            return "vec2";
+        case VertexAttributeSemantic.COLOR:
+            return "vec4";
+        case VertexAttributeSemantic.JOINTS:
+            return "ivec4";
+        case VertexAttributeSemantic.WEIGHTS:
+            return "vec4";
+        case VertexAttributeSemantic.FEATURE_ID:
+            return "int";
+        case VertexAttributeSemantic.SCALE:
+            return "vec3";
+        case VertexAttributeSemantic.ROTATION:
+            return "vec4";
+        case VertexAttributeSemantic.OPACITY:
+            return "float";
+        //>>includeStart('debug', pragmas.debug);
+        default:
+            throw new DeveloperError("semantic is not a valid value.");
+        //>>includeEnd('debug');
+    }
 };
 
 /**
@@ -291,15 +291,15 @@ VertexAttributeSemantic.getGlslType = function (semantic) {
  * @private
  */
 VertexAttributeSemantic.getVariableName = function (semantic, setIndex) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.string("semantic", semantic);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.string("semantic", semantic);
+    //>>includeEnd('debug');
 
-  let variableName = semanticToVariableName(semantic);
-  if (defined(setIndex)) {
-    variableName += `_${setIndex}`;
-  }
-  return variableName;
+    let variableName = semanticToVariableName(semantic);
+    if (defined(setIndex)) {
+        variableName += `_${setIndex}`;
+    }
+    return variableName;
 };
 
 export default Object.freeze(VertexAttributeSemantic);

@@ -17,12 +17,12 @@ import * as Cesium from "cesium";
 //   })),
 // });
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-    Cesium.ArcGisMapServerImageryProvider.fromBasemapType(
-      Cesium.ArcGisBaseMapType.SATELLITE,
-      // other supported styles include:
-      // Cesium.ArcGisMapServerImageryProvider.HILLSHADE
-      // Cesium.ArcGisMapServerImageryProvider.OCEANS
+    baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+        Cesium.ArcGisMapServerImageryProvider.fromBasemapType(
+            Cesium.ArcGisBaseMapType.SATELLITE,
+            // other supported styles include:
+            // Cesium.ArcGisMapServerImageryProvider.HILLSHADE
+            // Cesium.ArcGisMapServerImageryProvider.OCEANS
+        ),
     ),
-  ),
 });

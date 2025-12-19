@@ -6,7 +6,7 @@ import * as Cesium from "cesium";
 // and other widgets, nor does it depend on the third-party
 // Knockout library.
 const widget = new Cesium.CesiumWidget("cesiumContainer", {
-  shouldAnimate: true,
+    shouldAnimate: true,
 });
 
 const position = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706, 500);
@@ -17,12 +17,12 @@ const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
 const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
 
 const entity = widget.entities.add({
-  position: position,
-  orientation: orientation,
-  model: {
-    uri: "../../SampleData/models/CesiumAir/Cesium_Air.glb",
-    minimumPixelSize: 128,
-    maximumScale: 20000,
-  },
+    position: position,
+    orientation: orientation,
+    model: {
+        uri: "../../SampleData/models/CesiumAir/Cesium_Air.glb",
+        minimumPixelSize: 128,
+        maximumScale: 20000,
+    },
 });
 widget.trackedEntity = entity;

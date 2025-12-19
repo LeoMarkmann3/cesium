@@ -43,144 +43,145 @@ import BoundingVolumeSemantics from "./BoundingVolumeSemantics.js";
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 function Implicit3DTileContent(tileset, tile, resource) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("tile.implicitTileset", tile.implicitTileset);
-  Check.defined("tile.implicitCoordinates", tile.implicitCoordinates);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("tile.implicitTileset", tile.implicitTileset);
+    Check.defined("tile.implicitCoordinates", tile.implicitCoordinates);
+    //>>includeEnd('debug');
 
-  const implicitTileset = tile.implicitTileset;
-  const implicitCoordinates = tile.implicitCoordinates;
+    const implicitTileset = tile.implicitTileset;
+    const implicitCoordinates = tile.implicitCoordinates;
 
-  this._implicitTileset = implicitTileset;
-  this._implicitCoordinates = implicitCoordinates;
-  this._implicitSubtree = undefined;
-  this._tileset = tileset;
-  this._tile = tile;
-  this._resource = resource;
+    this._implicitTileset = implicitTileset;
+    this._implicitCoordinates = implicitCoordinates;
+    this._implicitSubtree = undefined;
+    this._tileset = tileset;
+    this._tile = tile;
+    this._resource = resource;
 
-  this._metadata = undefined;
+    this._metadata = undefined;
 
-  this.featurePropertiesDirty = false;
-  this._group = undefined;
+    this.featurePropertiesDirty = false;
+    this._group = undefined;
 
-  const templateValues = implicitCoordinates.getTemplateValues();
-  const subtreeResource = implicitTileset.subtreeUriTemplate.getDerivedResource(
-    {
-      templateValues: templateValues,
-    },
-  );
-  this._url = subtreeResource.getUrlComponent(true);
+    const templateValues = implicitCoordinates.getTemplateValues();
+    const subtreeResource =
+        implicitTileset.subtreeUriTemplate.getDerivedResource({
+            templateValues: templateValues,
+        });
+    this._url = subtreeResource.getUrlComponent(true);
 
-  this._ready = false;
+    this._ready = false;
 }
 
 Object.defineProperties(Implicit3DTileContent.prototype, {
-  featuresLength: {
-    get: function () {
-      return 0;
+    featuresLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  pointsLength: {
-    get: function () {
-      return 0;
+    pointsLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  trianglesLength: {
-    get: function () {
-      return 0;
+    trianglesLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  geometryByteLength: {
-    get: function () {
-      return 0;
+    geometryByteLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  texturesByteLength: {
-    get: function () {
-      return 0;
+    texturesByteLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  batchTableByteLength: {
-    get: function () {
-      return 0;
+    batchTableByteLength: {
+        get: function () {
+            return 0;
+        },
     },
-  },
 
-  innerContents: {
-    get: function () {
-      return undefined;
+    innerContents: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  /**
-   * Returns true when the tile's content is ready to render; otherwise false
-   *
-   * @memberof Implicit3DTileContent.prototype
-   *
-   * @type {boolean}
-   * @readonly
-   * @private
-   */
-  ready: {
-    get: function () {
-      return this._ready;
+    /**
+     * Returns true when the tile's content is ready to render; otherwise false
+     *
+     * @memberof Implicit3DTileContent.prototype
+     *
+     * @type {boolean}
+     * @readonly
+     * @private
+     */
+    ready: {
+        get: function () {
+            return this._ready;
+        },
     },
-  },
 
-  tileset: {
-    get: function () {
-      return this._tileset;
+    tileset: {
+        get: function () {
+            return this._tileset;
+        },
     },
-  },
 
-  tile: {
-    get: function () {
-      return this._tile;
+    tile: {
+        get: function () {
+            return this._tile;
+        },
     },
-  },
 
-  url: {
-    get: function () {
-      return this._url;
+    url: {
+        get: function () {
+            return this._url;
+        },
     },
-  },
 
-  /**
-   * Part of the {@link Cesium3DTileContent} interface. <code>Implicit3DTileContent</code>
-   * always returns <code>undefined</code>. Only transcoded tiles have content metadata.
-   * @memberof Implicit3DTileContent.prototype
-   * @private
-   */
-  metadata: {
-    get: function () {
-      return undefined;
+    /**
+     * Part of the {@link Cesium3DTileContent} interface. <code>Implicit3DTileContent</code>
+     * always returns <code>undefined</code>. Only transcoded tiles have content metadata.
+     * @memberof Implicit3DTileContent.prototype
+     * @private
+     */
+    metadata: {
+        get: function () {
+            return undefined;
+        },
+        set: function () {
+            //>>includeStart('debug', pragmas.debug);
+            throw new DeveloperError(
+                "Implicit3DTileContent cannot have metadata",
+            );
+            //>>includeEnd('debug');
+        },
     },
-    set: function () {
-      //>>includeStart('debug', pragmas.debug);
-      throw new DeveloperError("Implicit3DTileContent cannot have metadata");
-      //>>includeEnd('debug');
-    },
-  },
 
-  batchTable: {
-    get: function () {
-      return undefined;
+    batchTable: {
+        get: function () {
+            return undefined;
+        },
     },
-  },
 
-  group: {
-    get: function () {
-      return this._group;
+    group: {
+        get: function () {
+            return this._group;
+        },
+        set: function (value) {
+            this._group = value;
+        },
     },
-    set: function (value) {
-      this._group = value;
-    },
-  },
 });
 
 /**
@@ -200,45 +201,47 @@ Object.defineProperties(Implicit3DTileContent.prototype, {
  * @private
  */
 Implicit3DTileContent.fromSubtreeJson = async function (
-  tileset,
-  tile,
-  resource,
-  json,
-  arrayBuffer,
-  byteOffset,
-) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("tile.implicitTileset", tile.implicitTileset);
-  Check.defined("tile.implicitCoordinates", tile.implicitCoordinates);
-  if (defined(json) === defined(arrayBuffer)) {
-    throw new DeveloperError("One of json and arrayBuffer must be defined.");
-  }
-  //>>includeEnd('debug');
-
-  byteOffset = byteOffset ?? 0;
-  let uint8Array;
-  if (defined(arrayBuffer)) {
-    uint8Array = new Uint8Array(arrayBuffer, byteOffset);
-  }
-
-  const implicitTileset = tile.implicitTileset;
-  const implicitCoordinates = tile.implicitCoordinates;
-
-  const subtree = await ImplicitSubtree.fromSubtreeJson(
+    tileset,
+    tile,
     resource,
     json,
-    uint8Array,
-    implicitTileset,
-    implicitCoordinates,
-  );
+    arrayBuffer,
+    byteOffset,
+) {
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("tile.implicitTileset", tile.implicitTileset);
+    Check.defined("tile.implicitCoordinates", tile.implicitCoordinates);
+    if (defined(json) === defined(arrayBuffer)) {
+        throw new DeveloperError(
+            "One of json and arrayBuffer must be defined.",
+        );
+    }
+    //>>includeEnd('debug');
 
-  const content = new Implicit3DTileContent(tileset, tile, resource);
+    byteOffset = byteOffset ?? 0;
+    let uint8Array;
+    if (defined(arrayBuffer)) {
+        uint8Array = new Uint8Array(arrayBuffer, byteOffset);
+    }
 
-  content._implicitSubtree = subtree;
-  expandSubtree(content, subtree);
-  content._ready = true;
+    const implicitTileset = tile.implicitTileset;
+    const implicitCoordinates = tile.implicitCoordinates;
 
-  return content;
+    const subtree = await ImplicitSubtree.fromSubtreeJson(
+        resource,
+        json,
+        uint8Array,
+        implicitTileset,
+        implicitCoordinates,
+    );
+
+    const content = new Implicit3DTileContent(tileset, tile, resource);
+
+    content._implicitSubtree = subtree;
+    expandSubtree(content, subtree);
+    content._ready = true;
+
+    return content;
 };
 
 /**
@@ -252,36 +255,40 @@ Implicit3DTileContent.fromSubtreeJson = async function (
  * @private
  */
 function expandSubtree(content, subtree) {
-  const placeholderTile = content._tile;
+    const placeholderTile = content._tile;
 
-  // Parse the tiles inside this immediate subtree
-  const childIndex = content._implicitCoordinates.childIndex;
-  const results = transcodeSubtreeTiles(
-    content,
-    subtree,
-    placeholderTile,
-    childIndex,
-  );
-
-  const statistics = content._tileset.statistics;
-
-  // Link the new subtree to the existing placeholder tile.
-  placeholderTile.children.push(results.rootTile);
-  statistics.numberOfTilesTotal++;
-
-  // for each child subtree, make new placeholder tiles
-  const childSubtrees = listChildSubtrees(content, subtree, results.bottomRow);
-  for (let i = 0; i < childSubtrees.length; i++) {
-    const subtreeLocator = childSubtrees[i];
-    const leafTile = subtreeLocator.tile;
-    const implicitChildTile = makePlaceholderChildSubtree(
-      content,
-      leafTile,
-      subtreeLocator.childIndex,
+    // Parse the tiles inside this immediate subtree
+    const childIndex = content._implicitCoordinates.childIndex;
+    const results = transcodeSubtreeTiles(
+        content,
+        subtree,
+        placeholderTile,
+        childIndex,
     );
-    leafTile.children.push(implicitChildTile);
+
+    const statistics = content._tileset.statistics;
+
+    // Link the new subtree to the existing placeholder tile.
+    placeholderTile.children.push(results.rootTile);
     statistics.numberOfTilesTotal++;
-  }
+
+    // for each child subtree, make new placeholder tiles
+    const childSubtrees = listChildSubtrees(
+        content,
+        subtree,
+        results.bottomRow,
+    );
+    for (let i = 0; i < childSubtrees.length; i++) {
+        const subtreeLocator = childSubtrees[i];
+        const leafTile = subtreeLocator.tile;
+        const implicitChildTile = makePlaceholderChildSubtree(
+            content,
+            leafTile,
+            subtreeLocator.childIndex,
+        );
+        leafTile.children.push(implicitChildTile);
+        statistics.numberOfTilesTotal++;
+    }
 }
 
 /**
@@ -303,25 +310,25 @@ function expandSubtree(content, subtree) {
  * @private
  */
 function listChildSubtrees(content, subtree, bottomRow) {
-  const results = [];
-  const branchingFactor = content._implicitTileset.branchingFactor;
-  for (let i = 0; i < bottomRow.length; i++) {
-    const leafTile = bottomRow[i];
-    if (!defined(leafTile)) {
-      continue;
-    }
+    const results = [];
+    const branchingFactor = content._implicitTileset.branchingFactor;
+    for (let i = 0; i < bottomRow.length; i++) {
+        const leafTile = bottomRow[i];
+        if (!defined(leafTile)) {
+            continue;
+        }
 
-    for (let j = 0; j < branchingFactor; j++) {
-      const index = i * branchingFactor + j;
-      if (subtree.childSubtreeIsAvailableAtIndex(index)) {
-        results.push({
-          tile: leafTile,
-          childIndex: j,
-        });
-      }
+        for (let j = 0; j < branchingFactor; j++) {
+            const index = i * branchingFactor + j;
+            if (subtree.childSubtreeIsAvailableAtIndex(index)) {
+                results.push({
+                    tile: leafTile,
+                    childIndex: j,
+                });
+            }
+        }
     }
-  }
-  return results;
+    return results;
 }
 
 /**
@@ -347,78 +354,80 @@ function listChildSubtrees(content, subtree, bottomRow) {
  * @private
  */
 function transcodeSubtreeTiles(content, subtree, placeholderTile, childIndex) {
-  const rootBitIndex = 0;
-  const rootParentIsPlaceholder = true;
-  const rootTile = deriveChildTile(
-    content,
-    subtree,
-    placeholderTile,
-    childIndex,
-    rootBitIndex,
-    rootParentIsPlaceholder,
-  );
-
-  const statistics = content._tileset.statistics;
-
-  // Sliding window over the levels of the tree.
-  // Each row is branchingFactor * length of previous row
-  // Tiles within a row are ordered by Morton index.
-  let parentRow = [rootTile];
-  let currentRow = [];
-
-  const implicitTileset = content._implicitTileset;
-  for (let level = 1; level < implicitTileset.subtreeLevels; level++) {
-    const levelOffset = subtree.getLevelOffset(level);
-    const numberOfChildren = implicitTileset.branchingFactor * parentRow.length;
-    for (
-      let childMortonIndex = 0;
-      childMortonIndex < numberOfChildren;
-      childMortonIndex++
-    ) {
-      const childBitIndex = levelOffset + childMortonIndex;
-
-      if (!subtree.tileIsAvailableAtIndex(childBitIndex)) {
-        currentRow.push(undefined);
-        continue;
-      }
-
-      const parentMortonIndex = subtree.getParentMortonIndex(childMortonIndex);
-      const parentTile = parentRow[parentMortonIndex];
-      const childChildIndex =
-        childMortonIndex % implicitTileset.branchingFactor;
-      const childTile = deriveChildTile(
+    const rootBitIndex = 0;
+    const rootParentIsPlaceholder = true;
+    const rootTile = deriveChildTile(
         content,
         subtree,
-        parentTile,
-        childChildIndex,
-        childBitIndex,
-      );
-      parentTile.children.push(childTile);
-      statistics.numberOfTilesTotal++;
-      currentRow.push(childTile);
+        placeholderTile,
+        childIndex,
+        rootBitIndex,
+        rootParentIsPlaceholder,
+    );
+
+    const statistics = content._tileset.statistics;
+
+    // Sliding window over the levels of the tree.
+    // Each row is branchingFactor * length of previous row
+    // Tiles within a row are ordered by Morton index.
+    let parentRow = [rootTile];
+    let currentRow = [];
+
+    const implicitTileset = content._implicitTileset;
+    for (let level = 1; level < implicitTileset.subtreeLevels; level++) {
+        const levelOffset = subtree.getLevelOffset(level);
+        const numberOfChildren =
+            implicitTileset.branchingFactor * parentRow.length;
+        for (
+            let childMortonIndex = 0;
+            childMortonIndex < numberOfChildren;
+            childMortonIndex++
+        ) {
+            const childBitIndex = levelOffset + childMortonIndex;
+
+            if (!subtree.tileIsAvailableAtIndex(childBitIndex)) {
+                currentRow.push(undefined);
+                continue;
+            }
+
+            const parentMortonIndex =
+                subtree.getParentMortonIndex(childMortonIndex);
+            const parentTile = parentRow[parentMortonIndex];
+            const childChildIndex =
+                childMortonIndex % implicitTileset.branchingFactor;
+            const childTile = deriveChildTile(
+                content,
+                subtree,
+                parentTile,
+                childChildIndex,
+                childBitIndex,
+            );
+            parentTile.children.push(childTile);
+            statistics.numberOfTilesTotal++;
+            currentRow.push(childTile);
+        }
+
+        parentRow = currentRow;
+        currentRow = [];
     }
 
-    parentRow = currentRow;
-    currentRow = [];
-  }
-
-  return {
-    rootTile: rootTile,
-    // At the end of the last loop, bottomRow was moved to parentRow
-    bottomRow: parentRow,
-  };
+    return {
+        rootTile: rootTile,
+        // At the end of the last loop, bottomRow was moved to parentRow
+        bottomRow: parentRow,
+    };
 }
 
 function getGeometricError(tileMetadata, implicitTileset, implicitCoordinates) {
-  const semantic = MetadataSemantic.TILE_GEOMETRIC_ERROR;
+    const semantic = MetadataSemantic.TILE_GEOMETRIC_ERROR;
 
-  if (defined(tileMetadata) && tileMetadata.hasPropertyBySemantic(semantic)) {
-    return tileMetadata.getPropertyBySemantic(semantic);
-  }
+    if (defined(tileMetadata) && tileMetadata.hasPropertyBySemantic(semantic)) {
+        return tileMetadata.getPropertyBySemantic(semantic);
+    }
 
-  return (
-    implicitTileset.geometricError / Math.pow(2, implicitCoordinates.level)
-  );
+    return (
+        implicitTileset.geometricError / Math.pow(2, implicitCoordinates.level)
+    );
 }
 
 /**
@@ -439,143 +448,146 @@ function getGeometricError(tileMetadata, implicitTileset, implicitCoordinates) {
  * @private
  */
 function deriveChildTile(
-  implicitContent,
-  subtree,
-  parentTile,
-  childIndex,
-  childBitIndex,
-  parentIsPlaceholderTile,
-) {
-  const implicitTileset = implicitContent._implicitTileset;
-  let implicitCoordinates;
-  if (parentIsPlaceholderTile ?? false) {
-    implicitCoordinates = parentTile.implicitCoordinates;
-  } else {
-    implicitCoordinates =
-      parentTile.implicitCoordinates.getChildCoordinates(childIndex);
-  }
-
-  // Parse metadata and bounding volume semantics at the beginning
-  // as the bounding volumes are needed below.
-  let tileMetadata;
-  let tileBounds;
-  if (defined(subtree.tilePropertyTableJson)) {
-    tileMetadata = subtree.getTileMetadataView(implicitCoordinates);
-
-    tileBounds = BoundingVolumeSemantics.parseAllBoundingVolumeSemantics(
-      "TILE",
-      tileMetadata,
-    );
-  }
-
-  // Content is not loaded at this point, so this flag is set for future reference.
-  const contentPropertyTableJsons = subtree.contentPropertyTableJsons;
-  const length = contentPropertyTableJsons.length;
-  let hasImplicitContentMetadata = false;
-  for (let i = 0; i < length; i++) {
-    if (subtree.contentIsAvailableAtCoordinates(implicitCoordinates, i)) {
-      hasImplicitContentMetadata = true;
-      break;
-    }
-  }
-
-  const boundingVolume = getTileBoundingVolume(
-    implicitTileset,
-    implicitCoordinates,
-    childIndex,
-    parentIsPlaceholderTile,
+    implicitContent,
+    subtree,
     parentTile,
-    tileBounds,
-  );
-
-  const contentJsons = [];
-  for (let i = 0; i < implicitTileset.contentCount; i++) {
-    if (!subtree.contentIsAvailableAtIndex(childBitIndex, i)) {
-      continue;
+    childIndex,
+    childBitIndex,
+    parentIsPlaceholderTile,
+) {
+    const implicitTileset = implicitContent._implicitTileset;
+    let implicitCoordinates;
+    if (parentIsPlaceholderTile ?? false) {
+        implicitCoordinates = parentTile.implicitCoordinates;
+    } else {
+        implicitCoordinates =
+            parentTile.implicitCoordinates.getChildCoordinates(childIndex);
     }
-    const childContentTemplate = implicitTileset.contentUriTemplates[i];
-    const childContentUri = childContentTemplate.getDerivedResource({
-      templateValues: implicitCoordinates.getTemplateValues(),
-    }).url;
-    const contentJson = {
-      uri: childContentUri,
+
+    // Parse metadata and bounding volume semantics at the beginning
+    // as the bounding volumes are needed below.
+    let tileMetadata;
+    let tileBounds;
+    if (defined(subtree.tilePropertyTableJson)) {
+        tileMetadata = subtree.getTileMetadataView(implicitCoordinates);
+
+        tileBounds = BoundingVolumeSemantics.parseAllBoundingVolumeSemantics(
+            "TILE",
+            tileMetadata,
+        );
+    }
+
+    // Content is not loaded at this point, so this flag is set for future reference.
+    const contentPropertyTableJsons = subtree.contentPropertyTableJsons;
+    const length = contentPropertyTableJsons.length;
+    let hasImplicitContentMetadata = false;
+    for (let i = 0; i < length; i++) {
+        if (subtree.contentIsAvailableAtCoordinates(implicitCoordinates, i)) {
+            hasImplicitContentMetadata = true;
+            break;
+        }
+    }
+
+    const boundingVolume = getTileBoundingVolume(
+        implicitTileset,
+        implicitCoordinates,
+        childIndex,
+        parentIsPlaceholderTile,
+        parentTile,
+        tileBounds,
+    );
+
+    const contentJsons = [];
+    for (let i = 0; i < implicitTileset.contentCount; i++) {
+        if (!subtree.contentIsAvailableAtIndex(childBitIndex, i)) {
+            continue;
+        }
+        const childContentTemplate = implicitTileset.contentUriTemplates[i];
+        const childContentUri = childContentTemplate.getDerivedResource({
+            templateValues: implicitCoordinates.getTemplateValues(),
+        }).url;
+        const contentJson = {
+            uri: childContentUri,
+        };
+
+        let contentBounds;
+
+        if (subtree.contentPropertyTableJsons.length > 0) {
+            const contentMetadata = subtree.getContentMetadataView(
+                implicitCoordinates,
+                i,
+            );
+
+            contentBounds =
+                BoundingVolumeSemantics.parseAllBoundingVolumeSemantics(
+                    "CONTENT",
+                    contentMetadata,
+                );
+        }
+
+        const contentBoundingVolume = getContentBoundingVolume(
+            boundingVolume,
+            contentBounds,
+        );
+
+        if (defined(contentBoundingVolume)) {
+            contentJson.boundingVolume = contentBoundingVolume;
+        }
+
+        // combine() is used to pass through any additional properties the
+        // user specified such as extras or extensions
+        contentJsons.push(
+            combine(contentJson, implicitTileset.contentHeaders[i]),
+        );
+    }
+
+    const childGeometricError = getGeometricError(
+        tileMetadata,
+        implicitTileset,
+        implicitCoordinates,
+    );
+
+    const tileJson = {
+        boundingVolume: boundingVolume,
+        geometricError: childGeometricError,
+        refine: implicitTileset.refine,
+        contents: contentJsons,
     };
 
-    let contentBounds;
+    // combine() is used to pass through any additional properties the
+    // user specified such as extras or extensions.
+    const deep = true;
+    const rootHeader = clone(implicitTileset.tileHeader, deep);
+    // The bounding volume was computed above since it may come from metadata
+    // in the subtree file.
+    delete rootHeader.boundingVolume;
+    // Copying the transform to all the transcoded tiles would cause the transform
+    // to be applied multiple times. Removing it from the header avoids this issue.
+    delete rootHeader.transform;
+    // The implicit tiling spec does not specify what should happen if explicit
+    // tile metadata is added to the placeholder tile. Since implicit tile
+    // metadata comes from the subtree file, ignore the explicit version.
+    //
+    // Also, when a property with the semantic TILE_BOUNDING_VOLUME is added to
+    // the placeholder tile to set a tight bounding volume (See Cesium3DTile.js)
+    // propagating it to transcoded tiles causes transcoded tiles to use the
+    // wrong bounding volume, this can lead to loading far too many tiles.
+    delete rootHeader.metadata;
+    const combinedTileJson = combine(tileJson, rootHeader, deep);
 
-    if (subtree.contentPropertyTableJsons.length > 0) {
-      const contentMetadata = subtree.getContentMetadataView(
-        implicitCoordinates,
-        i,
-      );
-
-      contentBounds = BoundingVolumeSemantics.parseAllBoundingVolumeSemantics(
-        "CONTENT",
-        contentMetadata,
-      );
-    }
-
-    const contentBoundingVolume = getContentBoundingVolume(
-      boundingVolume,
-      contentBounds,
+    const childTile = makeTile(
+        implicitContent,
+        implicitTileset.baseResource,
+        combinedTileJson,
+        parentTile,
     );
 
-    if (defined(contentBoundingVolume)) {
-      contentJson.boundingVolume = contentBoundingVolume;
-    }
+    childTile.implicitCoordinates = implicitCoordinates;
+    childTile.implicitSubtree = subtree;
+    childTile.metadata = tileMetadata;
+    childTile.hasImplicitContentMetadata = hasImplicitContentMetadata;
 
-    // combine() is used to pass through any additional properties the
-    // user specified such as extras or extensions
-    contentJsons.push(combine(contentJson, implicitTileset.contentHeaders[i]));
-  }
-
-  const childGeometricError = getGeometricError(
-    tileMetadata,
-    implicitTileset,
-    implicitCoordinates,
-  );
-
-  const tileJson = {
-    boundingVolume: boundingVolume,
-    geometricError: childGeometricError,
-    refine: implicitTileset.refine,
-    contents: contentJsons,
-  };
-
-  // combine() is used to pass through any additional properties the
-  // user specified such as extras or extensions.
-  const deep = true;
-  const rootHeader = clone(implicitTileset.tileHeader, deep);
-  // The bounding volume was computed above since it may come from metadata
-  // in the subtree file.
-  delete rootHeader.boundingVolume;
-  // Copying the transform to all the transcoded tiles would cause the transform
-  // to be applied multiple times. Removing it from the header avoids this issue.
-  delete rootHeader.transform;
-  // The implicit tiling spec does not specify what should happen if explicit
-  // tile metadata is added to the placeholder tile. Since implicit tile
-  // metadata comes from the subtree file, ignore the explicit version.
-  //
-  // Also, when a property with the semantic TILE_BOUNDING_VOLUME is added to
-  // the placeholder tile to set a tight bounding volume (See Cesium3DTile.js)
-  // propagating it to transcoded tiles causes transcoded tiles to use the
-  // wrong bounding volume, this can lead to loading far too many tiles.
-  delete rootHeader.metadata;
-  const combinedTileJson = combine(tileJson, rootHeader, deep);
-
-  const childTile = makeTile(
-    implicitContent,
-    implicitTileset.baseResource,
-    combinedTileJson,
-    parentTile,
-  );
-
-  childTile.implicitCoordinates = implicitCoordinates;
-  childTile.implicitSubtree = subtree;
-  childTile.metadata = tileMetadata;
-  childTile.hasImplicitContentMetadata = hasImplicitContentMetadata;
-
-  return childTile;
+    return childTile;
 }
 
 /**
@@ -591,13 +603,14 @@ function deriveChildTile(
  * @private
  */
 function canUpdateHeights(boundingVolume, tileBounds) {
-  return (
-    defined(boundingVolume) &&
-    defined(tileBounds) &&
-    (defined(tileBounds.minimumHeight) || defined(tileBounds.maximumHeight)) &&
-    (hasExtension(boundingVolume, "3DTILES_bounding_volume_S2") ||
-      defined(boundingVolume.region))
-  );
+    return (
+        defined(boundingVolume) &&
+        defined(tileBounds) &&
+        (defined(tileBounds.minimumHeight) ||
+            defined(tileBounds.maximumHeight)) &&
+        (hasExtension(boundingVolume, "3DTILES_bounding_volume_S2") ||
+            defined(boundingVolume.region))
+    );
 }
 
 /**
@@ -615,23 +628,23 @@ function canUpdateHeights(boundingVolume, tileBounds) {
  * @private
  */
 function updateHeights(boundingVolume, tileBounds) {
-  if (!defined(tileBounds)) {
-    return;
-  }
+    if (!defined(tileBounds)) {
+        return;
+    }
 
-  if (hasExtension(boundingVolume, "3DTILES_bounding_volume_S2")) {
-    updateS2CellHeights(
-      boundingVolume.extensions["3DTILES_bounding_volume_S2"],
-      tileBounds.minimumHeight,
-      tileBounds.maximumHeight,
-    );
-  } else if (defined(boundingVolume.region)) {
-    updateRegionHeights(
-      boundingVolume.region,
-      tileBounds.minimumHeight,
-      tileBounds.maximumHeight,
-    );
-  }
+    if (hasExtension(boundingVolume, "3DTILES_bounding_volume_S2")) {
+        updateS2CellHeights(
+            boundingVolume.extensions["3DTILES_bounding_volume_S2"],
+            tileBounds.minimumHeight,
+            tileBounds.maximumHeight,
+        );
+    } else if (defined(boundingVolume.region)) {
+        updateRegionHeights(
+            boundingVolume.region,
+            tileBounds.minimumHeight,
+            tileBounds.maximumHeight,
+        );
+    }
 }
 
 /**
@@ -647,13 +660,13 @@ function updateHeights(boundingVolume, tileBounds) {
  * @private
  */
 function updateRegionHeights(region, minimumHeight, maximumHeight) {
-  if (defined(minimumHeight)) {
-    region[4] = minimumHeight;
-  }
+    if (defined(minimumHeight)) {
+        region[4] = minimumHeight;
+    }
 
-  if (defined(maximumHeight)) {
-    region[5] = maximumHeight;
-  }
+    if (defined(maximumHeight)) {
+        region[5] = maximumHeight;
+    }
 }
 
 /**
@@ -669,13 +682,13 @@ function updateRegionHeights(region, minimumHeight, maximumHeight) {
  * @private
  */
 function updateS2CellHeights(s2CellVolume, minimumHeight, maximumHeight) {
-  if (defined(minimumHeight)) {
-    s2CellVolume.minimumHeight = minimumHeight;
-  }
+    if (defined(minimumHeight)) {
+        s2CellVolume.minimumHeight = minimumHeight;
+    }
 
-  if (defined(maximumHeight)) {
-    s2CellVolume.maximumHeight = maximumHeight;
-  }
+    if (defined(maximumHeight)) {
+        s2CellVolume.maximumHeight = maximumHeight;
+    }
 }
 
 /**
@@ -711,37 +724,37 @@ function updateS2CellHeights(s2CellVolume, minimumHeight, maximumHeight) {
  * @private
  */
 function getTileBoundingVolume(
-  implicitTileset,
-  implicitCoordinates,
-  childIndex,
-  parentIsPlaceholderTile,
-  parentTile,
-  tileBounds,
+    implicitTileset,
+    implicitCoordinates,
+    childIndex,
+    parentIsPlaceholderTile,
+    parentTile,
+    tileBounds,
 ) {
-  let boundingVolume;
+    let boundingVolume;
 
-  if (
-    !defined(tileBounds) ||
-    !defined(tileBounds.boundingVolume) ||
-    (!canUpdateHeights(tileBounds.boundingVolume, tileBounds) &&
-      canUpdateHeights(implicitTileset.boundingVolume, tileBounds))
-  ) {
-    boundingVolume = deriveBoundingVolume(
-      implicitTileset,
-      implicitCoordinates,
-      childIndex,
-      parentIsPlaceholderTile ?? false,
-      parentTile,
-    );
-  } else {
-    boundingVolume = tileBounds.boundingVolume;
-  }
+    if (
+        !defined(tileBounds) ||
+        !defined(tileBounds.boundingVolume) ||
+        (!canUpdateHeights(tileBounds.boundingVolume, tileBounds) &&
+            canUpdateHeights(implicitTileset.boundingVolume, tileBounds))
+    ) {
+        boundingVolume = deriveBoundingVolume(
+            implicitTileset,
+            implicitCoordinates,
+            childIndex,
+            parentIsPlaceholderTile ?? false,
+            parentTile,
+        );
+    } else {
+        boundingVolume = tileBounds.boundingVolume;
+    }
 
-  // The TILE_MINIMUM_HEIGHT and TILE_MAXIMUM_HEIGHT metadata semantics
-  // can be used to tighten the bounding volume
-  updateHeights(boundingVolume, tileBounds);
+    // The TILE_MINIMUM_HEIGHT and TILE_MAXIMUM_HEIGHT metadata semantics
+    // can be used to tighten the bounding volume
+    updateHeights(boundingVolume, tileBounds);
 
-  return boundingVolume;
+    return boundingVolume;
 }
 
 /**
@@ -769,23 +782,23 @@ function getTileBoundingVolume(
  * @private
  */
 function getContentBoundingVolume(tileBoundingVolume, contentBounds) {
-  // content bounding volumes can only be specified via
-  // metadata semantics such as CONTENT_BOUNDING_BOX
-  let contentBoundingVolume;
-  if (defined(contentBounds)) {
-    contentBoundingVolume = contentBounds.boundingVolume;
-  }
+    // content bounding volumes can only be specified via
+    // metadata semantics such as CONTENT_BOUNDING_BOX
+    let contentBoundingVolume;
+    if (defined(contentBounds)) {
+        contentBoundingVolume = contentBounds.boundingVolume;
+    }
 
-  // The CONTENT_MINIMUM_HEIGHT and CONTENT_MAXIMUM_HEIGHT metadata semantics
-  // can be used to tighten the bounding volume
-  if (canUpdateHeights(contentBoundingVolume, contentBounds)) {
-    updateHeights(contentBoundingVolume, contentBounds);
-  } else if (canUpdateHeights(tileBoundingVolume, contentBounds)) {
-    contentBoundingVolume = clone(tileBoundingVolume, true);
-    updateHeights(contentBoundingVolume, contentBounds);
-  }
+    // The CONTENT_MINIMUM_HEIGHT and CONTENT_MAXIMUM_HEIGHT metadata semantics
+    // can be used to tighten the bounding volume
+    if (canUpdateHeights(contentBoundingVolume, contentBounds)) {
+        updateHeights(contentBoundingVolume, contentBounds);
+    } else if (canUpdateHeights(tileBoundingVolume, contentBounds)) {
+        contentBoundingVolume = clone(tileBoundingVolume, true);
+        updateHeights(contentBoundingVolume, contentBounds);
+    }
 
-  return contentBoundingVolume;
+    return contentBoundingVolume;
 }
 
 /**
@@ -800,51 +813,51 @@ function getContentBoundingVolume(tileBoundingVolume, contentBounds) {
  * @private
  */
 function deriveBoundingVolume(
-  implicitTileset,
-  implicitCoordinates,
-  childIndex,
-  parentIsPlaceholderTile,
-  parentTile,
+    implicitTileset,
+    implicitCoordinates,
+    childIndex,
+    parentIsPlaceholderTile,
+    parentTile,
 ) {
-  const rootBoundingVolume = implicitTileset.boundingVolume;
+    const rootBoundingVolume = implicitTileset.boundingVolume;
 
-  if (hasExtension(rootBoundingVolume, "3DTILES_bounding_volume_S2")) {
-    return deriveBoundingVolumeS2(
-      parentIsPlaceholderTile,
-      parentTile,
-      childIndex,
-      implicitCoordinates.level,
-      implicitCoordinates.x,
-      implicitCoordinates.y,
-      implicitCoordinates.z,
-    );
-  }
+    if (hasExtension(rootBoundingVolume, "3DTILES_bounding_volume_S2")) {
+        return deriveBoundingVolumeS2(
+            parentIsPlaceholderTile,
+            parentTile,
+            childIndex,
+            implicitCoordinates.level,
+            implicitCoordinates.x,
+            implicitCoordinates.y,
+            implicitCoordinates.z,
+        );
+    }
 
-  if (defined(rootBoundingVolume.region)) {
-    const childRegion = deriveBoundingRegion(
-      rootBoundingVolume.region,
-      implicitCoordinates.level,
-      implicitCoordinates.x,
-      implicitCoordinates.y,
-      implicitCoordinates.z,
+    if (defined(rootBoundingVolume.region)) {
+        const childRegion = deriveBoundingRegion(
+            rootBoundingVolume.region,
+            implicitCoordinates.level,
+            implicitCoordinates.x,
+            implicitCoordinates.y,
+            implicitCoordinates.z,
+        );
+
+        return {
+            region: childRegion,
+        };
+    }
+
+    const childBox = deriveBoundingBox(
+        rootBoundingVolume.box,
+        implicitCoordinates.level,
+        implicitCoordinates.x,
+        implicitCoordinates.y,
+        implicitCoordinates.z,
     );
 
     return {
-      region: childRegion,
+        box: childBox,
     };
-  }
-
-  const childBox = deriveBoundingBox(
-    rootBoundingVolume.box,
-    implicitCoordinates.level,
-    implicitCoordinates.x,
-    implicitCoordinates.y,
-    implicitCoordinates.z,
-  );
-
-  return {
-    box: childBox,
-  };
 }
 
 /**
@@ -869,73 +882,78 @@ function deriveBoundingVolume(
  * @private
  */
 function deriveBoundingVolumeS2(
-  parentIsPlaceholderTile,
-  parentTile,
-  childIndex,
-  level,
-  x,
-  y,
-  z,
+    parentIsPlaceholderTile,
+    parentTile,
+    childIndex,
+    level,
+    x,
+    y,
+    z,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.bool("parentIsPlaceholderTile", parentIsPlaceholderTile);
-  Check.typeOf.object("parentTile", parentTile);
-  Check.typeOf.number("childIndex", childIndex);
-  Check.typeOf.number("level", level);
-  Check.typeOf.number("x", x);
-  Check.typeOf.number("y", y);
-  if (defined(z)) {
-    Check.typeOf.number("z", z);
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.bool("parentIsPlaceholderTile", parentIsPlaceholderTile);
+    Check.typeOf.object("parentTile", parentTile);
+    Check.typeOf.number("childIndex", childIndex);
+    Check.typeOf.number("level", level);
+    Check.typeOf.number("x", x);
+    Check.typeOf.number("y", y);
+    if (defined(z)) {
+        Check.typeOf.number("z", z);
+    }
+    //>>includeEnd('debug');
 
-  const boundingVolumeS2 = parentTile._boundingVolume;
+    const boundingVolumeS2 = parentTile._boundingVolume;
 
-  // Handle the placeholder tile case, where we just duplicate the placeholder's bounding volume.
-  if (parentIsPlaceholderTile) {
+    // Handle the placeholder tile case, where we just duplicate the placeholder's bounding volume.
+    if (parentIsPlaceholderTile) {
+        return {
+            extensions: {
+                "3DTILES_bounding_volume_S2": {
+                    token: S2Cell.getTokenFromId(
+                        boundingVolumeS2.s2Cell._cellId,
+                    ),
+                    minimumHeight: boundingVolumeS2.minimumHeight,
+                    maximumHeight: boundingVolumeS2.maximumHeight,
+                },
+            },
+        };
+    }
+
+    // Extract the first 3 face bits from the 64-bit S2 cell ID.
+    const face = Number(
+        parentTile._boundingVolume.s2Cell._cellId >> BigInt(61),
+    );
+    // The Hilbert curve is rotated for the "odd" faces on the S2 Earthcube.
+    // See http://s2geometry.io/devguide/img/s2cell_global.jpg
+    const position =
+        face % 2 === 0
+            ? HilbertOrder.encode2D(level, x, y)
+            : HilbertOrder.encode2D(level, y, x);
+    const cell = S2Cell.fromFacePositionLevel(face, BigInt(position), level);
+
+    let minHeight, maxHeight;
+    if (defined(z)) {
+        const midpointHeight =
+            (boundingVolumeS2.maximumHeight + boundingVolumeS2.minimumHeight) /
+            2;
+        minHeight =
+            childIndex < 4 ? boundingVolumeS2.minimumHeight : midpointHeight;
+        maxHeight =
+            childIndex < 4 ? midpointHeight : boundingVolumeS2.maximumHeight;
+    } else {
+        minHeight = boundingVolumeS2.minimumHeight;
+        maxHeight = boundingVolumeS2.maximumHeight;
+    }
+
     return {
-      extensions: {
-        "3DTILES_bounding_volume_S2": {
-          token: S2Cell.getTokenFromId(boundingVolumeS2.s2Cell._cellId),
-          minimumHeight: boundingVolumeS2.minimumHeight,
-          maximumHeight: boundingVolumeS2.maximumHeight,
+        extensions: {
+            "3DTILES_bounding_volume_S2": {
+                token: S2Cell.getTokenFromId(cell._cellId),
+                minimumHeight: minHeight,
+                maximumHeight: maxHeight,
+            },
         },
-      },
     };
-  }
-
-  // Extract the first 3 face bits from the 64-bit S2 cell ID.
-  const face = Number(parentTile._boundingVolume.s2Cell._cellId >> BigInt(61));
-  // The Hilbert curve is rotated for the "odd" faces on the S2 Earthcube.
-  // See http://s2geometry.io/devguide/img/s2cell_global.jpg
-  const position =
-    face % 2 === 0
-      ? HilbertOrder.encode2D(level, x, y)
-      : HilbertOrder.encode2D(level, y, x);
-  const cell = S2Cell.fromFacePositionLevel(face, BigInt(position), level);
-
-  let minHeight, maxHeight;
-  if (defined(z)) {
-    const midpointHeight =
-      (boundingVolumeS2.maximumHeight + boundingVolumeS2.minimumHeight) / 2;
-    minHeight =
-      childIndex < 4 ? boundingVolumeS2.minimumHeight : midpointHeight;
-    maxHeight =
-      childIndex < 4 ? midpointHeight : boundingVolumeS2.maximumHeight;
-  } else {
-    minHeight = boundingVolumeS2.minimumHeight;
-    maxHeight = boundingVolumeS2.maximumHeight;
-  }
-
-  return {
-    extensions: {
-      "3DTILES_bounding_volume_S2": {
-        token: S2Cell.getTokenFromId(cell._cellId),
-        minimumHeight: minHeight,
-        maximumHeight: maxHeight,
-      },
-    },
-  };
 }
 
 const scratchScaleFactors = new Cartesian3();
@@ -966,56 +984,56 @@ const scratchHalfAxes = new Matrix3();
  * @private
  */
 function deriveBoundingBox(rootBox, level, x, y, z) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("rootBox", rootBox);
-  Check.typeOf.number("level", level);
-  Check.typeOf.number("x", x);
-  Check.typeOf.number("y", y);
-  if (defined(z)) {
-    Check.typeOf.number("z", z);
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("rootBox", rootBox);
+    Check.typeOf.number("level", level);
+    Check.typeOf.number("x", x);
+    Check.typeOf.number("y", y);
+    if (defined(z)) {
+        Check.typeOf.number("z", z);
+    }
+    //>>includeEnd('debug');
 
-  if (level === 0) {
-    return rootBox;
-  }
+    if (level === 0) {
+        return rootBox;
+    }
 
-  const rootCenter = Cartesian3.unpack(rootBox, 0, scratchRootCenter);
-  const rootHalfAxes = Matrix3.unpack(rootBox, 3, scratchHalfAxes);
+    const rootCenter = Cartesian3.unpack(rootBox, 0, scratchRootCenter);
+    const rootHalfAxes = Matrix3.unpack(rootBox, 3, scratchHalfAxes);
 
-  const tileScale = Math.pow(2, -level);
-  const modelSpaceX = -1 + (2 * x + 1) * tileScale;
-  const modelSpaceY = -1 + (2 * y + 1) * tileScale;
+    const tileScale = Math.pow(2, -level);
+    const modelSpaceX = -1 + (2 * x + 1) * tileScale;
+    const modelSpaceY = -1 + (2 * y + 1) * tileScale;
 
-  let modelSpaceZ = 0;
-  const scaleFactors = Cartesian3.fromElements(
-    tileScale,
-    tileScale,
-    1,
-    scratchScaleFactors,
-  );
+    let modelSpaceZ = 0;
+    const scaleFactors = Cartesian3.fromElements(
+        tileScale,
+        tileScale,
+        1,
+        scratchScaleFactors,
+    );
 
-  if (defined(z)) {
-    modelSpaceZ = -1 + (2 * z + 1) * tileScale;
-    scaleFactors.z = tileScale;
-  }
+    if (defined(z)) {
+        modelSpaceZ = -1 + (2 * z + 1) * tileScale;
+        scaleFactors.z = tileScale;
+    }
 
-  let center = Cartesian3.fromElements(
-    modelSpaceX,
-    modelSpaceY,
-    modelSpaceZ,
-    scratchCenter,
-  );
-  center = Matrix3.multiplyByVector(rootHalfAxes, center, scratchCenter);
-  center = Cartesian3.add(center, rootCenter, scratchCenter);
+    let center = Cartesian3.fromElements(
+        modelSpaceX,
+        modelSpaceY,
+        modelSpaceZ,
+        scratchCenter,
+    );
+    center = Matrix3.multiplyByVector(rootHalfAxes, center, scratchCenter);
+    center = Cartesian3.add(center, rootCenter, scratchCenter);
 
-  let halfAxes = Matrix3.clone(rootHalfAxes);
-  halfAxes = Matrix3.multiplyByScale(halfAxes, scaleFactors, halfAxes);
+    let halfAxes = Matrix3.clone(rootHalfAxes);
+    halfAxes = Matrix3.multiplyByScale(halfAxes, scaleFactors, halfAxes);
 
-  const childBox = new Array(12);
-  Cartesian3.pack(center, childBox);
-  Matrix3.pack(halfAxes, childBox, 3);
-  return childBox;
+    const childBox = new Array(12);
+    Cartesian3.pack(center, childBox);
+    Matrix3.pack(halfAxes, childBox, 3);
+    return childBox;
 }
 
 const scratchRectangle = new Rectangle();
@@ -1043,43 +1061,44 @@ const scratchRectangle = new Rectangle();
  * @private
  */
 function deriveBoundingRegion(rootRegion, level, x, y, z) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.typeOf.object("rootRegion", rootRegion);
-  Check.typeOf.number("level", level);
-  Check.typeOf.number("x", x);
-  Check.typeOf.number("y", y);
-  if (defined(z)) {
-    Check.typeOf.number("z", z);
-  }
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.typeOf.object("rootRegion", rootRegion);
+    Check.typeOf.number("level", level);
+    Check.typeOf.number("x", x);
+    Check.typeOf.number("y", y);
+    if (defined(z)) {
+        Check.typeOf.number("z", z);
+    }
+    //>>includeEnd('debug');
 
-  if (level === 0) {
-    return rootRegion.slice();
-  }
+    if (level === 0) {
+        return rootRegion.slice();
+    }
 
-  const rectangle = Rectangle.unpack(rootRegion, 0, scratchRectangle);
-  const rootMinimumHeight = rootRegion[4];
-  const rootMaximumHeight = rootRegion[5];
-  const tileScale = Math.pow(2, -level);
+    const rectangle = Rectangle.unpack(rootRegion, 0, scratchRectangle);
+    const rootMinimumHeight = rootRegion[4];
+    const rootMaximumHeight = rootRegion[5];
+    const tileScale = Math.pow(2, -level);
 
-  const childWidth = tileScale * rectangle.width;
-  const west = CesiumMath.negativePiToPi(rectangle.west + x * childWidth);
-  const east = CesiumMath.negativePiToPi(west + childWidth);
+    const childWidth = tileScale * rectangle.width;
+    const west = CesiumMath.negativePiToPi(rectangle.west + x * childWidth);
+    const east = CesiumMath.negativePiToPi(west + childWidth);
 
-  const childHeight = tileScale * rectangle.height;
-  const south = CesiumMath.negativePiToPi(rectangle.south + y * childHeight);
-  const north = CesiumMath.negativePiToPi(south + childHeight);
+    const childHeight = tileScale * rectangle.height;
+    const south = CesiumMath.negativePiToPi(rectangle.south + y * childHeight);
+    const north = CesiumMath.negativePiToPi(south + childHeight);
 
-  // Height is only subdivided for octrees; It remains constant for quadtrees.
-  let minimumHeight = rootMinimumHeight;
-  let maximumHeight = rootMaximumHeight;
-  if (defined(z)) {
-    const childThickness = tileScale * (rootMaximumHeight - rootMinimumHeight);
-    minimumHeight += z * childThickness;
-    maximumHeight = minimumHeight + childThickness;
-  }
+    // Height is only subdivided for octrees; It remains constant for quadtrees.
+    let minimumHeight = rootMinimumHeight;
+    let maximumHeight = rootMaximumHeight;
+    if (defined(z)) {
+        const childThickness =
+            tileScale * (rootMaximumHeight - rootMinimumHeight);
+        minimumHeight += z * childThickness;
+        maximumHeight = minimumHeight + childThickness;
+    }
 
-  return [west, south, east, north, minimumHeight, maximumHeight];
+    return [west, south, east, north, minimumHeight, maximumHeight];
 }
 
 /**
@@ -1093,52 +1112,51 @@ function deriveBoundingRegion(rootRegion, level, x, y, z) {
  * @private
  */
 function makePlaceholderChildSubtree(content, parentTile, childIndex) {
-  const implicitTileset = content._implicitTileset;
-  const implicitCoordinates =
-    parentTile.implicitCoordinates.getChildCoordinates(childIndex);
+    const implicitTileset = content._implicitTileset;
+    const implicitCoordinates =
+        parentTile.implicitCoordinates.getChildCoordinates(childIndex);
 
-  const childBoundingVolume = deriveBoundingVolume(
-    implicitTileset,
-    implicitCoordinates,
-    childIndex,
-    false,
-    parentTile,
-  );
+    const childBoundingVolume = deriveBoundingVolume(
+        implicitTileset,
+        implicitCoordinates,
+        childIndex,
+        false,
+        parentTile,
+    );
 
-  // Ignore tile metadata when computing geometric error for the placeholder tile
-  // since the child subtree's metadata hasn't been loaded yet.
-  // The actual geometric error will be computed in deriveChildTile.
-  const childGeometricError = getGeometricError(
-    undefined,
-    implicitTileset,
-    implicitCoordinates,
-  );
+    // Ignore tile metadata when computing geometric error for the placeholder tile
+    // since the child subtree's metadata hasn't been loaded yet.
+    // The actual geometric error will be computed in deriveChildTile.
+    const childGeometricError = getGeometricError(
+        undefined,
+        implicitTileset,
+        implicitCoordinates,
+    );
 
-  const childContentUri = implicitTileset.subtreeUriTemplate.getDerivedResource(
-    {
-      templateValues: implicitCoordinates.getTemplateValues(),
-    },
-  ).url;
-  const tileJson = {
-    boundingVolume: childBoundingVolume,
-    geometricError: childGeometricError,
-    refine: implicitTileset.refine,
-    contents: [
-      {
-        uri: childContentUri,
-      },
-    ],
-  };
+    const childContentUri =
+        implicitTileset.subtreeUriTemplate.getDerivedResource({
+            templateValues: implicitCoordinates.getTemplateValues(),
+        }).url;
+    const tileJson = {
+        boundingVolume: childBoundingVolume,
+        geometricError: childGeometricError,
+        refine: implicitTileset.refine,
+        contents: [
+            {
+                uri: childContentUri,
+            },
+        ],
+    };
 
-  const tile = makeTile(
-    content,
-    implicitTileset.baseResource,
-    tileJson,
-    parentTile,
-  );
-  tile.implicitTileset = implicitTileset;
-  tile.implicitCoordinates = implicitCoordinates;
-  return tile;
+    const tile = makeTile(
+        content,
+        implicitTileset.baseResource,
+        tileJson,
+        parentTile,
+    );
+    tile.implicitTileset = implicitTileset;
+    tile.implicitCoordinates = implicitCoordinates;
+    return tile;
 }
 
 /**
@@ -1153,8 +1171,13 @@ function makePlaceholderChildSubtree(content, parentTile, childIndex) {
  * @private
  */
 function makeTile(content, baseResource, tileJson, parentTile) {
-  const Cesium3DTile = content._tile.constructor;
-  return new Cesium3DTile(content._tileset, baseResource, tileJson, parentTile);
+    const Cesium3DTile = content._tile.constructor;
+    return new Cesium3DTile(
+        content._tileset,
+        baseResource,
+        tileJson,
+        parentTile,
+    );
 }
 
 /**
@@ -1163,7 +1186,7 @@ function makeTile(content, baseResource, tileJson, parentTile) {
  * @private
  */
 Implicit3DTileContent.prototype.hasProperty = function (batchId, name) {
-  return false;
+    return false;
 };
 
 /**
@@ -1172,12 +1195,12 @@ Implicit3DTileContent.prototype.hasProperty = function (batchId, name) {
  * @private
  */
 Implicit3DTileContent.prototype.getFeature = function (batchId) {
-  return undefined;
+    return undefined;
 };
 
 Implicit3DTileContent.prototype.applyDebugSettings = function (
-  enabled,
-  color,
+    enabled,
+    color,
 ) {};
 
 Implicit3DTileContent.prototype.applyStyle = function (style) {};
@@ -1185,17 +1208,17 @@ Implicit3DTileContent.prototype.applyStyle = function (style) {};
 Implicit3DTileContent.prototype.update = function (tileset, frameState) {};
 
 Implicit3DTileContent.prototype.pick = function (ray, frameState, result) {
-  return undefined;
+    return undefined;
 };
 
 Implicit3DTileContent.prototype.isDestroyed = function () {
-  return false;
+    return false;
 };
 
 Implicit3DTileContent.prototype.destroy = function () {
-  this._implicitSubtree =
-    this._implicitSubtree && this._implicitSubtree.destroy();
-  return destroyObject(this);
+    this._implicitSubtree =
+        this._implicitSubtree && this._implicitSubtree.destroy();
+    return destroyObject(this);
 };
 
 // Exposed for testing

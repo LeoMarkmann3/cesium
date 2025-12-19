@@ -16,21 +16,21 @@ import KTX2Transcoder from "./KTX2Transcoder.js";
 let supportedTranscoderFormats;
 
 loadKTX2.setKTX2SupportedFormats = function (
-  s3tc,
-  pvrtc,
-  astc,
-  etc,
-  etc1,
-  bc7,
+    s3tc,
+    pvrtc,
+    astc,
+    etc,
+    etc1,
+    bc7,
 ) {
-  supportedTranscoderFormats = {
-    s3tc: s3tc,
-    pvrtc: pvrtc,
-    astc: astc,
-    etc: etc,
-    etc1: etc1,
-    bc7: bc7,
-  };
+    supportedTranscoderFormats = {
+        s3tc: s3tc,
+        pvrtc: pvrtc,
+        astc: astc,
+        etc: etc,
+        etc1: etc1,
+        bc7: bc7,
+    };
 };
 
 /**
@@ -80,25 +80,25 @@ loadKTX2.setKTX2SupportedFormats = function (
  * @private
  */
 function loadKTX2(resourceOrUrlOrBuffer) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("resourceOrUrlOrBuffer", resourceOrUrlOrBuffer);
-  //>>includeEnd('debug');
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("resourceOrUrlOrBuffer", resourceOrUrlOrBuffer);
+    //>>includeEnd('debug');
 
-  let loadPromise;
-  if (
-    resourceOrUrlOrBuffer instanceof ArrayBuffer ||
-    ArrayBuffer.isView(resourceOrUrlOrBuffer)
-  ) {
-    loadPromise = Promise.resolve(resourceOrUrlOrBuffer);
-  } else {
-    const resource = Resource.createIfNeeded(resourceOrUrlOrBuffer);
-    loadPromise = resource.fetchArrayBuffer();
-  }
+    let loadPromise;
+    if (
+        resourceOrUrlOrBuffer instanceof ArrayBuffer ||
+        ArrayBuffer.isView(resourceOrUrlOrBuffer)
+    ) {
+        loadPromise = Promise.resolve(resourceOrUrlOrBuffer);
+    } else {
+        const resource = Resource.createIfNeeded(resourceOrUrlOrBuffer);
+        loadPromise = resource.fetchArrayBuffer();
+    }
 
-  // load module then return
-  return loadPromise.then(function (data) {
-    return KTX2Transcoder.transcode(data, supportedTranscoderFormats);
-  });
+    // load module then return
+    return loadPromise.then(function (data) {
+        return KTX2Transcoder.transcode(data, supportedTranscoderFormats);
+    });
 }
 
 export default loadKTX2;

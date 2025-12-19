@@ -20,10 +20,10 @@ const scratchSurfaceCartesian = new Cartesian3();
 const scratchBoundingSphere = new BoundingSphere();
 const tilingScheme = new GeographicTilingScheme();
 const scratchCorners = [
-  new Cartographic(),
-  new Cartographic(),
-  new Cartographic(),
-  new Cartographic(),
+    new Cartographic(),
+    new Cartographic(),
+    new Cartographic(),
+    new Cartographic(),
 ];
 const scratchTileXY = new Cartesian2();
 
@@ -38,18 +38,18 @@ const ApproximateTerrainHeights = {};
  * @return {Promise<void>}
  */
 ApproximateTerrainHeights.initialize = function () {
-  let initPromise = ApproximateTerrainHeights._initPromise;
-  if (defined(initPromise)) {
-    return initPromise;
-  }
-  initPromise = Resource.fetchJson(
-    buildModuleUrl("Assets/approximateTerrainHeights.json"),
-  ).then(function (json) {
-    ApproximateTerrainHeights._terrainHeights = json;
-  });
-  ApproximateTerrainHeights._initPromise = initPromise;
+    let initPromise = ApproximateTerrainHeights._initPromise;
+    if (defined(initPromise)) {
+        return initPromise;
+    }
+    initPromise = Resource.fetchJson(
+        buildModuleUrl("Assets/approximateTerrainHeights.json"),
+    ).then(function (json) {
+        ApproximateTerrainHeights._terrainHeights = json;
+    });
+    ApproximateTerrainHeights._initPromise = initPromise;
 
-  return initPromise;
+    return initPromise;
 };
 
 /**
@@ -59,71 +59,72 @@ ApproximateTerrainHeights.initialize = function () {
  * @return {{minimumTerrainHeight: number, maximumTerrainHeight: number}}
  */
 ApproximateTerrainHeights.getMinimumMaximumHeights = function (
-  rectangle,
-  ellipsoid,
+    rectangle,
+    ellipsoid,
 ) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("rectangle", rectangle);
-  if (!defined(ApproximateTerrainHeights._terrainHeights)) {
-    throw new DeveloperError(
-      "You must call ApproximateTerrainHeights.initialize and wait for the promise to resolve before using this function",
-    );
-  }
-  //>>includeEnd('debug');
-  ellipsoid = ellipsoid ?? Ellipsoid.default;
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("rectangle", rectangle);
+    if (!defined(ApproximateTerrainHeights._terrainHeights)) {
+        throw new DeveloperError(
+            "You must call ApproximateTerrainHeights.initialize and wait for the promise to resolve before using this function",
+        );
+    }
+    //>>includeEnd('debug');
+    ellipsoid = ellipsoid ?? Ellipsoid.default;
 
-  const xyLevel = getTileXYLevel(rectangle);
+    const xyLevel = getTileXYLevel(rectangle);
 
-  // Get the terrain min/max for that tile
-  let minTerrainHeight = ApproximateTerrainHeights._defaultMinTerrainHeight;
-  let maxTerrainHeight = ApproximateTerrainHeights._defaultMaxTerrainHeight;
-  if (defined(xyLevel)) {
-    const key = `${xyLevel.level}-${xyLevel.x}-${xyLevel.y}`;
-    const heights = ApproximateTerrainHeights._terrainHeights[key];
-    if (defined(heights)) {
-      minTerrainHeight = heights[0];
-      maxTerrainHeight = heights[1];
+    // Get the terrain min/max for that tile
+    let minTerrainHeight = ApproximateTerrainHeights._defaultMinTerrainHeight;
+    let maxTerrainHeight = ApproximateTerrainHeights._defaultMaxTerrainHeight;
+    if (defined(xyLevel)) {
+        const key = `${xyLevel.level}-${xyLevel.x}-${xyLevel.y}`;
+        const heights = ApproximateTerrainHeights._terrainHeights[key];
+        if (defined(heights)) {
+            minTerrainHeight = heights[0];
+            maxTerrainHeight = heights[1];
+        }
+
+        // Compute min by taking the center of the NE->SW diagonal and finding distance to the surface
+        ellipsoid.cartographicToCartesian(
+            Rectangle.northeast(rectangle, scratchDiagonalCartographic),
+            scratchDiagonalCartesianNE,
+        );
+        ellipsoid.cartographicToCartesian(
+            Rectangle.southwest(rectangle, scratchDiagonalCartographic),
+            scratchDiagonalCartesianSW,
+        );
+
+        Cartesian3.midpoint(
+            scratchDiagonalCartesianSW,
+            scratchDiagonalCartesianNE,
+            scratchCenterCartesian,
+        );
+        const surfacePosition = ellipsoid.scaleToGeodeticSurface(
+            scratchCenterCartesian,
+            scratchSurfaceCartesian,
+        );
+        if (defined(surfacePosition)) {
+            const distance = Cartesian3.distance(
+                scratchCenterCartesian,
+                surfacePosition,
+            );
+            minTerrainHeight = Math.min(minTerrainHeight, -distance);
+        } else {
+            minTerrainHeight =
+                ApproximateTerrainHeights._defaultMinTerrainHeight;
+        }
     }
 
-    // Compute min by taking the center of the NE->SW diagonal and finding distance to the surface
-    ellipsoid.cartographicToCartesian(
-      Rectangle.northeast(rectangle, scratchDiagonalCartographic),
-      scratchDiagonalCartesianNE,
-    );
-    ellipsoid.cartographicToCartesian(
-      Rectangle.southwest(rectangle, scratchDiagonalCartographic),
-      scratchDiagonalCartesianSW,
+    minTerrainHeight = Math.max(
+        ApproximateTerrainHeights._defaultMinTerrainHeight,
+        minTerrainHeight,
     );
 
-    Cartesian3.midpoint(
-      scratchDiagonalCartesianSW,
-      scratchDiagonalCartesianNE,
-      scratchCenterCartesian,
-    );
-    const surfacePosition = ellipsoid.scaleToGeodeticSurface(
-      scratchCenterCartesian,
-      scratchSurfaceCartesian,
-    );
-    if (defined(surfacePosition)) {
-      const distance = Cartesian3.distance(
-        scratchCenterCartesian,
-        surfacePosition,
-      );
-      minTerrainHeight = Math.min(minTerrainHeight, -distance);
-    } else {
-      minTerrainHeight = ApproximateTerrainHeights._defaultMinTerrainHeight;
-    }
-  }
-
-  minTerrainHeight = Math.max(
-    ApproximateTerrainHeights._defaultMinTerrainHeight,
-    minTerrainHeight,
-  );
-
-  return {
-    minimumTerrainHeight: minTerrainHeight,
-    maximumTerrainHeight: maxTerrainHeight,
-  };
+    return {
+        minimumTerrainHeight: minTerrainHeight,
+        maximumTerrainHeight: maxTerrainHeight,
+    };
 };
 
 /**
@@ -133,103 +134,106 @@ ApproximateTerrainHeights.getMinimumMaximumHeights = function (
  * @return {BoundingSphere} The result bounding sphere
  */
 ApproximateTerrainHeights.getBoundingSphere = function (rectangle, ellipsoid) {
-  //>>includeStart('debug', pragmas.debug);
-  Check.defined("rectangle", rectangle);
-  if (!defined(ApproximateTerrainHeights._terrainHeights)) {
-    throw new DeveloperError(
-      "You must call ApproximateTerrainHeights.initialize and wait for the promise to resolve before using this function",
-    );
-  }
-  //>>includeEnd('debug');
-  ellipsoid = ellipsoid ?? Ellipsoid.default;
-
-  const xyLevel = getTileXYLevel(rectangle);
-
-  // Get the terrain max for that tile
-  let maxTerrainHeight = ApproximateTerrainHeights._defaultMaxTerrainHeight;
-  if (defined(xyLevel)) {
-    const key = `${xyLevel.level}-${xyLevel.x}-${xyLevel.y}`;
-    const heights = ApproximateTerrainHeights._terrainHeights[key];
-    if (defined(heights)) {
-      maxTerrainHeight = heights[1];
+    //>>includeStart('debug', pragmas.debug);
+    Check.defined("rectangle", rectangle);
+    if (!defined(ApproximateTerrainHeights._terrainHeights)) {
+        throw new DeveloperError(
+            "You must call ApproximateTerrainHeights.initialize and wait for the promise to resolve before using this function",
+        );
     }
-  }
+    //>>includeEnd('debug');
+    ellipsoid = ellipsoid ?? Ellipsoid.default;
 
-  const result = BoundingSphere.fromRectangle3D(rectangle, ellipsoid, 0.0);
-  BoundingSphere.fromRectangle3D(
-    rectangle,
-    ellipsoid,
-    maxTerrainHeight,
-    scratchBoundingSphere,
-  );
+    const xyLevel = getTileXYLevel(rectangle);
 
-  return BoundingSphere.union(result, scratchBoundingSphere, result);
+    // Get the terrain max for that tile
+    let maxTerrainHeight = ApproximateTerrainHeights._defaultMaxTerrainHeight;
+    if (defined(xyLevel)) {
+        const key = `${xyLevel.level}-${xyLevel.x}-${xyLevel.y}`;
+        const heights = ApproximateTerrainHeights._terrainHeights[key];
+        if (defined(heights)) {
+            maxTerrainHeight = heights[1];
+        }
+    }
+
+    const result = BoundingSphere.fromRectangle3D(rectangle, ellipsoid, 0.0);
+    BoundingSphere.fromRectangle3D(
+        rectangle,
+        ellipsoid,
+        maxTerrainHeight,
+        scratchBoundingSphere,
+    );
+
+    return BoundingSphere.union(result, scratchBoundingSphere, result);
 };
 
 function getTileXYLevel(rectangle) {
-  Cartographic.fromRadians(
-    rectangle.east,
-    rectangle.north,
-    0.0,
-    scratchCorners[0],
-  );
-  Cartographic.fromRadians(
-    rectangle.west,
-    rectangle.north,
-    0.0,
-    scratchCorners[1],
-  );
-  Cartographic.fromRadians(
-    rectangle.east,
-    rectangle.south,
-    0.0,
-    scratchCorners[2],
-  );
-  Cartographic.fromRadians(
-    rectangle.west,
-    rectangle.south,
-    0.0,
-    scratchCorners[3],
-  );
+    Cartographic.fromRadians(
+        rectangle.east,
+        rectangle.north,
+        0.0,
+        scratchCorners[0],
+    );
+    Cartographic.fromRadians(
+        rectangle.west,
+        rectangle.north,
+        0.0,
+        scratchCorners[1],
+    );
+    Cartographic.fromRadians(
+        rectangle.east,
+        rectangle.south,
+        0.0,
+        scratchCorners[2],
+    );
+    Cartographic.fromRadians(
+        rectangle.west,
+        rectangle.south,
+        0.0,
+        scratchCorners[3],
+    );
 
-  // Determine which tile the bounding rectangle is in
-  let lastLevelX = 0,
-    lastLevelY = 0;
-  let currentX = 0,
-    currentY = 0;
-  const maxLevel = ApproximateTerrainHeights._terrainHeightsMaxLevel;
-  let i;
-  for (i = 0; i <= maxLevel; ++i) {
-    let failed = false;
-    for (let j = 0; j < 4; ++j) {
-      const corner = scratchCorners[j];
-      tilingScheme.positionToTileXY(corner, i, scratchTileXY);
-      if (j === 0) {
-        currentX = scratchTileXY.x;
-        currentY = scratchTileXY.y;
-      } else if (currentX !== scratchTileXY.x || currentY !== scratchTileXY.y) {
-        failed = true;
-        break;
-      }
+    // Determine which tile the bounding rectangle is in
+    let lastLevelX = 0,
+        lastLevelY = 0;
+    let currentX = 0,
+        currentY = 0;
+    const maxLevel = ApproximateTerrainHeights._terrainHeightsMaxLevel;
+    let i;
+    for (i = 0; i <= maxLevel; ++i) {
+        let failed = false;
+        for (let j = 0; j < 4; ++j) {
+            const corner = scratchCorners[j];
+            tilingScheme.positionToTileXY(corner, i, scratchTileXY);
+            if (j === 0) {
+                currentX = scratchTileXY.x;
+                currentY = scratchTileXY.y;
+            } else if (
+                currentX !== scratchTileXY.x ||
+                currentY !== scratchTileXY.y
+            ) {
+                failed = true;
+                break;
+            }
+        }
+
+        if (failed) {
+            break;
+        }
+
+        lastLevelX = currentX;
+        lastLevelY = currentY;
     }
 
-    if (failed) {
-      break;
+    if (i === 0) {
+        return undefined;
     }
 
-    lastLevelX = currentX;
-    lastLevelY = currentY;
-  }
-
-  if (i === 0) {
-    return undefined;
-  }
-
-  return {
-    x: lastLevelX,
-    y: lastLevelY,
-    level: i > maxLevel ? maxLevel : i - 1,
-  };
+    return {
+        x: lastLevelX,
+        y: lastLevelY,
+        level: i > maxLevel ? maxLevel : i - 1,
+    };
 }
 
 ApproximateTerrainHeights._terrainHeightsMaxLevel = 6;
@@ -239,17 +243,17 @@ ApproximateTerrainHeights._terrainHeights = undefined;
 ApproximateTerrainHeights._initPromise = undefined;
 
 Object.defineProperties(ApproximateTerrainHeights, {
-  /**
-   * Determines if the terrain heights are initialized and ready to use. To initialize the terrain heights,
-   * call {@link ApproximateTerrainHeights#initialize} and wait for the returned promise to resolve.
-   * @type {boolean}
-   * @readonly
-   * @memberof ApproximateTerrainHeights
-   */
-  initialized: {
-    get: function () {
-      return defined(ApproximateTerrainHeights._terrainHeights);
+    /**
+     * Determines if the terrain heights are initialized and ready to use. To initialize the terrain heights,
+     * call {@link ApproximateTerrainHeights#initialize} and wait for the returned promise to resolve.
+     * @type {boolean}
+     * @readonly
+     * @memberof ApproximateTerrainHeights
+     */
+    initialized: {
+        get: function () {
+            return defined(ApproximateTerrainHeights._terrainHeights);
+        },
     },
-  },
 });
 export default ApproximateTerrainHeights;

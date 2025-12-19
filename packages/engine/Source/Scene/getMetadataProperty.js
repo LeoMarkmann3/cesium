@@ -22,27 +22,27 @@ import defined from "../Core/defined.js";
  * @private
  */
 function getMetadataProperty(structuralMetadata, className, propertyName) {
-  if (!defined(structuralMetadata)) {
-    return undefined;
-  }
-  const propertyTextures = structuralMetadata.propertyTextures;
-  for (const propertyTexture of propertyTextures) {
-    const metadataClass = propertyTexture.class;
-    if (metadataClass.id === className) {
-      const properties = propertyTexture.properties;
-      const property = properties[propertyName];
-      if (defined(property)) {
-        return property;
-      }
+    if (!defined(structuralMetadata)) {
+        return undefined;
     }
-  }
-  // Note: This could check for property attributes in a similar
-  // way. But since picking arbitrary property attributes via the
-  // frame buffer is not supported yet, returning "undefined" here
-  // causes the picking to bail out early and safely when no
-  // property texture was found.
-  // See https://github.com/CesiumGS/cesium/issues/12225
-  return undefined;
+    const propertyTextures = structuralMetadata.propertyTextures;
+    for (const propertyTexture of propertyTextures) {
+        const metadataClass = propertyTexture.class;
+        if (metadataClass.id === className) {
+            const properties = propertyTexture.properties;
+            const property = properties[propertyName];
+            if (defined(property)) {
+                return property;
+            }
+        }
+    }
+    // Note: This could check for property attributes in a similar
+    // way. But since picking arbitrary property attributes via the
+    // frame buffer is not supported yet, returning "undefined" here
+    // causes the picking to bail out early and safely when no
+    // property texture was found.
+    // See https://github.com/CesiumGS/cesium/issues/12225
+    return undefined;
 }
 
 export default getMetadataProperty;

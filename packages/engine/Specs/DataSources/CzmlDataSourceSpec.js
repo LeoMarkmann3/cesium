@@ -1,7134 +1,7762 @@
 import {
-  ArcType,
-  BoundingRectangle,
-  Cartesian2,
-  Cartesian3,
-  ClockRange,
-  ClockStep,
-  Color,
-  CornerType,
-  Credit,
-  DistanceDisplayCondition,
-  Event,
-  ExtrapolationType,
-  Iso8601,
-  JulianDate,
-  Math as CesiumMath,
-  NearFarScalar,
-  PolygonHierarchy,
-  Quaternion,
-  Rectangle,
-  ReferenceFrame,
-  Resource,
-  RuntimeError,
-  Spherical,
-  TimeInterval,
-  Transforms,
-  TranslationRotationScale,
-  CompositeEntityCollection,
-  CompositeMaterialProperty,
-  CompositePositionProperty,
-  CompositeProperty,
-  ConstantPositionProperty,
-  ConstantProperty,
-  CzmlDataSource,
-  EntityCollection,
-  ReferenceProperty,
-  SampledPositionProperty,
-  SampledProperty,
-  StripeOrientation,
-  TimeIntervalCollectionPositionProperty,
-  TimeIntervalCollectionProperty,
-  ClassificationType,
-  ColorBlendMode,
-  HeightReference,
-  HorizontalOrigin,
-  LabelStyle,
-  ShadowMode,
-  VerticalOrigin,
-  Ellipsoid,
+    ArcType,
+    BoundingRectangle,
+    Cartesian2,
+    Cartesian3,
+    ClockRange,
+    ClockStep,
+    Color,
+    CornerType,
+    Credit,
+    DistanceDisplayCondition,
+    Event,
+    ExtrapolationType,
+    Iso8601,
+    JulianDate,
+    Math as CesiumMath,
+    NearFarScalar,
+    PolygonHierarchy,
+    Quaternion,
+    Rectangle,
+    ReferenceFrame,
+    Resource,
+    RuntimeError,
+    Spherical,
+    TimeInterval,
+    Transforms,
+    TranslationRotationScale,
+    CompositeEntityCollection,
+    CompositeMaterialProperty,
+    CompositePositionProperty,
+    CompositeProperty,
+    ConstantPositionProperty,
+    ConstantProperty,
+    CzmlDataSource,
+    EntityCollection,
+    ReferenceProperty,
+    SampledPositionProperty,
+    SampledProperty,
+    StripeOrientation,
+    TimeIntervalCollectionPositionProperty,
+    TimeIntervalCollectionProperty,
+    ClassificationType,
+    ColorBlendMode,
+    HeightReference,
+    HorizontalOrigin,
+    LabelStyle,
+    ShadowMode,
+    VerticalOrigin,
+    Ellipsoid,
 } from "../../index.js";
 
 describe("DataSources/CzmlDataSource", function () {
-  function makeDocument(packet) {
-    const documentPacket = {
-      id: "document",
-      version: "1.0",
-    };
-    return [documentPacket, packet];
-  }
-
-  const staticCzml = {
-    id: "test",
-    billboard: {
-      show: true,
-    },
-  };
-
-  const czmlDelete = {
-    id: "test",
-    delete: true,
-  };
-
-  const dynamicCzml = {
-    id: "test",
-    availability: "2000-01-01/2001-01-01",
-    billboard: {
-      show: true,
-    },
-  };
-
-  const clockCzml = {
-    id: "document",
-    version: "1.0",
-    clock: {
-      interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
-      currentTime: "2012-03-15T10:00:00Z",
-      multiplier: 60.0,
-      range: "LOOP_STOP",
-      step: "SYSTEM_CLOCK_MULTIPLIER",
-    },
-  };
-
-  const clockCzml2 = {
-    id: "document",
-    version: "1.0",
-    clock: {
-      interval: "2013-03-15T10:00:00Z/2013-03-16T10:00:00Z",
-      currentTime: "2013-03-15T10:00:00Z",
-      multiplier: 30.0,
-      range: "UNBOUNDED",
-      step: "TICK_DEPENDENT",
-    },
-  };
-
-  const parsedClock = {
-    interval: TimeInterval.fromIso8601({
-      iso8601: clockCzml.clock.interval,
-    }),
-    currentTime: JulianDate.fromIso8601(clockCzml.clock.currentTime),
-    multiplier: clockCzml.clock.multiplier,
-    range: ClockRange[clockCzml.clock.range],
-    step: ClockStep[clockCzml.clock.step],
-  };
-
-  const parsedClock2 = {
-    interval: TimeInterval.fromIso8601({
-      iso8601: clockCzml2.clock.interval,
-    }),
-    currentTime: JulianDate.fromIso8601(clockCzml2.clock.currentTime),
-    multiplier: clockCzml2.clock.multiplier,
-    range: ClockRange[clockCzml2.clock.range],
-    step: ClockStep[clockCzml2.clock.step],
-  };
-
-  const nameCzml = {
-    id: "document",
-    version: "1.0",
-    name: "czmlName",
-  };
-
-  let simple;
-  const simpleUrl = "Data/CZML/simple.czml";
-  let vehicle;
-  const vehicleUrl = "Data/CZML/Vehicle.czml";
-
-  beforeAll(function () {
-    return Promise.all([
-      Resource.fetchJson(simpleUrl).then(function (result) {
-        simple = result;
-      }),
-      Resource.fetchJson(vehicleUrl).then(function (result) {
-        vehicle = result;
-      }),
-    ]);
-  });
-
-  function arraySubset(array, startIndex, count) {
-    startIndex = startIndex === undefined ? 0 : startIndex;
-    return array.slice(startIndex, startIndex + count);
-  }
-
-  function cartesianFromArrayDegrees(array, startIndex, ellipsoid) {
-    return Cartesian3.fromDegrees.apply(
-      null,
-      [].concat(arraySubset(array, startIndex, 3), ellipsoid),
-    );
-  }
-
-  function cartesianFromArrayRadians(array, startIndex, ellipsoid) {
-    return Cartesian3.fromRadians.apply(
-      null,
-      [].concat(arraySubset(array, startIndex, 3), ellipsoid),
-    );
-  }
-
-  it("default constructor has expected values", function () {
-    const dataSource = new CzmlDataSource();
-    expect(dataSource.changedEvent).toBeInstanceOf(Event);
-    expect(dataSource.errorEvent).toBeInstanceOf(Event);
-    expect(dataSource.name).toBeUndefined();
-    expect(dataSource.clock).toBeUndefined();
-    expect(dataSource.entities).toBeInstanceOf(EntityCollection);
-    expect(dataSource.entities.values.length).toEqual(0);
-    expect(dataSource.show).toEqual(true);
-    expect(dataSource.credit).toBeUndefined();
-  });
-
-  it("show sets underlying entity collection show.", function () {
-    const dataSource = new CzmlDataSource();
-
-    dataSource.show = false;
-    expect(dataSource.show).toEqual(false);
-    expect(dataSource.show).toEqual(dataSource.entities.show);
-
-    dataSource.show = true;
-    expect(dataSource.show).toEqual(true);
-    expect(dataSource.show).toEqual(dataSource.entities.show);
-  });
-
-  it("name returns CZML defined name", function () {
-    return CzmlDataSource.load(nameCzml).then(function (dataSource) {
-      expect(dataSource.name).toEqual(nameCzml.name);
-    });
-  });
-
-  it("name uses source name if CZML name is undefined", function () {
-    return CzmlDataSource.load(clockCzml, {
-      sourceUri: "Gallery/simple.czml?asd=true",
-    }).then(function (dataSource) {
-      expect(dataSource.name).toEqual("simple.czml");
-    });
-  });
-
-  it("credit gets set from options", function () {
-    return CzmlDataSource.load(nameCzml, {
-      credit: "This is my credit",
-    }).then(function (dataSource) {
-      expect(dataSource.credit).toBeInstanceOf(Credit);
-    });
-  });
-
-  it("does not overwrite existing name if CZML name is undefined", function () {
-    const name = "myName";
-    const dataSource = new CzmlDataSource(name);
-    return dataSource
-      .load(clockCzml, {
-        sourceUri: "Gallery/simple.czml",
-      })
-      .then(function (dataSource) {
-        expect(dataSource.name).toEqual(name);
-      });
-  });
-
-  it("clock returns undefined for static CZML", function () {
-    return CzmlDataSource.load(makeDocument(staticCzml)).then(
-      function (dataSource) {
-        expect(dataSource.clock).toBeUndefined();
-      },
-    );
-  });
-
-  it("clock returns CZML defined clock", function () {
-    return CzmlDataSource.load(clockCzml)
-      .then(function (dataSource) {
-        const clock = dataSource.clock;
-        expect(clock).toBeDefined();
-        expect(clock.startTime).toEqual(parsedClock.interval.start);
-        expect(clock.stopTime).toEqual(parsedClock.interval.stop);
-        expect(clock.currentTime).toEqual(parsedClock.currentTime);
-        expect(clock.clockRange).toEqual(parsedClock.range);
-        expect(clock.clockStep).toEqual(parsedClock.step);
-        expect(clock.multiplier).toEqual(parsedClock.multiplier);
-
-        return dataSource.process(clockCzml2);
-      })
-      .then(function (dataSource) {
-        const clock = dataSource.clock;
-        expect(clock).toBeDefined();
-        expect(clock.startTime).toEqual(parsedClock2.interval.start);
-        expect(clock.stopTime).toEqual(parsedClock2.interval.stop);
-        expect(clock.currentTime).toEqual(parsedClock2.currentTime);
-        expect(clock.clockRange).toEqual(parsedClock2.range);
-        expect(clock.clockStep).toEqual(parsedClock2.step);
-        expect(clock.multiplier).toEqual(parsedClock2.multiplier);
-      });
-  });
-
-  it("clock returns data interval if no clock defined", function () {
-    const interval = TimeInterval.fromIso8601({
-      iso8601: dynamicCzml.availability,
-    });
-
-    return CzmlDataSource.load(makeDocument(dynamicCzml)).then(
-      function (dataSource) {
-        const clock = dataSource.clock;
-        expect(clock).toBeDefined();
-        expect(clock.startTime).toEqual(interval.start);
-        expect(clock.stopTime).toEqual(interval.stop);
-        expect(clock.currentTime).toEqual(interval.start);
-        expect(clock.clockRange).toEqual(ClockRange.LOOP_STOP);
-        expect(clock.clockStep).toEqual(ClockStep.SYSTEM_CLOCK_MULTIPLIER);
-        expect(clock.multiplier).toEqual(
-          JulianDate.secondsDifference(interval.stop, interval.start) / 120.0,
-        );
-      },
-    );
-  });
-
-  it("process loads expected data", function () {
-    const dataSource = new CzmlDataSource();
-    return dataSource.process(simple).then(function (dataSource) {
-      expect(dataSource.entities.values.length).toEqual(10);
-    });
-  });
-
-  it("process loads expected data from Resource", function () {
-    const dataSource = new CzmlDataSource();
-    return dataSource
-      .process(
-        new Resource({
-          url: simpleUrl,
-        }),
-      )
-      .then(function (dataSource) {
-        expect(dataSource.entities.values.length).toEqual(10);
-      });
-  });
-
-  it("process loads data on top of existing", function () {
-    const dataSource = new CzmlDataSource();
-    return dataSource
-      .process(simple)
-      .then(function (dataSource) {
-        expect(dataSource.entities.values.length).toEqual(10);
-
-        return dataSource.process(vehicle, vehicleUrl);
-      })
-      .then(function (dataSource) {
-        expect(dataSource.entities.values.length).toEqual(11);
-      });
-  });
-
-  it("load replaces data", function () {
-    const dataSource = new CzmlDataSource();
-    return dataSource
-      .process(simple)
-      .then(function (dataSource) {
-        expect(dataSource.entities.values.length).toEqual(10);
-
-        return dataSource.load(vehicle, vehicleUrl);
-      })
-      .then(function (dataSource) {
-        expect(dataSource.entities.values.length).toEqual(1);
-      });
-  });
-
-  it("process throws with undefined CZML", function () {
-    const dataSource = new CzmlDataSource();
-    expect(function () {
-      dataSource.process(undefined);
-    }).toThrowDeveloperError();
-  });
-
-  it("load throws with undefined CZML", function () {
-    const dataSource = new CzmlDataSource();
-    expect(function () {
-      dataSource.load(undefined);
-    }).toThrowDeveloperError();
-  });
-
-  it("raises changed event when loading CZML", function () {
-    const dataSource = new CzmlDataSource();
-
-    const spy = jasmine.createSpy("changedEvent");
-    dataSource.changedEvent.addEventListener(spy);
-
-    return dataSource.load(clockCzml).then(function (dataSource) {
-      expect(spy).toHaveBeenCalledWith(dataSource);
-    });
-  });
-
-  it("raises changed event when name changes in CZML", function () {
-    const dataSource = new CzmlDataSource();
-    const spy = jasmine.createSpy("changedEvent");
-
-    const originalCzml = {
-      id: "document",
-      version: "1.0",
-      name: "czmlName",
-    };
-
-    return dataSource
-      .load(originalCzml)
-      .then(function (dataSource) {
-        dataSource.changedEvent.addEventListener(spy);
-
-        const newCzml = {
-          id: "document",
-          name: "newCzmlName",
+    function makeDocument(packet) {
+        const documentPacket = {
+            id: "document",
+            version: "1.0",
         };
-        return dataSource.process(newCzml);
-      })
-      .then(function (dataSource) {
-        expect(spy).toHaveBeenCalledWith(dataSource);
-      });
-  });
+        return [documentPacket, packet];
+    }
 
-  it("does not raise changed event when name does not change in CZML", function () {
-    const dataSource = new CzmlDataSource();
-    const spy = jasmine.createSpy("changedEvent");
-
-    return dataSource
-      .load(nameCzml)
-      .then(function (dataSource) {
-        dataSource.changedEvent.addEventListener(spy);
-        return dataSource.load(nameCzml);
-      })
-      .then(function (dataSource) {
-        expect(spy).not.toHaveBeenCalled();
-      });
-  });
-
-  it("raises changed event when clock changes in CZML", function () {
-    const dataSource = new CzmlDataSource();
-    const spy = jasmine.createSpy("changedEvent");
-
-    const originalCzml = {
-      id: "document",
-      version: "1.0",
-      clock: {
-        interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
-        currentTime: "2012-03-15T10:00:00Z",
-        multiplier: 60.0,
-        range: "LOOP_STOP",
-        step: "SYSTEM_CLOCK_MULTIPLIER",
-      },
+    const staticCzml = {
+        id: "test",
+        billboard: {
+            show: true,
+        },
     };
 
-    return dataSource
-      .load(originalCzml)
-      .then(function (dataSource) {
-        dataSource.changedEvent.addEventListener(spy);
+    const czmlDelete = {
+        id: "test",
+        delete: true,
+    };
 
-        const newCzml = {
-          id: "document",
-          version: "1.0",
-          clock: {
-            interval: "2013-03-15T10:00:00Z/2013-03-16T10:00:00Z",
+    const dynamicCzml = {
+        id: "test",
+        availability: "2000-01-01/2001-01-01",
+        billboard: {
+            show: true,
+        },
+    };
+
+    const clockCzml = {
+        id: "document",
+        version: "1.0",
+        clock: {
+            interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
             currentTime: "2012-03-15T10:00:00Z",
             multiplier: 60.0,
             range: "LOOP_STOP",
             step: "SYSTEM_CLOCK_MULTIPLIER",
-          },
-        };
-        return dataSource.load(newCzml);
-      })
-      .then(function (dataSource) {
-        expect(spy).toHaveBeenCalledWith(dataSource);
-      });
-  });
+        },
+    };
 
-  it("does not raise changed event when clock does not change in CZML", function () {
-    const dataSource = new CzmlDataSource();
-    const spy = jasmine.createSpy("changedEvent");
+    const clockCzml2 = {
+        id: "document",
+        version: "1.0",
+        clock: {
+            interval: "2013-03-15T10:00:00Z/2013-03-16T10:00:00Z",
+            currentTime: "2013-03-15T10:00:00Z",
+            multiplier: 30.0,
+            range: "UNBOUNDED",
+            step: "TICK_DEPENDENT",
+        },
+    };
 
-    return dataSource
-      .load(clockCzml)
-      .then(function (dataSource) {
+    const parsedClock = {
+        interval: TimeInterval.fromIso8601({
+            iso8601: clockCzml.clock.interval,
+        }),
+        currentTime: JulianDate.fromIso8601(clockCzml.clock.currentTime),
+        multiplier: clockCzml.clock.multiplier,
+        range: ClockRange[clockCzml.clock.range],
+        step: ClockStep[clockCzml.clock.step],
+    };
+
+    const parsedClock2 = {
+        interval: TimeInterval.fromIso8601({
+            iso8601: clockCzml2.clock.interval,
+        }),
+        currentTime: JulianDate.fromIso8601(clockCzml2.clock.currentTime),
+        multiplier: clockCzml2.clock.multiplier,
+        range: ClockRange[clockCzml2.clock.range],
+        step: ClockStep[clockCzml2.clock.step],
+    };
+
+    const nameCzml = {
+        id: "document",
+        version: "1.0",
+        name: "czmlName",
+    };
+
+    let simple;
+    const simpleUrl = "Data/CZML/simple.czml";
+    let vehicle;
+    const vehicleUrl = "Data/CZML/Vehicle.czml";
+
+    beforeAll(function () {
+        return Promise.all([
+            Resource.fetchJson(simpleUrl).then(function (result) {
+                simple = result;
+            }),
+            Resource.fetchJson(vehicleUrl).then(function (result) {
+                vehicle = result;
+            }),
+        ]);
+    });
+
+    function arraySubset(array, startIndex, count) {
+        startIndex = startIndex === undefined ? 0 : startIndex;
+        return array.slice(startIndex, startIndex + count);
+    }
+
+    function cartesianFromArrayDegrees(array, startIndex, ellipsoid) {
+        return Cartesian3.fromDegrees.apply(
+            null,
+            [].concat(arraySubset(array, startIndex, 3), ellipsoid),
+        );
+    }
+
+    function cartesianFromArrayRadians(array, startIndex, ellipsoid) {
+        return Cartesian3.fromRadians.apply(
+            null,
+            [].concat(arraySubset(array, startIndex, 3), ellipsoid),
+        );
+    }
+
+    it("default constructor has expected values", function () {
+        const dataSource = new CzmlDataSource();
+        expect(dataSource.changedEvent).toBeInstanceOf(Event);
+        expect(dataSource.errorEvent).toBeInstanceOf(Event);
+        expect(dataSource.name).toBeUndefined();
+        expect(dataSource.clock).toBeUndefined();
+        expect(dataSource.entities).toBeInstanceOf(EntityCollection);
+        expect(dataSource.entities.values.length).toEqual(0);
+        expect(dataSource.show).toEqual(true);
+        expect(dataSource.credit).toBeUndefined();
+    });
+
+    it("show sets underlying entity collection show.", function () {
+        const dataSource = new CzmlDataSource();
+
+        dataSource.show = false;
+        expect(dataSource.show).toEqual(false);
+        expect(dataSource.show).toEqual(dataSource.entities.show);
+
+        dataSource.show = true;
+        expect(dataSource.show).toEqual(true);
+        expect(dataSource.show).toEqual(dataSource.entities.show);
+    });
+
+    it("name returns CZML defined name", function () {
+        return CzmlDataSource.load(nameCzml).then(function (dataSource) {
+            expect(dataSource.name).toEqual(nameCzml.name);
+        });
+    });
+
+    it("name uses source name if CZML name is undefined", function () {
+        return CzmlDataSource.load(clockCzml, {
+            sourceUri: "Gallery/simple.czml?asd=true",
+        }).then(function (dataSource) {
+            expect(dataSource.name).toEqual("simple.czml");
+        });
+    });
+
+    it("credit gets set from options", function () {
+        return CzmlDataSource.load(nameCzml, {
+            credit: "This is my credit",
+        }).then(function (dataSource) {
+            expect(dataSource.credit).toBeInstanceOf(Credit);
+        });
+    });
+
+    it("does not overwrite existing name if CZML name is undefined", function () {
+        const name = "myName";
+        const dataSource = new CzmlDataSource(name);
+        return dataSource
+            .load(clockCzml, {
+                sourceUri: "Gallery/simple.czml",
+            })
+            .then(function (dataSource) {
+                expect(dataSource.name).toEqual(name);
+            });
+    });
+
+    it("clock returns undefined for static CZML", function () {
+        return CzmlDataSource.load(makeDocument(staticCzml)).then(
+            function (dataSource) {
+                expect(dataSource.clock).toBeUndefined();
+            },
+        );
+    });
+
+    it("clock returns CZML defined clock", function () {
+        return CzmlDataSource.load(clockCzml)
+            .then(function (dataSource) {
+                const clock = dataSource.clock;
+                expect(clock).toBeDefined();
+                expect(clock.startTime).toEqual(parsedClock.interval.start);
+                expect(clock.stopTime).toEqual(parsedClock.interval.stop);
+                expect(clock.currentTime).toEqual(parsedClock.currentTime);
+                expect(clock.clockRange).toEqual(parsedClock.range);
+                expect(clock.clockStep).toEqual(parsedClock.step);
+                expect(clock.multiplier).toEqual(parsedClock.multiplier);
+
+                return dataSource.process(clockCzml2);
+            })
+            .then(function (dataSource) {
+                const clock = dataSource.clock;
+                expect(clock).toBeDefined();
+                expect(clock.startTime).toEqual(parsedClock2.interval.start);
+                expect(clock.stopTime).toEqual(parsedClock2.interval.stop);
+                expect(clock.currentTime).toEqual(parsedClock2.currentTime);
+                expect(clock.clockRange).toEqual(parsedClock2.range);
+                expect(clock.clockStep).toEqual(parsedClock2.step);
+                expect(clock.multiplier).toEqual(parsedClock2.multiplier);
+            });
+    });
+
+    it("clock returns data interval if no clock defined", function () {
+        const interval = TimeInterval.fromIso8601({
+            iso8601: dynamicCzml.availability,
+        });
+
+        return CzmlDataSource.load(makeDocument(dynamicCzml)).then(
+            function (dataSource) {
+                const clock = dataSource.clock;
+                expect(clock).toBeDefined();
+                expect(clock.startTime).toEqual(interval.start);
+                expect(clock.stopTime).toEqual(interval.stop);
+                expect(clock.currentTime).toEqual(interval.start);
+                expect(clock.clockRange).toEqual(ClockRange.LOOP_STOP);
+                expect(clock.clockStep).toEqual(
+                    ClockStep.SYSTEM_CLOCK_MULTIPLIER,
+                );
+                expect(clock.multiplier).toEqual(
+                    JulianDate.secondsDifference(
+                        interval.stop,
+                        interval.start,
+                    ) / 120.0,
+                );
+            },
+        );
+    });
+
+    it("process loads expected data", function () {
+        const dataSource = new CzmlDataSource();
+        return dataSource.process(simple).then(function (dataSource) {
+            expect(dataSource.entities.values.length).toEqual(10);
+        });
+    });
+
+    it("process loads expected data from Resource", function () {
+        const dataSource = new CzmlDataSource();
+        return dataSource
+            .process(
+                new Resource({
+                    url: simpleUrl,
+                }),
+            )
+            .then(function (dataSource) {
+                expect(dataSource.entities.values.length).toEqual(10);
+            });
+    });
+
+    it("process loads data on top of existing", function () {
+        const dataSource = new CzmlDataSource();
+        return dataSource
+            .process(simple)
+            .then(function (dataSource) {
+                expect(dataSource.entities.values.length).toEqual(10);
+
+                return dataSource.process(vehicle, vehicleUrl);
+            })
+            .then(function (dataSource) {
+                expect(dataSource.entities.values.length).toEqual(11);
+            });
+    });
+
+    it("load replaces data", function () {
+        const dataSource = new CzmlDataSource();
+        return dataSource
+            .process(simple)
+            .then(function (dataSource) {
+                expect(dataSource.entities.values.length).toEqual(10);
+
+                return dataSource.load(vehicle, vehicleUrl);
+            })
+            .then(function (dataSource) {
+                expect(dataSource.entities.values.length).toEqual(1);
+            });
+    });
+
+    it("process throws with undefined CZML", function () {
+        const dataSource = new CzmlDataSource();
+        expect(function () {
+            dataSource.process(undefined);
+        }).toThrowDeveloperError();
+    });
+
+    it("load throws with undefined CZML", function () {
+        const dataSource = new CzmlDataSource();
+        expect(function () {
+            dataSource.load(undefined);
+        }).toThrowDeveloperError();
+    });
+
+    it("raises changed event when loading CZML", function () {
+        const dataSource = new CzmlDataSource();
+
+        const spy = jasmine.createSpy("changedEvent");
         dataSource.changedEvent.addEventListener(spy);
 
-        return dataSource.load(clockCzml);
-      })
-      .then(function (dataSource) {
-        expect(spy).not.toHaveBeenCalled();
-      });
-  });
-
-  it("raises error when an error occurs in load", function () {
-    const dataSource = new CzmlDataSource();
-
-    const spy = jasmine.createSpy("errorEvent");
-    dataSource.errorEvent.addEventListener(spy);
-
-    // Blue.png is not JSON
-    return dataSource
-      .load("Data/Images/Blue.png")
-      .then(function () {
-        fail("should not be called");
-      })
-      .catch(function () {
-        expect(spy).toHaveBeenCalledWith(dataSource, jasmine.any(Error));
-      });
-  });
-
-  it("raises error when an error occurs in process", function () {
-    const dataSource = new CzmlDataSource();
-
-    const spy = jasmine.createSpy("errorEvent");
-    dataSource.errorEvent.addEventListener(spy);
-
-    // Blue.png is not JSON
-    return dataSource
-      .process("Data/Images/Blue.png")
-      .then(function () {
-        fail("should not be called");
-      })
-      .catch(function () {
-        expect(spy).toHaveBeenCalledWith(dataSource, jasmine.any(Error));
-      });
-  });
-
-  it("can load constant data for billboard", function () {
-    const sourceUri = "http://someImage.invalid/";
-    const packet = {
-      billboard: {
-        image: "image.png",
-        scale: 1.0,
-        rotation: 1.3,
-        heightReference: "CLAMP_TO_GROUND",
-        horizontalOrigin: "CENTER",
-        verticalOrigin: "CENTER",
-        color: {
-          rgbaf: [1.0, 1.0, 1.0, 1.0],
-        },
-        eyeOffset: {
-          cartesian: [3.0, 4.0, 5.0],
-        },
-        pixelOffset: {
-          cartesian2: [1.0, 2.0],
-        },
-        alignedAxis: {
-          unitCartesian: [1.0, 0.0, 0.0],
-        },
-        show: true,
-        sizeInMeters: false,
-        width: 10,
-        height: 11,
-        scaleByDistance: {
-          nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
-        },
-        translucencyByDistance: {
-          nearFarScalar: [1.0, 1.0, 10000.0, 0.0],
-        },
-        pixelOffsetScaleByDistance: {
-          nearFarScalar: [1.0, 20.0, 10000.0, 30.0],
-        },
-        imageSubRegion: {
-          boundingRectangle: [20, 30, 10, 11],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet), {
-      sourceUri: sourceUri,
-    }).then(function (dataSource) {
-      const entity = dataSource.entities.values[0];
-
-      expect(entity.billboard).toBeDefined();
-      expect(entity.billboard.image.getValue(time).url).toEqual(
-        sourceUri + packet.billboard.image,
-      );
-      expect(entity.billboard.rotation.getValue(time)).toEqual(
-        packet.billboard.rotation,
-      );
-      expect(entity.billboard.scale.getValue(time)).toEqual(
-        packet.billboard.scale,
-      );
-      expect(entity.billboard.heightReference.getValue(time)).toEqual(
-        HeightReference[packet.billboard.heightReference],
-      );
-      expect(entity.billboard.horizontalOrigin.getValue(time)).toEqual(
-        HorizontalOrigin[packet.billboard.horizontalOrigin],
-      );
-      expect(entity.billboard.verticalOrigin.getValue(time)).toEqual(
-        VerticalOrigin[packet.billboard.verticalOrigin],
-      );
-      expect(entity.billboard.color.getValue(time)).toEqual(
-        Color.unpack(packet.billboard.color.rgbaf),
-      );
-      expect(entity.billboard.eyeOffset.getValue(time)).toEqual(
-        Cartesian3.unpack(packet.billboard.eyeOffset.cartesian),
-      );
-      expect(entity.billboard.pixelOffset.getValue(time)).toEqual(
-        Cartesian2.unpack(packet.billboard.pixelOffset.cartesian2),
-      );
-      expect(entity.billboard.alignedAxis.getValue(time)).toEqual(
-        Cartesian3.unpack(packet.billboard.alignedAxis.unitCartesian),
-      );
-      expect(entity.billboard.show.getValue(time)).toEqual(
-        packet.billboard.show,
-      );
-      expect(entity.billboard.sizeInMeters.getValue(time)).toEqual(
-        packet.billboard.sizeInMeters,
-      );
-      expect(entity.billboard.width.getValue(time)).toEqual(
-        packet.billboard.width,
-      );
-      expect(entity.billboard.height.getValue(time)).toEqual(
-        packet.billboard.height,
-      );
-      expect(entity.billboard.scaleByDistance.getValue(time)).toEqual(
-        NearFarScalar.unpack(packet.billboard.scaleByDistance.nearFarScalar),
-      );
-      expect(entity.billboard.translucencyByDistance.getValue(time)).toEqual(
-        NearFarScalar.unpack(
-          packet.billboard.translucencyByDistance.nearFarScalar,
-        ),
-      );
-      expect(
-        entity.billboard.pixelOffsetScaleByDistance.getValue(time),
-      ).toEqual(
-        NearFarScalar.unpack(
-          packet.billboard.pixelOffsetScaleByDistance.nearFarScalar,
-        ),
-      );
-      expect(entity.billboard.imageSubRegion.getValue(time)).toEqual(
-        BoundingRectangle.unpack(
-          packet.billboard.imageSubRegion.boundingRectangle,
-        ),
-      );
+        return dataSource.load(clockCzml).then(function (dataSource) {
+            expect(spy).toHaveBeenCalledWith(dataSource);
+        });
     });
-  });
 
-  it("can handle aligned axis expressed as a cartesian", function () {
-    // historically, CZML allowed alignedAxis to be defined as a cartesian,
-    // even though that implied it could be non-unit magnitude (it can't).
-    // but, we need to ensure that continues to work.
-    const packet = {
-      billboard: {
-        alignedAxis: {
-          cartesian: [1.0, 0.0, 0.0],
-        },
-      },
-    };
+    it("raises changed event when name changes in CZML", function () {
+        const dataSource = new CzmlDataSource();
+        const spy = jasmine.createSpy("changedEvent");
 
-    const time = Iso8601.MINIMUM_VALUE;
+        const originalCzml = {
+            id: "document",
+            version: "1.0",
+            name: "czmlName",
+        };
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
+        return dataSource
+            .load(originalCzml)
+            .then(function (dataSource) {
+                dataSource.changedEvent.addEventListener(spy);
 
-        expect(entity.billboard).toBeDefined();
-        expect(entity.billboard.alignedAxis.getValue(time)).toEqual(
-          Cartesian3.unpack(packet.billboard.alignedAxis.cartesian),
-        );
-      },
-    );
-  });
-
-  it("can handle aligned axis expressed as a velocity reference", function () {
-    const packet = {
-      position: {
-        epoch: "2016-06-17T12:00:00Z",
-        cartesian: [0, 1, 2, 3, 60, 61, 122, 183],
-      },
-      billboard: {
-        alignedAxis: {
-          velocityReference: "#position",
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const property = entity.billboard.alignedAxis;
-
-        const expectedVelocity = new Cartesian3(1.0, 2.0, 3.0);
-        const expectedVelocityDirection = Cartesian3.normalize(
-          expectedVelocity,
-          new Cartesian3(),
-        );
-
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:00:00Z")),
-        ).toEqualEpsilon(expectedVelocityDirection, CesiumMath.EPSILON15);
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:00:30Z")),
-        ).toEqualEpsilon(expectedVelocityDirection, CesiumMath.EPSILON15);
-      },
-    );
-  });
-
-  it("can handle aligned axis expressed as a velocity reference within an interval", function () {
-    const packet = {
-      position: {
-        epoch: "2016-06-17T12:00:00Z",
-        cartesian: [0, 1, 2, 3, 60, 61, 122, 183],
-      },
-      billboard: {
-        alignedAxis: [
-          {
-            interval: "2016-06-17T12:00:00Z/2016-06-17T12:00:30Z",
-            unitCartesian: [0, 1, 0],
-          },
-          {
-            interval: "2016-06-17T12:00:30Z/2016-06-17T12:01:00Z",
-            velocityReference: "#position",
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const property = entity.billboard.alignedAxis;
-
-        const expected = new Cartesian3(0, 1, 0);
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:00:00Z")),
-        ).toEqual(expected);
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:00:29Z")),
-        ).toEqual(expected);
-
-        const expectedVelocity = new Cartesian3(1.0, 2.0, 3.0);
-        const expectedVelocityDirection = Cartesian3.normalize(
-          expectedVelocity,
-          new Cartesian3(),
-        );
-
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:00:30Z")),
-        ).toEqualEpsilon(expectedVelocityDirection, CesiumMath.EPSILON15);
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:01:00Z")),
-        ).toEqualEpsilon(expectedVelocityDirection, CesiumMath.EPSILON12);
-      },
-    );
-  });
-
-  it("can handle image intervals both of type uri and image", function () {
-    const source = "http://some.url.invalid/";
-    const packet = {
-      billboard: {
-        image: [
-          {
-            interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
-            uri: "image.png",
-          },
-          {
-            interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
-            uri: "image2.png",
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet), {
-      sourceUri: source,
-    }).then(function (dataSource) {
-      const entity = dataSource.entities.values[0];
-      const imageProperty = entity.billboard.image;
-      expect(
-        imageProperty.getValue(JulianDate.fromIso8601("2013-01-01T00:00:00Z"))
-          .url,
-      ).toEqual(`${source}image.png`);
-      expect(
-        imageProperty.getValue(JulianDate.fromIso8601("2013-01-01T01:00:00Z"))
-          .url,
-      ).toEqual(`${source}image2.png`);
+                const newCzml = {
+                    id: "document",
+                    name: "newCzmlName",
+                };
+                return dataSource.process(newCzml);
+            })
+            .then(function (dataSource) {
+                expect(spy).toHaveBeenCalledWith(dataSource);
+            });
     });
-  });
 
-  it("can load interval data for billboard", function () {
-    const packet = {
-      billboard: {
-        interval: "2000-01-01/2001-01-01",
-        image: "http://someImage.invalid/image",
-        scale: 1.0,
-        horizontalOrigin: "CENTER",
-        verticalOrigin: "CENTER",
-        color: {
-          rgbaf: [1.0, 1.0, 1.0, 1.0],
-        },
-        eyeOffset: {
-          cartesian: [3.0, 4.0, 5.0],
-        },
-        pixelOffset: {
-          cartesian2: [1.0, 2.0],
-        },
-        show: true,
-      },
-    };
+    it("does not raise changed event when name does not change in CZML", function () {
+        const dataSource = new CzmlDataSource();
+        const spy = jasmine.createSpy("changedEvent");
 
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.billboard.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
+        return dataSource
+            .load(nameCzml)
+            .then(function (dataSource) {
+                dataSource.changedEvent.addEventListener(spy);
+                return dataSource.load(nameCzml);
+            })
+            .then(function (dataSource) {
+                expect(spy).not.toHaveBeenCalled();
+            });
+    });
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
+    it("raises changed event when clock changes in CZML", function () {
+        const dataSource = new CzmlDataSource();
+        const spy = jasmine.createSpy("changedEvent");
 
-        expect(entity.billboard).toBeDefined();
-        expect(entity.billboard.image.getValue(validTime).url).toEqual(
-          packet.billboard.image,
-        );
-        expect(entity.billboard.scale.getValue(validTime)).toEqual(
-          packet.billboard.scale,
-        );
-        expect(entity.billboard.horizontalOrigin.getValue(validTime)).toEqual(
-          HorizontalOrigin[packet.billboard.horizontalOrigin],
-        );
-        expect(entity.billboard.verticalOrigin.getValue(validTime)).toEqual(
-          VerticalOrigin[packet.billboard.verticalOrigin],
-        );
-        expect(entity.billboard.color.getValue(validTime)).toEqual(
-          Color.unpack(packet.billboard.color.rgbaf),
-        );
-        expect(entity.billboard.eyeOffset.getValue(validTime)).toEqual(
-          Cartesian3.unpack(packet.billboard.eyeOffset.cartesian),
-        );
-        expect(entity.billboard.pixelOffset.getValue(validTime)).toEqual(
-          Cartesian2.unpack(packet.billboard.pixelOffset.cartesian2),
-        );
-        expect(entity.billboard.show.getValue(validTime)).toEqual(
-          packet.billboard.show,
-        );
-
-        expect(entity.billboard).toBeDefined();
-        expect(entity.billboard.image.getValue(invalidTime)).toBeUndefined();
-        expect(entity.billboard.scale.getValue(invalidTime)).toBeUndefined();
-        expect(
-          entity.billboard.horizontalOrigin.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.billboard.verticalOrigin.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(entity.billboard.color.getValue(invalidTime)).toBeUndefined();
-        expect(
-          entity.billboard.eyeOffset.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.billboard.pixelOffset.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(entity.billboard.show.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load interval data with further constrained intervals in subproperties", function () {
-    const packet = {
-      billboard: {
-        interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
-        scaleByDistance: [
-          {
-            interval: "2009-01-01T00:00:00Z/2010-01-01T00:30:00Z",
-            nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
-          },
-          {
-            interval: "2010-01-01T00:30:00Z/2011-01-01T00:00:00Z",
-            nearFarScalar: [2.0, 3.0, 20000.0, 4.0],
-          },
-        ],
-      },
-      ellipsoid: {
-        interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
-        material: [
-          {
-            interval: "2009-01-01T00:00:00Z/2010-01-01T00:30:00Z",
-            solidColor: {
-              color: {
-                rgbaf: [0.1, 0.2, 0.3, 0.4],
-              },
+        const originalCzml = {
+            id: "document",
+            version: "1.0",
+            clock: {
+                interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
+                currentTime: "2012-03-15T10:00:00Z",
+                multiplier: 60.0,
+                range: "LOOP_STOP",
+                step: "SYSTEM_CLOCK_MULTIPLIER",
             },
-          },
-          {
-            interval: "2010-01-01T00:30:00Z/2011-01-01T00:00:00Z",
-            solidColor: {
-              color: {
-                rgbaf: [0.5, 0.4, 0.3, 0.2],
-              },
+        };
+
+        return dataSource
+            .load(originalCzml)
+            .then(function (dataSource) {
+                dataSource.changedEvent.addEventListener(spy);
+
+                const newCzml = {
+                    id: "document",
+                    version: "1.0",
+                    clock: {
+                        interval: "2013-03-15T10:00:00Z/2013-03-16T10:00:00Z",
+                        currentTime: "2012-03-15T10:00:00Z",
+                        multiplier: 60.0,
+                        range: "LOOP_STOP",
+                        step: "SYSTEM_CLOCK_MULTIPLIER",
+                    },
+                };
+                return dataSource.load(newCzml);
+            })
+            .then(function (dataSource) {
+                expect(spy).toHaveBeenCalledWith(dataSource);
+            });
+    });
+
+    it("does not raise changed event when clock does not change in CZML", function () {
+        const dataSource = new CzmlDataSource();
+        const spy = jasmine.createSpy("changedEvent");
+
+        return dataSource
+            .load(clockCzml)
+            .then(function (dataSource) {
+                dataSource.changedEvent.addEventListener(spy);
+
+                return dataSource.load(clockCzml);
+            })
+            .then(function (dataSource) {
+                expect(spy).not.toHaveBeenCalled();
+            });
+    });
+
+    it("raises error when an error occurs in load", function () {
+        const dataSource = new CzmlDataSource();
+
+        const spy = jasmine.createSpy("errorEvent");
+        dataSource.errorEvent.addEventListener(spy);
+
+        // Blue.png is not JSON
+        return dataSource
+            .load("Data/Images/Blue.png")
+            .then(function () {
+                fail("should not be called");
+            })
+            .catch(function () {
+                expect(spy).toHaveBeenCalledWith(
+                    dataSource,
+                    jasmine.any(Error),
+                );
+            });
+    });
+
+    it("raises error when an error occurs in process", function () {
+        const dataSource = new CzmlDataSource();
+
+        const spy = jasmine.createSpy("errorEvent");
+        dataSource.errorEvent.addEventListener(spy);
+
+        // Blue.png is not JSON
+        return dataSource
+            .process("Data/Images/Blue.png")
+            .then(function () {
+                fail("should not be called");
+            })
+            .catch(function () {
+                expect(spy).toHaveBeenCalledWith(
+                    dataSource,
+                    jasmine.any(Error),
+                );
+            });
+    });
+
+    it("can load constant data for billboard", function () {
+        const sourceUri = "http://someImage.invalid/";
+        const packet = {
+            billboard: {
+                image: "image.png",
+                scale: 1.0,
+                rotation: 1.3,
+                heightReference: "CLAMP_TO_GROUND",
+                horizontalOrigin: "CENTER",
+                verticalOrigin: "CENTER",
+                color: {
+                    rgbaf: [1.0, 1.0, 1.0, 1.0],
+                },
+                eyeOffset: {
+                    cartesian: [3.0, 4.0, 5.0],
+                },
+                pixelOffset: {
+                    cartesian2: [1.0, 2.0],
+                },
+                alignedAxis: {
+                    unitCartesian: [1.0, 0.0, 0.0],
+                },
+                show: true,
+                sizeInMeters: false,
+                width: 10,
+                height: 11,
+                scaleByDistance: {
+                    nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
+                },
+                translucencyByDistance: {
+                    nearFarScalar: [1.0, 1.0, 10000.0, 0.0],
+                },
+                pixelOffsetScaleByDistance: {
+                    nearFarScalar: [1.0, 20.0, 10000.0, 30.0],
+                },
+                imageSubRegion: {
+                    boundingRectangle: [20, 30, 10, 11],
+                },
             },
-          },
-        ],
-      },
-    };
+        };
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
+        const time = Iso8601.MINIMUM_VALUE;
 
-        expect(entity.billboard).toBeDefined();
-        expect(entity.ellipsoid).toBeDefined();
+        return CzmlDataSource.load(makeDocument(packet), {
+            sourceUri: sourceUri,
+        }).then(function (dataSource) {
+            const entity = dataSource.entities.values[0];
 
-        // before billboard interval: not defined, even though the scaleByDistance includes the time in its intervals
-        let time = JulianDate.fromIso8601("2009-01-01T00:00:00Z");
-        expect(entity.billboard.scaleByDistance.getValue(time)).toBeUndefined();
-        expect(entity.ellipsoid.material.getValue(time)).toBeUndefined();
-
-        // within both billboard and scaleByDistance intervals
-        time = JulianDate.fromIso8601("2010-01-01T00:05:00Z");
-        expect(entity.billboard.scaleByDistance.getValue(time)).toEqual(
-          NearFarScalar.unpack(
-            packet.billboard.scaleByDistance[0].nearFarScalar,
-          ),
-        );
-        expect(entity.ellipsoid.material.getValue(time).color).toEqual(
-          Color.unpack(packet.ellipsoid.material[0].solidColor.color.rgbaf),
-        );
-
-        time = JulianDate.fromIso8601("2010-01-01T00:35:00Z");
-        expect(entity.billboard.scaleByDistance.getValue(time)).toEqual(
-          NearFarScalar.unpack(
-            packet.billboard.scaleByDistance[1].nearFarScalar,
-          ),
-        );
-        expect(entity.ellipsoid.material.getValue(time).color).toEqual(
-          Color.unpack(packet.ellipsoid.material[1].solidColor.color.rgbaf),
-        );
-
-        // after billboard interval: not defined, even though the scaleByDistance includes the time in its intervals
-        time = JulianDate.fromIso8601("2010-01-03T00:00:00Z");
-        expect(entity.billboard.scaleByDistance.getValue(time)).toBeUndefined();
-        expect(entity.ellipsoid.material.getValue(time)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can constrain a constant property by sending an interval in a subsequent packet", function () {
-    const constantPacket = {
-      id: "a",
-      billboard: {
-        scale: 1.0,
-      },
-    };
-
-    // loading a value with an interval makes the previously constant property into a composite.
-    const intervalPacket = {
-      id: "a",
-      billboard: {
-        scale: {
-          interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
-          number: 2.0,
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(constantPacket))
-      .then(function (dataSource) {
-        return dataSource.process(intervalPacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("a");
-
-        expect(entity.billboard).toBeDefined();
-        expect(entity.billboard.scale).toBeInstanceOf(CompositeProperty);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2009-01-01T00:00:00Z"),
-          ),
-        ).toEqual(constantPacket.billboard.scale);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
-          ),
-        ).toEqual(intervalPacket.billboard.scale.number);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2011-01-01T00:00:00Z"),
-          ),
-        ).toEqual(constantPacket.billboard.scale);
-      });
-  });
-
-  it("can constrain a constant position property by sending an interval in a subsequent packet", function () {
-    const constantPacket = {
-      id: "a",
-      position: {
-        cartographicDegrees: [34, 117, 0],
-      },
-    };
-    // loading a value with an interval makes the previously constant property into a composite.
-    const intervalPacket = {
-      id: "a",
-      position: {
-        interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
-        cartographicDegrees: [40, 100, 0],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(constantPacket))
-      .then(function (dataSource) {
-        return dataSource.process(intervalPacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("a");
-
-        expect(entity.position).toBeDefined();
-        expect(entity.position).toBeInstanceOf(CompositePositionProperty);
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2009-01-01T00:00:00Z"),
-          ),
-        ).toEqual(
-          cartesianFromArrayDegrees(
-            constantPacket.position.cartographicDegrees,
-          ),
-        );
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
-          ),
-        ).toEqual(
-          cartesianFromArrayDegrees(
-            intervalPacket.position.cartographicDegrees,
-          ),
-        );
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2011-01-01T00:00:00Z"),
-          ),
-        ).toEqual(
-          cartesianFromArrayDegrees(
-            constantPacket.position.cartographicDegrees,
-          ),
-        );
-      });
-  });
-
-  it("can convert a sampled property to a composite by sending intervals in a subsequent packet", function () {
-    const sampledPacket = {
-      id: "a",
-      billboard: {
-        scale: {
-          number: [
-            "2010-01-01T00:00:00Z",
-            1,
-            "2010-01-01T01:00:00Z",
-            2,
-            "2010-01-01T02:00:00Z",
-            3,
-          ],
-        },
-      },
-    };
-    // loading a value with an interval makes the property into a composite.
-    const intervalPacket = {
-      id: "a",
-      billboard: {
-        scale: [
-          {
-            interval: "2010-01-01T00:20:00Z/2010-01-01T00:22:00Z",
-            number: ["2010-01-01T00:20:00Z", 10, "2010-01-01T00:22:00Z", 20],
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(sampledPacket))
-      .then(function (dataSource) {
-        return dataSource.process(intervalPacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("a");
-
-        expect(entity.billboard).toBeDefined();
-        expect(entity.billboard.scale).toBeInstanceOf(CompositeProperty);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
-          ),
-        ).toEqual(1.0);
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:20:00Z"),
-          ),
-        ).toEqual(10.0);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:21:00Z"),
-          ),
-        ).toEqual(15.0);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:22:00Z"),
-          ),
-        ).toEqual(20.0);
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2010-01-01T01:00:00Z"),
-          ),
-        ).toEqual(2.0);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2010-01-01T02:00:00Z"),
-          ),
-        ).toEqual(3.0);
-      });
-  });
-
-  it("can convert a sampled position property to a composite by sending intervals in a subsequent packet", function () {
-    const sampledPacket = {
-      id: "a",
-      position: {
-        cartographicDegrees: [
-          "2010-01-01T00:00:00Z",
-          34,
-          117,
-          10000,
-          "2010-01-01T01:00:00Z",
-          34,
-          117,
-          20000,
-        ],
-      },
-    };
-    // loading a value with an interval makes the property into a composite.
-    const intervalPacket = {
-      id: "a",
-      position: [
-        {
-          interval: "2010-01-01T00:20:00Z/2010-01-01T00:22:00Z",
-          cartographicDegrees: [
-            "2010-01-01T00:20:00Z",
-            40,
-            100,
-            10000,
-            "2010-01-01T00:22:00Z",
-            40,
-            100,
-            20000,
-          ],
-        },
-      ],
-    };
-
-    return CzmlDataSource.load(makeDocument(sampledPacket))
-      .then(function (dataSource) {
-        return dataSource.process(intervalPacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("a");
-
-        expect(entity.position).toBeDefined();
-        expect(entity.position).toBeInstanceOf(CompositePositionProperty);
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
-          ),
-        ).toEqual(Cartesian3.fromDegrees(34, 117, 10000));
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:20:00Z"),
-          ),
-        ).toEqual(Cartesian3.fromDegrees(40, 100, 10000));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:21:00Z"),
-          ),
-        ).toEqualEpsilon(
-          Cartesian3.fromDegrees(40, 100, 15000),
-          CesiumMath.EPSILON10,
-        );
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2010-01-01T00:22:00Z"),
-          ),
-        ).toEqual(Cartesian3.fromDegrees(40, 100, 20000));
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2010-01-01T01:00:00Z"),
-          ),
-        ).toEqual(Cartesian3.fromDegrees(34, 117, 20000));
-      });
-  });
-
-  it("can handle sampled billboard pixelOffset.", function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      billboard: {
-        pixelOffset: {
-          epoch: JulianDate.toIso8601(epoch),
-          cartesian2: [0.0, 1.0, 2.0, 1.0, 3.0, 4.0],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.billboard).toBeDefined();
-        const date1 = epoch;
-        const date2 = JulianDate.addSeconds(epoch, 0.5, new JulianDate());
-        const date3 = JulianDate.addSeconds(epoch, 1.0, new JulianDate());
-        expect(entity.billboard.pixelOffset.getValue(date1)).toEqual(
-          new Cartesian2(1.0, 2.0),
-        );
-        expect(entity.billboard.pixelOffset.getValue(date2)).toEqual(
-          new Cartesian2(2.0, 3.0),
-        );
-        expect(entity.billboard.pixelOffset.getValue(date3)).toEqual(
-          new Cartesian2(3.0, 4.0),
-        );
-      },
-    );
-  });
-
-  it("can handle interval billboard scaleByDistance", function () {
-    const packet = {
-      billboard: {
-        scaleByDistance: [
-          {
-            interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
-            nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
-          },
-          {
-            interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
-            nearFarScalar: [2.0, 3.0, 20000.0, 4.0],
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.billboard).toBeDefined();
-        expect(
-          entity.billboard.scaleByDistance.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
-          ),
-        ).toEqual(
-          NearFarScalar.unpack(
-            packet.billboard.scaleByDistance[0].nearFarScalar,
-          ),
-        );
-        expect(
-          entity.billboard.scaleByDistance.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
-          ),
-        ).toEqual(
-          NearFarScalar.unpack(
-            packet.billboard.scaleByDistance[1].nearFarScalar,
-          ),
-        );
-      },
-    );
-  });
-
-  it("can handle sampled billboard scaleByDistance", function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      billboard: {
-        scaleByDistance: {
-          epoch: JulianDate.toIso8601(epoch),
-          nearFarScalar: [0, 1.0, 2.0, 10000.0, 3.0, 2, 2.0, 3.0, 20000.0, 4.0],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.billboard).toBeDefined();
-        const date1 = epoch;
-        const date2 = JulianDate.addSeconds(epoch, 1.0, new JulianDate());
-        const date3 = JulianDate.addSeconds(epoch, 2.0, new JulianDate());
-        expect(entity.billboard.scaleByDistance.getValue(date1)).toEqual(
-          new NearFarScalar(1.0, 2.0, 10000.0, 3.0),
-        );
-        expect(entity.billboard.scaleByDistance.getValue(date2)).toEqual(
-          new NearFarScalar(1.5, 2.5, 15000.0, 3.5),
-        );
-        expect(entity.billboard.scaleByDistance.getValue(date3)).toEqual(
-          new NearFarScalar(2.0, 3.0, 20000.0, 4.0),
-        );
-      },
-    );
-  });
-
-  it("can handle sampled billboard color rgba.", function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      billboard: {
-        color: {
-          epoch: JulianDate.toIso8601(epoch),
-          rgba: [0, 200, 202, 204, 206, 2, 0, 0, 0, 0],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.billboard).toBeDefined();
-        const date1 = epoch;
-        const date2 = JulianDate.addSeconds(epoch, 1.0, new JulianDate());
-        const date3 = JulianDate.addSeconds(epoch, 2.0, new JulianDate());
-        expect(entity.billboard.color.getValue(date1)).toEqual(
-          Color.fromBytes(200, 202, 204, 206),
-        );
-        expect(entity.billboard.color.getValue(date2)).toEqual(
-          Color.fromBytes(100, 101, 102, 103),
-        );
-        expect(entity.billboard.color.getValue(date3)).toEqual(
-          Color.fromBytes(0, 0, 0, 0),
-        );
-      },
-    );
-  });
-
-  it("can handle clock data.", function () {
-    const documentPacket = {
-      id: "document",
-      version: "1.0",
-      clock: {
-        interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
-        currentTime: "2012-03-15T10:00:00Z",
-        multiplier: 60.0,
-        range: "LOOP_STOP",
-        step: "SYSTEM_CLOCK_MULTIPLIER",
-      },
-    };
-
-    const interval = TimeInterval.fromIso8601({
-      iso8601: documentPacket.clock.interval,
+            expect(entity.billboard).toBeDefined();
+            expect(entity.billboard.image.getValue(time).url).toEqual(
+                sourceUri + packet.billboard.image,
+            );
+            expect(entity.billboard.rotation.getValue(time)).toEqual(
+                packet.billboard.rotation,
+            );
+            expect(entity.billboard.scale.getValue(time)).toEqual(
+                packet.billboard.scale,
+            );
+            expect(entity.billboard.heightReference.getValue(time)).toEqual(
+                HeightReference[packet.billboard.heightReference],
+            );
+            expect(entity.billboard.horizontalOrigin.getValue(time)).toEqual(
+                HorizontalOrigin[packet.billboard.horizontalOrigin],
+            );
+            expect(entity.billboard.verticalOrigin.getValue(time)).toEqual(
+                VerticalOrigin[packet.billboard.verticalOrigin],
+            );
+            expect(entity.billboard.color.getValue(time)).toEqual(
+                Color.unpack(packet.billboard.color.rgbaf),
+            );
+            expect(entity.billboard.eyeOffset.getValue(time)).toEqual(
+                Cartesian3.unpack(packet.billboard.eyeOffset.cartesian),
+            );
+            expect(entity.billboard.pixelOffset.getValue(time)).toEqual(
+                Cartesian2.unpack(packet.billboard.pixelOffset.cartesian2),
+            );
+            expect(entity.billboard.alignedAxis.getValue(time)).toEqual(
+                Cartesian3.unpack(packet.billboard.alignedAxis.unitCartesian),
+            );
+            expect(entity.billboard.show.getValue(time)).toEqual(
+                packet.billboard.show,
+            );
+            expect(entity.billboard.sizeInMeters.getValue(time)).toEqual(
+                packet.billboard.sizeInMeters,
+            );
+            expect(entity.billboard.width.getValue(time)).toEqual(
+                packet.billboard.width,
+            );
+            expect(entity.billboard.height.getValue(time)).toEqual(
+                packet.billboard.height,
+            );
+            expect(entity.billboard.scaleByDistance.getValue(time)).toEqual(
+                NearFarScalar.unpack(
+                    packet.billboard.scaleByDistance.nearFarScalar,
+                ),
+            );
+            expect(
+                entity.billboard.translucencyByDistance.getValue(time),
+            ).toEqual(
+                NearFarScalar.unpack(
+                    packet.billboard.translucencyByDistance.nearFarScalar,
+                ),
+            );
+            expect(
+                entity.billboard.pixelOffsetScaleByDistance.getValue(time),
+            ).toEqual(
+                NearFarScalar.unpack(
+                    packet.billboard.pixelOffsetScaleByDistance.nearFarScalar,
+                ),
+            );
+            expect(entity.billboard.imageSubRegion.getValue(time)).toEqual(
+                BoundingRectangle.unpack(
+                    packet.billboard.imageSubRegion.boundingRectangle,
+                ),
+            );
+        });
     });
-    return CzmlDataSource.load(documentPacket).then(function (dataSource) {
-      const clock = dataSource.clock;
 
-      expect(clock).toBeDefined();
-      expect(clock.startTime).toEqual(interval.start);
-      expect(clock.stopTime).toEqual(interval.stop);
-      expect(clock.currentTime).toEqual(
-        JulianDate.fromIso8601(documentPacket.clock.currentTime),
-      );
-      expect(clock.clockRange).toEqual(ClockRange[documentPacket.clock.range]);
-      expect(clock.clockStep).toEqual(ClockStep[documentPacket.clock.step]);
-      expect(clock.multiplier).toEqual(documentPacket.clock.multiplier);
+    it("can handle aligned axis expressed as a cartesian", function () {
+        // historically, CZML allowed alignedAxis to be defined as a cartesian,
+        // even though that implied it could be non-unit magnitude (it can't).
+        // but, we need to ensure that continues to work.
+        const packet = {
+            billboard: {
+                alignedAxis: {
+                    cartesian: [1.0, 0.0, 0.0],
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                expect(entity.billboard.alignedAxis.getValue(time)).toEqual(
+                    Cartesian3.unpack(packet.billboard.alignedAxis.cartesian),
+                );
+            },
+        );
     });
-  });
 
-  it("can handle position specified as constant cartographicsDegrees", function () {
-    const packet = {
-      position: {
-        cartographicDegrees: [34, 117, 10000],
-      },
-    };
+    it("can handle aligned axis expressed as a velocity reference", function () {
+        const packet = {
+            position: {
+                epoch: "2016-06-17T12:00:00Z",
+                cartesian: [0, 1, 2, 3, 60, 61, 122, 183],
+            },
+            billboard: {
+                alignedAxis: {
+                    velocityReference: "#position",
+                },
+            },
+        };
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const property = entity.billboard.alignedAxis;
+
+                const expectedVelocity = new Cartesian3(1.0, 2.0, 3.0);
+                const expectedVelocityDirection = Cartesian3.normalize(
+                    expectedVelocity,
+                    new Cartesian3(),
+                );
+
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:00Z"),
+                    ),
+                ).toEqualEpsilon(
+                    expectedVelocityDirection,
+                    CesiumMath.EPSILON15,
+                );
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:30Z"),
+                    ),
+                ).toEqualEpsilon(
+                    expectedVelocityDirection,
+                    CesiumMath.EPSILON15,
+                );
+            },
+        );
+    });
+
+    it("can handle aligned axis expressed as a velocity reference within an interval", function () {
+        const packet = {
+            position: {
+                epoch: "2016-06-17T12:00:00Z",
+                cartesian: [0, 1, 2, 3, 60, 61, 122, 183],
+            },
+            billboard: {
+                alignedAxis: [
+                    {
+                        interval: "2016-06-17T12:00:00Z/2016-06-17T12:00:30Z",
+                        unitCartesian: [0, 1, 0],
+                    },
+                    {
+                        interval: "2016-06-17T12:00:30Z/2016-06-17T12:01:00Z",
+                        velocityReference: "#position",
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const property = entity.billboard.alignedAxis;
+
+                const expected = new Cartesian3(0, 1, 0);
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:00Z"),
+                    ),
+                ).toEqual(expected);
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:29Z"),
+                    ),
+                ).toEqual(expected);
+
+                const expectedVelocity = new Cartesian3(1.0, 2.0, 3.0);
+                const expectedVelocityDirection = Cartesian3.normalize(
+                    expectedVelocity,
+                    new Cartesian3(),
+                );
+
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:30Z"),
+                    ),
+                ).toEqualEpsilon(
+                    expectedVelocityDirection,
+                    CesiumMath.EPSILON15,
+                );
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:01:00Z"),
+                    ),
+                ).toEqualEpsilon(
+                    expectedVelocityDirection,
+                    CesiumMath.EPSILON12,
+                );
+            },
+        );
+    });
+
+    it("can handle image intervals both of type uri and image", function () {
+        const source = "http://some.url.invalid/";
+        const packet = {
+            billboard: {
+                image: [
+                    {
+                        interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
+                        uri: "image.png",
+                    },
+                    {
+                        interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
+                        uri: "image2.png",
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet), {
+            sourceUri: source,
+        }).then(function (dataSource) {
+            const entity = dataSource.entities.values[0];
+            const imageProperty = entity.billboard.image;
+            expect(
+                imageProperty.getValue(
+                    JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
+                ).url,
+            ).toEqual(`${source}image.png`);
+            expect(
+                imageProperty.getValue(
+                    JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
+                ).url,
+            ).toEqual(`${source}image2.png`);
+        });
+    });
+
+    it("can load interval data for billboard", function () {
+        const packet = {
+            billboard: {
+                interval: "2000-01-01/2001-01-01",
+                image: "http://someImage.invalid/image",
+                scale: 1.0,
+                horizontalOrigin: "CENTER",
+                verticalOrigin: "CENTER",
+                color: {
+                    rgbaf: [1.0, 1.0, 1.0, 1.0],
+                },
+                eyeOffset: {
+                    cartesian: [3.0, 4.0, 5.0],
+                },
+                pixelOffset: {
+                    cartesian2: [1.0, 2.0],
+                },
+                show: true,
+            },
+        };
+
+        const validTime = TimeInterval.fromIso8601({
+            iso8601: packet.billboard.interval,
+        }).start;
+        const invalidTime = JulianDate.addSeconds(
+            validTime,
+            -1,
+            new JulianDate(),
+        );
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                expect(entity.billboard.image.getValue(validTime).url).toEqual(
+                    packet.billboard.image,
+                );
+                expect(entity.billboard.scale.getValue(validTime)).toEqual(
+                    packet.billboard.scale,
+                );
+                expect(
+                    entity.billboard.horizontalOrigin.getValue(validTime),
+                ).toEqual(HorizontalOrigin[packet.billboard.horizontalOrigin]);
+                expect(
+                    entity.billboard.verticalOrigin.getValue(validTime),
+                ).toEqual(VerticalOrigin[packet.billboard.verticalOrigin]);
+                expect(entity.billboard.color.getValue(validTime)).toEqual(
+                    Color.unpack(packet.billboard.color.rgbaf),
+                );
+                expect(entity.billboard.eyeOffset.getValue(validTime)).toEqual(
+                    Cartesian3.unpack(packet.billboard.eyeOffset.cartesian),
+                );
+                expect(
+                    entity.billboard.pixelOffset.getValue(validTime),
+                ).toEqual(
+                    Cartesian2.unpack(packet.billboard.pixelOffset.cartesian2),
+                );
+                expect(entity.billboard.show.getValue(validTime)).toEqual(
+                    packet.billboard.show,
+                );
+
+                expect(entity.billboard).toBeDefined();
+                expect(
+                    entity.billboard.image.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.scale.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.horizontalOrigin.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.verticalOrigin.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.color.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.eyeOffset.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.pixelOffset.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.show.getValue(invalidTime),
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load interval data with further constrained intervals in subproperties", function () {
+        const packet = {
+            billboard: {
+                interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
+                scaleByDistance: [
+                    {
+                        interval: "2009-01-01T00:00:00Z/2010-01-01T00:30:00Z",
+                        nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
+                    },
+                    {
+                        interval: "2010-01-01T00:30:00Z/2011-01-01T00:00:00Z",
+                        nearFarScalar: [2.0, 3.0, 20000.0, 4.0],
+                    },
+                ],
+            },
+            ellipsoid: {
+                interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
+                material: [
+                    {
+                        interval: "2009-01-01T00:00:00Z/2010-01-01T00:30:00Z",
+                        solidColor: {
+                            color: {
+                                rgbaf: [0.1, 0.2, 0.3, 0.4],
+                            },
+                        },
+                    },
+                    {
+                        interval: "2010-01-01T00:30:00Z/2011-01-01T00:00:00Z",
+                        solidColor: {
+                            color: {
+                                rgbaf: [0.5, 0.4, 0.3, 0.2],
+                            },
+                        },
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                expect(entity.ellipsoid).toBeDefined();
+
+                // before billboard interval: not defined, even though the scaleByDistance includes the time in its intervals
+                let time = JulianDate.fromIso8601("2009-01-01T00:00:00Z");
+                expect(
+                    entity.billboard.scaleByDistance.getValue(time),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipsoid.material.getValue(time),
+                ).toBeUndefined();
+
+                // within both billboard and scaleByDistance intervals
+                time = JulianDate.fromIso8601("2010-01-01T00:05:00Z");
+                expect(entity.billboard.scaleByDistance.getValue(time)).toEqual(
+                    NearFarScalar.unpack(
+                        packet.billboard.scaleByDistance[0].nearFarScalar,
+                    ),
+                );
+                expect(entity.ellipsoid.material.getValue(time).color).toEqual(
+                    Color.unpack(
+                        packet.ellipsoid.material[0].solidColor.color.rgbaf,
+                    ),
+                );
+
+                time = JulianDate.fromIso8601("2010-01-01T00:35:00Z");
+                expect(entity.billboard.scaleByDistance.getValue(time)).toEqual(
+                    NearFarScalar.unpack(
+                        packet.billboard.scaleByDistance[1].nearFarScalar,
+                    ),
+                );
+                expect(entity.ellipsoid.material.getValue(time).color).toEqual(
+                    Color.unpack(
+                        packet.ellipsoid.material[1].solidColor.color.rgbaf,
+                    ),
+                );
+
+                // after billboard interval: not defined, even though the scaleByDistance includes the time in its intervals
+                time = JulianDate.fromIso8601("2010-01-03T00:00:00Z");
+                expect(
+                    entity.billboard.scaleByDistance.getValue(time),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipsoid.material.getValue(time),
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can constrain a constant property by sending an interval in a subsequent packet", function () {
+        const constantPacket = {
+            id: "a",
+            billboard: {
+                scale: 1.0,
+            },
+        };
+
+        // loading a value with an interval makes the previously constant property into a composite.
+        const intervalPacket = {
+            id: "a",
+            billboard: {
+                scale: {
+                    interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
+                    number: 2.0,
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(constantPacket))
+            .then(function (dataSource) {
+                return dataSource.process(intervalPacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("a");
+
+                expect(entity.billboard).toBeDefined();
+                expect(entity.billboard.scale).toBeInstanceOf(
+                    CompositeProperty,
+                );
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2009-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(constantPacket.billboard.scale);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(intervalPacket.billboard.scale.number);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2011-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(constantPacket.billboard.scale);
+            });
+    });
+
+    it("can constrain a constant position property by sending an interval in a subsequent packet", function () {
+        const constantPacket = {
+            id: "a",
+            position: {
+                cartographicDegrees: [34, 117, 0],
+            },
+        };
+        // loading a value with an interval makes the previously constant property into a composite.
+        const intervalPacket = {
+            id: "a",
+            position: {
+                interval: "2010-01-01T00:00:00Z/2010-01-02T01:00:00Z",
+                cartographicDegrees: [40, 100, 0],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(constantPacket))
+            .then(function (dataSource) {
+                return dataSource.process(intervalPacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("a");
+
+                expect(entity.position).toBeDefined();
+                expect(entity.position).toBeInstanceOf(
+                    CompositePositionProperty,
+                );
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2009-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(
+                    cartesianFromArrayDegrees(
+                        constantPacket.position.cartographicDegrees,
+                    ),
+                );
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(
+                    cartesianFromArrayDegrees(
+                        intervalPacket.position.cartographicDegrees,
+                    ),
+                );
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2011-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(
+                    cartesianFromArrayDegrees(
+                        constantPacket.position.cartographicDegrees,
+                    ),
+                );
+            });
+    });
+
+    it("can convert a sampled property to a composite by sending intervals in a subsequent packet", function () {
+        const sampledPacket = {
+            id: "a",
+            billboard: {
+                scale: {
+                    number: [
+                        "2010-01-01T00:00:00Z",
+                        1,
+                        "2010-01-01T01:00:00Z",
+                        2,
+                        "2010-01-01T02:00:00Z",
+                        3,
+                    ],
+                },
+            },
+        };
+        // loading a value with an interval makes the property into a composite.
+        const intervalPacket = {
+            id: "a",
+            billboard: {
+                scale: [
+                    {
+                        interval: "2010-01-01T00:20:00Z/2010-01-01T00:22:00Z",
+                        number: [
+                            "2010-01-01T00:20:00Z",
+                            10,
+                            "2010-01-01T00:22:00Z",
+                            20,
+                        ],
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(sampledPacket))
+            .then(function (dataSource) {
+                return dataSource.process(intervalPacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("a");
+
+                expect(entity.billboard).toBeDefined();
+                expect(entity.billboard.scale).toBeInstanceOf(
+                    CompositeProperty,
+                );
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(1.0);
+
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:20:00Z"),
+                    ),
+                ).toEqual(10.0);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:21:00Z"),
+                    ),
+                ).toEqual(15.0);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:22:00Z"),
+                    ),
+                ).toEqual(20.0);
+
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2010-01-01T01:00:00Z"),
+                    ),
+                ).toEqual(2.0);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2010-01-01T02:00:00Z"),
+                    ),
+                ).toEqual(3.0);
+            });
+    });
+
+    it("can convert a sampled position property to a composite by sending intervals in a subsequent packet", function () {
+        const sampledPacket = {
+            id: "a",
+            position: {
+                cartographicDegrees: [
+                    "2010-01-01T00:00:00Z",
+                    34,
+                    117,
+                    10000,
+                    "2010-01-01T01:00:00Z",
+                    34,
+                    117,
+                    20000,
+                ],
+            },
+        };
+        // loading a value with an interval makes the property into a composite.
+        const intervalPacket = {
+            id: "a",
+            position: [
+                {
+                    interval: "2010-01-01T00:20:00Z/2010-01-01T00:22:00Z",
+                    cartographicDegrees: [
+                        "2010-01-01T00:20:00Z",
+                        40,
+                        100,
+                        10000,
+                        "2010-01-01T00:22:00Z",
+                        40,
+                        100,
+                        20000,
+                    ],
+                },
+            ],
+        };
+
+        return CzmlDataSource.load(makeDocument(sampledPacket))
+            .then(function (dataSource) {
+                return dataSource.process(intervalPacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("a");
+
+                expect(entity.position).toBeDefined();
+                expect(entity.position).toBeInstanceOf(
+                    CompositePositionProperty,
+                );
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(Cartesian3.fromDegrees(34, 117, 10000));
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:20:00Z"),
+                    ),
+                ).toEqual(Cartesian3.fromDegrees(40, 100, 10000));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:21:00Z"),
+                    ),
+                ).toEqualEpsilon(
+                    Cartesian3.fromDegrees(40, 100, 15000),
+                    CesiumMath.EPSILON10,
+                );
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2010-01-01T00:22:00Z"),
+                    ),
+                ).toEqual(Cartesian3.fromDegrees(40, 100, 20000));
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2010-01-01T01:00:00Z"),
+                    ),
+                ).toEqual(Cartesian3.fromDegrees(34, 117, 20000));
+            });
+    });
+
+    it("can handle sampled billboard pixelOffset.", function () {
+        const epoch = JulianDate.now();
+
+        const packet = {
+            billboard: {
+                pixelOffset: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    cartesian2: [0.0, 1.0, 2.0, 1.0, 3.0, 4.0],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                const date1 = epoch;
+                const date2 = JulianDate.addSeconds(
+                    epoch,
+                    0.5,
+                    new JulianDate(),
+                );
+                const date3 = JulianDate.addSeconds(
+                    epoch,
+                    1.0,
+                    new JulianDate(),
+                );
+                expect(entity.billboard.pixelOffset.getValue(date1)).toEqual(
+                    new Cartesian2(1.0, 2.0),
+                );
+                expect(entity.billboard.pixelOffset.getValue(date2)).toEqual(
+                    new Cartesian2(2.0, 3.0),
+                );
+                expect(entity.billboard.pixelOffset.getValue(date3)).toEqual(
+                    new Cartesian2(3.0, 4.0),
+                );
+            },
+        );
+    });
+
+    it("can handle interval billboard scaleByDistance", function () {
+        const packet = {
+            billboard: {
+                scaleByDistance: [
+                    {
+                        interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
+                        nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
+                    },
+                    {
+                        interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
+                        nearFarScalar: [2.0, 3.0, 20000.0, 4.0],
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                expect(
+                    entity.billboard.scaleByDistance.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(
+                    NearFarScalar.unpack(
+                        packet.billboard.scaleByDistance[0].nearFarScalar,
+                    ),
+                );
+                expect(
+                    entity.billboard.scaleByDistance.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
+                    ),
+                ).toEqual(
+                    NearFarScalar.unpack(
+                        packet.billboard.scaleByDistance[1].nearFarScalar,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can handle sampled billboard scaleByDistance", function () {
+        const epoch = JulianDate.now();
+
+        const packet = {
+            billboard: {
+                scaleByDistance: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    nearFarScalar: [
+                        0, 1.0, 2.0, 10000.0, 3.0, 2, 2.0, 3.0, 20000.0, 4.0,
+                    ],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                const date1 = epoch;
+                const date2 = JulianDate.addSeconds(
+                    epoch,
+                    1.0,
+                    new JulianDate(),
+                );
+                const date3 = JulianDate.addSeconds(
+                    epoch,
+                    2.0,
+                    new JulianDate(),
+                );
+                expect(
+                    entity.billboard.scaleByDistance.getValue(date1),
+                ).toEqual(new NearFarScalar(1.0, 2.0, 10000.0, 3.0));
+                expect(
+                    entity.billboard.scaleByDistance.getValue(date2),
+                ).toEqual(new NearFarScalar(1.5, 2.5, 15000.0, 3.5));
+                expect(
+                    entity.billboard.scaleByDistance.getValue(date3),
+                ).toEqual(new NearFarScalar(2.0, 3.0, 20000.0, 4.0));
+            },
+        );
+    });
+
+    it("can handle sampled billboard color rgba.", function () {
+        const epoch = JulianDate.now();
+
+        const packet = {
+            billboard: {
+                color: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    rgba: [0, 200, 202, 204, 206, 2, 0, 0, 0, 0],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                const date1 = epoch;
+                const date2 = JulianDate.addSeconds(
+                    epoch,
+                    1.0,
+                    new JulianDate(),
+                );
+                const date3 = JulianDate.addSeconds(
+                    epoch,
+                    2.0,
+                    new JulianDate(),
+                );
+                expect(entity.billboard.color.getValue(date1)).toEqual(
+                    Color.fromBytes(200, 202, 204, 206),
+                );
+                expect(entity.billboard.color.getValue(date2)).toEqual(
+                    Color.fromBytes(100, 101, 102, 103),
+                );
+                expect(entity.billboard.color.getValue(date3)).toEqual(
+                    Color.fromBytes(0, 0, 0, 0),
+                );
+            },
+        );
+    });
+
+    it("can handle clock data.", function () {
+        const documentPacket = {
+            id: "document",
+            version: "1.0",
+            clock: {
+                interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
+                currentTime: "2012-03-15T10:00:00Z",
+                multiplier: 60.0,
+                range: "LOOP_STOP",
+                step: "SYSTEM_CLOCK_MULTIPLIER",
+            },
+        };
+
+        const interval = TimeInterval.fromIso8601({
+            iso8601: documentPacket.clock.interval,
+        });
+        return CzmlDataSource.load(documentPacket).then(function (dataSource) {
+            const clock = dataSource.clock;
+
+            expect(clock).toBeDefined();
+            expect(clock.startTime).toEqual(interval.start);
+            expect(clock.stopTime).toEqual(interval.stop);
+            expect(clock.currentTime).toEqual(
+                JulianDate.fromIso8601(documentPacket.clock.currentTime),
+            );
+            expect(clock.clockRange).toEqual(
+                ClockRange[documentPacket.clock.range],
+            );
+            expect(clock.clockStep).toEqual(
+                ClockStep[documentPacket.clock.step],
+            );
+            expect(clock.multiplier).toEqual(documentPacket.clock.multiplier);
+        });
+    });
+
+    it("can handle position specified as constant cartographicsDegrees", function () {
+        const packet = {
+            position: {
+                cartographicDegrees: [34, 117, 10000],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const resultCartesian = entity.position.getValue(
+                    JulianDate.now(),
+                );
+                expect(resultCartesian).toEqual(
+                    cartesianFromArrayDegrees(
+                        packet.position.cartographicDegrees,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can handle position specified as constant cartographicsDegrees with non-standard ellipsoid", async function () {
+        Ellipsoid.default = new Ellipsoid(1737400, 1737400, 1737400);
+        const packet = {
+            position: {
+                cartographicDegrees: [34, 117, 10000],
+            },
+        };
+
+        const dataSource = await CzmlDataSource.load(makeDocument(packet));
         const entity = dataSource.entities.values[0];
         const resultCartesian = entity.position.getValue(JulianDate.now());
         expect(resultCartesian).toEqual(
-          cartesianFromArrayDegrees(packet.position.cartographicDegrees),
+            cartesianFromArrayDegrees(
+                packet.position.cartographicDegrees,
+                0,
+                Ellipsoid.default,
+            ),
         );
-      },
-    );
-  });
+        Ellipsoid.default = Ellipsoid.WGS84;
+    });
 
-  it("can handle position specified as constant cartographicsDegrees with non-standard ellipsoid", async function () {
-    Ellipsoid.default = new Ellipsoid(1737400, 1737400, 1737400);
-    const packet = {
-      position: {
-        cartographicDegrees: [34, 117, 10000],
-      },
-    };
+    it("can handle position specified as sampled cartographicsDegrees", async function () {
+        const epoch = JulianDate.now();
 
-    const dataSource = await CzmlDataSource.load(makeDocument(packet));
-    const entity = dataSource.entities.values[0];
-    const resultCartesian = entity.position.getValue(JulianDate.now());
-    expect(resultCartesian).toEqual(
-      cartesianFromArrayDegrees(
-        packet.position.cartographicDegrees,
-        0,
-        Ellipsoid.default,
-      ),
-    );
-    Ellipsoid.default = Ellipsoid.WGS84;
-  });
+        const packet = {
+            position: {
+                epoch: JulianDate.toIso8601(epoch),
+                cartographicDegrees: [0, 34, 117, 10000, 1, 34, 117, 20000],
+            },
+        };
 
-  it("can handle position specified as sampled cartographicsDegrees", async function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      position: {
-        epoch: JulianDate.toIso8601(epoch),
-        cartographicDegrees: [0, 34, 117, 10000, 1, 34, 117, 20000],
-      },
-    };
-
-    const dataSource = await CzmlDataSource.load(makeDocument(packet));
-    const entity = dataSource.entities.values[0];
-    let resultCartesian = entity.position.getValue(epoch);
-    expect(resultCartesian).toEqual(
-      cartesianFromArrayDegrees(packet.position.cartographicDegrees, 1),
-    );
-
-    resultCartesian = entity.position.getValue(
-      JulianDate.addSeconds(epoch, 1, new JulianDate()),
-    );
-    expect(resultCartesian).toEqual(
-      cartesianFromArrayDegrees(packet.position.cartographicDegrees, 5),
-    );
-  });
-
-  it("can handle position specified as sampled cartographicDegrees without epoch", async function () {
-    const lastDate = JulianDate.now();
-    const firstDate = new JulianDate(lastDate.dayNumber - 1, 0);
-
-    const packet = {
-      position: {
-        cartographicDegrees: [
-          JulianDate.toIso8601(firstDate),
-          34,
-          117,
-          10000,
-          JulianDate.toIso8601(lastDate),
-          34,
-          117,
-          20000,
-        ],
-      },
-    };
-
-    const dataSource = await CzmlDataSource.load(makeDocument(packet));
-    const entity = dataSource.entities.values[0];
-    let resultCartesian = entity.position.getValue(firstDate);
-    expect(resultCartesian).toEqual(
-      cartesianFromArrayDegrees(packet.position.cartographicDegrees, 1),
-    );
-
-    resultCartesian = entity.position.getValue(lastDate);
-    expect(resultCartesian).toEqual(
-      cartesianFromArrayDegrees(packet.position.cartographicDegrees, 5),
-    );
-  });
-
-  it("can handle position specified as constant cartographicRadians", async function () {
-    const packet = {
-      position: {
-        cartographicRadians: [1, 2, 10000],
-      },
-    };
-
-    const dataSource = await CzmlDataSource.load(makeDocument(packet));
-    const entity = dataSource.entities.values[0];
-    const resultCartesian = entity.position.getValue(JulianDate.now());
-    expect(resultCartesian).toEqual(
-      cartesianFromArrayRadians(packet.position.cartographicRadians),
-    );
-  });
-
-  it("can handle position specified as constant cartographicRadians with non-standard ellipsoid", async function () {
-    Ellipsoid.default = new Ellipsoid(1737400, 1737400, 1737400);
-    const packet = {
-      position: {
-        cartographicRadians: [1, 2, 10000],
-      },
-    };
-
-    const dataSource = await CzmlDataSource.load(makeDocument(packet));
-    const entity = dataSource.entities.values[0];
-    const resultCartesian = entity.position.getValue(JulianDate.now());
-    expect(resultCartesian).toEqual(
-      cartesianFromArrayRadians(
-        packet.position.cartographicRadians,
-        0,
-        Ellipsoid.default,
-      ),
-    );
-    Ellipsoid.default = Ellipsoid.WGS84;
-  });
-
-  it("can handle position specified as sampled cartographicRadians", function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      position: {
-        epoch: JulianDate.toIso8601(epoch),
-        cartographicRadians: [0, 2, 0.3, 10000, 1, 0.2, 0.5, 20000],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
+        const dataSource = await CzmlDataSource.load(makeDocument(packet));
         const entity = dataSource.entities.values[0];
         let resultCartesian = entity.position.getValue(epoch);
         expect(resultCartesian).toEqual(
-          cartesianFromArrayRadians(packet.position.cartographicRadians, 1),
+            cartesianFromArrayDegrees(packet.position.cartographicDegrees, 1),
         );
 
         resultCartesian = entity.position.getValue(
-          JulianDate.addSeconds(epoch, 1, new JulianDate()),
+            JulianDate.addSeconds(epoch, 1, new JulianDate()),
         );
         expect(resultCartesian).toEqual(
-          cartesianFromArrayRadians(packet.position.cartographicRadians, 5),
+            cartesianFromArrayDegrees(packet.position.cartographicDegrees, 5),
         );
-      },
-    );
-  });
+    });
 
-  it("can set position reference frame", function () {
-    const epoch = JulianDate.now();
-    const dataSource = new CzmlDataSource();
+    it("can handle position specified as sampled cartographicDegrees without epoch", async function () {
+        const lastDate = JulianDate.now();
+        const firstDate = new JulianDate(lastDate.dayNumber - 1, 0);
 
-    let packet = {
-      position: {
-        referenceFrame: "INERTIAL",
-        epoch: JulianDate.toIso8601(epoch),
-        cartesian: [1.0, 2.0, 3.0],
-      },
-    };
-
-    return dataSource
-      .load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.position.referenceFrame).toEqual(ReferenceFrame.INERTIAL);
-
-        packet = {
-          position: {
-            referenceFrame: "FIXED",
-            epoch: JulianDate.toIso8601(epoch),
-            cartesian: [1.0, 2.0, 3.0],
-          },
+        const packet = {
+            position: {
+                cartographicDegrees: [
+                    JulianDate.toIso8601(firstDate),
+                    34,
+                    117,
+                    10000,
+                    JulianDate.toIso8601(lastDate),
+                    34,
+                    117,
+                    20000,
+                ],
+            },
         };
 
-        return dataSource.load(makeDocument(packet));
-      })
-      .then(function (dataSource) {
+        const dataSource = await CzmlDataSource.load(makeDocument(packet));
         const entity = dataSource.entities.values[0];
-        expect(entity.position.referenceFrame).toEqual(ReferenceFrame.FIXED);
-      });
-  });
+        let resultCartesian = entity.position.getValue(firstDate);
+        expect(resultCartesian).toEqual(
+            cartesianFromArrayDegrees(packet.position.cartographicDegrees, 1),
+        );
 
-  it("uses FIXED as default position reference frame if not specified in CZML", function () {
-    const epoch = JulianDate.now();
+        resultCartesian = entity.position.getValue(lastDate);
+        expect(resultCartesian).toEqual(
+            cartesianFromArrayDegrees(packet.position.cartographicDegrees, 5),
+        );
+    });
 
-    const packet = {
-      position: {
-        epoch: JulianDate.toIso8601(epoch),
-        cartesian: [1.0, 2.0, 3.0],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.position.referenceFrame).toEqual(ReferenceFrame.FIXED);
-      },
-    );
-  });
-
-  it("does not reset value to FIXED when omitting reference frame on subsequent packet", function () {
-    const epoch = JulianDate.now();
-    const dataSource = new CzmlDataSource();
-
-    let packet = {
-      position: {
-        referenceFrame: "INERTIAL",
-        epoch: JulianDate.toIso8601(epoch),
-        cartesian: [1.0, 2.0, 3.0],
-      },
-    };
-
-    return dataSource
-      .process(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.position.referenceFrame).toEqual(ReferenceFrame.INERTIAL);
-
-        packet = {
-          position: {
-            epoch: JulianDate.toIso8601(epoch),
-            cartesian: [1.0, 2.0, 3.0],
-          },
+    it("can handle position specified as constant cartographicRadians", async function () {
+        const packet = {
+            position: {
+                cartographicRadians: [1, 2, 10000],
+            },
         };
-        return dataSource.process(packet);
-      })
-      .then(function (dataSource) {
+
+        const dataSource = await CzmlDataSource.load(makeDocument(packet));
         const entity = dataSource.entities.values[0];
-        expect(entity.position.referenceFrame).toEqual(ReferenceFrame.INERTIAL);
-      });
-  });
-
-  it("can load a number specified as sampled values without epoch.", function () {
-    const firstDate = Iso8601.MINIMUM_VALUE;
-    const midDate = JulianDate.addDays(firstDate, 1, new JulianDate());
-    const lastDate = JulianDate.addDays(firstDate, 2, new JulianDate());
-
-    const packet = {
-      ellipse: {
-        semiMajorAxis: {
-          number: [
-            JulianDate.toIso8601(firstDate),
-            0,
-            JulianDate.toIso8601(lastDate),
-            10,
-          ],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.ellipse).toBeDefined();
-        expect(entity.ellipse.semiMajorAxis.getValue(firstDate)).toEqual(0);
-        expect(entity.ellipse.semiMajorAxis.getValue(midDate)).toEqual(5);
-        expect(entity.ellipse.semiMajorAxis.getValue(lastDate)).toEqual(10);
-      },
-    );
-  });
-
-  it("can load a direction specified as constant unitSpherical", function () {
-    const packet = {
-      billboard: {
-        alignedAxis: {
-          unitSpherical: [1.0, 2.0],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const resultCartesian = entity.billboard.alignedAxis.getValue(
-          JulianDate.now(),
-        );
+        const resultCartesian = entity.position.getValue(JulianDate.now());
         expect(resultCartesian).toEqual(
-          Cartesian3.fromSpherical(new Spherical(1.0, 2.0)),
+            cartesianFromArrayRadians(packet.position.cartographicRadians),
         );
-      },
-    );
-  });
+    });
 
-  it("can load a direction specified as sampled unitSpherical", function () {
-    const epoch = JulianDate.now();
+    it("can handle position specified as constant cartographicRadians with non-standard ellipsoid", async function () {
+        Ellipsoid.default = new Ellipsoid(1737400, 1737400, 1737400);
+        const packet = {
+            position: {
+                cartographicRadians: [1, 2, 10000],
+            },
+        };
 
-    const packet = {
-      billboard: {
-        alignedAxis: {
-          epoch: JulianDate.toIso8601(epoch),
-          unitSpherical: [0, 1.0, 2.0, 1, -1.0, -2.0],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
+        const dataSource = await CzmlDataSource.load(makeDocument(packet));
         const entity = dataSource.entities.values[0];
-        let resultCartesian = entity.billboard.alignedAxis.getValue(epoch);
+        const resultCartesian = entity.position.getValue(JulianDate.now());
         expect(resultCartesian).toEqual(
-          Cartesian3.fromSpherical(new Spherical(1.0, 2.0)),
+            cartesianFromArrayRadians(
+                packet.position.cartographicRadians,
+                0,
+                Ellipsoid.default,
+            ),
         );
+        Ellipsoid.default = Ellipsoid.WGS84;
+    });
 
-        resultCartesian = entity.billboard.alignedAxis.getValue(
-          JulianDate.addSeconds(epoch, 1, new JulianDate()),
-        );
-        expect(resultCartesian).toEqual(
-          Cartesian3.fromSpherical(new Spherical(-1.0, -2.0)),
-        );
-      },
-    );
-  });
+    it("can handle position specified as sampled cartographicRadians", function () {
+        const epoch = JulianDate.now();
 
-  it("can load a direction specified as constant spherical", function () {
-    const packet = {
-      billboard: {
-        alignedAxis: {
-          spherical: [1.0, 2.0, 30.0],
-        },
-      },
-    };
+        const packet = {
+            position: {
+                epoch: JulianDate.toIso8601(epoch),
+                cartographicRadians: [0, 2, 0.3, 10000, 1, 0.2, 0.5, 20000],
+            },
+        };
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const resultCartesian = entity.billboard.alignedAxis.getValue(
-          JulianDate.now(),
-        );
-        const expected = Cartesian3.fromSpherical(
-          new Spherical(1.0, 2.0, 30.0),
-        );
-        Cartesian3.normalize(expected, expected);
-        expect(resultCartesian).toEqual(expected);
-      },
-    );
-  });
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                let resultCartesian = entity.position.getValue(epoch);
+                expect(resultCartesian).toEqual(
+                    cartesianFromArrayRadians(
+                        packet.position.cartographicRadians,
+                        1,
+                    ),
+                );
 
-  it("can load a direction specified as sampled spherical", function () {
-    const epoch = JulianDate.now();
+                resultCartesian = entity.position.getValue(
+                    JulianDate.addSeconds(epoch, 1, new JulianDate()),
+                );
+                expect(resultCartesian).toEqual(
+                    cartesianFromArrayRadians(
+                        packet.position.cartographicRadians,
+                        5,
+                    ),
+                );
+            },
+        );
+    });
 
-    const packet = {
-      billboard: {
-        alignedAxis: {
-          epoch: JulianDate.toIso8601(epoch),
-          spherical: [0, 1.0, 2.0, 30.0, 1, -1.0, -2.0, 40.0],
-        },
-      },
-    };
+    it("can set position reference frame", function () {
+        const epoch = JulianDate.now();
+        const dataSource = new CzmlDataSource();
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        let resultCartesian = entity.billboard.alignedAxis.getValue(epoch);
-        let expected = Cartesian3.fromSpherical(new Spherical(1.0, 2.0, 30.0));
-        Cartesian3.normalize(expected, expected);
-        expect(resultCartesian).toEqual(expected);
+        let packet = {
+            position: {
+                referenceFrame: "INERTIAL",
+                epoch: JulianDate.toIso8601(epoch),
+                cartesian: [1.0, 2.0, 3.0],
+            },
+        };
 
-        resultCartesian = entity.billboard.alignedAxis.getValue(
-          JulianDate.addSeconds(epoch, 1, new JulianDate()),
-        );
-        expected = Cartesian3.fromSpherical(new Spherical(-1.0, -2.0, 40.0));
-        Cartesian3.normalize(expected, expected);
-        expect(resultCartesian).toEqual(expected);
-      },
-    );
-  });
+        return dataSource
+            .load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.position.referenceFrame).toEqual(
+                    ReferenceFrame.INERTIAL,
+                );
 
-  it("can load constant data for ellipse", function () {
-    const packet = {
-      ellipse: {
-        semiMajorAxis: 10,
-        semiMinorAxis: 20,
-        rotation: 1.0,
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        shadows: "ENABLED",
-        zIndex: 8,
-        classificationType: "TERRAIN",
-      },
-    };
+                packet = {
+                    position: {
+                        referenceFrame: "FIXED",
+                        epoch: JulianDate.toIso8601(epoch),
+                        cartesian: [1.0, 2.0, 3.0],
+                    },
+                };
 
-    const time = Iso8601.MINIMUM_VALUE;
+                return dataSource.load(makeDocument(packet));
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.position.referenceFrame).toEqual(
+                    ReferenceFrame.FIXED,
+                );
+            });
+    });
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
+    it("uses FIXED as default position reference frame if not specified in CZML", function () {
+        const epoch = JulianDate.now();
 
-        expect(entity.ellipse).toBeDefined();
-        expect(entity.ellipse.semiMajorAxis.getValue(time)).toEqual(
-          packet.ellipse.semiMajorAxis,
-        );
-        expect(entity.ellipse.semiMinorAxis.getValue(time)).toEqual(
-          packet.ellipse.semiMinorAxis,
-        );
-        expect(entity.ellipse.rotation.getValue(time)).toEqual(
-          packet.ellipse.rotation,
-        );
-        expect(entity.ellipse.outline.getValue(time)).toEqual(
-          packet.ellipse.outline,
-        );
-        expect(entity.ellipse.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.ellipse.outlineColor.rgbaf),
-        );
-        expect(entity.ellipse.outlineWidth.getValue(time)).toEqual(
-          packet.ellipse.outlineWidth,
-        );
-        expect(entity.ellipse.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.ellipse.shadows],
-        );
-        expect(entity.ellipse.zIndex.getValue(time)).toEqual(
-          packet.ellipse.zIndex,
-        );
-        expect(entity.ellipse.classificationType.getValue(time)).toEqual(
-          ClassificationType[packet.ellipse.classificationType],
-        );
-      },
-    );
-  });
+        const packet = {
+            position: {
+                epoch: JulianDate.toIso8601(epoch),
+                cartesian: [1.0, 2.0, 3.0],
+            },
+        };
 
-  it("can load interval data for ellipse", function () {
-    const packet = {
-      ellipse: {
-        interval: "2000-01-01/2001-01-01",
-        semiMajorAxis: 10,
-        semiMinorAxis: 20,
-        rotation: 1.0,
-        shadows: "ENABLED",
-      },
-    };
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.position.referenceFrame).toEqual(
+                    ReferenceFrame.FIXED,
+                );
+            },
+        );
+    });
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
+    it("does not reset value to FIXED when omitting reference frame on subsequent packet", function () {
+        const epoch = JulianDate.now();
+        const dataSource = new CzmlDataSource();
+
+        let packet = {
+            position: {
+                referenceFrame: "INERTIAL",
+                epoch: JulianDate.toIso8601(epoch),
+                cartesian: [1.0, 2.0, 3.0],
+            },
+        };
+
+        return dataSource
+            .process(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.position.referenceFrame).toEqual(
+                    ReferenceFrame.INERTIAL,
+                );
+
+                packet = {
+                    position: {
+                        epoch: JulianDate.toIso8601(epoch),
+                        cartesian: [1.0, 2.0, 3.0],
+                    },
+                };
+                return dataSource.process(packet);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.position.referenceFrame).toEqual(
+                    ReferenceFrame.INERTIAL,
+                );
+            });
+    });
+
+    it("can load a number specified as sampled values without epoch.", function () {
+        const firstDate = Iso8601.MINIMUM_VALUE;
+        const midDate = JulianDate.addDays(firstDate, 1, new JulianDate());
+        const lastDate = JulianDate.addDays(firstDate, 2, new JulianDate());
+
+        const packet = {
+            ellipse: {
+                semiMajorAxis: {
+                    number: [
+                        JulianDate.toIso8601(firstDate),
+                        0,
+                        JulianDate.toIso8601(lastDate),
+                        10,
+                    ],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.ellipse).toBeDefined();
+                expect(
+                    entity.ellipse.semiMajorAxis.getValue(firstDate),
+                ).toEqual(0);
+                expect(entity.ellipse.semiMajorAxis.getValue(midDate)).toEqual(
+                    5,
+                );
+                expect(entity.ellipse.semiMajorAxis.getValue(lastDate)).toEqual(
+                    10,
+                );
+            },
+        );
+    });
+
+    it("can load a direction specified as constant unitSpherical", function () {
+        const packet = {
+            billboard: {
+                alignedAxis: {
+                    unitSpherical: [1.0, 2.0],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const resultCartesian = entity.billboard.alignedAxis.getValue(
+                    JulianDate.now(),
+                );
+                expect(resultCartesian).toEqual(
+                    Cartesian3.fromSpherical(new Spherical(1.0, 2.0)),
+                );
+            },
+        );
+    });
+
+    it("can load a direction specified as sampled unitSpherical", function () {
+        const epoch = JulianDate.now();
+
+        const packet = {
+            billboard: {
+                alignedAxis: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    unitSpherical: [0, 1.0, 2.0, 1, -1.0, -2.0],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                let resultCartesian =
+                    entity.billboard.alignedAxis.getValue(epoch);
+                expect(resultCartesian).toEqual(
+                    Cartesian3.fromSpherical(new Spherical(1.0, 2.0)),
+                );
+
+                resultCartesian = entity.billboard.alignedAxis.getValue(
+                    JulianDate.addSeconds(epoch, 1, new JulianDate()),
+                );
+                expect(resultCartesian).toEqual(
+                    Cartesian3.fromSpherical(new Spherical(-1.0, -2.0)),
+                );
+            },
+        );
+    });
+
+    it("can load a direction specified as constant spherical", function () {
+        const packet = {
+            billboard: {
+                alignedAxis: {
+                    spherical: [1.0, 2.0, 30.0],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const resultCartesian = entity.billboard.alignedAxis.getValue(
+                    JulianDate.now(),
+                );
+                const expected = Cartesian3.fromSpherical(
+                    new Spherical(1.0, 2.0, 30.0),
+                );
+                Cartesian3.normalize(expected, expected);
+                expect(resultCartesian).toEqual(expected);
+            },
+        );
+    });
+
+    it("can load a direction specified as sampled spherical", function () {
+        const epoch = JulianDate.now();
+
+        const packet = {
+            billboard: {
+                alignedAxis: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    spherical: [0, 1.0, 2.0, 30.0, 1, -1.0, -2.0, 40.0],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                let resultCartesian =
+                    entity.billboard.alignedAxis.getValue(epoch);
+                let expected = Cartesian3.fromSpherical(
+                    new Spherical(1.0, 2.0, 30.0),
+                );
+                Cartesian3.normalize(expected, expected);
+                expect(resultCartesian).toEqual(expected);
+
+                resultCartesian = entity.billboard.alignedAxis.getValue(
+                    JulianDate.addSeconds(epoch, 1, new JulianDate()),
+                );
+                expected = Cartesian3.fromSpherical(
+                    new Spherical(-1.0, -2.0, 40.0),
+                );
+                Cartesian3.normalize(expected, expected);
+                expect(resultCartesian).toEqual(expected);
+            },
+        );
+    });
+
+    it("can load constant data for ellipse", function () {
+        const packet = {
+            ellipse: {
+                semiMajorAxis: 10,
+                semiMinorAxis: 20,
+                rotation: 1.0,
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                shadows: "ENABLED",
+                zIndex: 8,
+                classificationType: "TERRAIN",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.ellipse).toBeDefined();
+                expect(entity.ellipse.semiMajorAxis.getValue(time)).toEqual(
+                    packet.ellipse.semiMajorAxis,
+                );
+                expect(entity.ellipse.semiMinorAxis.getValue(time)).toEqual(
+                    packet.ellipse.semiMinorAxis,
+                );
+                expect(entity.ellipse.rotation.getValue(time)).toEqual(
+                    packet.ellipse.rotation,
+                );
+                expect(entity.ellipse.outline.getValue(time)).toEqual(
+                    packet.ellipse.outline,
+                );
+                expect(entity.ellipse.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.ellipse.outlineColor.rgbaf),
+                );
+                expect(entity.ellipse.outlineWidth.getValue(time)).toEqual(
+                    packet.ellipse.outlineWidth,
+                );
+                expect(entity.ellipse.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.ellipse.shadows],
+                );
+                expect(entity.ellipse.zIndex.getValue(time)).toEqual(
+                    packet.ellipse.zIndex,
+                );
+                expect(
+                    entity.ellipse.classificationType.getValue(time),
+                ).toEqual(
+                    ClassificationType[packet.ellipse.classificationType],
+                );
+            },
+        );
+    });
+
+    it("can load interval data for ellipse", function () {
+        const packet = {
+            ellipse: {
+                interval: "2000-01-01/2001-01-01",
+                semiMajorAxis: 10,
+                semiMinorAxis: 20,
+                rotation: 1.0,
+                shadows: "ENABLED",
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                const validTime = TimeInterval.fromIso8601({
+                    iso8601: packet.ellipse.interval,
+                }).start;
+                const invalidTime = JulianDate.addSeconds(
+                    validTime,
+                    -1,
+                    new JulianDate(),
+                );
+
+                expect(entity.ellipse).toBeDefined();
+                expect(
+                    entity.ellipse.semiMajorAxis.getValue(validTime),
+                ).toEqual(packet.ellipse.semiMajorAxis);
+                expect(
+                    entity.ellipse.semiMinorAxis.getValue(validTime),
+                ).toEqual(packet.ellipse.semiMinorAxis);
+                expect(entity.ellipse.rotation.getValue(validTime)).toEqual(
+                    packet.ellipse.rotation,
+                );
+                expect(entity.ellipse.shadows.getValue(validTime)).toEqual(
+                    ShadowMode[packet.ellipse.shadows],
+                );
+
+                expect(
+                    entity.ellipse.semiMajorAxis.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipse.semiMinorAxis.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipse.rotation.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipse.shadows.getValue(invalidTime),
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load constant data for ellipsoid", function () {
+        const packet = {
+            ellipsoid: {
+                radii: {
+                    cartesian: [1.0, 2.0, 3.0],
+                },
+                show: true,
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                    },
+                },
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                stackPartitions: 25,
+                slicePartitions: 26,
+                subdivisions: 27,
+                shadows: "ENABLED",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.ellipsoid).toBeDefined();
+                expect(entity.ellipsoid.radii.getValue(time)).toEqual(
+                    Cartesian3.unpack(packet.ellipsoid.radii.cartesian),
+                );
+                expect(entity.ellipsoid.show.getValue(time)).toEqual(
+                    packet.ellipsoid.show,
+                );
+                expect(entity.ellipsoid.material.getValue(time).color).toEqual(
+                    Color.unpack(
+                        packet.ellipsoid.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.ellipsoid.outline.getValue(time)).toEqual(
+                    packet.ellipsoid.outline,
+                );
+                expect(entity.ellipsoid.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.ellipsoid.outlineColor.rgbaf),
+                );
+                expect(entity.ellipsoid.outlineWidth.getValue(time)).toEqual(
+                    packet.ellipsoid.outlineWidth,
+                );
+                expect(entity.ellipsoid.stackPartitions.getValue(time)).toEqual(
+                    packet.ellipsoid.stackPartitions,
+                );
+                expect(entity.ellipsoid.slicePartitions.getValue(time)).toEqual(
+                    packet.ellipsoid.slicePartitions,
+                );
+                expect(entity.ellipsoid.subdivisions.getValue(time)).toEqual(
+                    packet.ellipsoid.subdivisions,
+                );
+                expect(entity.ellipsoid.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.ellipsoid.shadows],
+                );
+            },
+        );
+    });
+
+    it("can load interval data for ellipsoid", function () {
+        const packet = {
+            ellipsoid: {
+                interval: "2000-01-01/2001-01-01",
+                radii: {
+                    cartesian: [1.0, 2.0, 3.0],
+                },
+                show: true,
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                    },
+                },
+                shadows: "ENABLED",
+            },
+        };
 
         const validTime = TimeInterval.fromIso8601({
-          iso8601: packet.ellipse.interval,
+            iso8601: packet.ellipsoid.interval,
         }).start;
         const invalidTime = JulianDate.addSeconds(
-          validTime,
-          -1,
-          new JulianDate(),
+            validTime,
+            -1,
+            new JulianDate(),
         );
 
-        expect(entity.ellipse).toBeDefined();
-        expect(entity.ellipse.semiMajorAxis.getValue(validTime)).toEqual(
-          packet.ellipse.semiMajorAxis,
-        );
-        expect(entity.ellipse.semiMinorAxis.getValue(validTime)).toEqual(
-          packet.ellipse.semiMinorAxis,
-        );
-        expect(entity.ellipse.rotation.getValue(validTime)).toEqual(
-          packet.ellipse.rotation,
-        );
-        expect(entity.ellipse.shadows.getValue(validTime)).toEqual(
-          ShadowMode[packet.ellipse.shadows],
-        );
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
 
-        expect(
-          entity.ellipse.semiMajorAxis.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.ellipse.semiMinorAxis.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(entity.ellipse.rotation.getValue(invalidTime)).toBeUndefined();
-        expect(entity.ellipse.shadows.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
+                expect(entity.ellipsoid).toBeDefined();
+                expect(entity.ellipsoid.radii.getValue(validTime)).toEqual(
+                    Cartesian3.unpack(packet.ellipsoid.radii.cartesian),
+                );
+                expect(entity.ellipsoid.show.getValue(validTime)).toEqual(
+                    packet.ellipsoid.show,
+                );
+                expect(
+                    entity.ellipsoid.material.getValue(validTime).color,
+                ).toEqual(
+                    Color.unpack(
+                        packet.ellipsoid.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.ellipsoid.shadows.getValue(validTime)).toEqual(
+                    ShadowMode[packet.ellipsoid.shadows],
+                );
 
-  it("can load constant data for ellipsoid", function () {
-    const packet = {
-      ellipsoid: {
-        radii: {
-          cartesian: [1.0, 2.0, 3.0],
-        },
-        show: true,
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
+                expect(
+                    entity.ellipsoid.radii.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipsoid.show.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipsoid.material.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.ellipsoid.shadows.getValue(invalidTime),
+                ).toBeUndefined();
             },
-          },
-        },
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        stackPartitions: 25,
-        slicePartitions: 26,
-        subdivisions: 27,
-        shadows: "ENABLED",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.ellipsoid).toBeDefined();
-        expect(entity.ellipsoid.radii.getValue(time)).toEqual(
-          Cartesian3.unpack(packet.ellipsoid.radii.cartesian),
         );
-        expect(entity.ellipsoid.show.getValue(time)).toEqual(
-          packet.ellipsoid.show,
-        );
-        expect(entity.ellipsoid.material.getValue(time).color).toEqual(
-          Color.unpack(packet.ellipsoid.material.solidColor.color.rgbaf),
-        );
-        expect(entity.ellipsoid.outline.getValue(time)).toEqual(
-          packet.ellipsoid.outline,
-        );
-        expect(entity.ellipsoid.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.ellipsoid.outlineColor.rgbaf),
-        );
-        expect(entity.ellipsoid.outlineWidth.getValue(time)).toEqual(
-          packet.ellipsoid.outlineWidth,
-        );
-        expect(entity.ellipsoid.stackPartitions.getValue(time)).toEqual(
-          packet.ellipsoid.stackPartitions,
-        );
-        expect(entity.ellipsoid.slicePartitions.getValue(time)).toEqual(
-          packet.ellipsoid.slicePartitions,
-        );
-        expect(entity.ellipsoid.subdivisions.getValue(time)).toEqual(
-          packet.ellipsoid.subdivisions,
-        );
-        expect(entity.ellipsoid.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.ellipsoid.shadows],
-        );
-      },
-    );
-  });
-
-  it("can load interval data for ellipsoid", function () {
-    const packet = {
-      ellipsoid: {
-        interval: "2000-01-01/2001-01-01",
-        radii: {
-          cartesian: [1.0, 2.0, 3.0],
-        },
-        show: true,
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-          },
-        },
-        shadows: "ENABLED",
-      },
-    };
-
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.ellipsoid.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.ellipsoid).toBeDefined();
-        expect(entity.ellipsoid.radii.getValue(validTime)).toEqual(
-          Cartesian3.unpack(packet.ellipsoid.radii.cartesian),
-        );
-        expect(entity.ellipsoid.show.getValue(validTime)).toEqual(
-          packet.ellipsoid.show,
-        );
-        expect(entity.ellipsoid.material.getValue(validTime).color).toEqual(
-          Color.unpack(packet.ellipsoid.material.solidColor.color.rgbaf),
-        );
-        expect(entity.ellipsoid.shadows.getValue(validTime)).toEqual(
-          ShadowMode[packet.ellipsoid.shadows],
-        );
-
-        expect(entity.ellipsoid.radii.getValue(invalidTime)).toBeUndefined();
-        expect(entity.ellipsoid.show.getValue(invalidTime)).toBeUndefined();
-        expect(entity.ellipsoid.material.getValue(invalidTime)).toBeUndefined();
-        expect(entity.ellipsoid.shadows.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load constant data for label", function () {
-    const packet = {
-      label: {
-        text: "TestFacility",
-        font: '10pt "Open Sans"',
-        style: "FILL",
-        fillColor: {
-          rgbaf: [0.1, 0.1, 0.1, 0.1],
-        },
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 3.14,
-        horizontalOrigin: "LEFT",
-        verticalOrigin: "CENTER",
-        eyeOffset: {
-          cartesian: [1.0, 2.0, 3.0],
-        },
-        pixelOffset: {
-          cartesian2: [4.0, 5.0],
-        },
-        scale: 1.0,
-        show: true,
-        translucencyByDistance: {
-          nearFarScalar: [1.0, 1.0, 10000.0, 0.0],
-        },
-        pixelOffsetScaleByDistance: {
-          nearFarScalar: [1.0, 20.0, 10000.0, 30.0],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.label).toBeDefined();
-        expect(entity.label.text.getValue(time)).toEqual(packet.label.text);
-        expect(entity.label.font.getValue(time)).toEqual(packet.label.font);
-        expect(entity.label.style.getValue(time)).toEqual(
-          LabelStyle[packet.label.style],
-        );
-        expect(entity.label.fillColor.getValue(time)).toEqual(
-          Color.unpack(packet.label.fillColor.rgbaf),
-        );
-        expect(entity.label.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.label.outlineColor.rgbaf),
-        );
-        expect(entity.label.outlineWidth.getValue(time)).toEqual(
-          packet.label.outlineWidth,
-        );
-        expect(entity.label.horizontalOrigin.getValue(time)).toEqual(
-          HorizontalOrigin[packet.label.horizontalOrigin],
-        );
-        expect(entity.label.verticalOrigin.getValue(time)).toEqual(
-          VerticalOrigin[packet.label.verticalOrigin],
-        );
-        expect(entity.label.eyeOffset.getValue(time)).toEqual(
-          Cartesian3.unpack(packet.label.eyeOffset.cartesian),
-        );
-        expect(entity.label.pixelOffset.getValue(time)).toEqual(
-          Cartesian2.unpack(packet.label.pixelOffset.cartesian2),
-        );
-        expect(entity.label.scale.getValue(time)).toEqual(packet.label.scale);
-        expect(entity.label.show.getValue(time)).toEqual(packet.label.show);
-        expect(entity.label.translucencyByDistance.getValue(time)).toEqual(
-          NearFarScalar.unpack(
-            packet.label.translucencyByDistance.nearFarScalar,
-          ),
-        );
-        expect(entity.label.pixelOffsetScaleByDistance.getValue(time)).toEqual(
-          NearFarScalar.unpack(
-            packet.label.pixelOffsetScaleByDistance.nearFarScalar,
-          ),
-        );
-      },
-    );
-  });
-
-  it("can load interval data for label", function () {
-    const packet = {
-      label: {
-        interval: "2000-01-01/2001-01-01",
-        text: "TestFacility",
-        font: '10pt "Open Sans"',
-        style: "FILL",
-        fillColor: {
-          rgbaf: [0.1, 0.1, 0.1, 0.1],
-        },
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 2.78,
-        horizontalOrigin: "LEFT",
-        verticalOrigin: "CENTER",
-        eyeOffset: {
-          cartesian: [1.0, 2.0, 3.0],
-        },
-        pixelOffset: {
-          cartesian2: [4.0, 5.0],
-        },
-        scale: 1.0,
-        show: true,
-      },
-    };
-
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.label.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.label).toBeDefined();
-        expect(entity.label.text.getValue(validTime)).toEqual(
-          packet.label.text,
-        );
-        expect(entity.label.font.getValue(validTime)).toEqual(
-          packet.label.font,
-        );
-        expect(entity.label.style.getValue(validTime)).toEqual(
-          LabelStyle[packet.label.style],
-        );
-        expect(entity.label.fillColor.getValue(validTime)).toEqual(
-          Color.unpack(packet.label.fillColor.rgbaf),
-        );
-        expect(entity.label.outlineColor.getValue(validTime)).toEqual(
-          Color.unpack(packet.label.outlineColor.rgbaf),
-        );
-        expect(entity.label.outlineWidth.getValue(validTime)).toEqual(
-          packet.label.outlineWidth,
-        );
-        expect(entity.label.horizontalOrigin.getValue(validTime)).toEqual(
-          HorizontalOrigin[packet.label.horizontalOrigin],
-        );
-        expect(entity.label.verticalOrigin.getValue(validTime)).toEqual(
-          VerticalOrigin[packet.label.verticalOrigin],
-        );
-        expect(entity.label.eyeOffset.getValue(validTime)).toEqual(
-          Cartesian3.unpack(packet.label.eyeOffset.cartesian),
-        );
-        expect(entity.label.pixelOffset.getValue(validTime)).toEqual(
-          Cartesian2.unpack(packet.label.pixelOffset.cartesian2),
-        );
-        expect(entity.label.scale.getValue(validTime)).toEqual(
-          packet.label.scale,
-        );
-        expect(entity.label.show.getValue(validTime)).toEqual(
-          packet.label.show,
-        );
-
-        expect(entity.label.text.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.font.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.style.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.fillColor.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.outlineColor.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.outlineWidth.getValue(invalidTime)).toBeUndefined();
-        expect(
-          entity.label.horizontalOrigin.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.label.verticalOrigin.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(entity.label.eyeOffset.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.pixelOffset.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.scale.getValue(invalidTime)).toBeUndefined();
-        expect(entity.label.show.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can handle sampled label pixelOffset.", function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      label: {
-        pixelOffset: {
-          epoch: JulianDate.toIso8601(epoch),
-          cartesian2: [0, 1, 2, 1, 3, 4],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.label).toBeDefined();
-        const date1 = epoch;
-        const date2 = JulianDate.addSeconds(epoch, 1.0, new JulianDate());
-        expect(entity.label.pixelOffset.getValue(date1)).toEqual(
-          new Cartesian2(1.0, 2.0),
-        );
-        expect(entity.label.pixelOffset.getValue(date2)).toEqual(
-          new Cartesian2(3.0, 4.0),
-        );
-      },
-    );
-  });
-
-  it("can load position", function () {
-    const packet = {
-      position: {
-        cartesian: [1.0, 2.0, 3.0],
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.position.getValue(time)).toEqual(
-          Cartesian3.unpack(packet.position.cartesian),
-        );
-      },
-    );
-  });
-
-  it("can load orientation", function () {
-    const packet = {
-      orientation: {
-        unitQuaternion: [0.0, 0.0, 0.0, 1.0],
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.orientation.getValue(time)).toEqual(
-          Quaternion.unpack(packet.orientation.unitQuaternion),
-        );
-      },
-    );
-  });
-
-  it("normalizes constant orientation on load", function () {
-    const packet = {
-      orientation: {
-        unitQuaternion: [0.0, 0.0, 0.7071067, 0.7071067],
-      },
-    };
-
-    const expected = Quaternion.unpack(packet.orientation.unitQuaternion);
-    Quaternion.normalize(expected, expected);
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.orientation.getValue(time)).toEqual(expected);
-      },
-    );
-  });
-
-  it("normalizes sampled orientation on load", function () {
-    const time1 = "2000-01-01T00:00:00Z";
-    const time2 = "2000-01-01T00:00:01Z";
-    const packet = {
-      orientation: {
-        unitQuaternion: [
-          time1,
-          0.0,
-          0.0,
-          0.7071067,
-          0.7071067,
-          time2,
-          0.7071067,
-          0.7071067,
-          0.0,
-          0.0,
-        ],
-      },
-    };
-
-    const expected1 = Quaternion.unpack(packet.orientation.unitQuaternion, 1);
-    Quaternion.normalize(expected1, expected1);
-
-    const expected2 = Quaternion.unpack(packet.orientation.unitQuaternion, 6);
-    Quaternion.normalize(expected2, expected2);
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(
-          entity.orientation.getValue(JulianDate.fromIso8601(time1)),
-        ).toEqual(expected1);
-        expect(
-          entity.orientation.getValue(JulianDate.fromIso8601(time2)),
-        ).toEqual(expected2);
-      },
-    );
-  });
-
-  it("can handle orientation expressed as a velocity reference", function () {
-    const packet = {
-      position: {
-        epoch: "2016-06-17T12:00:00Z",
-        cartesian: [0, 1, 2, 3, 60, 61, 122, 183],
-      },
-      orientation: {
-        velocityReference: "#position",
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const property = entity.orientation;
-
-        const expectedVelocity = new Cartesian3(1.0, 2.0, 3.0);
-        const expectedVelocityDirection = Cartesian3.normalize(
-          expectedVelocity,
-          new Cartesian3(),
-        );
-
-        const expectedPosition = new Cartesian3(1, 2, 3);
-        const expectedRotation = Transforms.rotationMatrixFromPositionVelocity(
-          expectedPosition,
-          expectedVelocityDirection,
-        );
-        const expectedOrientation =
-          Quaternion.fromRotationMatrix(expectedRotation);
-
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:00:00Z")),
-        ).toEqualEpsilon(expectedOrientation, CesiumMath.EPSILON15);
-        expect(
-          property.getValue(JulianDate.fromIso8601("2016-06-17T12:00:30Z")),
-        ).toEqualEpsilon(expectedOrientation, CesiumMath.EPSILON15);
-      },
-    );
-  });
-
-  it("can load positions expressed as cartesians", function () {
-    const packet = {
-      polyline: {
-        positions: {
-          cartesian: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.polyline.positions.getValue(time)).toEqual(
-          Cartesian3.unpackArray(packet.polyline.positions.cartesian),
-        );
-      },
-    );
-  });
-
-  it("can load positions expressed as cartographicRadians", function () {
-    const packet = {
-      polyline: {
-        positions: {
-          cartographicRadians: [1.0, 2.0, 4.0, 5.0, 6.0, 7.0],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.polyline.positions.getValue(time)).toEqual(
-          Cartesian3.fromRadiansArrayHeights(
-            packet.polyline.positions.cartographicRadians,
-          ),
-        );
-      },
-    );
-  });
-
-  it("can load positions expressed as cartographicDegrees", function () {
-    const packet = {
-      polyline: {
-        positions: {
-          cartographicDegrees: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.polyline.positions.getValue(time)).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polyline.positions.cartographicDegrees,
-          ),
-        );
-      },
-    );
-  });
-
-  it("can load viewFrom", function () {
-    const packet = {
-      viewFrom: {
-        cartesian: [1.0, 2.0, 3.0],
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.viewFrom.getValue(time)).toEqual(
-          Cartesian3.unpack(packet.viewFrom.cartesian),
-        );
-      },
-    );
-  });
-
-  it("can load description", function () {
-    const packet = {
-      description: "this is a description",
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.description.getValue(time)).toEqual(packet.description);
-      },
-    );
-  });
-
-  it("can load constant custom properties", function () {
-    const testObject = {
-      foo: 4,
-      bar: {
-        name: "bar",
-      },
-    };
-    const testArray = [2, 4, 16, "test"];
-
-    const packet = {
-      properties: {
-        constant_name: "ABC",
-        constant_height: 8,
-        constant_object: {
-          value: testObject,
-        },
-        constant_array: {
-          value: testArray,
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.properties.constant_name.getValue(time)).toEqual(
-          packet.properties.constant_name,
-        );
-        expect(entity.properties.constant_height.getValue(time)).toEqual(
-          packet.properties.constant_height,
-        );
-        expect(entity.properties.constant_object.getValue(time)).toEqual(
-          testObject,
-        );
-        expect(entity.properties.constant_array.getValue(time)).toEqual(
-          testArray,
-        );
-      },
-    );
-  });
-
-  it("can load custom properties which are constant with specified type", function () {
-    const testObject = {
-      foo: 4,
-      bar: {
-        name: "bar",
-      },
-    };
-    const testArray = [2, 4, 16, "test"];
-    const packet = {
-      properties: {
-        constant_name: {
-          string: "ABC",
-        },
-        constant_height: {
-          number: 8,
-        },
-        constant_object: {
-          object: testObject,
-        },
-        constant_array: {
-          array: testArray,
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.properties.constant_name.getValue(time)).toEqual(
-          packet.properties.constant_name.string,
-        );
-        expect(entity.properties.constant_height.getValue(time)).toEqual(
-          packet.properties.constant_height.number,
-        );
-        expect(entity.properties.constant_object.getValue(time)).toEqual(
-          testObject,
-        );
-        expect(entity.properties.constant_array.getValue(time)).toEqual(
-          testArray,
-        );
-      },
-    );
-  });
-
-  it("can load custom properties with one interval", function () {
-    const packet = {
-      properties: {
-        changing_name: {
-          interval: "2012/2014",
-          value: "ABC",
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(
-          entity.properties.changing_name.getValue(
-            JulianDate.fromIso8601("2013"),
-          ),
-        ).toEqual(packet.properties.changing_name.value);
-        expect(
-          entity.properties.changing_name.getValue(
-            JulianDate.fromIso8601("2015"),
-          ),
-        ).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load custom properties with one interval with specified type", function () {
-    const packet = {
-      properties: {
-        changing_name: {
-          interval: "2012/2014",
-          string: "ABC",
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(
-          entity.properties.changing_name.getValue(
-            JulianDate.fromIso8601("2013"),
-          ),
-        ).toEqual(packet.properties.changing_name.string);
-        expect(
-          entity.properties.changing_name.getValue(
-            JulianDate.fromIso8601("2015"),
-          ),
-        ).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load custom properties with multiple intervals", function () {
-    const array1 = [1, 2, 3];
-    const array2 = [4, 5, 6];
-    const packet = {
-      properties: {
-        changing_array: [
-          {
-            interval: "2012/2013",
-            value: array1,
-          },
-          {
-            interval: "2013/2014",
-            value: array2,
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(
-          entity.properties.changing_array.getValue(
-            JulianDate.fromIso8601("2012-06-01"),
-          ),
-        ).toEqual(array1);
-        expect(
-          entity.properties.changing_array.getValue(
-            JulianDate.fromIso8601("2013-06-01"),
-          ),
-        ).toEqual(array2);
-      },
-    );
-  });
-
-  it("can load boolean custom properties with multiple intervals", function () {
-    const packet = {
-      id: "MyID",
-      properties: {
-        custom_boolean: [
-          {
-            interval: "2012-04-02T12:00:00Z/2012-04-02T12:00:01Z",
-            boolean: true,
-          },
-          {
-            interval: "2012-04-02T12:00:01Z/2012-04-02T12:00:02Z",
-            boolean: false,
-          },
-          {
-            interval: "2012-04-02T12:00:02Z/2012-04-02T12:01:00Z",
-            boolean: true,
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.getById("MyID");
-        expect(entity).toBeDefined();
-        expect(entity.properties).toBeDefined();
-        expect(entity.properties.custom_boolean).toBeDefined();
-
-        expect(
-          entity.properties.custom_boolean.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:00:00Z"),
-          ),
-        ).toEqual(true);
-        expect(
-          entity.properties.custom_boolean.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:00:01Z"),
-          ),
-        ).toEqual(false);
-        expect(
-          entity.properties.custom_boolean.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:00:02Z"),
-          ),
-        ).toEqual(true);
-      },
-    );
-  });
-
-  it("can load custom properties with multiple intervals with specified type", function () {
-    const array1 = [1, 2, 3];
-    const array2 = [4, 5, 6];
-    const packet = {
-      properties: {
-        changing_array: [
-          {
-            interval: "2012/2013",
-            array: array1,
-          },
-          {
-            interval: "2013/2014",
-            array: array2,
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(
-          entity.properties.changing_array.getValue(
-            JulianDate.fromIso8601("2012-06-01"),
-          ),
-        ).toEqual(array1);
-        expect(
-          entity.properties.changing_array.getValue(
-            JulianDate.fromIso8601("2013-06-01"),
-          ),
-        ).toEqual(array2);
-      },
-    );
-  });
-
-  it("can load sampled custom properties", function () {
-    const packet = {
-      id: "MyID",
-      properties: {
-        custom_cartesian: {
-          epoch: "2012-04-02T12:00:00Z",
-          cartesian: [0, 1, 2, 3, 60, 4, 5, 6, 120, 7, 8, 9],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.getById("MyID");
-
-        expect(entity).toBeDefined();
-        expect(entity.properties).toBeDefined();
-        expect(entity.properties.custom_cartesian).toBeDefined();
-
-        expect(
-          entity.properties.custom_cartesian.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:00:00Z"),
-          ),
-        ).toBeInstanceOf(Cartesian3);
-        expect(
-          entity.properties.custom_cartesian.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:00:00Z"),
-          ),
-        ).toEqual(new Cartesian3(1, 2, 3));
-        // halfway between two samples, linearly interpolated
-        expect(
-          entity.properties.custom_cartesian.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:00:30Z"),
-          ),
-        ).toEqual(new Cartesian3((1 + 4) / 2, (2 + 5) / 2, (3 + 6) / 2));
-        expect(
-          entity.properties.custom_cartesian.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:01:00Z"),
-          ),
-        ).toEqual(new Cartesian3(4, 5, 6));
-        expect(
-          entity.properties.custom_cartesian.getValue(
-            JulianDate.fromIso8601("2012-04-02T12:02:00Z"),
-          ),
-        ).toEqual(new Cartesian3(7, 8, 9));
-      },
-    );
-  });
-
-  it("can load various types of custom properties", function () {
-    const interval1 = "2012/2013";
-    const interval2 = "2013/2014";
-    const packet = {
-      id: "MyID",
-      properties: {
-        custom_array_constant: {
-          array: [1, 2, 3],
-        },
-        custom_array_interval: [
-          {
-            interval: interval1,
-            array: [1, 2, 3],
-          },
-          {
-            interval: interval2,
-            array: [4, 5, 6],
-          },
-        ],
-        custom_boolean_constant: {
-          boolean: true,
-        },
-        custom_boolean_interval: [
-          {
-            interval: interval1,
-            boolean: true,
-          },
-          {
-            interval: interval2,
-            boolean: false,
-          },
-        ],
-        custom_boundingRectangle_constant: {
-          boundingRectangle: [20, 30, 10, 11],
-        },
-        custom_boundingRectangle_interval: [
-          {
-            interval: interval1,
-            boundingRectangle: [20, 30, 10, 11],
-          },
-          {
-            interval: interval2,
-            boundingRectangle: [21, 31, 11, 12],
-          },
-        ],
-        custom_boundingRectangle_sampled: {
-          epoch: "2012-06-01",
-          boundingRectangle: [0, 20, 30, 10, 11, 60, 21, 31, 11, 12],
-        },
-        custom_cartesian2_constant: {
-          cartesian2: [20, 30],
-        },
-        custom_cartesian2_interval: [
-          {
-            interval: interval1,
-            cartesian2: [20, 30],
-          },
-          {
-            interval: interval2,
-            cartesian2: [21, 31],
-          },
-        ],
-        custom_cartesian2_sampled: {
-          epoch: "2012-06-01",
-          cartesian2: [0, 20, 30, 60, 21, 31],
-        },
-        custom_cartesian_constant: {
-          cartesian: [10, 11, 12],
-        },
-        custom_cartesian_interval: [
-          {
-            interval: interval1,
-            cartesian: [10, 11, 12],
-          },
-          {
-            interval: interval2,
-            cartesian: [13, 14, 15],
-          },
-        ],
-        custom_cartesian_sampled: {
-          epoch: "2012-06-01",
-          cartesian: [0, 10, 11, 12, 60, 13, 14, 15],
-        },
-        custom_color_constant: {
-          rgbaf: [0.1, 0.2, 0.3, 0.4],
-        },
-        custom_color_interval: [
-          {
-            interval: interval1,
-            rgbaf: [0.1, 0.2, 0.3, 0.4],
-          },
-          {
-            interval: interval2,
-            rgbaf: [0.5, 0.6, 0.7, 0.8],
-          },
-        ],
-        custom_color_sampled: {
-          epoch: "2012-06-01",
-          rgbaf: [0, 0.1, 0.2, 0.3, 0.4, 60, 0.5, 0.6, 0.7, 0.8],
-        },
-        custom_date_constant: {
-          date: "2014-06-01",
-        },
-        custom_date_interval: [
-          {
-            interval: interval1,
-            date: "2014-06-01",
-          },
-          {
-            interval: interval2,
-            date: "2015-06-01",
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.getById("MyID");
-
-        expect(entity).toBeDefined();
-        expect(entity.properties).toBeDefined();
-
-        const time1 = JulianDate.fromIso8601("2012-06-01");
-        const time2 = JulianDate.fromIso8601("2013-06-01");
-
-        expect(entity.properties.custom_array_constant).toBeDefined();
-        expect(
-          entity.properties.custom_array_constant.getValue(time1),
-        ).toBeInstanceOf(Array);
-        expect(entity.properties.custom_array_constant.getValue(time1)).toEqual(
-          packet.properties.custom_array_constant.array,
-        );
-
-        expect(entity.properties.custom_array_interval).toBeDefined();
-        expect(
-          entity.properties.custom_array_interval.getValue(time1),
-        ).toBeInstanceOf(Array);
-        expect(entity.properties.custom_array_interval.getValue(time1)).toEqual(
-          packet.properties.custom_array_interval[0].array,
-        );
-        expect(entity.properties.custom_array_interval.getValue(time2)).toEqual(
-          packet.properties.custom_array_interval[1].array,
-        );
-
-        expect(entity.properties.custom_boolean_constant).toBeDefined();
-        expect(
-          entity.properties.custom_boolean_constant.getValue(time1),
-        ).toEqual(packet.properties.custom_boolean_constant.boolean);
-
-        expect(entity.properties.custom_boolean_interval).toBeDefined();
-        expect(
-          entity.properties.custom_boolean_interval.getValue(time1),
-        ).toEqual(packet.properties.custom_boolean_interval[0].boolean);
-        expect(
-          entity.properties.custom_boolean_interval.getValue(time2),
-        ).toEqual(packet.properties.custom_boolean_interval[1].boolean);
-
-        expect(
-          entity.properties.custom_boundingRectangle_constant,
-        ).toBeDefined();
-        expect(
-          entity.properties.custom_boundingRectangle_constant.getValue(time1),
-        ).toBeInstanceOf(BoundingRectangle);
-        expect(
-          entity.properties.custom_boundingRectangle_constant.getValue(time1),
-        ).toEqual(
-          BoundingRectangle.unpack(
-            packet.properties.custom_boundingRectangle_constant
-              .boundingRectangle,
-          ),
-        );
-
-        expect(
-          entity.properties.custom_boundingRectangle_interval,
-        ).toBeDefined();
-        expect(
-          entity.properties.custom_boundingRectangle_interval.getValue(time1),
-        ).toBeInstanceOf(BoundingRectangle);
-        expect(
-          entity.properties.custom_boundingRectangle_interval.getValue(time1),
-        ).toEqual(
-          BoundingRectangle.unpack(
-            packet.properties.custom_boundingRectangle_interval[0]
-              .boundingRectangle,
-          ),
-        );
-        expect(
-          entity.properties.custom_boundingRectangle_interval.getValue(time2),
-        ).toEqual(
-          BoundingRectangle.unpack(
-            packet.properties.custom_boundingRectangle_interval[1]
-              .boundingRectangle,
-          ),
-        );
-
-        expect(
-          entity.properties.custom_boundingRectangle_sampled,
-        ).toBeDefined();
-        expect(
-          entity.properties.custom_boundingRectangle_sampled.getValue(time1),
-        ).toBeInstanceOf(BoundingRectangle);
-        expect(
-          entity.properties.custom_boundingRectangle_sampled.getValue(time1),
-        ).toEqual(
-          BoundingRectangle.unpack(
-            packet.properties.custom_boundingRectangle_sampled
-              .boundingRectangle,
-            0 + 1,
-          ),
-        );
-        expect(
-          entity.properties.custom_boundingRectangle_sampled.getValue(
-            JulianDate.addSeconds(time1, 60, new JulianDate()),
-          ),
-        ).toEqual(
-          BoundingRectangle.unpack(
-            packet.properties.custom_boundingRectangle_sampled
-              .boundingRectangle,
-            4 + 2,
-          ),
-        );
-
-        expect(entity.properties.custom_cartesian2_constant).toBeDefined();
-        expect(
-          entity.properties.custom_cartesian2_constant.getValue(time1),
-        ).toBeInstanceOf(Cartesian2);
-        expect(
-          entity.properties.custom_cartesian2_constant.getValue(time1),
-        ).toEqual(
-          Cartesian2.unpack(
-            packet.properties.custom_cartesian2_constant.cartesian2,
-          ),
-        );
-
-        expect(entity.properties.custom_cartesian2_interval).toBeDefined();
-        expect(
-          entity.properties.custom_cartesian2_interval.getValue(time1),
-        ).toBeInstanceOf(Cartesian2);
-        expect(
-          entity.properties.custom_cartesian2_interval.getValue(time1),
-        ).toEqual(
-          Cartesian2.unpack(
-            packet.properties.custom_cartesian2_interval[0].cartesian2,
-          ),
-        );
-        expect(
-          entity.properties.custom_cartesian2_interval.getValue(time2),
-        ).toEqual(
-          Cartesian2.unpack(
-            packet.properties.custom_cartesian2_interval[1].cartesian2,
-          ),
-        );
-
-        expect(entity.properties.custom_cartesian2_sampled).toBeDefined();
-        expect(
-          entity.properties.custom_cartesian2_sampled.getValue(time1),
-        ).toBeInstanceOf(Cartesian2);
-        expect(
-          entity.properties.custom_cartesian2_sampled.getValue(time1),
-        ).toEqual(
-          Cartesian2.unpack(
-            packet.properties.custom_cartesian2_sampled.cartesian2,
-            0 + 1,
-          ),
-        );
-        expect(
-          entity.properties.custom_cartesian2_sampled.getValue(
-            JulianDate.addSeconds(time1, 60, new JulianDate()),
-          ),
-        ).toEqual(
-          Cartesian2.unpack(
-            packet.properties.custom_cartesian2_sampled.cartesian2,
-            2 + 2,
-          ),
-        );
-
-        expect(entity.properties.custom_cartesian_constant).toBeDefined();
-        expect(
-          entity.properties.custom_cartesian_constant.getValue(time1),
-        ).toBeInstanceOf(Cartesian3);
-        expect(
-          entity.properties.custom_cartesian_constant.getValue(time1),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.properties.custom_cartesian_constant.cartesian,
-          ),
-        );
-
-        expect(entity.properties.custom_cartesian_interval).toBeDefined();
-        expect(
-          entity.properties.custom_cartesian_interval.getValue(time1),
-        ).toBeInstanceOf(Cartesian3);
-        expect(
-          entity.properties.custom_cartesian_interval.getValue(time1),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.properties.custom_cartesian_interval[0].cartesian,
-          ),
-        );
-        expect(
-          entity.properties.custom_cartesian_interval.getValue(time2),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.properties.custom_cartesian_interval[1].cartesian,
-          ),
-        );
-
-        expect(entity.properties.custom_cartesian_sampled).toBeDefined();
-        expect(
-          entity.properties.custom_cartesian_sampled.getValue(time1),
-        ).toBeInstanceOf(Cartesian3);
-        expect(
-          entity.properties.custom_cartesian_sampled.getValue(time1),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.properties.custom_cartesian_sampled.cartesian,
-            0 + 1,
-          ),
-        );
-        expect(
-          entity.properties.custom_cartesian_sampled.getValue(
-            JulianDate.addSeconds(time1, 60, new JulianDate()),
-          ),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.properties.custom_cartesian_sampled.cartesian,
-            3 + 2,
-          ),
-        );
-
-        expect(entity.properties.custom_color_constant).toBeDefined();
-        expect(
-          entity.properties.custom_color_constant.getValue(time1),
-        ).toBeInstanceOf(Color);
-        expect(entity.properties.custom_color_constant.getValue(time1)).toEqual(
-          Color.unpack(packet.properties.custom_color_constant.rgbaf),
-        );
-
-        expect(entity.properties.custom_color_interval).toBeDefined();
-        expect(
-          entity.properties.custom_color_interval.getValue(time1),
-        ).toBeInstanceOf(Color);
-        expect(entity.properties.custom_color_interval.getValue(time1)).toEqual(
-          Color.unpack(packet.properties.custom_color_interval[0].rgbaf),
-        );
-        expect(entity.properties.custom_color_interval.getValue(time2)).toEqual(
-          Color.unpack(packet.properties.custom_color_interval[1].rgbaf),
-        );
-
-        expect(entity.properties.custom_color_sampled).toBeDefined();
-        expect(
-          entity.properties.custom_color_sampled.getValue(time1),
-        ).toBeInstanceOf(Color);
-        expect(entity.properties.custom_color_sampled.getValue(time1)).toEqual(
-          Color.unpack(packet.properties.custom_color_sampled.rgbaf, 0 + 1),
-        );
-        expect(
-          entity.properties.custom_color_sampled.getValue(
-            JulianDate.addSeconds(time1, 60, new JulianDate()),
-          ),
-        ).toEqual(
-          Color.unpack(packet.properties.custom_color_sampled.rgbaf, 4 + 2),
-        );
-
-        expect(entity.properties.custom_date_constant).toBeDefined();
-        expect(
-          entity.properties.custom_date_constant.getValue(time1),
-        ).toBeInstanceOf(JulianDate);
-        expect(entity.properties.custom_date_constant.getValue(time1)).toEqual(
-          JulianDate.fromIso8601(packet.properties.custom_date_constant.date),
-        );
-
-        expect(entity.properties.custom_date_interval).toBeDefined();
-        expect(
-          entity.properties.custom_date_interval.getValue(time1),
-        ).toBeInstanceOf(JulianDate);
-        expect(entity.properties.custom_date_interval.getValue(time1)).toEqual(
-          JulianDate.fromIso8601(
-            packet.properties.custom_date_interval[0].date,
-          ),
-        );
-        expect(entity.properties.custom_date_interval.getValue(time2)).toEqual(
-          JulianDate.fromIso8601(
-            packet.properties.custom_date_interval[1].date,
-          ),
-        );
-      },
-    );
-  });
-
-  it("can delete an entire property", function () {
-    function createDataSource() {
-      return CzmlDataSource.load([
-        {
-          id: "document",
-          version: "1.0",
-        },
-        {
-          id: "test-constant",
-          billboard: {
-            scale: 1,
-          },
-        },
-        {
-          id: "test-interval",
-          billboard: {
-            scale: [
-              {
-                interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
-                number: 1,
-              },
-            ],
-          },
-        },
-        {
-          id: "test-sampled",
-          billboard: {
-            scale: {
-              number: ["2012-03-15T10:00:00Z", 1],
-            },
-          },
-        },
-      ]);
-    }
-
-    const deletePackets = [
-      {
-        id: "test-constant",
-        billboard: {
-          scale: {
-            delete: true,
-          },
-        },
-      },
-      {
-        id: "test-interval",
-        billboard: {
-          scale: {
-            delete: true,
-          },
-        },
-      },
-      {
-        id: "test-sampled",
-        billboard: {
-          scale: {
-            delete: true,
-          },
-        },
-      },
-    ];
-
-    const deleteMaxIntervalPackets = [
-      {
-        id: "test-constant",
-        billboard: {
-          scale: {
-            interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
-            delete: true,
-          },
-        },
-      },
-      {
-        id: "test-interval",
-        billboard: {
-          scale: {
-            interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
-            delete: true,
-          },
-        },
-      },
-      {
-        id: "test-sampled",
-        billboard: {
-          scale: {
-            interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
-            delete: true,
-          },
-        },
-      },
-    ];
-
-    function expectPropertiesToBeDefined(dataSource) {
-      let entity = dataSource.entities.getById("test-constant");
-      expect(entity.billboard.scale).toBeInstanceOf(ConstantProperty);
-      entity = dataSource.entities.getById("test-interval");
-      expect(entity.billboard.scale).toBeInstanceOf(
-        TimeIntervalCollectionProperty,
-      );
-      entity = dataSource.entities.getById("test-sampled");
-      expect(entity.billboard.scale).toBeInstanceOf(SampledProperty);
-      return dataSource;
-    }
-
-    function expectPropertiesToBeUndefined(dataSource) {
-      let entity = dataSource.entities.getById("test-constant");
-      expect(entity.billboard.scale).toBeUndefined();
-      entity = dataSource.entities.getById("test-interval");
-      expect(entity.billboard.scale).toBeUndefined();
-      entity = dataSource.entities.getById("test-sampled");
-      expect(entity.billboard.scale).toBeUndefined();
-      return dataSource;
-    }
-
-    return createDataSource()
-      .then(expectPropertiesToBeDefined)
-      .then(function (dataSource) {
-        // delete with no interval specified should delete the properties entirely
-        return dataSource.process(deletePackets);
-      })
-      .then(expectPropertiesToBeUndefined)
-      .then(function (dataSource) {
-        // deleting properties that don't exist should be a no-op
-        return dataSource.process(deletePackets);
-      })
-      .then(expectPropertiesToBeUndefined)
-      .then(createDataSource) // start over with a new data source
-      .then(function (dataSource) {
-        // delete with maximum interval specified should delete the properties entirely
-        return dataSource.process(deleteMaxIntervalPackets);
-      })
-      .then(expectPropertiesToBeUndefined)
-      .then(function (dataSource) {
-        // deleting properties that don't exist should be a no-op
-        return dataSource.process(deleteMaxIntervalPackets);
-      })
-      .then(expectPropertiesToBeUndefined);
-  });
-
-  it("can delete a custom property", function () {
-    function createDataSource() {
-      return CzmlDataSource.load([
-        {
-          id: "document",
-          version: "1.0",
-        },
-        {
-          id: "test",
-          properties: {
-            custom: {
-              number: ["2012-03-15T10:00:00Z", 1],
-            },
-          },
-        },
-      ]);
-    }
-
-    const deletePackets = [
-      {
-        id: "test",
-        properties: {
-          custom: {
-            delete: true,
-          },
-        },
-      },
-    ];
-
-    function expectPropertiesToBeDefined(dataSource) {
-      const entity = dataSource.entities.getById("test");
-      expect(entity.properties.custom).toBeInstanceOf(SampledProperty);
-      return dataSource;
-    }
-
-    function expectPropertiesToBeUndefined(dataSource) {
-      const entity = dataSource.entities.getById("test");
-      expect(entity.properties.custom).toBeUndefined();
-      return dataSource;
-    }
-
-    return createDataSource()
-      .then(expectPropertiesToBeDefined)
-      .then(function (dataSource) {
-        // delete with no interval specified should delete the properties entirely
-        return dataSource.process(deletePackets);
-      })
-      .then(expectPropertiesToBeUndefined)
-      .then(function (dataSource) {
-        // deleting properties that don't exist should be a no-op
-        return dataSource.process(deletePackets);
-      })
-      .then(expectPropertiesToBeUndefined);
-  });
-
-  it("can delete an entire position property", function () {
-    function createDataSource() {
-      return CzmlDataSource.load([
-        {
-          id: "document",
-          version: "1.0",
-        },
-        {
-          id: "test-constant",
-          position: {
-            cartographicDegrees: [34, 117, 10000],
-          },
-        },
-        {
-          id: "test-interval",
-          position: [
-            {
-              interval: "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
-              cartographicDegrees: [34, 117, 10000],
-            },
-          ],
-        },
-        {
-          id: "test-sampled",
-          position: {
-            cartographicDegrees: ["2012-03-15T10:00:00Z", 34, 117, 10000],
-          },
-        },
-      ]);
-    }
-
-    const deletePackets = [
-      {
-        id: "test-constant",
-        position: {
-          delete: true,
-        },
-      },
-      {
-        id: "test-interval",
-        position: {
-          delete: true,
-        },
-      },
-      {
-        id: "test-sampled",
-        position: {
-          delete: true,
-        },
-      },
-    ];
-
-    const deleteMaxIntervalPackets = [
-      {
-        id: "test-constant",
-        position: {
-          interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
-          delete: true,
-        },
-      },
-      {
-        id: "test-interval",
-        position: {
-          interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
-          delete: true,
-        },
-      },
-      {
-        id: "test-sampled",
-        position: {
-          interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
-          delete: true,
-        },
-      },
-    ];
-
-    function expectPropertiesToBeDefined(dataSource) {
-      let entity = dataSource.entities.getById("test-constant");
-      expect(entity.position).toBeInstanceOf(ConstantPositionProperty);
-      entity = dataSource.entities.getById("test-interval");
-      expect(entity.position).toBeInstanceOf(
-        TimeIntervalCollectionPositionProperty,
-      );
-      entity = dataSource.entities.getById("test-sampled");
-      expect(entity.position).toBeInstanceOf(SampledPositionProperty);
-      return dataSource;
-    }
-
-    function expectPropertiesToBeUndefined(dataSource) {
-      let entity = dataSource.entities.getById("test-constant");
-      expect(entity.position).toBeUndefined();
-      entity = dataSource.entities.getById("test-interval");
-      expect(entity.position).toBeUndefined();
-      entity = dataSource.entities.getById("test-sampled");
-      expect(entity.position).toBeUndefined();
-      return dataSource;
-    }
-
-    return createDataSource()
-      .then(expectPropertiesToBeDefined)
-      .then(function (dataSource) {
-        // delete with no interval specified should delete the properties entirely
-        return dataSource.process(deletePackets);
-      })
-      .then(expectPropertiesToBeUndefined)
-      .then(function (dataSource) {
-        // deleting properties that don't exist should be a no-op
-        return dataSource.process(deletePackets);
-      })
-      .then(expectPropertiesToBeUndefined)
-      .then(createDataSource) // start over with a new data source
-      .then(function (dataSource) {
-        // delete with maximum interval specified should delete the properties entirely
-        return dataSource.process(deleteMaxIntervalPackets);
-      })
-      .then(expectPropertiesToBeUndefined)
-      .then(function (dataSource) {
-        // deleting properties that don't exist should be a no-op
-        return dataSource.process(deleteMaxIntervalPackets);
-      })
-      .then(expectPropertiesToBeUndefined);
-  });
-
-  it("can delete samples from a sampled property", function () {
-    const packet = {
-      id: "id",
-      billboard: {
-        scale: {
-          number: [
-            "2012-03-15T10:00:00Z",
-            1,
-            "2012-03-15T11:00:00Z",
-            5,
-            "2012-03-15T12:00:00Z",
-            3,
-          ],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.billboard.scale).toBeInstanceOf(SampledProperty);
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
-          ),
-        ).toEqual(1);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
-          ),
-        ).toEqual(5);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
-          ),
-        ).toEqual(3);
-
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        const deletePacket = {
-          id: "id",
-          billboard: {
-            scale: {
-              interval: "2012-03-15T11:00:00Z/2012-03-15T11:00:00Z",
-              delete: true,
-            },
-          },
-        };
-        return dataSource.process(deletePacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.billboard.scale).toBeInstanceOf(SampledProperty);
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
-          ),
-        ).toEqual(1);
-        // deleting sample will cause the property to interpolate from remaining samples
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
-          ),
-        ).toEqual(2);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
-          ),
-        ).toEqual(3);
-      });
-  });
-
-  it("can delete samples from a sampled custom property", function () {
-    const packet = {
-      id: "id",
-      properties: {
-        custom: {
-          number: [
-            "2012-03-15T10:00:00Z",
-            1,
-            "2012-03-15T11:00:00Z",
-            5,
-            "2012-03-15T12:00:00Z",
-            3,
-          ],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.properties.custom).toBeInstanceOf(SampledProperty);
-
-        expect(
-          entity.properties.custom.getValue(
-            JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
-          ),
-        ).toEqual(1);
-        expect(
-          entity.properties.custom.getValue(
-            JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
-          ),
-        ).toEqual(5);
-        expect(
-          entity.properties.custom.getValue(
-            JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
-          ),
-        ).toEqual(3);
-
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        const deletePacket = {
-          id: "id",
-          properties: {
-            custom: {
-              interval: "2012-03-15T11:00:00Z/2012-03-15T11:00:00Z",
-              delete: true,
-            },
-          },
-        };
-        return dataSource.process(deletePacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.properties.custom).toBeInstanceOf(SampledProperty);
-
-        expect(
-          entity.properties.custom.getValue(
-            JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
-          ),
-        ).toEqual(1);
-        // deleting sample will cause the property to interpolate from remaining samples
-        expect(
-          entity.properties.custom.getValue(
-            JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
-          ),
-        ).toEqual(2);
-        expect(
-          entity.properties.custom.getValue(
-            JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
-          ),
-        ).toEqual(3);
-      });
-  });
-
-  it("can delete samples from a sampled position property", function () {
-    const packet = {
-      id: "id",
-      position: {
-        epoch: "2016-06-17T12:00:00Z",
-        cartesian: [0, 1, 2, 3, 60, 61, 122, 183, 120, 3, 4, 5],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.position).toBeInstanceOf(SampledPositionProperty);
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2016-06-17T12:00:00Z"),
-          ),
-        ).toEqual(new Cartesian3(1, 2, 3));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2016-06-17T12:01:00Z"),
-          ),
-        ).toEqual(new Cartesian3(61, 122, 183));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2016-06-17T12:02:00Z"),
-          ),
-        ).toEqual(new Cartesian3(3, 4, 5));
-
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        const deletePacket = {
-          id: "id",
-          position: {
-            interval: "2016-06-17T12:00:45Z/2016-06-17T12:01:10Z",
-            delete: true,
-          },
-        };
-        return dataSource.process(deletePacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.position).toBeInstanceOf(SampledPositionProperty);
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2016-06-17T12:00:00Z"),
-          ),
-        ).toEqual(new Cartesian3(1, 2, 3));
-        // deleting sample will cause the property to interpolate from remaining samples
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2016-06-17T12:01:00Z"),
-          ),
-        ).toEqual(new Cartesian3(2, 3, 4));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2016-06-17T12:02:00Z"),
-          ),
-        ).toEqual(new Cartesian3(3, 4, 5));
-      });
-  });
-
-  it("can delete interval from an interval property", function () {
-    const packet = {
-      id: "id",
-      billboard: {
-        scale: [
-          {
-            interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
-            number: 2,
-          },
-          {
-            interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
-            number: 6,
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.billboard.scale).toBeInstanceOf(
-          TimeIntervalCollectionProperty,
-        );
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
-          ),
-        ).toEqual(2);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
-          ),
-        ).toEqual(6);
-
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        const deletePacket = {
-          id: "id",
-          billboard: {
-            scale: {
-              interval: "2013-01-01T00:30:00Z/2013-01-01T01:30:00Z",
-              delete: true,
-            },
-          },
-        };
-        return dataSource.process(deletePacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.billboard.scale).toBeInstanceOf(
-          TimeIntervalCollectionProperty,
-        );
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:29:00Z"),
-          ),
-        ).toEqual(2);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:31:00Z"),
-          ),
-        ).toEqual(6);
-      });
-  });
-
-  it("can delete interval from an interval position property", function () {
-    const packet = {
-      id: "id",
-      position: [
-        {
-          interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
-          cartesian: [1, 2, 3],
-        },
-        {
-          interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
-          cartesian: [4, 5, 6],
-        },
-      ],
-    };
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.position).toBeInstanceOf(
-          TimeIntervalCollectionPositionProperty,
-        );
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
-          ),
-        ).toEqual(new Cartesian3(1, 2, 3));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
-          ),
-        ).toEqual(new Cartesian3(4, 5, 6));
-
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        const deletePacket = {
-          id: "id",
-          position: {
-            interval: "2013-01-01T00:30:00Z/2013-01-01T01:30:00Z",
-            delete: true,
-          },
-        };
-        return dataSource.process(deletePacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.position).toBeInstanceOf(
-          TimeIntervalCollectionPositionProperty,
-        );
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:29:00Z"),
-          ),
-        ).toEqual(new Cartesian3(1, 2, 3));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:31:00Z"),
-          ),
-        ).toEqual(new Cartesian3(4, 5, 6));
-      });
-  });
-
-  it("can delete samples from a composite property", function () {
-    const packet = {
-      id: "id",
-      billboard: {
-        scale: [
-          {
-            interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
-            epoch: "2013-01-01T00:00:00Z",
-            number: [0, 1, 30, 6, 60, 3],
-          },
-          {
-            interval: "2013-01-01T00:02:00Z/2013-01-01T01:00:00Z",
-            number: 33,
-          },
-          {
-            interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
-            number: [
-              "2013-01-01T01:00:00Z",
-              9,
-              "2013-01-01T01:00:30Z",
-              19,
-              "2013-01-01T01:01:00Z",
-              11,
-            ],
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.billboard.scale).toBeInstanceOf(CompositeProperty);
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
-          ),
-        ).toEqual(1);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
-          ),
-        ).toEqual(6);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
-          ),
-        ).toEqual(3);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
-          ),
-        ).toEqual(33);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
-          ),
-        ).toEqual(9);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
-          ),
-        ).toEqual(19);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
-          ),
-        ).toEqual(11);
-
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        const deletePacket = {
-          id: "id",
-          billboard: {
-            scale: {
-              interval: "2013-01-01T00:01:00Z/2013-01-01T01:00:00Z",
-              delete: true,
-            },
-          },
-        };
-        return dataSource.process(deletePacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.billboard.scale).toBeInstanceOf(CompositeProperty);
-
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
-          ),
-        ).toEqual(1);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
-          ),
-        ).toEqual(6);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
-          ),
-        ).toEqual(19);
-        expect(
-          entity.billboard.scale.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
-          ),
-        ).toEqual(11);
-      });
-  });
-
-  it("can delete samples from a composite position property", function () {
-    const packet = {
-      id: "id",
-      position: [
-        {
-          interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
-          epoch: "2013-01-01T00:00:00Z",
-          cartesian: [0, 1, 2, 3, 30, 6, 7, 8, 60, 3, 4, 5],
-        },
-        {
-          interval: "2013-01-01T00:02:00Z/2013-01-01T01:00:00Z",
-          cartesian: [15, 16, 17],
-        },
-        {
-          interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
-          cartesian: [
-            "2013-01-01T01:00:00Z",
-            9,
-            15,
-            10,
-            "2013-01-01T01:00:30Z",
-            19,
-            16,
-            11,
-            "2013-01-01T01:01:00Z",
-            11,
-            17,
-            12,
-          ],
-        },
-      ],
-    };
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.position).toBeInstanceOf(CompositePositionProperty);
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
-          ),
-        ).toEqual(new Cartesian3(1, 2, 3));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
-          ),
-        ).toEqual(new Cartesian3(6, 7, 8));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
-          ),
-        ).toEqual(new Cartesian3(3, 4, 5));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
-          ),
-        ).toEqual(new Cartesian3(15, 16, 17));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
-          ),
-        ).toEqual(new Cartesian3(9, 15, 10));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
-          ),
-        ).toEqual(new Cartesian3(19, 16, 11));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
-          ),
-        ).toEqual(new Cartesian3(11, 17, 12));
-
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        const deletePacket = {
-          id: "id",
-          position: {
-            interval: "2013-01-01T00:01:00Z/2013-01-01T01:00:00Z",
-            delete: true,
-          },
-        };
-        return dataSource.process(deletePacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("id");
-        expect(entity.position).toBeInstanceOf(CompositePositionProperty);
-
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
-          ),
-        ).toEqual(new Cartesian3(1, 2, 3));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
-          ),
-        ).toEqual(new Cartesian3(6, 7, 8));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
-          ),
-        ).toEqual(new Cartesian3(19, 16, 11));
-        expect(
-          entity.position.getValue(
-            JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
-          ),
-        ).toEqual(new Cartesian3(11, 17, 12));
-      });
-  });
-
-  it("can load custom properties in a way that allows CompositeEntityCollection to work", function () {
-    const testObject1 = {
-      foo: 4,
-      bar: {
-        name: "bar",
-      },
-    };
-    const testArray1 = [2, 4, 16, "test"];
-    const packet1 = {
-      id: "test",
-      properties: {
-        constant_name: "ABC",
-        constant_height: 8,
-        constant_object: {
-          value: testObject1,
-        },
-        constant_array: {
-          value: testArray1,
-        },
-      },
-    };
-
-    const dataSource1 = new CzmlDataSource();
-    const dataSource2 = new CzmlDataSource();
-    const time = Iso8601.MINIMUM_VALUE;
-    const packet2 = {
-      id: "test",
-      properties: {
-        constant_name: "DEF",
-      },
-    };
-    const testObject3 = {
-      some: "value",
-    };
-    const testArray3 = ["not", "the", "same", 4];
-    const packet3 = {
-      id: "test",
-      properties: {
-        constant_height: 9,
-        constant_object: {
-          value: testObject3,
-        },
-        constant_array: {
-          value: testArray3,
-        },
-      },
-    };
-    let entity, composite;
-
-    return dataSource1
-      .load(makeDocument(packet1))
-      .then(function () {
-        composite = new CompositeEntityCollection([
-          dataSource1.entities,
-          dataSource2.entities,
-        ]);
-
-        // Initially we use all the properties from dataSource1.
-        entity = composite.values[0];
-        expect(entity.properties.constant_name.getValue(time)).toEqual(
-          packet1.properties.constant_name,
-        );
-        expect(entity.properties.constant_height.getValue(time)).toEqual(
-          packet1.properties.constant_height,
-        );
-        expect(entity.properties.constant_object.getValue(time)).toEqual(
-          testObject1,
-        );
-        expect(entity.properties.constant_array.getValue(time)).toEqual(
-          testArray1,
-        );
-
-        // Load a new packet into dataSource2 and it should take precedence in the composite.
-        return dataSource2.load(makeDocument(packet2));
-      })
-      .then(function () {
-        entity = composite.values[0];
-        expect(entity.properties.constant_name.getValue(time)).toEqual(
-          packet2.properties.constant_name,
-        );
-        expect(entity.properties.constant_height.getValue(time)).toEqual(
-          packet1.properties.constant_height,
-        );
-        expect(entity.properties.constant_object.getValue(time)).toEqual(
-          testObject1,
-        );
-        expect(entity.properties.constant_array.getValue(time)).toEqual(
-          testArray1,
-        );
-
-        // Changed values should be mirrored in the composite, too.
-        return dataSource2.process(packet3);
-      })
-      .then(function () {
-        entity = composite.values[0];
-        expect(entity.properties.constant_name.getValue(time)).toEqual(
-          packet2.properties.constant_name,
-        );
-        expect(entity.properties.constant_height.getValue(time)).toEqual(
-          packet3.properties.constant_height,
-        );
-        expect(entity.properties.constant_object.getValue(time)).toEqual(
-          testObject3,
-        );
-        expect(entity.properties.constant_array.getValue(time)).toEqual(
-          testArray3,
-        );
-      });
-  });
-
-  it("can load and modify availability from a single interval", function () {
-    const packet1 = {
-      id: "testObject",
-      availability: "2000-01-01/2001-01-01",
-    };
-
-    const packet2 = {
-      id: "testObject",
-      availability: "2000-02-02/2001-02-02",
-    };
-
-    const dataSource = new CzmlDataSource();
-    return dataSource
-      .process(makeDocument(packet1))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const interval = TimeInterval.fromIso8601({
-          iso8601: packet1.availability,
-        });
-        expect(entity.availability.length).toEqual(1);
-        expect(entity.availability.get(0)).toEqual(interval);
-
-        return dataSource.process(packet2);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const interval = TimeInterval.fromIso8601({
-          iso8601: packet2.availability,
-        });
-        expect(entity.availability.length).toEqual(1);
-        expect(entity.availability.get(0)).toEqual(interval);
-      });
-  });
-
-  it("can load and modify availability from multiple intervals", function () {
-    const packet1 = {
-      id: "testObject",
-      availability: ["2000-01-01/2001-01-01", "2002-01-01/2003-01-01"],
-    };
-    const packet2 = {
-      id: "testObject",
-      availability: ["2003-01-01/2004-01-01", "2005-01-01/2006-01-01"],
-    };
-
-    const dataSource = new CzmlDataSource();
-    return dataSource
-      .process(makeDocument(packet1))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        const interval1 = TimeInterval.fromIso8601({
-          iso8601: packet1.availability[0],
-        });
-        const interval2 = TimeInterval.fromIso8601({
-          iso8601: packet1.availability[1],
-        });
-        expect(entity.availability.length).toEqual(2);
-        expect(entity.availability.get(0)).toEqual(interval1);
-        expect(entity.availability.get(1)).toEqual(interval2);
-
-        return dataSource.process(packet2);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        const interval1 = TimeInterval.fromIso8601({
-          iso8601: packet2.availability[0],
-        });
-        const interval2 = TimeInterval.fromIso8601({
-          iso8601: packet2.availability[1],
-        });
-        expect(entity.availability.length).toEqual(2);
-        expect(entity.availability.get(0)).toEqual(interval1);
-        expect(entity.availability.get(1)).toEqual(interval2);
-      });
-  });
-
-  it("can load constant data for path", function () {
-    const packet = {
-      path: {
-        material: {
-          polylineOutline: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-            outlineColor: {
-              rgbaf: [0.2, 0.2, 0.2, 0.2],
-            },
-            outlineWidth: 1.0,
-          },
-        },
-        width: 1.0,
-        resolution: 23.0,
-        leadTime: 2.0,
-        trailTime: 3.0,
-        show: true,
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.path).toBeDefined();
-        expect(entity.path.material.color.getValue(time)).toEqual(
-          Color.unpack(packet.path.material.polylineOutline.color.rgbaf),
-        );
-        expect(entity.path.material.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.path.material.polylineOutline.outlineColor.rgbaf),
-        );
-        expect(entity.path.material.outlineWidth.getValue(time)).toEqual(
-          packet.path.material.polylineOutline.outlineWidth,
-        );
-        expect(entity.path.width.getValue(time)).toEqual(packet.path.width);
-        expect(entity.path.resolution.getValue(time)).toEqual(
-          packet.path.resolution,
-        );
-        expect(entity.path.leadTime.getValue(time)).toEqual(
-          packet.path.leadTime,
-        );
-        expect(entity.path.trailTime.getValue(time)).toEqual(
-          packet.path.trailTime,
-        );
-        expect(entity.path.show.getValue(time)).toEqual(packet.path.show);
-      },
-    );
-  });
-
-  it("can load interval data for path", function () {
-    const packet = {
-      path: {
-        interval: "2000-01-01/2001-01-01",
-        material: {
-          polylineOutline: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-            outlineColor: {
-              rgbaf: [0.2, 0.2, 0.2, 0.2],
-            },
-            outlineWidth: 1.0,
-          },
-        },
-        width: 1.0,
-        resolution: 23.0,
-        leadTime: 2.0,
-        trailTime: 3.0,
-        show: true,
-      },
-    };
-
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.path.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.path).toBeDefined();
-        expect(entity.path.width.getValue(validTime)).toEqual(
-          packet.path.width,
-        );
-        expect(entity.path.resolution.getValue(validTime)).toEqual(
-          packet.path.resolution,
-        );
-        expect(entity.path.leadTime.getValue(validTime)).toEqual(
-          packet.path.leadTime,
-        );
-        expect(entity.path.trailTime.getValue(validTime)).toEqual(
-          packet.path.trailTime,
-        );
-        expect(entity.path.show.getValue(validTime)).toEqual(packet.path.show);
-        expect(entity.path.material.getValue(validTime).color).toEqual(
-          Color.unpack(packet.path.material.polylineOutline.color.rgbaf),
-        );
-        expect(entity.path.material.getValue(validTime).outlineColor).toEqual(
-          Color.unpack(packet.path.material.polylineOutline.outlineColor.rgbaf),
-        );
-        expect(entity.path.material.getValue(validTime).outlineWidth).toEqual(
-          packet.path.material.polylineOutline.outlineWidth,
-        );
-
-        expect(entity.path.material.getValue(invalidTime)).toBeUndefined();
-        expect(entity.path.width.getValue(invalidTime)).toBeUndefined();
-        expect(entity.path.leadTime.getValue(invalidTime)).toBeUndefined();
-        expect(entity.path.trailTime.getValue(invalidTime)).toBeUndefined();
-        expect(entity.path.show.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load constant data for point", function () {
-    const packet = {
-      point: {
-        color: {
-          rgbaf: [0.1, 0.1, 0.1, 0.1],
-        },
-        pixelSize: 1.0,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 1.0,
-        show: true,
-        scaleByDistance: {
-          nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
-        },
-        translucencyByDistance: {
-          nearFarScalar: [1.0, 1.0, 10000.0, 0.0],
-        },
-        heightReference: "CLAMP_TO_GROUND",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.point).toBeDefined();
-        expect(entity.point.color.getValue(time)).toEqual(
-          Color.unpack(packet.point.color.rgbaf),
-        );
-        expect(entity.point.pixelSize.getValue(time)).toEqual(
-          packet.point.pixelSize,
-        );
-        expect(entity.point.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.point.outlineColor.rgbaf),
-        );
-        expect(entity.point.outlineWidth.getValue(time)).toEqual(
-          packet.point.outlineWidth,
-        );
-        expect(entity.point.show.getValue(time)).toEqual(packet.point.show);
-        expect(entity.point.scaleByDistance.getValue(time)).toEqual(
-          NearFarScalar.unpack(packet.point.scaleByDistance.nearFarScalar),
-        );
-        expect(entity.point.translucencyByDistance.getValue(time)).toEqual(
-          NearFarScalar.unpack(
-            packet.point.translucencyByDistance.nearFarScalar,
-          ),
-        );
-        expect(entity.point.heightReference.getValue(time)).toEqual(
-          HeightReference[packet.point.heightReference],
-        );
-      },
-    );
-  });
-
-  it("can load interval data for point", function () {
-    const packet = {
-      point: {
-        interval: "2000-01-01/2001-01-01",
-        color: {
-          rgbaf: [0.1, 0.1, 0.1, 0.1],
-        },
-        pixelSize: 1.0,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 1.0,
-        show: true,
-      },
-    };
-
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.point.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.point).toBeDefined();
-        expect(entity.point.color.getValue(validTime)).toEqual(
-          Color.unpack(packet.point.color.rgbaf),
-        );
-        expect(entity.point.pixelSize.getValue(validTime)).toEqual(
-          packet.point.pixelSize,
-        );
-        expect(entity.point.outlineColor.getValue(validTime)).toEqual(
-          Color.unpack(packet.point.outlineColor.rgbaf),
-        );
-        expect(entity.point.outlineWidth.getValue(validTime)).toEqual(
-          packet.point.outlineWidth,
-        );
-        expect(entity.point.show.getValue(validTime)).toEqual(
-          packet.point.show,
-        );
-
-        expect(entity.point.color.getValue(invalidTime)).toBeUndefined();
-        expect(entity.point.pixelSize.getValue(invalidTime)).toBeUndefined();
-        expect(entity.point.outlineColor.getValue(invalidTime)).toBeUndefined();
-        expect(entity.point.outlineWidth.getValue(invalidTime)).toBeUndefined();
-        expect(entity.point.show.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load constant data for polygon", function () {
-    const packet = {
-      polygon: {
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-          },
-        },
-        height: 1,
-        extrudedHeight: 2,
-        granularity: 3,
-        stRotation: 4,
-        show: true,
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        closeTop: false,
-        closeBottom: false,
-        shadows: "ENABLED",
-        zIndex: 3,
-        classificationType: "TERRAIN",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.material.getValue(time).color).toEqual(
-          Color.unpack(packet.polygon.material.solidColor.color.rgbaf),
-        );
-        expect(entity.polygon.show.getValue(time)).toEqual(packet.polygon.show);
-        expect(entity.polygon.height.getValue(time)).toEqual(
-          packet.polygon.height,
-        );
-        expect(entity.polygon.extrudedHeight.getValue(time)).toEqual(
-          packet.polygon.extrudedHeight,
-        );
-        expect(entity.polygon.granularity.getValue(time)).toEqual(
-          packet.polygon.granularity,
-        );
-        expect(entity.polygon.stRotation.getValue(time)).toEqual(
-          packet.polygon.stRotation,
-        );
-        expect(entity.polygon.outline.getValue(time)).toEqual(
-          packet.polygon.outline,
-        );
-        expect(entity.polygon.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.polygon.outlineColor.rgbaf),
-        );
-        expect(entity.polygon.outlineWidth.getValue(time)).toEqual(
-          packet.polygon.outlineWidth,
-        );
-        expect(entity.polygon.closeTop.getValue(time)).toEqual(
-          packet.polygon.closeTop,
-        );
-        expect(entity.polygon.closeBottom.getValue(time)).toEqual(
-          packet.polygon.closeBottom,
-        );
-        expect(entity.polygon.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.polygon.shadows],
-        );
-        expect(entity.polygon.zIndex.getValue(time)).toEqual(
-          packet.polygon.zIndex,
-        );
-        expect(entity.polygon.classificationType.getValue(time)).toEqual(
-          ClassificationType[packet.polygon.classificationType],
-        );
-      },
-    );
-  });
-
-  it("can load interval data for polygon", function () {
-    const packet = {
-      polygon: {
-        interval: "2000-01-01/2001-01-01",
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-          },
-        },
-        show: true,
-        shadows: "ENABLED",
-      },
-    };
-
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.polygon.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.material.getValue(validTime).color).toEqual(
-          Color.unpack(packet.polygon.material.solidColor.color.rgbaf),
-        );
-        expect(entity.polygon.show.getValue(validTime)).toEqual(
-          packet.polygon.show,
-        );
-        expect(entity.polygon.shadows.getValue(validTime)).toEqual(
-          ShadowMode[packet.polygon.shadows],
-        );
-
-        expect(entity.polygon.material.getValue(invalidTime)).toBeUndefined();
-        expect(entity.polygon.show.getValue(invalidTime)).toBeUndefined();
-        expect(entity.polygon.shadows.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load constant polygon positions", function () {
-    const packet = {
-      polygon: {
-        positions: {
-          cartographicDegrees: [-50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.hierarchy).toBeDefined();
-        expect(entity.polygon.hierarchy.isConstant).toEqual(true);
-
-        let hierarchy = entity.polygon.hierarchy.getValue(time);
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polygon.positions.cartographicDegrees,
-          ),
-        );
-
-        hierarchy = entity.polygon.hierarchy.getValue(
-          time,
-          new PolygonHierarchy(),
-        );
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polygon.positions.cartographicDegrees,
-          ),
-        );
-      },
-    );
-  });
-
-  function unpackPolygonHoleFromCartographicDegrees(holePositions) {
-    return new PolygonHierarchy(
-      Cartesian3.fromDegreesArrayHeights(holePositions),
-    );
-  }
-
-  it("can load constant polygon positions with holes", function () {
-    const packet = {
-      polygon: {
-        positions: {
-          cartographicDegrees: [-50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0],
-        },
-        holes: {
-          cartographicDegrees: [
-            [-48.2, 39, 0, -44.5, 37, 0, -48.9, 33.1, 0, -49, 36.6, 0],
-            [-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0],
-          ],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.hierarchy).toBeDefined();
-        expect(entity.polygon.hierarchy.isConstant).toEqual(true);
-
-        const hierarchy = entity.polygon.hierarchy.getValue(time);
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polygon.positions.cartographicDegrees,
-          ),
-        );
-        expect(hierarchy.holes).toEqual(
-          packet.polygon.holes.cartographicDegrees.map(
-            unpackPolygonHoleFromCartographicDegrees,
-          ),
-        );
-      },
-    );
-  });
-
-  it("can load interval polygon positions", function () {
-    const packet = {
-      polygon: {
-        positions: [
-          {
-            interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-            cartographicDegrees: [
-              -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
-            ],
-          },
-          {
-            interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
-            cartographicDegrees: [-35, 50, 0, -35, 10, 0, -45, 30, 0],
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.hierarchy).toBeDefined();
-        expect(entity.polygon.hierarchy.isConstant).toEqual(false);
-
-        let hierarchy = entity.polygon.hierarchy.getValue(
-          JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
-        );
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polygon.positions[0].cartographicDegrees,
-          ),
-        );
-
-        hierarchy = entity.polygon.hierarchy.getValue(
-          JulianDate.fromIso8601("2012-08-04T16:20:00Z"),
-        );
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polygon.positions[1].cartographicDegrees,
-          ),
-        );
-      },
-    );
-  });
-
-  it("can load interval polygon positions with holes expressed as degrees", function () {
-    const packet = {
-      polygon: {
-        positions: [
-          {
-            interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-            cartographicDegrees: [
-              -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
-            ],
-          },
-          {
-            interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
-            cartographicDegrees: [-35, 50, 0, -35, 10, 0, -45, 30, 0],
-          },
-        ],
-        holes: [
-          {
-            interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-            cartographicDegrees: [
-              [-48.2, 39, 0, -44.5, 37, 0, -48.9, 33.1, 0, -49, 36.6, 0],
-              [-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0],
-            ],
-          },
-          {
-            interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
-            cartographicDegrees: [[-40, 34, 0, -37, 26, 0, -41.2, 31, 0]],
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.hierarchy).toBeDefined();
-        expect(entity.polygon.hierarchy.isConstant).toEqual(false);
-
-        let hierarchy = entity.polygon.hierarchy.getValue(
-          JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
-        );
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polygon.positions[0].cartographicDegrees,
-          ),
-        );
-        expect(hierarchy.holes).toEqual(
-          packet.polygon.holes[0].cartographicDegrees.map(
-            unpackPolygonHoleFromCartographicDegrees,
-          ),
-        );
-
-        hierarchy = entity.polygon.hierarchy.getValue(
-          JulianDate.fromIso8601("2012-08-04T16:20:00Z"),
-        );
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromDegreesArrayHeights(
-            packet.polygon.positions[1].cartographicDegrees,
-          ),
-        );
-        expect(hierarchy.holes).toEqual(
-          packet.polygon.holes[1].cartographicDegrees.map(
-            unpackPolygonHoleFromCartographicDegrees,
-          ),
-        );
-      },
-    );
-  });
-
-  function unpackPolygonHoleFromCartographicRadians(holePositions) {
-    return new PolygonHierarchy(
-      Cartesian3.fromRadiansArrayHeights(holePositions),
-    );
-  }
-
-  it("can load interval polygon positions with holes expressed as radians", function () {
-    const packet = {
-      polygon: {
-        positions: [
-          {
-            interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-            cartographicRadians: [
-              -0.8726646259971648, 0.3490658503988659, 0, -0.8726646259971648,
-              0.6981317007977318, 0, -0.6981317007977318, 0.6981317007977318, 0,
-              -0.6981317007977318, 0.3490658503988659, 0,
-            ],
-          },
-        ],
-        holes: [
-          {
-            interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-            cartographicRadians: [
-              [
-                -0.8412486994612669, 0.6806784082777885, 0, -0.7766715171374766,
-                0.6457718232379019, 0, -0.8534660042252271, 0.5777039824101231,
-                0, -0.8552113334772214, 0.6387905062299246, 0,
-              ],
-            ],
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.hierarchy).toBeDefined();
-        expect(entity.polygon.hierarchy.isConstant).toEqual(false);
-
-        const hierarchy = entity.polygon.hierarchy.getValue(
-          JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
-        );
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.fromRadiansArrayHeights(
-            packet.polygon.positions[0].cartographicRadians,
-          ),
-        );
-        expect(hierarchy.holes).toEqual(
-          packet.polygon.holes[0].cartographicRadians.map(
-            unpackPolygonHoleFromCartographicRadians,
-          ),
-        );
-      },
-    );
-  });
-
-  function unpackPolygonHoleFromCartesian(holePositions) {
-    return new PolygonHierarchy(Cartesian3.unpackArray(holePositions));
-  }
-
-  it("can load interval polygon positions with holes expressed as cartesian", function () {
-    const packet = {
-      polygon: {
-        positions: [
-          {
-            interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-            cartesian: [-35, 50, 0, -35, 10, 0, -45, 30, 0],
-          },
-        ],
-        holes: [
-          {
-            interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-            cartesian: [[-40, 34, 0, -37, 26, 0, -41.2, 31, 0]],
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polygon).toBeDefined();
-        expect(entity.polygon.hierarchy).toBeDefined();
-        expect(entity.polygon.hierarchy.isConstant).toEqual(false);
-
-        const hierarchy = entity.polygon.hierarchy.getValue(
-          JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
-        );
-        expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-        expect(hierarchy.positions).toEqual(
-          Cartesian3.unpackArray(packet.polygon.positions[0].cartesian),
-        );
-        expect(hierarchy.holes).toEqual(
-          packet.polygon.holes[0].cartesian.map(unpackPolygonHoleFromCartesian),
-        );
-      },
-    );
-  });
-
-  it("can load reference polygon positions with holes", function () {
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "target1",
-        position: {
-          cartesian: [1.0, 2.0, 3.0],
-        },
-      },
-      {
-        id: "target2",
-        position: {
-          cartesian: [4.0, 5.0, 6.0],
-        },
-      },
-      {
-        id: "target3",
-        position: {
-          cartesian: [7.0, 8.0, 9.0],
-        },
-      },
-      {
-        id: "target4",
-        position: {
-          cartesian: [1.5, 2.5, 3.5],
-        },
-      },
-      {
-        id: "target5",
-        position: {
-          cartesian: [1.5, 2.6, 3.5],
-        },
-      },
-      {
-        id: "target6",
-        position: {
-          cartesian: [1.6, 2.5, 3.5],
-        },
-      },
-      {
-        id: "polygon",
-        polygon: {
-          positions: {
-            references: [
-              "target1#position",
-              "target2#position",
-              "target3#position",
-            ],
-          },
-          holes: {
-            references: [
-              ["target4#position", "target5#position", "target6#position"],
-            ],
-          },
-        },
-      },
-    ];
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const entity = dataSource.entities.getById("polygon");
-
-      expect(entity.polygon).toBeDefined();
-      expect(entity.polygon.hierarchy).toBeDefined();
-      expect(entity.polygon.hierarchy.isConstant).toEqual(true);
-
-      const time = JulianDate.fromIso8601("2012-08-04T16:10:00Z");
-      const hierarchy = entity.polygon.hierarchy.getValue(time);
-      expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
-      expect(hierarchy.positions).toEqual([
-        dataSource.entities.getById("target1").position.getValue(time),
-        dataSource.entities.getById("target2").position.getValue(time),
-        dataSource.entities.getById("target3").position.getValue(time),
-      ]);
-      expect(hierarchy.holes).toEqual([
-        new PolygonHierarchy([
-          dataSource.entities.getById("target4").position.getValue(time),
-          dataSource.entities.getById("target5").position.getValue(time),
-          dataSource.entities.getById("target6").position.getValue(time),
-        ]),
-      ]);
     });
-  });
 
-  it("reports correct value of isConstant for polygon hierarchy", function () {
-    const document = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "constantPositionsTimeVaryingHoles",
-        polygon: {
-          positions: {
-            cartographicDegrees: [
-              -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
-            ],
-          },
-          holes: [
-            {
-              interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-              cartographicDegrees: [
-                [-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0],
-              ],
+    it("can load constant data for label", function () {
+        const packet = {
+            label: {
+                text: "TestFacility",
+                font: '10pt "Open Sans"',
+                style: "FILL",
+                fillColor: {
+                    rgbaf: [0.1, 0.1, 0.1, 0.1],
+                },
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 3.14,
+                horizontalOrigin: "LEFT",
+                verticalOrigin: "CENTER",
+                eyeOffset: {
+                    cartesian: [1.0, 2.0, 3.0],
+                },
+                pixelOffset: {
+                    cartesian2: [4.0, 5.0],
+                },
+                scale: 1.0,
+                show: true,
+                translucencyByDistance: {
+                    nearFarScalar: [1.0, 1.0, 10000.0, 0.0],
+                },
+                pixelOffsetScaleByDistance: {
+                    nearFarScalar: [1.0, 20.0, 10000.0, 30.0],
+                },
             },
-            {
-              interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
-              cartographicDegrees: [[-40, 34, 0, -37, 26, 0, -41.2, 31, 0]],
-            },
-          ],
-        },
-      },
-      {
-        id: "timeVaryingPositionsConstantHoles",
-        polygon: {
-          positions: [
-            {
-              interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
-              cartographicDegrees: [
-                -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
-              ],
-            },
-            {
-              interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
-              cartographicDegrees: [-35, 50, 0, -35, 10, 0, -45, 30, 0],
-            },
-          ],
-          holes: {
-            cartographicDegrees: [[-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0]],
-          },
-        },
-      },
-    ];
-
-    return CzmlDataSource.load(document).then(function (dataSource) {
-      let entity = dataSource.entities.getById(
-        "constantPositionsTimeVaryingHoles",
-      );
-
-      expect(entity.polygon).toBeDefined();
-      expect(entity.polygon.hierarchy).toBeDefined();
-      expect(entity.polygon.hierarchy.isConstant).toEqual(false);
-
-      entity = dataSource.entities.getById("timeVaryingPositionsConstantHoles");
-
-      expect(entity.polygon).toBeDefined();
-      expect(entity.polygon.hierarchy).toBeDefined();
-      expect(entity.polygon.hierarchy.isConstant).toEqual(false);
-    });
-  });
-
-  it("can load constant data for polyline", function () {
-    const packet = {
-      polyline: {
-        material: {
-          polylineOutline: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-            outlineColor: {
-              rgbaf: [0.2, 0.2, 0.2, 0.2],
-            },
-            outlineWidth: 1.0,
-          },
-        },
-        width: 1.0,
-        show: true,
-        shadows: "ENABLED",
-        classificationType: "CESIUM_3D_TILE",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polyline).toBeDefined();
-        expect(entity.polyline.material.color.getValue(time)).toEqual(
-          Color.unpack(packet.polyline.material.polylineOutline.color.rgbaf),
-        );
-        expect(entity.polyline.material.outlineColor.getValue(time)).toEqual(
-          Color.unpack(
-            packet.polyline.material.polylineOutline.outlineColor.rgbaf,
-          ),
-        );
-        expect(entity.polyline.material.outlineWidth.getValue(time)).toEqual(
-          packet.polyline.material.polylineOutline.outlineWidth,
-        );
-        expect(entity.polyline.width.getValue(time)).toEqual(
-          packet.polyline.width,
-        );
-        expect(entity.polyline.show.getValue(time)).toEqual(
-          packet.polyline.show,
-        );
-        expect(entity.polyline.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.polyline.shadows],
-        );
-        expect(entity.polyline.classificationType.getValue(time)).toEqual(
-          ClassificationType[packet.polyline.classificationType],
-        );
-      },
-    );
-  });
-
-  it("can load interval data for polyline", function () {
-    const packet = {
-      polyline: {
-        interval: "2000-01-01/2001-01-01",
-        material: {
-          polylineOutline: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-            outlineColor: {
-              rgbaf: [0.2, 0.2, 0.2, 0.2],
-            },
-            outlineWidth: 1.0,
-          },
-        },
-        width: 1.0,
-        show: true,
-        shadows: "ENABLED",
-      },
-    };
-
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.polyline.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polyline).toBeDefined();
-        expect(entity.polyline.material.getValue(validTime).color).toEqual(
-          Color.unpack(packet.polyline.material.polylineOutline.color.rgbaf),
-        );
-        expect(
-          entity.polyline.material.getValue(validTime).outlineColor,
-        ).toEqual(
-          Color.unpack(
-            packet.polyline.material.polylineOutline.outlineColor.rgbaf,
-          ),
-        );
-        expect(
-          entity.polyline.material.getValue(validTime).outlineWidth,
-        ).toEqual(packet.polyline.material.polylineOutline.outlineWidth);
-        expect(entity.polyline.width.getValue(validTime)).toEqual(
-          packet.polyline.width,
-        );
-        expect(entity.polyline.show.getValue(validTime)).toEqual(
-          packet.polyline.show,
-        );
-        expect(entity.polyline.shadows.getValue(validTime)).toEqual(
-          ShadowMode[packet.polyline.shadows],
-        );
-
-        expect(entity.polyline.material.getValue(invalidTime)).toBeUndefined();
-        expect(entity.polyline.width.getValue(invalidTime)).toBeUndefined();
-        expect(entity.polyline.show.getValue(invalidTime)).toBeUndefined();
-        expect(entity.polyline.shadows.getValue(invalidTime)).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load constant data for polyline clamped to terrain.", function () {
-    const packet = {
-      polyline: {
-        material: {
-          polylineOutline: {
-            color: {
-              rgbaf: [0.1, 0.1, 0.1, 0.1],
-            },
-            outlineColor: {
-              rgbaf: [0.2, 0.2, 0.2, 0.2],
-            },
-            outlineWidth: 1.0,
-          },
-        },
-        width: 1.0,
-        show: true,
-        clampToGround: true,
-        zIndex: 1,
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.polyline).toBeDefined();
-        expect(entity.polyline.material.color.getValue(time)).toEqual(
-          Color.unpack(packet.polyline.material.polylineOutline.color.rgbaf),
-        );
-        expect(entity.polyline.material.outlineColor.getValue(time)).toEqual(
-          Color.unpack(
-            packet.polyline.material.polylineOutline.outlineColor.rgbaf,
-          ),
-        );
-        expect(entity.polyline.material.outlineWidth.getValue(time)).toEqual(
-          packet.polyline.material.polylineOutline.outlineWidth,
-        );
-        expect(entity.polyline.width.getValue(time)).toEqual(
-          packet.polyline.width,
-        );
-        expect(entity.polyline.show.getValue(time)).toEqual(
-          packet.polyline.show,
-        );
-        expect(entity.polyline.clampToGround.getValue(time)).toEqual(
-          packet.polyline.clampToGround,
-        );
-        expect(entity.polyline.zIndex.getValue(time)).toEqual(
-          packet.polyline.zIndex,
-        );
-      },
-    );
-  });
-
-  it("can load constant data for polylineVolume", function () {
-    const packet = {
-      id: "id",
-      polylineVolume: {
-        positions: {
-          cartesian: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
-        },
-        shape: {
-          cartesian2: [1.0, 2.0, 3.0, 4.0],
-        },
-        cornerType: "MITERED",
-        show: true,
-        fill: true,
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-          },
-        },
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        granularity: 3,
-        shadows: "ENABLED",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    const dataSource = new CzmlDataSource();
-    return dataSource
-      .load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.id).toEqual("id");
-
-        expect(entity.polylineVolume).toBeDefined();
-        expect(entity.polylineVolume.positions.getValue(time)).toEqual(
-          Cartesian3.unpackArray(packet.polylineVolume.positions.cartesian),
-        );
-        expect(entity.polylineVolume.shape.getValue(time)).toEqual(
-          Cartesian2.unpackArray(packet.polylineVolume.shape.cartesian2),
-        );
-        expect(entity.polylineVolume.cornerType.getValue(time)).toEqual(
-          CornerType[packet.polylineVolume.cornerType],
-        );
-        expect(entity.polylineVolume.show.getValue(time)).toEqual(
-          packet.polylineVolume.show,
-        );
-        expect(entity.polylineVolume.fill.getValue(time)).toEqual(
-          packet.polylineVolume.fill,
-        );
-        expect(entity.polylineVolume.material.getValue(time).color).toEqual(
-          Color.unpack(packet.polylineVolume.material.solidColor.color.rgbaf),
-        );
-        expect(entity.polylineVolume.outline.getValue(time)).toEqual(true);
-        expect(entity.polylineVolume.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.polylineVolume.outlineColor.rgbaf),
-        );
-        expect(entity.polylineVolume.outlineWidth.getValue(time)).toEqual(6);
-        expect(entity.polylineVolume.granularity.getValue(time)).toEqual(
-          packet.polylineVolume.granularity,
-        );
-        expect(entity.polylineVolume.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.polylineVolume.shadows],
-        );
-
-        // for backwards compatibility, also accept `shape` specified as `cartesian`
-        // (which normally always refers to a Cartesian3)
-        packet.polylineVolume.shape = {
-          cartesian: [1.0, 2.0, 3.0, 4.0],
         };
 
-        return dataSource.load(makeDocument(packet));
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.id).toEqual("id");
+        const time = Iso8601.MINIMUM_VALUE;
 
-        expect(entity.polylineVolume.shape.getValue(time)).toEqual(
-          Cartesian2.unpackArray(packet.polylineVolume.shape.cartesian),
-        );
-      });
-  });
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
 
-  it("can load constant data for model", function () {
-    const packet = {
-      model: {
-        show: true,
-        scale: 3.0,
-        minimumPixelSize: 5.0,
-        maximumScale: 4.0,
-        gltf: "./Data/Models/glTF-2.0/BoxArticulations/glTF/BoxArticulations.gltf",
-        incrementallyLoadTextures: true,
-        shadows: "ENABLED",
-        heightReference: "CLAMP_TO_GROUND",
-        silhouetteColor: {
-          rgbaf: [1.0, 0.0, 0.0, 1.0],
-        },
-        silhouetteSize: 2.0,
-        color: {
-          rgbaf: [0.0, 1.0, 0.0, 0.2],
-        },
-        colorBlendMode: "HIGHLIGHT",
-        colorBlendAmount: 0.5,
-        nodeTransformations: {
-          Mesh: {
-            scale: {
-              cartesian: [1.0, 2.0, 3.0],
+                expect(entity.label).toBeDefined();
+                expect(entity.label.text.getValue(time)).toEqual(
+                    packet.label.text,
+                );
+                expect(entity.label.font.getValue(time)).toEqual(
+                    packet.label.font,
+                );
+                expect(entity.label.style.getValue(time)).toEqual(
+                    LabelStyle[packet.label.style],
+                );
+                expect(entity.label.fillColor.getValue(time)).toEqual(
+                    Color.unpack(packet.label.fillColor.rgbaf),
+                );
+                expect(entity.label.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.label.outlineColor.rgbaf),
+                );
+                expect(entity.label.outlineWidth.getValue(time)).toEqual(
+                    packet.label.outlineWidth,
+                );
+                expect(entity.label.horizontalOrigin.getValue(time)).toEqual(
+                    HorizontalOrigin[packet.label.horizontalOrigin],
+                );
+                expect(entity.label.verticalOrigin.getValue(time)).toEqual(
+                    VerticalOrigin[packet.label.verticalOrigin],
+                );
+                expect(entity.label.eyeOffset.getValue(time)).toEqual(
+                    Cartesian3.unpack(packet.label.eyeOffset.cartesian),
+                );
+                expect(entity.label.pixelOffset.getValue(time)).toEqual(
+                    Cartesian2.unpack(packet.label.pixelOffset.cartesian2),
+                );
+                expect(entity.label.scale.getValue(time)).toEqual(
+                    packet.label.scale,
+                );
+                expect(entity.label.show.getValue(time)).toEqual(
+                    packet.label.show,
+                );
+                expect(
+                    entity.label.translucencyByDistance.getValue(time),
+                ).toEqual(
+                    NearFarScalar.unpack(
+                        packet.label.translucencyByDistance.nearFarScalar,
+                    ),
+                );
+                expect(
+                    entity.label.pixelOffsetScaleByDistance.getValue(time),
+                ).toEqual(
+                    NearFarScalar.unpack(
+                        packet.label.pixelOffsetScaleByDistance.nearFarScalar,
+                    ),
+                );
             },
-            translation: {
-              cartesian: [4.0, 5.0, 6.0],
+        );
+    });
+
+    it("can load interval data for label", function () {
+        const packet = {
+            label: {
+                interval: "2000-01-01/2001-01-01",
+                text: "TestFacility",
+                font: '10pt "Open Sans"',
+                style: "FILL",
+                fillColor: {
+                    rgbaf: [0.1, 0.1, 0.1, 0.1],
+                },
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 2.78,
+                horizontalOrigin: "LEFT",
+                verticalOrigin: "CENTER",
+                eyeOffset: {
+                    cartesian: [1.0, 2.0, 3.0],
+                },
+                pixelOffset: {
+                    cartesian2: [4.0, 5.0],
+                },
+                scale: 1.0,
+                show: true,
             },
-            rotation: {
-              unitQuaternion: [0.0, 0.7071, 0.0, 0.7071],
+        };
+
+        const validTime = TimeInterval.fromIso8601({
+            iso8601: packet.label.interval,
+        }).start;
+        const invalidTime = JulianDate.addSeconds(
+            validTime,
+            -1,
+            new JulianDate(),
+        );
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.label).toBeDefined();
+                expect(entity.label.text.getValue(validTime)).toEqual(
+                    packet.label.text,
+                );
+                expect(entity.label.font.getValue(validTime)).toEqual(
+                    packet.label.font,
+                );
+                expect(entity.label.style.getValue(validTime)).toEqual(
+                    LabelStyle[packet.label.style],
+                );
+                expect(entity.label.fillColor.getValue(validTime)).toEqual(
+                    Color.unpack(packet.label.fillColor.rgbaf),
+                );
+                expect(entity.label.outlineColor.getValue(validTime)).toEqual(
+                    Color.unpack(packet.label.outlineColor.rgbaf),
+                );
+                expect(entity.label.outlineWidth.getValue(validTime)).toEqual(
+                    packet.label.outlineWidth,
+                );
+                expect(
+                    entity.label.horizontalOrigin.getValue(validTime),
+                ).toEqual(HorizontalOrigin[packet.label.horizontalOrigin]);
+                expect(entity.label.verticalOrigin.getValue(validTime)).toEqual(
+                    VerticalOrigin[packet.label.verticalOrigin],
+                );
+                expect(entity.label.eyeOffset.getValue(validTime)).toEqual(
+                    Cartesian3.unpack(packet.label.eyeOffset.cartesian),
+                );
+                expect(entity.label.pixelOffset.getValue(validTime)).toEqual(
+                    Cartesian2.unpack(packet.label.pixelOffset.cartesian2),
+                );
+                expect(entity.label.scale.getValue(validTime)).toEqual(
+                    packet.label.scale,
+                );
+                expect(entity.label.show.getValue(validTime)).toEqual(
+                    packet.label.show,
+                );
+
+                expect(entity.label.text.getValue(invalidTime)).toBeUndefined();
+                expect(entity.label.font.getValue(invalidTime)).toBeUndefined();
+                expect(
+                    entity.label.style.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.fillColor.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.outlineColor.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.outlineWidth.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.horizontalOrigin.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.verticalOrigin.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.eyeOffset.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.pixelOffset.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.label.scale.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(entity.label.show.getValue(invalidTime)).toBeUndefined();
             },
-          },
-        },
-        articulations: {
-          "SampleArticulation Yaw": 30,
-          "SampleArticulation Pitch": 45,
-          "SampleArticulation Roll": 60,
-        },
-      },
-    };
+        );
+    });
 
-    const time = Iso8601.MINIMUM_VALUE;
+    it("can handle sampled label pixelOffset.", function () {
+        const epoch = JulianDate.now();
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.model).toBeDefined();
-        expect(entity.model.show.getValue(time)).toEqual(packet.model.show);
-        expect(entity.model.scale.getValue(time)).toEqual(packet.model.scale);
-        expect(entity.model.minimumPixelSize.getValue(time)).toEqual(
-          packet.model.minimumPixelSize,
-        );
-        expect(entity.model.maximumScale.getValue(time)).toEqual(
-          packet.model.maximumScale,
-        );
-        expect(entity.model.uri.getValue(time).url).toEqual(packet.model.gltf);
-        expect(entity.model.incrementallyLoadTextures.getValue(time)).toEqual(
-          packet.model.incrementallyLoadTextures,
-        );
-        expect(entity.model.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.model.shadows],
-        );
-        expect(entity.model.heightReference.getValue(time)).toEqual(
-          HeightReference[packet.model.heightReference],
-        );
-        expect(entity.model.silhouetteColor.getValue(time)).toEqual(
-          Color.unpack(packet.model.silhouetteColor.rgbaf),
-        );
-        expect(entity.model.silhouetteSize.getValue(time)).toEqual(
-          packet.model.silhouetteSize,
-        );
-        expect(entity.model.color.getValue(time)).toEqual(
-          Color.unpack(packet.model.color.rgbaf),
-        );
-        expect(entity.model.colorBlendMode.getValue(time)).toEqual(
-          ColorBlendMode[packet.model.colorBlendMode],
-        );
-        expect(entity.model.colorBlendAmount.getValue(time)).toEqual(
-          packet.model.colorBlendAmount,
-        );
-
-        const nodeTransform =
-          entity.model.nodeTransformations.getValue(time).Mesh;
-        expect(nodeTransform).toBeDefined();
-        expect(nodeTransform.scale).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.scale.cartesian,
-          ),
-        );
-        expect(nodeTransform.translation).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.translation.cartesian,
-          ),
-        );
-
-        const expectedRotation = Quaternion.unpack(
-          packet.model.nodeTransformations.Mesh.rotation.unitQuaternion,
-        );
-        Quaternion.normalize(expectedRotation, expectedRotation);
-        expect(nodeTransform.rotation).toEqual(expectedRotation);
-
-        expect(
-          entity.model.nodeTransformations.Mesh.scale.getValue(time),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.scale.cartesian,
-          ),
-        );
-        expect(
-          entity.model.nodeTransformations.Mesh.translation.getValue(time),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.translation.cartesian,
-          ),
-        );
-        expect(
-          entity.model.nodeTransformations.Mesh.rotation.getValue(time),
-        ).toEqual(expectedRotation);
-
-        const articulations = entity.model.articulations.getValue(time);
-        expect(articulations).toBeDefined();
-        expect(articulations["SampleArticulation Yaw"]).toEqual(
-          packet.model.articulations["SampleArticulation Yaw"],
-        );
-        expect(articulations["SampleArticulation Pitch"]).toEqual(
-          packet.model.articulations["SampleArticulation Pitch"],
-        );
-        expect(articulations["SampleArticulation Roll"]).toEqual(
-          packet.model.articulations["SampleArticulation Roll"],
-        );
-      },
-    );
-  });
-
-  it("can load interval data for model", function () {
-    const packet = {
-      model: {
-        interval: "2000-01-01/2001-01-01",
-        show: true,
-        scale: 3.0,
-        minimumPixelSize: 5.0,
-        gltf: "./Data/Models/glTF-2.0/BoxArticulations/glTF/BoxArticulations.gltf",
-        incrementallyLoadTextures: true,
-        shadows: "ENABLED",
-        heightReference: "CLAMP_TO_GROUND",
-        silhouetteColor: {
-          rgbaf: [1.0, 0.0, 0.0, 1.0],
-        },
-        silhouetteSize: 2.0,
-        color: {
-          rgbaf: [0.0, 1.0, 0.0, 0.2],
-        },
-        colorBlendMode: "HIGHLIGHT",
-        colorBlendAmount: 0.5,
-        nodeTransformations: {
-          Mesh: {
-            scale: {
-              cartesian: [1.0, 2.0, 3.0],
+        const packet = {
+            label: {
+                pixelOffset: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    cartesian2: [0, 1, 2, 1, 3, 4],
+                },
             },
-            translation: {
-              cartesian: [4.0, 5.0, 6.0],
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.label).toBeDefined();
+                const date1 = epoch;
+                const date2 = JulianDate.addSeconds(
+                    epoch,
+                    1.0,
+                    new JulianDate(),
+                );
+                expect(entity.label.pixelOffset.getValue(date1)).toEqual(
+                    new Cartesian2(1.0, 2.0),
+                );
+                expect(entity.label.pixelOffset.getValue(date2)).toEqual(
+                    new Cartesian2(3.0, 4.0),
+                );
             },
-            rotation: {
-              unitQuaternion: [0.0, 0.7071, 0.0, 0.7071],
-            },
-          },
-        },
-        articulations: {
-          "SampleArticulation Yaw": 30,
-          "SampleArticulation Pitch": 45,
-          "SampleArticulation Roll": 60,
-        },
-      },
-    };
+        );
+    });
 
-    const validTime = TimeInterval.fromIso8601({
-      iso8601: packet.model.interval,
-    }).start;
-    const invalidTime = JulianDate.addSeconds(validTime, -1, new JulianDate());
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.model).toBeDefined();
-        expect(entity.model.show.getValue(validTime)).toEqual(
-          packet.model.show,
-        );
-        expect(entity.model.scale.getValue(validTime)).toEqual(
-          packet.model.scale,
-        );
-        expect(entity.model.minimumPixelSize.getValue(validTime)).toEqual(
-          packet.model.minimumPixelSize,
-        );
-        expect(entity.model.uri.getValue(validTime).url).toEqual(
-          packet.model.gltf,
-        );
-        expect(
-          entity.model.incrementallyLoadTextures.getValue(validTime),
-        ).toEqual(packet.model.incrementallyLoadTextures);
-        expect(entity.model.shadows.getValue(validTime)).toEqual(
-          ShadowMode[packet.model.shadows],
-        );
-        expect(entity.model.heightReference.getValue(validTime)).toEqual(
-          HeightReference[packet.model.heightReference],
-        );
-        expect(entity.model.silhouetteColor.getValue(validTime)).toEqual(
-          Color.unpack(packet.model.silhouetteColor.rgbaf),
-        );
-        expect(entity.model.silhouetteSize.getValue(validTime)).toEqual(
-          packet.model.silhouetteSize,
-        );
-        expect(entity.model.color.getValue(validTime)).toEqual(
-          Color.unpack(packet.model.color.rgbaf),
-        );
-        expect(entity.model.colorBlendMode.getValue(validTime)).toEqual(
-          ColorBlendMode[packet.model.colorBlendMode],
-        );
-        expect(entity.model.colorBlendAmount.getValue(validTime)).toEqual(
-          packet.model.colorBlendAmount,
-        );
-
-        const nodeTransform =
-          entity.model.nodeTransformations.getValue(validTime).Mesh;
-        expect(nodeTransform).toBeDefined();
-        expect(nodeTransform.scale).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.scale.cartesian,
-          ),
-        );
-        expect(nodeTransform.translation).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.translation.cartesian,
-          ),
-        );
-
-        const expectedRotation = Quaternion.unpack(
-          packet.model.nodeTransformations.Mesh.rotation.unitQuaternion,
-        );
-        Quaternion.normalize(expectedRotation, expectedRotation);
-        expect(nodeTransform.rotation).toEqual(expectedRotation);
-
-        expect(
-          entity.model.nodeTransformations.Mesh.scale.getValue(validTime),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.scale.cartesian,
-          ),
-        );
-        expect(
-          entity.model.nodeTransformations.Mesh.translation.getValue(validTime),
-        ).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations.Mesh.translation.cartesian,
-          ),
-        );
-        expect(
-          entity.model.nodeTransformations.Mesh.rotation.getValue(validTime),
-        ).toEqual(expectedRotation);
-
-        const articulations = entity.model.articulations.getValue(validTime);
-        expect(articulations).toBeDefined();
-        expect(articulations["SampleArticulation Yaw"]).toEqual(
-          packet.model.articulations["SampleArticulation Yaw"],
-        );
-        expect(articulations["SampleArticulation Pitch"]).toEqual(
-          packet.model.articulations["SampleArticulation Pitch"],
-        );
-        expect(articulations["SampleArticulation Roll"]).toEqual(
-          packet.model.articulations["SampleArticulation Roll"],
-        );
-
-        expect(entity.model.show.getValue(invalidTime)).toBeUndefined();
-        expect(entity.model.scale.getValue(invalidTime)).toBeUndefined();
-        expect(
-          entity.model.minimumPixelSize.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(entity.model.uri.getValue(invalidTime)).toBeUndefined();
-        expect(
-          entity.model.incrementallyLoadTextures.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(entity.model.shadows.getValue(invalidTime)).toBeUndefined();
-        expect(
-          entity.model.heightReference.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(entity.model.color.getValue(invalidTime)).toBeUndefined();
-        expect(
-          entity.model.silhouetteColor.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.model.silhouetteSize.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.model.colorBlendMode.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.model.colorBlendAmount.getValue(invalidTime),
-        ).toBeUndefined();
-
-        expect(
-          entity.model.nodeTransformations.Mesh.getValue(invalidTime),
-        ).toEqual(new TranslationRotationScale());
-        expect(
-          entity.model.nodeTransformations.Mesh.scale.getValue(invalidTime),
-        ).toBeUndefined();
-        expect(
-          entity.model.nodeTransformations.Mesh.translation.getValue(
-            invalidTime,
-          ),
-        ).toBeUndefined();
-        expect(
-          entity.model.nodeTransformations.Mesh.rotation.getValue(invalidTime),
-        ).toBeUndefined();
-
-        const invalidArticulations =
-          entity.model.articulations.getValue(invalidTime);
-        expect(invalidArticulations).toBeDefined();
-        expect(invalidArticulations["SampleArticulation Yaw"]).toBeUndefined();
-        expect(
-          invalidArticulations["SampleArticulation Pitch"],
-        ).toBeUndefined();
-        expect(invalidArticulations["SampleArticulation Roll"]).toBeUndefined();
-      },
-    );
-  });
-
-  it("can load node transformations expressed as intervals", function () {
-    const packet = {
-      model: {
-        interval: "2012-04-02T12:00:00Z/2012-04-02T13:00:00Z",
-        nodeTransformations: [
-          {
-            interval: "2012-04-02T12:00:00Z/2012-04-02T12:00:01Z",
-            Mesh: {
-              scale: {
+    it("can load position", function () {
+        const packet = {
+            position: {
                 cartesian: [1.0, 2.0, 3.0],
-              },
-              translation: {
-                cartesian: [4.0, 5.0, 6.0],
-              },
-              rotation: {
-                unitQuaternion: [0.0, 0.7071, 0.0, 0.0],
-              },
             },
-          },
-          {
-            interval: "2012-04-02T12:00:01Z/2012-04-02T12:00:02Z",
-            Mesh: {
-              scale: {
-                cartesian: [10.0, 20.0, 30.0],
-              },
-              translation: {
-                cartesian: [40.0, 50.0, 60.0],
-              },
-              rotation: {
-                unitQuaternion: [0.0, 0.0, 0.0, 0.7071],
-              },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.position.getValue(time)).toEqual(
+                    Cartesian3.unpack(packet.position.cartesian),
+                );
             },
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.model).toBeDefined();
-
-        let time = JulianDate.fromIso8601("2012-04-02T12:00:00Z");
-        let nodeTransform =
-          entity.model.nodeTransformations.getValue(time).Mesh;
-        expect(nodeTransform).toBeDefined();
-        expect(nodeTransform.scale).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations[0].Mesh.scale.cartesian,
-          ),
         );
-        expect(nodeTransform.translation).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations[0].Mesh.translation.cartesian,
-          ),
-        );
-
-        let expectedRotation = Quaternion.unpack(
-          packet.model.nodeTransformations[0].Mesh.rotation.unitQuaternion,
-        );
-        Quaternion.normalize(expectedRotation, expectedRotation);
-        expect(nodeTransform.rotation).toEqual(expectedRotation);
-
-        time = JulianDate.fromIso8601("2012-04-02T12:00:01Z");
-        nodeTransform = entity.model.nodeTransformations.getValue(time).Mesh;
-        expect(nodeTransform).toBeDefined();
-        expect(nodeTransform.scale).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations[1].Mesh.scale.cartesian,
-          ),
-        );
-        expect(nodeTransform.translation).toEqual(
-          Cartesian3.unpack(
-            packet.model.nodeTransformations[1].Mesh.translation.cartesian,
-          ),
-        );
-
-        expectedRotation = Quaternion.unpack(
-          packet.model.nodeTransformations[1].Mesh.rotation.unitQuaternion,
-        );
-        Quaternion.normalize(expectedRotation, expectedRotation);
-        expect(nodeTransform.rotation).toEqual(expectedRotation);
-      },
-    );
-  });
-
-  it("can load articulations expressed as intervals", function () {
-    const packet = {
-      model: {
-        interval: "2012-04-02T12:00:00Z/2012-04-02T13:00:00Z",
-        articulations: [
-          {
-            interval: "2012-04-02T12:00:00Z/2012-04-02T12:00:01Z",
-            "SampleArticulation Yaw": 30,
-            "SampleArticulation Pitch": 45,
-            "SampleArticulation Roll": 60,
-          },
-          {
-            interval: "2012-04-02T12:00:01Z/2012-04-02T12:00:02Z",
-            "SampleArticulation Yaw": 20,
-            "SampleArticulation Pitch": 25,
-            "SampleArticulation Roll": 30,
-          },
-        ],
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.model).toBeDefined();
-
-        let time = JulianDate.fromIso8601("2012-04-02T12:00:00Z");
-        let articulations = entity.model.articulations.getValue(time);
-        expect(articulations).toBeDefined();
-        expect(articulations["SampleArticulation Yaw"]).toEqual(
-          packet.model.articulations[0]["SampleArticulation Yaw"],
-        );
-        expect(articulations["SampleArticulation Pitch"]).toEqual(
-          packet.model.articulations[0]["SampleArticulation Pitch"],
-        );
-        expect(articulations["SampleArticulation Roll"]).toEqual(
-          packet.model.articulations[0]["SampleArticulation Roll"],
-        );
-
-        time = JulianDate.fromIso8601("2012-04-02T12:00:01Z");
-        articulations = entity.model.articulations.getValue(time);
-        expect(articulations).toBeDefined();
-        expect(articulations["SampleArticulation Yaw"]).toEqual(
-          packet.model.articulations[1]["SampleArticulation Yaw"],
-        );
-        expect(articulations["SampleArticulation Pitch"]).toEqual(
-          packet.model.articulations[1]["SampleArticulation Pitch"],
-        );
-        expect(articulations["SampleArticulation Roll"]).toEqual(
-          packet.model.articulations[1]["SampleArticulation Roll"],
-        );
-      },
-    );
-  });
-
-  it("can delete an existing object", function () {
-    const dataSource = new CzmlDataSource();
-    return dataSource
-      .load(makeDocument(staticCzml))
-      .then(function (dataSource) {
-        expect(dataSource.entities.values.length).toEqual(1);
-        return dataSource.load(makeDocument(czmlDelete));
-      })
-      .then(function (dataSource) {
-        expect(dataSource.entities.values.length).toEqual(0);
-      });
-  });
-
-  it("loads parent", function () {
-    const document = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "parent",
-      },
-      {
-        id: "child",
-        parent: "parent",
-      },
-    ];
-
-    return CzmlDataSource.load(document).then(function (dataSource) {
-      const parent = dataSource.entities.getById("parent");
-      expect(parent.parent).toBeUndefined();
-
-      const child = dataSource.entities.getById("child");
-      expect(child.parent).toBe(parent);
-    });
-  });
-
-  it("loads parent specified out of order", function () {
-    const document = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "child",
-        parent: "parent",
-      },
-      {
-        id: "child2",
-        parent: "parent",
-      },
-      {
-        id: "grandparent",
-      },
-      {
-        id: "grandparent2",
-      },
-      {
-        id: "parent",
-        parent: "grandparent",
-      },
-      {
-        id: "parent2",
-        parent: "grandparent",
-      },
-    ];
-
-    return CzmlDataSource.load(document).then(function (dataSource) {
-      const grandparent = dataSource.entities.getById("grandparent");
-      expect(grandparent.parent).toBeUndefined();
-
-      const grandparent2 = dataSource.entities.getById("grandparent");
-      expect(grandparent2.parent).toBeUndefined();
-
-      const parent = dataSource.entities.getById("parent");
-      expect(parent.parent).toBe(grandparent);
-
-      const parent2 = dataSource.entities.getById("parent2");
-      expect(parent2.parent).toBe(grandparent);
-
-      const child = dataSource.entities.getById("child");
-      expect(child.parent).toBe(parent);
-
-      const child2 = dataSource.entities.getById("child2");
-      expect(child2.parent).toBe(parent);
-    });
-  });
-
-  it("can process JulianDate data in packets", function () {
-    const date = JulianDate.fromIso8601("2000-01-01");
-
-    const object = {};
-    CzmlDataSource.processPacketData(
-      JulianDate,
-      object,
-      "simpleDate",
-      JulianDate.toIso8601(date),
-    );
-
-    expect(object.simpleDate).toBeDefined();
-    expect(object.simpleDate.getValue()).toEqual(date);
-
-    CzmlDataSource.processPacketData(JulianDate, object, "objDate", {
-      date: JulianDate.toIso8601(date),
     });
 
-    expect(object.objDate).toBeDefined();
-    expect(object.objDate.getValue()).toEqual(date);
-  });
+    it("can load orientation", function () {
+        const packet = {
+            orientation: {
+                unitQuaternion: [0.0, 0.0, 0.0, 1.0],
+            },
+        };
 
-  it("can process array data in packets", function () {
-    const packet = {
-      array: [1, 2, 3, 4, 5],
-    };
+        const time = Iso8601.MINIMUM_VALUE;
 
-    const object = {};
-    CzmlDataSource.processPacketData(Array, object, "arrayData", packet);
-
-    expect(object.arrayData).toBeDefined();
-    expect(object.arrayData.getValue()).toEqual(packet.array);
-  });
-
-  it("loading CZML suspends events.", function () {
-    const document = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        point: {
-          show: true,
-          color: {
-            rgbaf: [0.1, 0.1, 0.1, 0.1],
-          },
-        },
-      },
-      {
-        point: {
-          show: false,
-          color: {
-            rgbaf: [0.1, 0.1, 0.1, 0.1],
-          },
-        },
-      },
-    ];
-
-    const spy = jasmine.createSpy("changedEvent");
-
-    const dataSource = new CzmlDataSource();
-    dataSource.entities.collectionChanged.addEventListener(spy);
-    return dataSource.load(document).then(function (dataSource) {
-      expect(spy.calls.count()).toEqual(1);
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.orientation.getValue(time)).toEqual(
+                    Quaternion.unpack(packet.orientation.unitQuaternion),
+                );
+            },
+        );
     });
-  });
 
-  function printInterval(startTime, stopTime) {
-    return TimeInterval.toIso8601(
-      new TimeInterval({
-        start: startTime,
-        stop: stopTime,
-      }),
-    );
-  }
-
-  it("can load materials specified with composite interval", function () {
-    const beforeTime = JulianDate.fromIso8601("2012-03-15T09:23:59Z");
-    const solidTime = JulianDate.fromIso8601("2012-03-15T10:00:00Z");
-    const gridTime1 = JulianDate.fromIso8601("2012-03-15T11:00:00Z");
-    const gridTime2 = JulianDate.fromIso8601("2012-03-15T12:00:00Z");
-    const afterTime = JulianDate.fromIso8601("2012-03-15T12:00:01Z");
-
-    const packet = {
-      id: "obj",
-      polygon: {
-        material: [
-          {
-            interval: printInterval(solidTime, gridTime1),
-            solidColor: {
-              color: {
-                rgba: [240, 0, 0, 0],
-              },
+    it("normalizes constant orientation on load", function () {
+        const packet = {
+            orientation: {
+                unitQuaternion: [0.0, 0.0, 0.7071067, 0.7071067],
             },
-          },
-          {
-            interval: printInterval(gridTime1, gridTime2),
-            grid: {
-              color: {
-                rgba: [240, 255, 255, 255],
-              },
-              cellAlpha: 0,
-              lineCount: {
-                cartesian2: [36, 9],
-              },
-              lineThickness: {
-                cartesian2: [1, 1],
-              },
-              lineOffset: {
-                cartesian2: [0.5, 0.5],
-              },
+        };
+
+        const expected = Quaternion.unpack(packet.orientation.unitQuaternion);
+        Quaternion.normalize(expected, expected);
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.orientation.getValue(time)).toEqual(expected);
             },
-          },
-        ],
-      },
-    };
-    let secondPacket;
-
-    return CzmlDataSource.load(makeDocument(packet))
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("obj");
-
-        expect(entity.polygon.material).toBeInstanceOf(
-          CompositeMaterialProperty,
         );
+    });
 
-        expect(entity.polygon.material.getType(solidTime)).toEqual("Color");
-        expect(entity.polygon.material.getValue(solidTime).color).toEqual(
-          Color.unpack(
-            packet.polygon.material[0].solidColor.color.rgba.map(
-              Color.byteToFloat,
-            ),
-          ),
+    it("normalizes sampled orientation on load", function () {
+        const time1 = "2000-01-01T00:00:00Z";
+        const time2 = "2000-01-01T00:00:01Z";
+        const packet = {
+            orientation: {
+                unitQuaternion: [
+                    time1,
+                    0.0,
+                    0.0,
+                    0.7071067,
+                    0.7071067,
+                    time2,
+                    0.7071067,
+                    0.7071067,
+                    0.0,
+                    0.0,
+                ],
+            },
+        };
+
+        const expected1 = Quaternion.unpack(
+            packet.orientation.unitQuaternion,
+            1,
         );
+        Quaternion.normalize(expected1, expected1);
 
-        function assertValuesForGridMaterial(time) {
-          expect(entity.polygon.material.getValue(time).color).toEqual(
-            Color.unpack(
-              packet.polygon.material[1].grid.color.rgba.map(Color.byteToFloat),
-            ),
-          );
-          expect(entity.polygon.material.getValue(time).cellAlpha).toEqual(
-            packet.polygon.material[1].grid.cellAlpha,
-          );
-          expect(entity.polygon.material.getValue(time).lineCount).toEqual(
-            Cartesian2.unpack(
-              packet.polygon.material[1].grid.lineCount.cartesian2,
-            ),
-          );
-          expect(entity.polygon.material.getValue(time).lineThickness).toEqual(
-            Cartesian2.unpack(
-              packet.polygon.material[1].grid.lineThickness.cartesian2,
-            ),
-          );
-          expect(entity.polygon.material.getValue(time).lineOffset).toEqual(
-            Cartesian2.unpack(
-              packet.polygon.material[1].grid.lineOffset.cartesian2,
-            ),
-          );
+        const expected2 = Quaternion.unpack(
+            packet.orientation.unitQuaternion,
+            6,
+        );
+        Quaternion.normalize(expected2, expected2);
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(
+                    entity.orientation.getValue(JulianDate.fromIso8601(time1)),
+                ).toEqual(expected1);
+                expect(
+                    entity.orientation.getValue(JulianDate.fromIso8601(time2)),
+                ).toEqual(expected2);
+            },
+        );
+    });
+
+    it("can handle orientation expressed as a velocity reference", function () {
+        const packet = {
+            position: {
+                epoch: "2016-06-17T12:00:00Z",
+                cartesian: [0, 1, 2, 3, 60, 61, 122, 183],
+            },
+            orientation: {
+                velocityReference: "#position",
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const property = entity.orientation;
+
+                const expectedVelocity = new Cartesian3(1.0, 2.0, 3.0);
+                const expectedVelocityDirection = Cartesian3.normalize(
+                    expectedVelocity,
+                    new Cartesian3(),
+                );
+
+                const expectedPosition = new Cartesian3(1, 2, 3);
+                const expectedRotation =
+                    Transforms.rotationMatrixFromPositionVelocity(
+                        expectedPosition,
+                        expectedVelocityDirection,
+                    );
+                const expectedOrientation =
+                    Quaternion.fromRotationMatrix(expectedRotation);
+
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:00Z"),
+                    ),
+                ).toEqualEpsilon(expectedOrientation, CesiumMath.EPSILON15);
+                expect(
+                    property.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:30Z"),
+                    ),
+                ).toEqualEpsilon(expectedOrientation, CesiumMath.EPSILON15);
+            },
+        );
+    });
+
+    it("can load positions expressed as cartesians", function () {
+        const packet = {
+            polyline: {
+                positions: {
+                    cartesian: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.polyline.positions.getValue(time)).toEqual(
+                    Cartesian3.unpackArray(packet.polyline.positions.cartesian),
+                );
+            },
+        );
+    });
+
+    it("can load positions expressed as cartographicRadians", function () {
+        const packet = {
+            polyline: {
+                positions: {
+                    cartographicRadians: [1.0, 2.0, 4.0, 5.0, 6.0, 7.0],
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.polyline.positions.getValue(time)).toEqual(
+                    Cartesian3.fromRadiansArrayHeights(
+                        packet.polyline.positions.cartographicRadians,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can load positions expressed as cartographicDegrees", function () {
+        const packet = {
+            polyline: {
+                positions: {
+                    cartographicDegrees: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.polyline.positions.getValue(time)).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polyline.positions.cartographicDegrees,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can load viewFrom", function () {
+        const packet = {
+            viewFrom: {
+                cartesian: [1.0, 2.0, 3.0],
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.viewFrom.getValue(time)).toEqual(
+                    Cartesian3.unpack(packet.viewFrom.cartesian),
+                );
+            },
+        );
+    });
+
+    it("can load description", function () {
+        const packet = {
+            description: "this is a description",
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.description.getValue(time)).toEqual(
+                    packet.description,
+                );
+            },
+        );
+    });
+
+    it("can load constant custom properties", function () {
+        const testObject = {
+            foo: 4,
+            bar: {
+                name: "bar",
+            },
+        };
+        const testArray = [2, 4, 16, "test"];
+
+        const packet = {
+            properties: {
+                constant_name: "ABC",
+                constant_height: 8,
+                constant_object: {
+                    value: testObject,
+                },
+                constant_array: {
+                    value: testArray,
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.properties.constant_name.getValue(time)).toEqual(
+                    packet.properties.constant_name,
+                );
+                expect(
+                    entity.properties.constant_height.getValue(time),
+                ).toEqual(packet.properties.constant_height);
+                expect(
+                    entity.properties.constant_object.getValue(time),
+                ).toEqual(testObject);
+                expect(entity.properties.constant_array.getValue(time)).toEqual(
+                    testArray,
+                );
+            },
+        );
+    });
+
+    it("can load custom properties which are constant with specified type", function () {
+        const testObject = {
+            foo: 4,
+            bar: {
+                name: "bar",
+            },
+        };
+        const testArray = [2, 4, 16, "test"];
+        const packet = {
+            properties: {
+                constant_name: {
+                    string: "ABC",
+                },
+                constant_height: {
+                    number: 8,
+                },
+                constant_object: {
+                    object: testObject,
+                },
+                constant_array: {
+                    array: testArray,
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.properties.constant_name.getValue(time)).toEqual(
+                    packet.properties.constant_name.string,
+                );
+                expect(
+                    entity.properties.constant_height.getValue(time),
+                ).toEqual(packet.properties.constant_height.number);
+                expect(
+                    entity.properties.constant_object.getValue(time),
+                ).toEqual(testObject);
+                expect(entity.properties.constant_array.getValue(time)).toEqual(
+                    testArray,
+                );
+            },
+        );
+    });
+
+    it("can load custom properties with one interval", function () {
+        const packet = {
+            properties: {
+                changing_name: {
+                    interval: "2012/2014",
+                    value: "ABC",
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(
+                    entity.properties.changing_name.getValue(
+                        JulianDate.fromIso8601("2013"),
+                    ),
+                ).toEqual(packet.properties.changing_name.value);
+                expect(
+                    entity.properties.changing_name.getValue(
+                        JulianDate.fromIso8601("2015"),
+                    ),
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load custom properties with one interval with specified type", function () {
+        const packet = {
+            properties: {
+                changing_name: {
+                    interval: "2012/2014",
+                    string: "ABC",
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(
+                    entity.properties.changing_name.getValue(
+                        JulianDate.fromIso8601("2013"),
+                    ),
+                ).toEqual(packet.properties.changing_name.string);
+                expect(
+                    entity.properties.changing_name.getValue(
+                        JulianDate.fromIso8601("2015"),
+                    ),
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load custom properties with multiple intervals", function () {
+        const array1 = [1, 2, 3];
+        const array2 = [4, 5, 6];
+        const packet = {
+            properties: {
+                changing_array: [
+                    {
+                        interval: "2012/2013",
+                        value: array1,
+                    },
+                    {
+                        interval: "2013/2014",
+                        value: array2,
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(
+                    entity.properties.changing_array.getValue(
+                        JulianDate.fromIso8601("2012-06-01"),
+                    ),
+                ).toEqual(array1);
+                expect(
+                    entity.properties.changing_array.getValue(
+                        JulianDate.fromIso8601("2013-06-01"),
+                    ),
+                ).toEqual(array2);
+            },
+        );
+    });
+
+    it("can load boolean custom properties with multiple intervals", function () {
+        const packet = {
+            id: "MyID",
+            properties: {
+                custom_boolean: [
+                    {
+                        interval: "2012-04-02T12:00:00Z/2012-04-02T12:00:01Z",
+                        boolean: true,
+                    },
+                    {
+                        interval: "2012-04-02T12:00:01Z/2012-04-02T12:00:02Z",
+                        boolean: false,
+                    },
+                    {
+                        interval: "2012-04-02T12:00:02Z/2012-04-02T12:01:00Z",
+                        boolean: true,
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.getById("MyID");
+                expect(entity).toBeDefined();
+                expect(entity.properties).toBeDefined();
+                expect(entity.properties.custom_boolean).toBeDefined();
+
+                expect(
+                    entity.properties.custom_boolean.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:00:00Z"),
+                    ),
+                ).toEqual(true);
+                expect(
+                    entity.properties.custom_boolean.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:00:01Z"),
+                    ),
+                ).toEqual(false);
+                expect(
+                    entity.properties.custom_boolean.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:00:02Z"),
+                    ),
+                ).toEqual(true);
+            },
+        );
+    });
+
+    it("can load custom properties with multiple intervals with specified type", function () {
+        const array1 = [1, 2, 3];
+        const array2 = [4, 5, 6];
+        const packet = {
+            properties: {
+                changing_array: [
+                    {
+                        interval: "2012/2013",
+                        array: array1,
+                    },
+                    {
+                        interval: "2013/2014",
+                        array: array2,
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(
+                    entity.properties.changing_array.getValue(
+                        JulianDate.fromIso8601("2012-06-01"),
+                    ),
+                ).toEqual(array1);
+                expect(
+                    entity.properties.changing_array.getValue(
+                        JulianDate.fromIso8601("2013-06-01"),
+                    ),
+                ).toEqual(array2);
+            },
+        );
+    });
+
+    it("can load sampled custom properties", function () {
+        const packet = {
+            id: "MyID",
+            properties: {
+                custom_cartesian: {
+                    epoch: "2012-04-02T12:00:00Z",
+                    cartesian: [0, 1, 2, 3, 60, 4, 5, 6, 120, 7, 8, 9],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.getById("MyID");
+
+                expect(entity).toBeDefined();
+                expect(entity.properties).toBeDefined();
+                expect(entity.properties.custom_cartesian).toBeDefined();
+
+                expect(
+                    entity.properties.custom_cartesian.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:00:00Z"),
+                    ),
+                ).toBeInstanceOf(Cartesian3);
+                expect(
+                    entity.properties.custom_cartesian.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:00:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(1, 2, 3));
+                // halfway between two samples, linearly interpolated
+                expect(
+                    entity.properties.custom_cartesian.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:00:30Z"),
+                    ),
+                ).toEqual(
+                    new Cartesian3((1 + 4) / 2, (2 + 5) / 2, (3 + 6) / 2),
+                );
+                expect(
+                    entity.properties.custom_cartesian.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:01:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(4, 5, 6));
+                expect(
+                    entity.properties.custom_cartesian.getValue(
+                        JulianDate.fromIso8601("2012-04-02T12:02:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(7, 8, 9));
+            },
+        );
+    });
+
+    it("can load various types of custom properties", function () {
+        const interval1 = "2012/2013";
+        const interval2 = "2013/2014";
+        const packet = {
+            id: "MyID",
+            properties: {
+                custom_array_constant: {
+                    array: [1, 2, 3],
+                },
+                custom_array_interval: [
+                    {
+                        interval: interval1,
+                        array: [1, 2, 3],
+                    },
+                    {
+                        interval: interval2,
+                        array: [4, 5, 6],
+                    },
+                ],
+                custom_boolean_constant: {
+                    boolean: true,
+                },
+                custom_boolean_interval: [
+                    {
+                        interval: interval1,
+                        boolean: true,
+                    },
+                    {
+                        interval: interval2,
+                        boolean: false,
+                    },
+                ],
+                custom_boundingRectangle_constant: {
+                    boundingRectangle: [20, 30, 10, 11],
+                },
+                custom_boundingRectangle_interval: [
+                    {
+                        interval: interval1,
+                        boundingRectangle: [20, 30, 10, 11],
+                    },
+                    {
+                        interval: interval2,
+                        boundingRectangle: [21, 31, 11, 12],
+                    },
+                ],
+                custom_boundingRectangle_sampled: {
+                    epoch: "2012-06-01",
+                    boundingRectangle: [0, 20, 30, 10, 11, 60, 21, 31, 11, 12],
+                },
+                custom_cartesian2_constant: {
+                    cartesian2: [20, 30],
+                },
+                custom_cartesian2_interval: [
+                    {
+                        interval: interval1,
+                        cartesian2: [20, 30],
+                    },
+                    {
+                        interval: interval2,
+                        cartesian2: [21, 31],
+                    },
+                ],
+                custom_cartesian2_sampled: {
+                    epoch: "2012-06-01",
+                    cartesian2: [0, 20, 30, 60, 21, 31],
+                },
+                custom_cartesian_constant: {
+                    cartesian: [10, 11, 12],
+                },
+                custom_cartesian_interval: [
+                    {
+                        interval: interval1,
+                        cartesian: [10, 11, 12],
+                    },
+                    {
+                        interval: interval2,
+                        cartesian: [13, 14, 15],
+                    },
+                ],
+                custom_cartesian_sampled: {
+                    epoch: "2012-06-01",
+                    cartesian: [0, 10, 11, 12, 60, 13, 14, 15],
+                },
+                custom_color_constant: {
+                    rgbaf: [0.1, 0.2, 0.3, 0.4],
+                },
+                custom_color_interval: [
+                    {
+                        interval: interval1,
+                        rgbaf: [0.1, 0.2, 0.3, 0.4],
+                    },
+                    {
+                        interval: interval2,
+                        rgbaf: [0.5, 0.6, 0.7, 0.8],
+                    },
+                ],
+                custom_color_sampled: {
+                    epoch: "2012-06-01",
+                    rgbaf: [0, 0.1, 0.2, 0.3, 0.4, 60, 0.5, 0.6, 0.7, 0.8],
+                },
+                custom_date_constant: {
+                    date: "2014-06-01",
+                },
+                custom_date_interval: [
+                    {
+                        interval: interval1,
+                        date: "2014-06-01",
+                    },
+                    {
+                        interval: interval2,
+                        date: "2015-06-01",
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.getById("MyID");
+
+                expect(entity).toBeDefined();
+                expect(entity.properties).toBeDefined();
+
+                const time1 = JulianDate.fromIso8601("2012-06-01");
+                const time2 = JulianDate.fromIso8601("2013-06-01");
+
+                expect(entity.properties.custom_array_constant).toBeDefined();
+                expect(
+                    entity.properties.custom_array_constant.getValue(time1),
+                ).toBeInstanceOf(Array);
+                expect(
+                    entity.properties.custom_array_constant.getValue(time1),
+                ).toEqual(packet.properties.custom_array_constant.array);
+
+                expect(entity.properties.custom_array_interval).toBeDefined();
+                expect(
+                    entity.properties.custom_array_interval.getValue(time1),
+                ).toBeInstanceOf(Array);
+                expect(
+                    entity.properties.custom_array_interval.getValue(time1),
+                ).toEqual(packet.properties.custom_array_interval[0].array);
+                expect(
+                    entity.properties.custom_array_interval.getValue(time2),
+                ).toEqual(packet.properties.custom_array_interval[1].array);
+
+                expect(entity.properties.custom_boolean_constant).toBeDefined();
+                expect(
+                    entity.properties.custom_boolean_constant.getValue(time1),
+                ).toEqual(packet.properties.custom_boolean_constant.boolean);
+
+                expect(entity.properties.custom_boolean_interval).toBeDefined();
+                expect(
+                    entity.properties.custom_boolean_interval.getValue(time1),
+                ).toEqual(packet.properties.custom_boolean_interval[0].boolean);
+                expect(
+                    entity.properties.custom_boolean_interval.getValue(time2),
+                ).toEqual(packet.properties.custom_boolean_interval[1].boolean);
+
+                expect(
+                    entity.properties.custom_boundingRectangle_constant,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_boundingRectangle_constant.getValue(
+                        time1,
+                    ),
+                ).toBeInstanceOf(BoundingRectangle);
+                expect(
+                    entity.properties.custom_boundingRectangle_constant.getValue(
+                        time1,
+                    ),
+                ).toEqual(
+                    BoundingRectangle.unpack(
+                        packet.properties.custom_boundingRectangle_constant
+                            .boundingRectangle,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_boundingRectangle_interval,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_boundingRectangle_interval.getValue(
+                        time1,
+                    ),
+                ).toBeInstanceOf(BoundingRectangle);
+                expect(
+                    entity.properties.custom_boundingRectangle_interval.getValue(
+                        time1,
+                    ),
+                ).toEqual(
+                    BoundingRectangle.unpack(
+                        packet.properties.custom_boundingRectangle_interval[0]
+                            .boundingRectangle,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_boundingRectangle_interval.getValue(
+                        time2,
+                    ),
+                ).toEqual(
+                    BoundingRectangle.unpack(
+                        packet.properties.custom_boundingRectangle_interval[1]
+                            .boundingRectangle,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_boundingRectangle_sampled,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_boundingRectangle_sampled.getValue(
+                        time1,
+                    ),
+                ).toBeInstanceOf(BoundingRectangle);
+                expect(
+                    entity.properties.custom_boundingRectangle_sampled.getValue(
+                        time1,
+                    ),
+                ).toEqual(
+                    BoundingRectangle.unpack(
+                        packet.properties.custom_boundingRectangle_sampled
+                            .boundingRectangle,
+                        0 + 1,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_boundingRectangle_sampled.getValue(
+                        JulianDate.addSeconds(time1, 60, new JulianDate()),
+                    ),
+                ).toEqual(
+                    BoundingRectangle.unpack(
+                        packet.properties.custom_boundingRectangle_sampled
+                            .boundingRectangle,
+                        4 + 2,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_cartesian2_constant,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_cartesian2_constant.getValue(
+                        time1,
+                    ),
+                ).toBeInstanceOf(Cartesian2);
+                expect(
+                    entity.properties.custom_cartesian2_constant.getValue(
+                        time1,
+                    ),
+                ).toEqual(
+                    Cartesian2.unpack(
+                        packet.properties.custom_cartesian2_constant.cartesian2,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_cartesian2_interval,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_cartesian2_interval.getValue(
+                        time1,
+                    ),
+                ).toBeInstanceOf(Cartesian2);
+                expect(
+                    entity.properties.custom_cartesian2_interval.getValue(
+                        time1,
+                    ),
+                ).toEqual(
+                    Cartesian2.unpack(
+                        packet.properties.custom_cartesian2_interval[0]
+                            .cartesian2,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_cartesian2_interval.getValue(
+                        time2,
+                    ),
+                ).toEqual(
+                    Cartesian2.unpack(
+                        packet.properties.custom_cartesian2_interval[1]
+                            .cartesian2,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_cartesian2_sampled,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_cartesian2_sampled.getValue(time1),
+                ).toBeInstanceOf(Cartesian2);
+                expect(
+                    entity.properties.custom_cartesian2_sampled.getValue(time1),
+                ).toEqual(
+                    Cartesian2.unpack(
+                        packet.properties.custom_cartesian2_sampled.cartesian2,
+                        0 + 1,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_cartesian2_sampled.getValue(
+                        JulianDate.addSeconds(time1, 60, new JulianDate()),
+                    ),
+                ).toEqual(
+                    Cartesian2.unpack(
+                        packet.properties.custom_cartesian2_sampled.cartesian2,
+                        2 + 2,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_cartesian_constant,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_cartesian_constant.getValue(time1),
+                ).toBeInstanceOf(Cartesian3);
+                expect(
+                    entity.properties.custom_cartesian_constant.getValue(time1),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.properties.custom_cartesian_constant.cartesian,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_cartesian_interval,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_cartesian_interval.getValue(time1),
+                ).toBeInstanceOf(Cartesian3);
+                expect(
+                    entity.properties.custom_cartesian_interval.getValue(time1),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.properties.custom_cartesian_interval[0]
+                            .cartesian,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_cartesian_interval.getValue(time2),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.properties.custom_cartesian_interval[1]
+                            .cartesian,
+                    ),
+                );
+
+                expect(
+                    entity.properties.custom_cartesian_sampled,
+                ).toBeDefined();
+                expect(
+                    entity.properties.custom_cartesian_sampled.getValue(time1),
+                ).toBeInstanceOf(Cartesian3);
+                expect(
+                    entity.properties.custom_cartesian_sampled.getValue(time1),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.properties.custom_cartesian_sampled.cartesian,
+                        0 + 1,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_cartesian_sampled.getValue(
+                        JulianDate.addSeconds(time1, 60, new JulianDate()),
+                    ),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.properties.custom_cartesian_sampled.cartesian,
+                        3 + 2,
+                    ),
+                );
+
+                expect(entity.properties.custom_color_constant).toBeDefined();
+                expect(
+                    entity.properties.custom_color_constant.getValue(time1),
+                ).toBeInstanceOf(Color);
+                expect(
+                    entity.properties.custom_color_constant.getValue(time1),
+                ).toEqual(
+                    Color.unpack(packet.properties.custom_color_constant.rgbaf),
+                );
+
+                expect(entity.properties.custom_color_interval).toBeDefined();
+                expect(
+                    entity.properties.custom_color_interval.getValue(time1),
+                ).toBeInstanceOf(Color);
+                expect(
+                    entity.properties.custom_color_interval.getValue(time1),
+                ).toEqual(
+                    Color.unpack(
+                        packet.properties.custom_color_interval[0].rgbaf,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_color_interval.getValue(time2),
+                ).toEqual(
+                    Color.unpack(
+                        packet.properties.custom_color_interval[1].rgbaf,
+                    ),
+                );
+
+                expect(entity.properties.custom_color_sampled).toBeDefined();
+                expect(
+                    entity.properties.custom_color_sampled.getValue(time1),
+                ).toBeInstanceOf(Color);
+                expect(
+                    entity.properties.custom_color_sampled.getValue(time1),
+                ).toEqual(
+                    Color.unpack(
+                        packet.properties.custom_color_sampled.rgbaf,
+                        0 + 1,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_color_sampled.getValue(
+                        JulianDate.addSeconds(time1, 60, new JulianDate()),
+                    ),
+                ).toEqual(
+                    Color.unpack(
+                        packet.properties.custom_color_sampled.rgbaf,
+                        4 + 2,
+                    ),
+                );
+
+                expect(entity.properties.custom_date_constant).toBeDefined();
+                expect(
+                    entity.properties.custom_date_constant.getValue(time1),
+                ).toBeInstanceOf(JulianDate);
+                expect(
+                    entity.properties.custom_date_constant.getValue(time1),
+                ).toEqual(
+                    JulianDate.fromIso8601(
+                        packet.properties.custom_date_constant.date,
+                    ),
+                );
+
+                expect(entity.properties.custom_date_interval).toBeDefined();
+                expect(
+                    entity.properties.custom_date_interval.getValue(time1),
+                ).toBeInstanceOf(JulianDate);
+                expect(
+                    entity.properties.custom_date_interval.getValue(time1),
+                ).toEqual(
+                    JulianDate.fromIso8601(
+                        packet.properties.custom_date_interval[0].date,
+                    ),
+                );
+                expect(
+                    entity.properties.custom_date_interval.getValue(time2),
+                ).toEqual(
+                    JulianDate.fromIso8601(
+                        packet.properties.custom_date_interval[1].date,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can delete an entire property", function () {
+        function createDataSource() {
+            return CzmlDataSource.load([
+                {
+                    id: "document",
+                    version: "1.0",
+                },
+                {
+                    id: "test-constant",
+                    billboard: {
+                        scale: 1,
+                    },
+                },
+                {
+                    id: "test-interval",
+                    billboard: {
+                        scale: [
+                            {
+                                interval:
+                                    "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
+                                number: 1,
+                            },
+                        ],
+                    },
+                },
+                {
+                    id: "test-sampled",
+                    billboard: {
+                        scale: {
+                            number: ["2012-03-15T10:00:00Z", 1],
+                        },
+                    },
+                },
+            ]);
         }
 
-        expect(entity.polygon.material.getType(gridTime1)).toEqual("Grid");
-        assertValuesForGridMaterial(gridTime1);
-
-        expect(entity.polygon.material.getType(gridTime2)).toEqual("Grid");
-        assertValuesForGridMaterial(gridTime2);
-
-        expect(entity.polygon.material.getType(beforeTime)).toBeUndefined();
-        expect(entity.polygon.material.getType(afterTime)).toBeUndefined();
-        return dataSource;
-      })
-      .then(function (dataSource) {
-        // processing new data into an existing interval updates the existing material property
-        secondPacket = {
-          id: "obj",
-          polygon: {
-            material: [
-              {
-                interval: printInterval(solidTime, gridTime1),
-                solidColor: {
-                  color: {
-                    rgba: [200, 100, 50, 255],
-                  },
+        const deletePackets = [
+            {
+                id: "test-constant",
+                billboard: {
+                    scale: {
+                        delete: true,
+                    },
                 },
-              },
-            ],
-          },
+            },
+            {
+                id: "test-interval",
+                billboard: {
+                    scale: {
+                        delete: true,
+                    },
+                },
+            },
+            {
+                id: "test-sampled",
+                billboard: {
+                    scale: {
+                        delete: true,
+                    },
+                },
+            },
+        ];
+
+        const deleteMaxIntervalPackets = [
+            {
+                id: "test-constant",
+                billboard: {
+                    scale: {
+                        interval: TimeInterval.toIso8601(
+                            Iso8601.MAXIMUM_INTERVAL,
+                        ),
+                        delete: true,
+                    },
+                },
+            },
+            {
+                id: "test-interval",
+                billboard: {
+                    scale: {
+                        interval: TimeInterval.toIso8601(
+                            Iso8601.MAXIMUM_INTERVAL,
+                        ),
+                        delete: true,
+                    },
+                },
+            },
+            {
+                id: "test-sampled",
+                billboard: {
+                    scale: {
+                        interval: TimeInterval.toIso8601(
+                            Iso8601.MAXIMUM_INTERVAL,
+                        ),
+                        delete: true,
+                    },
+                },
+            },
+        ];
+
+        function expectPropertiesToBeDefined(dataSource) {
+            let entity = dataSource.entities.getById("test-constant");
+            expect(entity.billboard.scale).toBeInstanceOf(ConstantProperty);
+            entity = dataSource.entities.getById("test-interval");
+            expect(entity.billboard.scale).toBeInstanceOf(
+                TimeIntervalCollectionProperty,
+            );
+            entity = dataSource.entities.getById("test-sampled");
+            expect(entity.billboard.scale).toBeInstanceOf(SampledProperty);
+            return dataSource;
+        }
+
+        function expectPropertiesToBeUndefined(dataSource) {
+            let entity = dataSource.entities.getById("test-constant");
+            expect(entity.billboard.scale).toBeUndefined();
+            entity = dataSource.entities.getById("test-interval");
+            expect(entity.billboard.scale).toBeUndefined();
+            entity = dataSource.entities.getById("test-sampled");
+            expect(entity.billboard.scale).toBeUndefined();
+            return dataSource;
+        }
+
+        return createDataSource()
+            .then(expectPropertiesToBeDefined)
+            .then(function (dataSource) {
+                // delete with no interval specified should delete the properties entirely
+                return dataSource.process(deletePackets);
+            })
+            .then(expectPropertiesToBeUndefined)
+            .then(function (dataSource) {
+                // deleting properties that don't exist should be a no-op
+                return dataSource.process(deletePackets);
+            })
+            .then(expectPropertiesToBeUndefined)
+            .then(createDataSource) // start over with a new data source
+            .then(function (dataSource) {
+                // delete with maximum interval specified should delete the properties entirely
+                return dataSource.process(deleteMaxIntervalPackets);
+            })
+            .then(expectPropertiesToBeUndefined)
+            .then(function (dataSource) {
+                // deleting properties that don't exist should be a no-op
+                return dataSource.process(deleteMaxIntervalPackets);
+            })
+            .then(expectPropertiesToBeUndefined);
+    });
+
+    it("can delete a custom property", function () {
+        function createDataSource() {
+            return CzmlDataSource.load([
+                {
+                    id: "document",
+                    version: "1.0",
+                },
+                {
+                    id: "test",
+                    properties: {
+                        custom: {
+                            number: ["2012-03-15T10:00:00Z", 1],
+                        },
+                    },
+                },
+            ]);
+        }
+
+        const deletePackets = [
+            {
+                id: "test",
+                properties: {
+                    custom: {
+                        delete: true,
+                    },
+                },
+            },
+        ];
+
+        function expectPropertiesToBeDefined(dataSource) {
+            const entity = dataSource.entities.getById("test");
+            expect(entity.properties.custom).toBeInstanceOf(SampledProperty);
+            return dataSource;
+        }
+
+        function expectPropertiesToBeUndefined(dataSource) {
+            const entity = dataSource.entities.getById("test");
+            expect(entity.properties.custom).toBeUndefined();
+            return dataSource;
+        }
+
+        return createDataSource()
+            .then(expectPropertiesToBeDefined)
+            .then(function (dataSource) {
+                // delete with no interval specified should delete the properties entirely
+                return dataSource.process(deletePackets);
+            })
+            .then(expectPropertiesToBeUndefined)
+            .then(function (dataSource) {
+                // deleting properties that don't exist should be a no-op
+                return dataSource.process(deletePackets);
+            })
+            .then(expectPropertiesToBeUndefined);
+    });
+
+    it("can delete an entire position property", function () {
+        function createDataSource() {
+            return CzmlDataSource.load([
+                {
+                    id: "document",
+                    version: "1.0",
+                },
+                {
+                    id: "test-constant",
+                    position: {
+                        cartographicDegrees: [34, 117, 10000],
+                    },
+                },
+                {
+                    id: "test-interval",
+                    position: [
+                        {
+                            interval:
+                                "2012-03-15T10:00:00Z/2012-03-16T10:00:00Z",
+                            cartographicDegrees: [34, 117, 10000],
+                        },
+                    ],
+                },
+                {
+                    id: "test-sampled",
+                    position: {
+                        cartographicDegrees: [
+                            "2012-03-15T10:00:00Z",
+                            34,
+                            117,
+                            10000,
+                        ],
+                    },
+                },
+            ]);
+        }
+
+        const deletePackets = [
+            {
+                id: "test-constant",
+                position: {
+                    delete: true,
+                },
+            },
+            {
+                id: "test-interval",
+                position: {
+                    delete: true,
+                },
+            },
+            {
+                id: "test-sampled",
+                position: {
+                    delete: true,
+                },
+            },
+        ];
+
+        const deleteMaxIntervalPackets = [
+            {
+                id: "test-constant",
+                position: {
+                    interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
+                    delete: true,
+                },
+            },
+            {
+                id: "test-interval",
+                position: {
+                    interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
+                    delete: true,
+                },
+            },
+            {
+                id: "test-sampled",
+                position: {
+                    interval: TimeInterval.toIso8601(Iso8601.MAXIMUM_INTERVAL),
+                    delete: true,
+                },
+            },
+        ];
+
+        function expectPropertiesToBeDefined(dataSource) {
+            let entity = dataSource.entities.getById("test-constant");
+            expect(entity.position).toBeInstanceOf(ConstantPositionProperty);
+            entity = dataSource.entities.getById("test-interval");
+            expect(entity.position).toBeInstanceOf(
+                TimeIntervalCollectionPositionProperty,
+            );
+            entity = dataSource.entities.getById("test-sampled");
+            expect(entity.position).toBeInstanceOf(SampledPositionProperty);
+            return dataSource;
+        }
+
+        function expectPropertiesToBeUndefined(dataSource) {
+            let entity = dataSource.entities.getById("test-constant");
+            expect(entity.position).toBeUndefined();
+            entity = dataSource.entities.getById("test-interval");
+            expect(entity.position).toBeUndefined();
+            entity = dataSource.entities.getById("test-sampled");
+            expect(entity.position).toBeUndefined();
+            return dataSource;
+        }
+
+        return createDataSource()
+            .then(expectPropertiesToBeDefined)
+            .then(function (dataSource) {
+                // delete with no interval specified should delete the properties entirely
+                return dataSource.process(deletePackets);
+            })
+            .then(expectPropertiesToBeUndefined)
+            .then(function (dataSource) {
+                // deleting properties that don't exist should be a no-op
+                return dataSource.process(deletePackets);
+            })
+            .then(expectPropertiesToBeUndefined)
+            .then(createDataSource) // start over with a new data source
+            .then(function (dataSource) {
+                // delete with maximum interval specified should delete the properties entirely
+                return dataSource.process(deleteMaxIntervalPackets);
+            })
+            .then(expectPropertiesToBeUndefined)
+            .then(function (dataSource) {
+                // deleting properties that don't exist should be a no-op
+                return dataSource.process(deleteMaxIntervalPackets);
+            })
+            .then(expectPropertiesToBeUndefined);
+    });
+
+    it("can delete samples from a sampled property", function () {
+        const packet = {
+            id: "id",
+            billboard: {
+                scale: {
+                    number: [
+                        "2012-03-15T10:00:00Z",
+                        1,
+                        "2012-03-15T11:00:00Z",
+                        5,
+                        "2012-03-15T12:00:00Z",
+                        3,
+                    ],
+                },
+            },
         };
-        return dataSource.process(secondPacket);
-      })
-      .then(function (dataSource) {
-        const entity = dataSource.entities.getById("obj");
 
-        expect(entity.polygon.material).toBeInstanceOf(
-          CompositeMaterialProperty,
-        );
-        expect(entity.polygon.material.getType(solidTime)).toEqual("Color");
-        expect(entity.polygon.material.getValue(solidTime).color).toEqual(
-          Color.unpack(
-            secondPacket.polygon.material[0].solidColor.color.rgba.map(
-              Color.byteToFloat,
-            ),
-          ),
-        );
-      });
-  });
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.billboard.scale).toBeInstanceOf(SampledProperty);
 
-  it("can load constant data for rectangle", function () {
-    const packet = {
-      rectangle: {
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-          },
-        },
-        coordinates: {
-          wsen: [0, 1, 2, 3],
-        },
-        height: 1,
-        extrudedHeight: 2,
-        granularity: 3,
-        rotation: 4,
-        stRotation: 5,
-        show: true,
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        shadows: "ENABLED",
-        zIndex: 6,
-        classificationType: "TERRAIN",
-      },
-    };
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
+                    ),
+                ).toEqual(1);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
+                    ),
+                ).toEqual(5);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
+                    ),
+                ).toEqual(3);
 
-    const time = Iso8601.MINIMUM_VALUE;
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                const deletePacket = {
+                    id: "id",
+                    billboard: {
+                        scale: {
+                            interval:
+                                "2012-03-15T11:00:00Z/2012-03-15T11:00:00Z",
+                            delete: true,
+                        },
+                    },
+                };
+                return dataSource.process(deletePacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.billboard.scale).toBeInstanceOf(SampledProperty);
 
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.rectangle).toBeDefined();
-        expect(entity.rectangle.coordinates.getValue(time)).toEqual(
-          Rectangle.unpack(packet.rectangle.coordinates.wsen),
-        );
-        expect(entity.rectangle.material.getValue(time).color).toEqual(
-          Color.unpack(packet.rectangle.material.solidColor.color.rgbaf),
-        );
-        expect(entity.rectangle.show.getValue(time)).toEqual(
-          packet.rectangle.show,
-        );
-        expect(entity.rectangle.height.getValue(time)).toEqual(
-          packet.rectangle.height,
-        );
-        expect(entity.rectangle.extrudedHeight.getValue(time)).toEqual(
-          packet.rectangle.extrudedHeight,
-        );
-        expect(entity.rectangle.granularity.getValue(time)).toEqual(
-          packet.rectangle.granularity,
-        );
-        expect(entity.rectangle.rotation.getValue(time)).toEqual(
-          packet.rectangle.rotation,
-        );
-        expect(entity.rectangle.stRotation.getValue(time)).toEqual(
-          packet.rectangle.stRotation,
-        );
-        expect(entity.rectangle.outline.getValue(time)).toEqual(
-          packet.rectangle.outline,
-        );
-        expect(entity.rectangle.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.rectangle.outlineColor.rgbaf),
-        );
-        expect(entity.rectangle.outlineWidth.getValue(time)).toEqual(
-          packet.rectangle.outlineWidth,
-        );
-        expect(entity.rectangle.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.rectangle.shadows],
-        );
-        expect(entity.rectangle.zIndex.getValue(time)).toEqual(
-          packet.rectangle.zIndex,
-        );
-        expect(entity.rectangle.classificationType.getValue(time)).toEqual(
-          ClassificationType[packet.rectangle.classificationType],
-        );
-      },
-    );
-  });
-
-  it("can handle constant rectangle coordinates in degrees.", function () {
-    const packet = {
-      rectangle: {
-        coordinates: {
-          wsenDegrees: [0, 1, 2, 3],
-        },
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-        expect(entity.rectangle.coordinates.getValue(time)).toEqual(
-          Rectangle.fromDegrees(0, 1, 2, 3),
-        );
-      },
-    );
-  });
-
-  it("can handle sampled rectangle coordinates.", function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      rectangle: {
-        coordinates: {
-          epoch: JulianDate.toIso8601(epoch),
-          wsen: [0.0, 1.0, 2.0, 3.0, 4.0, 1.0, 3.0, 4.0, 5.0, 6.0],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.rectangle).toBeDefined();
-        const date1 = epoch;
-        const date2 = JulianDate.addSeconds(epoch, 0.5, new JulianDate());
-        const date3 = JulianDate.addSeconds(epoch, 1.0, new JulianDate());
-        expect(entity.rectangle.coordinates.getValue(date1)).toEqual(
-          new Rectangle(1.0, 2.0, 3.0, 4.0),
-        );
-        expect(entity.rectangle.coordinates.getValue(date2)).toEqual(
-          new Rectangle(2.0, 3.0, 4.0, 5.0),
-        );
-        expect(entity.rectangle.coordinates.getValue(date3)).toEqual(
-          new Rectangle(3.0, 4.0, 5.0, 6.0),
-        );
-      },
-    );
-  });
-
-  it("can handle sampled rectangle coordinates in degrees.", function () {
-    const epoch = JulianDate.now();
-
-    const packet = {
-      rectangle: {
-        coordinates: {
-          epoch: JulianDate.toIso8601(epoch),
-          wsenDegrees: [0.0, 1.0, 2.0, 3.0, 4.0, 1.0, 3.0, 4.0, 5.0, 6.0],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.rectangle).toBeDefined();
-        const date1 = epoch;
-        const date2 = JulianDate.addSeconds(epoch, 0.5, new JulianDate());
-        const date3 = JulianDate.addSeconds(epoch, 1.0, new JulianDate());
-        expect(entity.rectangle.coordinates.getValue(date1)).toEqual(
-          Rectangle.fromDegrees(1.0, 2.0, 3.0, 4.0),
-        );
-        expect(entity.rectangle.coordinates.getValue(date2)).toEqualEpsilon(
-          Rectangle.fromDegrees(2.0, 3.0, 4.0, 5.0),
-          CesiumMath.EPSILON15,
-        );
-        expect(entity.rectangle.coordinates.getValue(date3)).toEqual(
-          Rectangle.fromDegrees(3.0, 4.0, 5.0, 6.0),
-        );
-      },
-    );
-  });
-
-  it("can load constant data for wall", function () {
-    const packet = {
-      wall: {
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-          },
-        },
-        granularity: 3,
-        minimumHeights: {
-          array: [1, 2, 3],
-        },
-        maximumHeights: {
-          array: [4, 5, 6],
-        },
-        show: true,
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        shadows: "ENABLED",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.wall).toBeDefined();
-        expect(entity.wall.material.getValue(time).color).toEqual(
-          Color.unpack(packet.wall.material.solidColor.color.rgbaf),
-        );
-        expect(entity.wall.show.getValue(time)).toEqual(packet.wall.show);
-        expect(entity.wall.granularity.getValue(time)).toEqual(
-          packet.wall.granularity,
-        );
-        expect(entity.wall.minimumHeights.getValue(time)).toEqual(
-          packet.wall.minimumHeights.array,
-        );
-        expect(entity.wall.maximumHeights.getValue(time)).toEqual(
-          packet.wall.maximumHeights.array,
-        );
-        expect(entity.wall.outline.getValue(time)).toEqual(packet.wall.outline);
-        expect(entity.wall.outlineColor.getValue(time)).toEqual(
-          new Color(0.2, 0.2, 0.2, 0.2),
-        );
-        expect(entity.wall.outlineWidth.getValue(time)).toEqual(
-          packet.wall.outlineWidth,
-        );
-        expect(entity.wall.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.wall.shadows],
-        );
-      },
-    );
-  });
-
-  it("can load data for wall with minimumHeights as references.", function () {
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "obj1",
-        billboard: {
-          scale: 1.0,
-        },
-      },
-      {
-        id: "obj2",
-        billboard: {
-          scale: 4.0,
-        },
-      },
-      {
-        id: "wall",
-        wall: {
-          minimumHeights: {
-            references: ["obj1#billboard.scale", "obj2#billboard.scale"],
-          },
-          maximumHeights: {
-            references: ["obj2#billboard.scale", "obj1#billboard.scale"],
-          },
-        },
-      },
-    ];
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const entity = dataSource.entities.getById("wall");
-
-      expect(entity.wall).toBeDefined();
-      expect(entity.wall.minimumHeights.getValue(time)).toEqual([
-        packets[1].billboard.scale,
-        packets[2].billboard.scale,
-      ]);
-      expect(entity.wall.maximumHeights.getValue(time)).toEqual([
-        packets[2].billboard.scale,
-        packets[1].billboard.scale,
-      ]);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
+                    ),
+                ).toEqual(1);
+                // deleting sample will cause the property to interpolate from remaining samples
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
+                    ),
+                ).toEqual(2);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
+                    ),
+                ).toEqual(3);
+            });
     });
-  });
 
-  it("can load array of references expressed using intervals", function () {
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "obj1",
-        billboard: {
-          scale: 1.0,
-        },
-      },
-      {
-        id: "obj2",
-        billboard: {
-          scale: 4.0,
-        },
-      },
-      {
-        id: "obj3",
-        billboard: {
-          scale: 6.0,
-        },
-      },
-      {
-        id: "wall",
-        wall: {
-          minimumHeights: [
+    it("can delete samples from a sampled custom property", function () {
+        const packet = {
+            id: "id",
+            properties: {
+                custom: {
+                    number: [
+                        "2012-03-15T10:00:00Z",
+                        1,
+                        "2012-03-15T11:00:00Z",
+                        5,
+                        "2012-03-15T12:00:00Z",
+                        3,
+                    ],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.properties.custom).toBeInstanceOf(
+                    SampledProperty,
+                );
+
+                expect(
+                    entity.properties.custom.getValue(
+                        JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
+                    ),
+                ).toEqual(1);
+                expect(
+                    entity.properties.custom.getValue(
+                        JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
+                    ),
+                ).toEqual(5);
+                expect(
+                    entity.properties.custom.getValue(
+                        JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
+                    ),
+                ).toEqual(3);
+
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                const deletePacket = {
+                    id: "id",
+                    properties: {
+                        custom: {
+                            interval:
+                                "2012-03-15T11:00:00Z/2012-03-15T11:00:00Z",
+                            delete: true,
+                        },
+                    },
+                };
+                return dataSource.process(deletePacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.properties.custom).toBeInstanceOf(
+                    SampledProperty,
+                );
+
+                expect(
+                    entity.properties.custom.getValue(
+                        JulianDate.fromIso8601("2012-03-15T10:00:00Z"),
+                    ),
+                ).toEqual(1);
+                // deleting sample will cause the property to interpolate from remaining samples
+                expect(
+                    entity.properties.custom.getValue(
+                        JulianDate.fromIso8601("2012-03-15T11:00:00Z"),
+                    ),
+                ).toEqual(2);
+                expect(
+                    entity.properties.custom.getValue(
+                        JulianDate.fromIso8601("2012-03-15T12:00:00Z"),
+                    ),
+                ).toEqual(3);
+            });
+    });
+
+    it("can delete samples from a sampled position property", function () {
+        const packet = {
+            id: "id",
+            position: {
+                epoch: "2016-06-17T12:00:00Z",
+                cartesian: [0, 1, 2, 3, 60, 61, 122, 183, 120, 3, 4, 5],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.position).toBeInstanceOf(SampledPositionProperty);
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(1, 2, 3));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:01:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(61, 122, 183));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:02:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(3, 4, 5));
+
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                const deletePacket = {
+                    id: "id",
+                    position: {
+                        interval: "2016-06-17T12:00:45Z/2016-06-17T12:01:10Z",
+                        delete: true,
+                    },
+                };
+                return dataSource.process(deletePacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.position).toBeInstanceOf(SampledPositionProperty);
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:00:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(1, 2, 3));
+                // deleting sample will cause the property to interpolate from remaining samples
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:01:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(2, 3, 4));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2016-06-17T12:02:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(3, 4, 5));
+            });
+    });
+
+    it("can delete interval from an interval property", function () {
+        const packet = {
+            id: "id",
+            billboard: {
+                scale: [
+                    {
+                        interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
+                        number: 2,
+                    },
+                    {
+                        interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
+                        number: 6,
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.billboard.scale).toBeInstanceOf(
+                    TimeIntervalCollectionProperty,
+                );
+
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
+                    ),
+                ).toEqual(2);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
+                    ),
+                ).toEqual(6);
+
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                const deletePacket = {
+                    id: "id",
+                    billboard: {
+                        scale: {
+                            interval:
+                                "2013-01-01T00:30:00Z/2013-01-01T01:30:00Z",
+                            delete: true,
+                        },
+                    },
+                };
+                return dataSource.process(deletePacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.billboard.scale).toBeInstanceOf(
+                    TimeIntervalCollectionProperty,
+                );
+
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:29:00Z"),
+                    ),
+                ).toEqual(2);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:31:00Z"),
+                    ),
+                ).toEqual(6);
+            });
+    });
+
+    it("can delete interval from an interval position property", function () {
+        const packet = {
+            id: "id",
+            position: [
+                {
+                    interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
+                    cartesian: [1, 2, 3],
+                },
+                {
+                    interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
+                    cartesian: [4, 5, 6],
+                },
+            ],
+        };
+
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.position).toBeInstanceOf(
+                    TimeIntervalCollectionPositionProperty,
+                );
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(1, 2, 3));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(4, 5, 6));
+
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                const deletePacket = {
+                    id: "id",
+                    position: {
+                        interval: "2013-01-01T00:30:00Z/2013-01-01T01:30:00Z",
+                        delete: true,
+                    },
+                };
+                return dataSource.process(deletePacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.position).toBeInstanceOf(
+                    TimeIntervalCollectionPositionProperty,
+                );
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:30:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:30:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:29:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(1, 2, 3));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:31:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(4, 5, 6));
+            });
+    });
+
+    it("can delete samples from a composite property", function () {
+        const packet = {
+            id: "id",
+            billboard: {
+                scale: [
+                    {
+                        interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
+                        epoch: "2013-01-01T00:00:00Z",
+                        number: [0, 1, 30, 6, 60, 3],
+                    },
+                    {
+                        interval: "2013-01-01T00:02:00Z/2013-01-01T01:00:00Z",
+                        number: 33,
+                    },
+                    {
+                        interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
+                        number: [
+                            "2013-01-01T01:00:00Z",
+                            9,
+                            "2013-01-01T01:00:30Z",
+                            19,
+                            "2013-01-01T01:01:00Z",
+                            11,
+                        ],
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.billboard.scale).toBeInstanceOf(
+                    CompositeProperty,
+                );
+
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(1);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
+                    ),
+                ).toEqual(6);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
+                    ),
+                ).toEqual(3);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
+                    ),
+                ).toEqual(33);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
+                    ),
+                ).toEqual(9);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
+                    ),
+                ).toEqual(19);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
+                    ),
+                ).toEqual(11);
+
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                const deletePacket = {
+                    id: "id",
+                    billboard: {
+                        scale: {
+                            interval:
+                                "2013-01-01T00:01:00Z/2013-01-01T01:00:00Z",
+                            delete: true,
+                        },
+                    },
+                };
+                return dataSource.process(deletePacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.billboard.scale).toBeInstanceOf(
+                    CompositeProperty,
+                );
+
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(1);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
+                    ),
+                ).toEqual(6);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
+                    ),
+                ).toEqual(19);
+                expect(
+                    entity.billboard.scale.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
+                    ),
+                ).toEqual(11);
+            });
+    });
+
+    it("can delete samples from a composite position property", function () {
+        const packet = {
+            id: "id",
+            position: [
+                {
+                    interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
+                    epoch: "2013-01-01T00:00:00Z",
+                    cartesian: [0, 1, 2, 3, 30, 6, 7, 8, 60, 3, 4, 5],
+                },
+                {
+                    interval: "2013-01-01T00:02:00Z/2013-01-01T01:00:00Z",
+                    cartesian: [15, 16, 17],
+                },
+                {
+                    interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
+                    cartesian: [
+                        "2013-01-01T01:00:00Z",
+                        9,
+                        15,
+                        10,
+                        "2013-01-01T01:00:30Z",
+                        19,
+                        16,
+                        11,
+                        "2013-01-01T01:01:00Z",
+                        11,
+                        17,
+                        12,
+                    ],
+                },
+            ],
+        };
+
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.position).toBeInstanceOf(
+                    CompositePositionProperty,
+                );
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(1, 2, 3));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
+                    ),
+                ).toEqual(new Cartesian3(6, 7, 8));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(3, 4, 5));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(15, 16, 17));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(9, 15, 10));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
+                    ),
+                ).toEqual(new Cartesian3(19, 16, 11));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(11, 17, 12));
+
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                const deletePacket = {
+                    id: "id",
+                    position: {
+                        interval: "2013-01-01T00:01:00Z/2013-01-01T01:00:00Z",
+                        delete: true,
+                    },
+                };
+                return dataSource.process(deletePacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("id");
+                expect(entity.position).toBeInstanceOf(
+                    CompositePositionProperty,
+                );
+
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(1, 2, 3));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:00:30Z"),
+                    ),
+                ).toEqual(new Cartesian3(6, 7, 8));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:01:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T00:02:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:00:30Z"),
+                    ),
+                ).toEqual(new Cartesian3(19, 16, 11));
+                expect(
+                    entity.position.getValue(
+                        JulianDate.fromIso8601("2013-01-01T01:01:00Z"),
+                    ),
+                ).toEqual(new Cartesian3(11, 17, 12));
+            });
+    });
+
+    it("can load custom properties in a way that allows CompositeEntityCollection to work", function () {
+        const testObject1 = {
+            foo: 4,
+            bar: {
+                name: "bar",
+            },
+        };
+        const testArray1 = [2, 4, 16, "test"];
+        const packet1 = {
+            id: "test",
+            properties: {
+                constant_name: "ABC",
+                constant_height: 8,
+                constant_object: {
+                    value: testObject1,
+                },
+                constant_array: {
+                    value: testArray1,
+                },
+            },
+        };
+
+        const dataSource1 = new CzmlDataSource();
+        const dataSource2 = new CzmlDataSource();
+        const time = Iso8601.MINIMUM_VALUE;
+        const packet2 = {
+            id: "test",
+            properties: {
+                constant_name: "DEF",
+            },
+        };
+        const testObject3 = {
+            some: "value",
+        };
+        const testArray3 = ["not", "the", "same", 4];
+        const packet3 = {
+            id: "test",
+            properties: {
+                constant_height: 9,
+                constant_object: {
+                    value: testObject3,
+                },
+                constant_array: {
+                    value: testArray3,
+                },
+            },
+        };
+        let entity, composite;
+
+        return dataSource1
+            .load(makeDocument(packet1))
+            .then(function () {
+                composite = new CompositeEntityCollection([
+                    dataSource1.entities,
+                    dataSource2.entities,
+                ]);
+
+                // Initially we use all the properties from dataSource1.
+                entity = composite.values[0];
+                expect(entity.properties.constant_name.getValue(time)).toEqual(
+                    packet1.properties.constant_name,
+                );
+                expect(
+                    entity.properties.constant_height.getValue(time),
+                ).toEqual(packet1.properties.constant_height);
+                expect(
+                    entity.properties.constant_object.getValue(time),
+                ).toEqual(testObject1);
+                expect(entity.properties.constant_array.getValue(time)).toEqual(
+                    testArray1,
+                );
+
+                // Load a new packet into dataSource2 and it should take precedence in the composite.
+                return dataSource2.load(makeDocument(packet2));
+            })
+            .then(function () {
+                entity = composite.values[0];
+                expect(entity.properties.constant_name.getValue(time)).toEqual(
+                    packet2.properties.constant_name,
+                );
+                expect(
+                    entity.properties.constant_height.getValue(time),
+                ).toEqual(packet1.properties.constant_height);
+                expect(
+                    entity.properties.constant_object.getValue(time),
+                ).toEqual(testObject1);
+                expect(entity.properties.constant_array.getValue(time)).toEqual(
+                    testArray1,
+                );
+
+                // Changed values should be mirrored in the composite, too.
+                return dataSource2.process(packet3);
+            })
+            .then(function () {
+                entity = composite.values[0];
+                expect(entity.properties.constant_name.getValue(time)).toEqual(
+                    packet2.properties.constant_name,
+                );
+                expect(
+                    entity.properties.constant_height.getValue(time),
+                ).toEqual(packet3.properties.constant_height);
+                expect(
+                    entity.properties.constant_object.getValue(time),
+                ).toEqual(testObject3);
+                expect(entity.properties.constant_array.getValue(time)).toEqual(
+                    testArray3,
+                );
+            });
+    });
+
+    it("can load and modify availability from a single interval", function () {
+        const packet1 = {
+            id: "testObject",
+            availability: "2000-01-01/2001-01-01",
+        };
+
+        const packet2 = {
+            id: "testObject",
+            availability: "2000-02-02/2001-02-02",
+        };
+
+        const dataSource = new CzmlDataSource();
+        return dataSource
+            .process(makeDocument(packet1))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const interval = TimeInterval.fromIso8601({
+                    iso8601: packet1.availability,
+                });
+                expect(entity.availability.length).toEqual(1);
+                expect(entity.availability.get(0)).toEqual(interval);
+
+                return dataSource.process(packet2);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const interval = TimeInterval.fromIso8601({
+                    iso8601: packet2.availability,
+                });
+                expect(entity.availability.length).toEqual(1);
+                expect(entity.availability.get(0)).toEqual(interval);
+            });
+    });
+
+    it("can load and modify availability from multiple intervals", function () {
+        const packet1 = {
+            id: "testObject",
+            availability: ["2000-01-01/2001-01-01", "2002-01-01/2003-01-01"],
+        };
+        const packet2 = {
+            id: "testObject",
+            availability: ["2003-01-01/2004-01-01", "2005-01-01/2006-01-01"],
+        };
+
+        const dataSource = new CzmlDataSource();
+        return dataSource
+            .process(makeDocument(packet1))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                const interval1 = TimeInterval.fromIso8601({
+                    iso8601: packet1.availability[0],
+                });
+                const interval2 = TimeInterval.fromIso8601({
+                    iso8601: packet1.availability[1],
+                });
+                expect(entity.availability.length).toEqual(2);
+                expect(entity.availability.get(0)).toEqual(interval1);
+                expect(entity.availability.get(1)).toEqual(interval2);
+
+                return dataSource.process(packet2);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                const interval1 = TimeInterval.fromIso8601({
+                    iso8601: packet2.availability[0],
+                });
+                const interval2 = TimeInterval.fromIso8601({
+                    iso8601: packet2.availability[1],
+                });
+                expect(entity.availability.length).toEqual(2);
+                expect(entity.availability.get(0)).toEqual(interval1);
+                expect(entity.availability.get(1)).toEqual(interval2);
+            });
+    });
+
+    it("can load constant data for path", function () {
+        const packet = {
+            path: {
+                material: {
+                    polylineOutline: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                        outlineColor: {
+                            rgbaf: [0.2, 0.2, 0.2, 0.2],
+                        },
+                        outlineWidth: 1.0,
+                    },
+                },
+                width: 1.0,
+                resolution: 23.0,
+                leadTime: 2.0,
+                trailTime: 3.0,
+                show: true,
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.path).toBeDefined();
+                expect(entity.path.material.color.getValue(time)).toEqual(
+                    Color.unpack(
+                        packet.path.material.polylineOutline.color.rgbaf,
+                    ),
+                );
+                expect(
+                    entity.path.material.outlineColor.getValue(time),
+                ).toEqual(
+                    Color.unpack(
+                        packet.path.material.polylineOutline.outlineColor.rgbaf,
+                    ),
+                );
+                expect(
+                    entity.path.material.outlineWidth.getValue(time),
+                ).toEqual(packet.path.material.polylineOutline.outlineWidth);
+                expect(entity.path.width.getValue(time)).toEqual(
+                    packet.path.width,
+                );
+                expect(entity.path.resolution.getValue(time)).toEqual(
+                    packet.path.resolution,
+                );
+                expect(entity.path.leadTime.getValue(time)).toEqual(
+                    packet.path.leadTime,
+                );
+                expect(entity.path.trailTime.getValue(time)).toEqual(
+                    packet.path.trailTime,
+                );
+                expect(entity.path.show.getValue(time)).toEqual(
+                    packet.path.show,
+                );
+            },
+        );
+    });
+
+    it("can load interval data for path", function () {
+        const packet = {
+            path: {
+                interval: "2000-01-01/2001-01-01",
+                material: {
+                    polylineOutline: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                        outlineColor: {
+                            rgbaf: [0.2, 0.2, 0.2, 0.2],
+                        },
+                        outlineWidth: 1.0,
+                    },
+                },
+                width: 1.0,
+                resolution: 23.0,
+                leadTime: 2.0,
+                trailTime: 3.0,
+                show: true,
+            },
+        };
+
+        const validTime = TimeInterval.fromIso8601({
+            iso8601: packet.path.interval,
+        }).start;
+        const invalidTime = JulianDate.addSeconds(
+            validTime,
+            -1,
+            new JulianDate(),
+        );
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.path).toBeDefined();
+                expect(entity.path.width.getValue(validTime)).toEqual(
+                    packet.path.width,
+                );
+                expect(entity.path.resolution.getValue(validTime)).toEqual(
+                    packet.path.resolution,
+                );
+                expect(entity.path.leadTime.getValue(validTime)).toEqual(
+                    packet.path.leadTime,
+                );
+                expect(entity.path.trailTime.getValue(validTime)).toEqual(
+                    packet.path.trailTime,
+                );
+                expect(entity.path.show.getValue(validTime)).toEqual(
+                    packet.path.show,
+                );
+                expect(entity.path.material.getValue(validTime).color).toEqual(
+                    Color.unpack(
+                        packet.path.material.polylineOutline.color.rgbaf,
+                    ),
+                );
+                expect(
+                    entity.path.material.getValue(validTime).outlineColor,
+                ).toEqual(
+                    Color.unpack(
+                        packet.path.material.polylineOutline.outlineColor.rgbaf,
+                    ),
+                );
+                expect(
+                    entity.path.material.getValue(validTime).outlineWidth,
+                ).toEqual(packet.path.material.polylineOutline.outlineWidth);
+
+                expect(
+                    entity.path.material.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(entity.path.width.getValue(invalidTime)).toBeUndefined();
+                expect(
+                    entity.path.leadTime.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.path.trailTime.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(entity.path.show.getValue(invalidTime)).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load constant data for point", function () {
+        const packet = {
+            point: {
+                color: {
+                    rgbaf: [0.1, 0.1, 0.1, 0.1],
+                },
+                pixelSize: 1.0,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 1.0,
+                show: true,
+                scaleByDistance: {
+                    nearFarScalar: [1.0, 2.0, 10000.0, 3.0],
+                },
+                translucencyByDistance: {
+                    nearFarScalar: [1.0, 1.0, 10000.0, 0.0],
+                },
+                heightReference: "CLAMP_TO_GROUND",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.point).toBeDefined();
+                expect(entity.point.color.getValue(time)).toEqual(
+                    Color.unpack(packet.point.color.rgbaf),
+                );
+                expect(entity.point.pixelSize.getValue(time)).toEqual(
+                    packet.point.pixelSize,
+                );
+                expect(entity.point.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.point.outlineColor.rgbaf),
+                );
+                expect(entity.point.outlineWidth.getValue(time)).toEqual(
+                    packet.point.outlineWidth,
+                );
+                expect(entity.point.show.getValue(time)).toEqual(
+                    packet.point.show,
+                );
+                expect(entity.point.scaleByDistance.getValue(time)).toEqual(
+                    NearFarScalar.unpack(
+                        packet.point.scaleByDistance.nearFarScalar,
+                    ),
+                );
+                expect(
+                    entity.point.translucencyByDistance.getValue(time),
+                ).toEqual(
+                    NearFarScalar.unpack(
+                        packet.point.translucencyByDistance.nearFarScalar,
+                    ),
+                );
+                expect(entity.point.heightReference.getValue(time)).toEqual(
+                    HeightReference[packet.point.heightReference],
+                );
+            },
+        );
+    });
+
+    it("can load interval data for point", function () {
+        const packet = {
+            point: {
+                interval: "2000-01-01/2001-01-01",
+                color: {
+                    rgbaf: [0.1, 0.1, 0.1, 0.1],
+                },
+                pixelSize: 1.0,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 1.0,
+                show: true,
+            },
+        };
+
+        const validTime = TimeInterval.fromIso8601({
+            iso8601: packet.point.interval,
+        }).start;
+        const invalidTime = JulianDate.addSeconds(
+            validTime,
+            -1,
+            new JulianDate(),
+        );
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.point).toBeDefined();
+                expect(entity.point.color.getValue(validTime)).toEqual(
+                    Color.unpack(packet.point.color.rgbaf),
+                );
+                expect(entity.point.pixelSize.getValue(validTime)).toEqual(
+                    packet.point.pixelSize,
+                );
+                expect(entity.point.outlineColor.getValue(validTime)).toEqual(
+                    Color.unpack(packet.point.outlineColor.rgbaf),
+                );
+                expect(entity.point.outlineWidth.getValue(validTime)).toEqual(
+                    packet.point.outlineWidth,
+                );
+                expect(entity.point.show.getValue(validTime)).toEqual(
+                    packet.point.show,
+                );
+
+                expect(
+                    entity.point.color.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.point.pixelSize.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.point.outlineColor.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.point.outlineWidth.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(entity.point.show.getValue(invalidTime)).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load constant data for polygon", function () {
+        const packet = {
+            polygon: {
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                    },
+                },
+                height: 1,
+                extrudedHeight: 2,
+                granularity: 3,
+                stRotation: 4,
+                show: true,
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                closeTop: false,
+                closeBottom: false,
+                shadows: "ENABLED",
+                zIndex: 3,
+                classificationType: "TERRAIN",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(entity.polygon.material.getValue(time).color).toEqual(
+                    Color.unpack(
+                        packet.polygon.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.polygon.show.getValue(time)).toEqual(
+                    packet.polygon.show,
+                );
+                expect(entity.polygon.height.getValue(time)).toEqual(
+                    packet.polygon.height,
+                );
+                expect(entity.polygon.extrudedHeight.getValue(time)).toEqual(
+                    packet.polygon.extrudedHeight,
+                );
+                expect(entity.polygon.granularity.getValue(time)).toEqual(
+                    packet.polygon.granularity,
+                );
+                expect(entity.polygon.stRotation.getValue(time)).toEqual(
+                    packet.polygon.stRotation,
+                );
+                expect(entity.polygon.outline.getValue(time)).toEqual(
+                    packet.polygon.outline,
+                );
+                expect(entity.polygon.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.polygon.outlineColor.rgbaf),
+                );
+                expect(entity.polygon.outlineWidth.getValue(time)).toEqual(
+                    packet.polygon.outlineWidth,
+                );
+                expect(entity.polygon.closeTop.getValue(time)).toEqual(
+                    packet.polygon.closeTop,
+                );
+                expect(entity.polygon.closeBottom.getValue(time)).toEqual(
+                    packet.polygon.closeBottom,
+                );
+                expect(entity.polygon.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.polygon.shadows],
+                );
+                expect(entity.polygon.zIndex.getValue(time)).toEqual(
+                    packet.polygon.zIndex,
+                );
+                expect(
+                    entity.polygon.classificationType.getValue(time),
+                ).toEqual(
+                    ClassificationType[packet.polygon.classificationType],
+                );
+            },
+        );
+    });
+
+    it("can load interval data for polygon", function () {
+        const packet = {
+            polygon: {
+                interval: "2000-01-01/2001-01-01",
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                    },
+                },
+                show: true,
+                shadows: "ENABLED",
+            },
+        };
+
+        const validTime = TimeInterval.fromIso8601({
+            iso8601: packet.polygon.interval,
+        }).start;
+        const invalidTime = JulianDate.addSeconds(
+            validTime,
+            -1,
+            new JulianDate(),
+        );
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(
+                    entity.polygon.material.getValue(validTime).color,
+                ).toEqual(
+                    Color.unpack(
+                        packet.polygon.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.polygon.show.getValue(validTime)).toEqual(
+                    packet.polygon.show,
+                );
+                expect(entity.polygon.shadows.getValue(validTime)).toEqual(
+                    ShadowMode[packet.polygon.shadows],
+                );
+
+                expect(
+                    entity.polygon.material.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.polygon.show.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.polygon.shadows.getValue(invalidTime),
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load constant polygon positions", function () {
+        const packet = {
+            polygon: {
+                positions: {
+                    cartographicDegrees: [
+                        -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
+                    ],
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(entity.polygon.hierarchy).toBeDefined();
+                expect(entity.polygon.hierarchy.isConstant).toEqual(true);
+
+                let hierarchy = entity.polygon.hierarchy.getValue(time);
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polygon.positions.cartographicDegrees,
+                    ),
+                );
+
+                hierarchy = entity.polygon.hierarchy.getValue(
+                    time,
+                    new PolygonHierarchy(),
+                );
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polygon.positions.cartographicDegrees,
+                    ),
+                );
+            },
+        );
+    });
+
+    function unpackPolygonHoleFromCartographicDegrees(holePositions) {
+        return new PolygonHierarchy(
+            Cartesian3.fromDegreesArrayHeights(holePositions),
+        );
+    }
+
+    it("can load constant polygon positions with holes", function () {
+        const packet = {
+            polygon: {
+                positions: {
+                    cartographicDegrees: [
+                        -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
+                    ],
+                },
+                holes: {
+                    cartographicDegrees: [
+                        [
+                            -48.2, 39, 0, -44.5, 37, 0, -48.9, 33.1, 0, -49,
+                            36.6, 0,
+                        ],
+                        [-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0],
+                    ],
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(entity.polygon.hierarchy).toBeDefined();
+                expect(entity.polygon.hierarchy.isConstant).toEqual(true);
+
+                const hierarchy = entity.polygon.hierarchy.getValue(time);
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polygon.positions.cartographicDegrees,
+                    ),
+                );
+                expect(hierarchy.holes).toEqual(
+                    packet.polygon.holes.cartographicDegrees.map(
+                        unpackPolygonHoleFromCartographicDegrees,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can load interval polygon positions", function () {
+        const packet = {
+            polygon: {
+                positions: [
+                    {
+                        interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                        cartographicDegrees: [
+                            -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
+                        ],
+                    },
+                    {
+                        interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
+                        cartographicDegrees: [
+                            -35, 50, 0, -35, 10, 0, -45, 30, 0,
+                        ],
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(entity.polygon.hierarchy).toBeDefined();
+                expect(entity.polygon.hierarchy.isConstant).toEqual(false);
+
+                let hierarchy = entity.polygon.hierarchy.getValue(
+                    JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
+                );
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polygon.positions[0].cartographicDegrees,
+                    ),
+                );
+
+                hierarchy = entity.polygon.hierarchy.getValue(
+                    JulianDate.fromIso8601("2012-08-04T16:20:00Z"),
+                );
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polygon.positions[1].cartographicDegrees,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can load interval polygon positions with holes expressed as degrees", function () {
+        const packet = {
+            polygon: {
+                positions: [
+                    {
+                        interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                        cartographicDegrees: [
+                            -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
+                        ],
+                    },
+                    {
+                        interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
+                        cartographicDegrees: [
+                            -35, 50, 0, -35, 10, 0, -45, 30, 0,
+                        ],
+                    },
+                ],
+                holes: [
+                    {
+                        interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                        cartographicDegrees: [
+                            [
+                                -48.2, 39, 0, -44.5, 37, 0, -48.9, 33.1, 0, -49,
+                                36.6, 0,
+                            ],
+                            [-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0],
+                        ],
+                    },
+                    {
+                        interval: "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
+                        cartographicDegrees: [
+                            [-40, 34, 0, -37, 26, 0, -41.2, 31, 0],
+                        ],
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(entity.polygon.hierarchy).toBeDefined();
+                expect(entity.polygon.hierarchy.isConstant).toEqual(false);
+
+                let hierarchy = entity.polygon.hierarchy.getValue(
+                    JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
+                );
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polygon.positions[0].cartographicDegrees,
+                    ),
+                );
+                expect(hierarchy.holes).toEqual(
+                    packet.polygon.holes[0].cartographicDegrees.map(
+                        unpackPolygonHoleFromCartographicDegrees,
+                    ),
+                );
+
+                hierarchy = entity.polygon.hierarchy.getValue(
+                    JulianDate.fromIso8601("2012-08-04T16:20:00Z"),
+                );
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromDegreesArrayHeights(
+                        packet.polygon.positions[1].cartographicDegrees,
+                    ),
+                );
+                expect(hierarchy.holes).toEqual(
+                    packet.polygon.holes[1].cartographicDegrees.map(
+                        unpackPolygonHoleFromCartographicDegrees,
+                    ),
+                );
+            },
+        );
+    });
+
+    function unpackPolygonHoleFromCartographicRadians(holePositions) {
+        return new PolygonHierarchy(
+            Cartesian3.fromRadiansArrayHeights(holePositions),
+        );
+    }
+
+    it("can load interval polygon positions with holes expressed as radians", function () {
+        const packet = {
+            polygon: {
+                positions: [
+                    {
+                        interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                        cartographicRadians: [
+                            -0.8726646259971648, 0.3490658503988659, 0,
+                            -0.8726646259971648, 0.6981317007977318, 0,
+                            -0.6981317007977318, 0.6981317007977318, 0,
+                            -0.6981317007977318, 0.3490658503988659, 0,
+                        ],
+                    },
+                ],
+                holes: [
+                    {
+                        interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                        cartographicRadians: [
+                            [
+                                -0.8412486994612669, 0.6806784082777885, 0,
+                                -0.7766715171374766, 0.6457718232379019, 0,
+                                -0.8534660042252271, 0.5777039824101231, 0,
+                                -0.8552113334772214, 0.6387905062299246, 0,
+                            ],
+                        ],
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(entity.polygon.hierarchy).toBeDefined();
+                expect(entity.polygon.hierarchy.isConstant).toEqual(false);
+
+                const hierarchy = entity.polygon.hierarchy.getValue(
+                    JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
+                );
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.fromRadiansArrayHeights(
+                        packet.polygon.positions[0].cartographicRadians,
+                    ),
+                );
+                expect(hierarchy.holes).toEqual(
+                    packet.polygon.holes[0].cartographicRadians.map(
+                        unpackPolygonHoleFromCartographicRadians,
+                    ),
+                );
+            },
+        );
+    });
+
+    function unpackPolygonHoleFromCartesian(holePositions) {
+        return new PolygonHierarchy(Cartesian3.unpackArray(holePositions));
+    }
+
+    it("can load interval polygon positions with holes expressed as cartesian", function () {
+        const packet = {
+            polygon: {
+                positions: [
+                    {
+                        interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                        cartesian: [-35, 50, 0, -35, 10, 0, -45, 30, 0],
+                    },
+                ],
+                holes: [
+                    {
+                        interval: "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                        cartesian: [[-40, 34, 0, -37, 26, 0, -41.2, 31, 0]],
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polygon).toBeDefined();
+                expect(entity.polygon.hierarchy).toBeDefined();
+                expect(entity.polygon.hierarchy.isConstant).toEqual(false);
+
+                const hierarchy = entity.polygon.hierarchy.getValue(
+                    JulianDate.fromIso8601("2012-08-04T16:10:00Z"),
+                );
+                expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+                expect(hierarchy.positions).toEqual(
+                    Cartesian3.unpackArray(
+                        packet.polygon.positions[0].cartesian,
+                    ),
+                );
+                expect(hierarchy.holes).toEqual(
+                    packet.polygon.holes[0].cartesian.map(
+                        unpackPolygonHoleFromCartesian,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can load reference polygon positions with holes", function () {
+        const packets = [
             {
-              interval: "2010-01-01T00:00:00Z/2010-01-01T01:00:00Z",
-              references: ["obj1#billboard.scale", "obj2#billboard.scale"],
+                id: "document",
+                version: "1.0",
             },
             {
-              interval: "2010-01-01T01:00:00Z/2010-01-01T02:00:00Z",
-              references: ["obj2#billboard.scale", "obj3#billboard.scale"],
-            },
-          ],
-        },
-      },
-    ];
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const entity = dataSource.entities.getById("wall");
-
-      expect(entity.wall).toBeDefined();
-      expect(entity.wall.minimumHeights).toBeInstanceOf(CompositeProperty);
-      expect(
-        entity.wall.minimumHeights.getValue(
-          JulianDate.fromIso8601("2009-01-01T00:00:00Z"),
-        ),
-      ).toBeUndefined();
-      expect(
-        entity.wall.minimumHeights.getValue(
-          JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
-        ),
-      ).toEqual([packets[1].billboard.scale, packets[2].billboard.scale]);
-      expect(
-        entity.wall.minimumHeights.getValue(
-          JulianDate.fromIso8601("2010-01-01T01:00:00Z"),
-        ),
-      ).toEqual([packets[2].billboard.scale, packets[3].billboard.scale]);
-    });
-  });
-
-  it("can load constant data for box", function () {
-    const packet = {
-      box: {
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-          },
-        },
-        dimensions: {
-          cartesian: [1, 2, 3],
-        },
-        show: true,
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        shadows: "ENABLED",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.box).toBeDefined();
-        expect(entity.box.dimensions.getValue(time)).toEqual(
-          Cartesian3.unpack(packet.box.dimensions.cartesian),
-        );
-        expect(entity.box.material.getValue(time).color).toEqual(
-          Color.unpack(packet.box.material.solidColor.color.rgbaf),
-        );
-        expect(entity.box.show.getValue(time)).toEqual(packet.box.show);
-        expect(entity.box.outline.getValue(time)).toEqual(packet.box.outline);
-        expect(entity.box.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.box.outlineColor.rgbaf),
-        );
-        expect(entity.box.outlineWidth.getValue(time)).toEqual(
-          packet.box.outlineWidth,
-        );
-        expect(entity.box.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.box.shadows],
-        );
-      },
-    );
-  });
-
-  it("can load constant data for cylinder", function () {
-    const packet = {
-      cylinder: {
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-          },
-        },
-        length: 5,
-        topRadius: 6,
-        bottomRadius: 7,
-        show: true,
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        numberOfVerticalLines: 15,
-        slices: 100,
-        shadows: "ENABLED",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.cylinder).toBeDefined();
-        expect(entity.cylinder.length.getValue(time)).toEqual(
-          packet.cylinder.length,
-        );
-        expect(entity.cylinder.topRadius.getValue(time)).toEqual(
-          packet.cylinder.topRadius,
-        );
-        expect(entity.cylinder.bottomRadius.getValue(time)).toEqual(
-          packet.cylinder.bottomRadius,
-        );
-        expect(entity.cylinder.material.getValue(time).color).toEqual(
-          Color.unpack(packet.cylinder.material.solidColor.color.rgbaf),
-        );
-        expect(entity.cylinder.show.getValue(time)).toEqual(
-          packet.cylinder.show,
-        );
-        expect(entity.cylinder.outline.getValue(time)).toEqual(
-          packet.cylinder.outline,
-        );
-        expect(entity.cylinder.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.cylinder.outlineColor.rgbaf),
-        );
-        expect(entity.cylinder.outlineWidth.getValue(time)).toEqual(
-          packet.cylinder.outlineWidth,
-        );
-        expect(entity.cylinder.numberOfVerticalLines.getValue(time)).toEqual(
-          packet.cylinder.numberOfVerticalLines,
-        );
-        expect(entity.cylinder.slices.getValue(time)).toEqual(
-          packet.cylinder.slices,
-        );
-        expect(entity.cylinder.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.cylinder.shadows],
-        );
-      },
-    );
-  });
-
-  it("can load constant data for corridor", function () {
-    const packet = {
-      corridor: {
-        material: {
-          solidColor: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-          },
-        },
-        positions: {
-          cartesian: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
-        },
-        cornerType: "MITERED",
-        extrudedHeight: 2,
-        granularity: 3,
-        height: 4,
-        width: 9,
-        show: true,
-        outline: true,
-        outlineColor: {
-          rgbaf: [0.2, 0.2, 0.2, 0.2],
-        },
-        outlineWidth: 6,
-        shadows: "ENABLED",
-        zIndex: 5,
-        classificationType: "TERRAIN",
-      },
-    };
-
-    const time = Iso8601.MINIMUM_VALUE;
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.corridor).toBeDefined();
-        expect(entity.corridor.positions.getValue(time)).toEqual(
-          Cartesian3.unpackArray(packet.corridor.positions.cartesian),
-        );
-        expect(entity.corridor.material.getValue(time).color).toEqual(
-          Color.unpack(packet.corridor.material.solidColor.color.rgbaf),
-        );
-        expect(entity.corridor.show.getValue(time)).toEqual(
-          packet.corridor.show,
-        );
-        expect(entity.corridor.height.getValue(time)).toEqual(
-          packet.corridor.height,
-        );
-        expect(entity.corridor.width.getValue(time)).toEqual(
-          packet.corridor.width,
-        );
-        expect(entity.corridor.cornerType.getValue(time)).toEqual(
-          CornerType[packet.corridor.cornerType],
-        );
-        expect(entity.corridor.extrudedHeight.getValue(time)).toEqual(
-          packet.corridor.extrudedHeight,
-        );
-        expect(entity.corridor.granularity.getValue(time)).toEqual(
-          packet.corridor.granularity,
-        );
-        expect(entity.corridor.outline.getValue(time)).toEqual(
-          packet.corridor.outline,
-        );
-        expect(entity.corridor.outlineColor.getValue(time)).toEqual(
-          Color.unpack(packet.corridor.outlineColor.rgbaf),
-        );
-        expect(entity.corridor.outlineWidth.getValue(time)).toEqual(
-          packet.corridor.outlineWidth,
-        );
-        expect(entity.corridor.shadows.getValue(time)).toEqual(
-          ShadowMode[packet.corridor.shadows],
-        );
-        expect(entity.corridor.zIndex.getValue(time)).toEqual(
-          packet.corridor.zIndex,
-        );
-        expect(entity.corridor.classificationType.getValue(time)).toEqual(
-          ClassificationType[packet.corridor.classificationType],
-        );
-      },
-    );
-  });
-
-  it("has entity collection with link to data source", function () {
-    return CzmlDataSource.load(nameCzml).then(function (dataSource) {
-      expect(dataSource.entities.owner).toEqual(dataSource);
-    });
-  });
-
-  it("has entity with link to entity collection", function () {
-    return CzmlDataSource.load(makeDocument(staticCzml)).then(
-      function (dataSource) {
-        const entities = dataSource.entities;
-        expect(entities.values[0].entityCollection).toEqual(entities);
-      },
-    );
-  });
-
-  it("can use constant reference properties", function () {
-    const time = JulianDate.now();
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "targetId",
-        point: {
-          pixelSize: 1.0,
-        },
-      },
-      {
-        id: "referenceId",
-        point: {
-          pixelSize: {
-            reference: "targetId#point.pixelSize",
-          },
-        },
-      },
-    ];
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const targetEntity = dataSource.entities.getById("targetId");
-      const referenceObject = dataSource.entities.getById("referenceId");
-
-      expect(referenceObject.point.pixelSize).toBeInstanceOf(ReferenceProperty);
-      expect(targetEntity.point.pixelSize.getValue(time)).toEqual(
-        referenceObject.point.pixelSize.getValue(time),
-      );
-    });
-  });
-
-  it("can use interval reference properties", function () {
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "targetId",
-        point: {
-          pixelSize: 1.0,
-        },
-      },
-      {
-        id: "targetId2",
-        point: {
-          pixelSize: 2.0,
-        },
-      },
-      {
-        id: "referenceId",
-        point: {
-          pixelSize: [
-            {
-              interval: "2012/2013",
-              reference: "targetId#point.pixelSize",
+                id: "target1",
+                position: {
+                    cartesian: [1.0, 2.0, 3.0],
+                },
             },
             {
-              interval: "2013/2014",
-              reference: "targetId2#point.pixelSize",
-            },
-          ],
-        },
-      },
-    ];
-
-    const time1 = JulianDate.fromIso8601("2012");
-    const time2 = JulianDate.fromIso8601("2014");
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const targetEntity = dataSource.entities.getById("targetId");
-      const targetEntity2 = dataSource.entities.getById("targetId2");
-      const referenceObject = dataSource.entities.getById("referenceId");
-
-      expect(targetEntity.point.pixelSize.getValue(time1)).toEqual(
-        referenceObject.point.pixelSize.getValue(time1),
-      );
-      expect(targetEntity2.point.pixelSize.getValue(time2)).toEqual(
-        referenceObject.point.pixelSize.getValue(time2),
-      );
-    });
-  });
-
-  it("can use constant reference properties for position", function () {
-    const time = JulianDate.now();
-
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "targetId",
-        position: {
-          cartesian: [1.0, 2.0, 3.0],
-        },
-      },
-      {
-        id: "referenceId",
-        position: {
-          reference: "targetId#position",
-        },
-      },
-    ];
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const targetEntity = dataSource.entities.getById("targetId");
-      const referenceObject = dataSource.entities.getById("referenceId");
-
-      expect(referenceObject.position).toBeInstanceOf(ReferenceProperty);
-      expect(targetEntity.position.getValue(time)).toEqual(
-        referenceObject.position.getValue(time),
-      );
-    });
-  });
-
-  it("can use interval reference properties for positions", function () {
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "targetId",
-        position: {
-          cartesian: [1.0, 2.0, 3.0],
-        },
-      },
-      {
-        id: "targetId2",
-        position: {
-          cartesian: [4.0, 5.0, 6.0],
-        },
-      },
-      {
-        id: "referenceId",
-        position: [
-          {
-            interval: "2012/2013",
-            reference: "targetId#position",
-          },
-          {
-            interval: "2013/2014",
-            reference: "targetId2#position",
-          },
-        ],
-      },
-    ];
-
-    const time1 = JulianDate.fromIso8601("2012");
-    const time2 = JulianDate.fromIso8601("2014");
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const targetEntity = dataSource.entities.getById("targetId");
-      const targetEntity2 = dataSource.entities.getById("targetId2");
-      const referenceObject = dataSource.entities.getById("referenceId");
-
-      expect(targetEntity.position.getValue(time1)).toEqual(
-        referenceObject.position.getValue(time1),
-      );
-      expect(targetEntity2.position.getValue(time2)).toEqual(
-        referenceObject.position.getValue(time2),
-      );
-    });
-  });
-
-  it("can reference properties before they exist.", function () {
-    const time = JulianDate.now();
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "referenceId",
-        point: {
-          pixelSize: {
-            reference: "targetId#point.pixelSize",
-          },
-        },
-      },
-      {
-        id: "targetId",
-        point: {
-          pixelSize: 1.0,
-        },
-      },
-    ];
-
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const targetEntity = dataSource.entities.getById("targetId");
-      const referenceObject = dataSource.entities.getById("referenceId");
-
-      expect(referenceObject.point.pixelSize).toBeInstanceOf(ReferenceProperty);
-      expect(targetEntity.point.pixelSize.getValue(time)).toEqual(
-        referenceObject.point.pixelSize.getValue(time),
-      );
-    });
-  });
-
-  it("can reference local properties.", function () {
-    const time = JulianDate.now();
-    const packet = {
-      id: "testObject",
-      point: {
-        pixelSize: 1.0,
-        outlineWidth: {
-          reference: "#point.pixelSize",
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const targetEntity = dataSource.entities.getById("testObject");
-        expect(targetEntity.point.outlineWidth).toBeInstanceOf(
-          ReferenceProperty,
-        );
-        expect(targetEntity.point.outlineWidth.getValue(time)).toEqual(
-          targetEntity.point.pixelSize.getValue(time),
-        );
-      },
-    );
-  });
-
-  it("can load a polyline with polyline glow material", function () {
-    const packet = {
-      id: "polylineGlow",
-      polyline: {
-        material: {
-          polylineGlow: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-            glowPower: 0.75,
-            taperPower: 0.55,
-          },
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.getById("polylineGlow");
-
-        expect(entity.polyline.material.color.getValue()).toEqual(
-          Color.unpack(packet.polyline.material.polylineGlow.color.rgbaf),
-        );
-        expect(entity.polyline.material.glowPower.getValue()).toEqual(
-          packet.polyline.material.polylineGlow.glowPower,
-        );
-        expect(entity.polyline.material.taperPower.getValue()).toEqual(
-          packet.polyline.material.polylineGlow.taperPower,
-        );
-      },
-    );
-  });
-
-  it("can load a polyline with polyline arrow material", function () {
-    const packet = {
-      id: "polylineArrow",
-      polyline: {
-        material: {
-          polylineArrow: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-          },
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.getById("polylineArrow");
-
-        expect(entity.polyline.material.color.getValue()).toEqual(
-          Color.unpack(packet.polyline.material.polylineArrow.color.rgbaf),
-        );
-      },
-    );
-  });
-
-  it("can load a polyline with polyline dash material", function () {
-    const packet = {
-      id: "polylineDash",
-      polyline: {
-        material: {
-          polylineDash: {
-            color: {
-              rgbaf: [0.1, 0.2, 0.3, 0.4],
-            },
-            dashLength: 16.0,
-            dashPattern: 7.0,
-          },
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.getById("polylineDash");
-
-        expect(entity.polyline.material.color.getValue()).toEqual(
-          Color.unpack(packet.polyline.material.polylineDash.color.rgbaf),
-        );
-        expect(entity.polyline.material.dashLength.getValue()).toEqual(
-          packet.polyline.material.polylineDash.dashLength,
-        );
-        expect(entity.polyline.material.dashPattern.getValue()).toEqual(
-          packet.polyline.material.polylineDash.dashPattern,
-        );
-      },
-    );
-  });
-
-  it("loads extrapolation options", function () {
-    const packet = {
-      id: "point",
-      position: {
-        forwardExtrapolationType: "HOLD",
-        forwardExtrapolationDuration: 2.0,
-        backwardExtrapolationType: "NONE",
-        backwardExtrapolationDuration: 1.0,
-        cartesian: ["2012", 0, 0, 0],
-      },
-      point: {
-        color: {
-          forwardExtrapolationType: "NONE",
-          forwardExtrapolationDuration: 1.0,
-          backwardExtrapolationType: "HOLD",
-          backwardExtrapolationDuration: 2.0,
-          rgbaf: ["2012", 0.1, 0.2, 0.3, 0.4],
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.getById("point");
-        const color = entity.point.color;
-        expect(color.forwardExtrapolationType).toEqual(
-          ExtrapolationType[packet.point.color.forwardExtrapolationType],
-        );
-        expect(color.forwardExtrapolationDuration).toEqual(
-          packet.point.color.forwardExtrapolationDuration,
-        );
-        expect(color.backwardExtrapolationType).toEqual(
-          ExtrapolationType[packet.point.color.backwardExtrapolationType],
-        );
-        expect(color.backwardExtrapolationDuration).toEqual(
-          packet.point.color.backwardExtrapolationDuration,
-        );
-
-        const position = entity.position;
-        expect(position.forwardExtrapolationType).toEqual(
-          ExtrapolationType[packet.position.forwardExtrapolationType],
-        );
-        expect(position.forwardExtrapolationDuration).toEqual(
-          packet.position.forwardExtrapolationDuration,
-        );
-        expect(position.backwardExtrapolationType).toEqual(
-          ExtrapolationType[packet.position.backwardExtrapolationType],
-        );
-        expect(position.backwardExtrapolationDuration).toEqual(
-          packet.position.backwardExtrapolationDuration,
-        );
-      },
-    );
-  });
-
-  it("rejects if first document packet lacks version information", function () {
-    return CzmlDataSource.load({
-      id: "document",
-    })
-      .then(function () {
-        fail("should not be called");
-      })
-      .catch(function (error) {
-        expect(error).toBeInstanceOf(RuntimeError);
-        expect(error.message).toEqual(
-          "CZML version information invalid.  It is expected to be a property on the document object in the <Major>.<Minor> version format.",
-        );
-      });
-  });
-
-  it("rejects if first packet is not document", function () {
-    return CzmlDataSource.load({
-      id: "someId",
-    })
-      .then(function () {
-        fail("should not be called");
-      })
-      .catch(function (error) {
-        expect(error).toBeInstanceOf(RuntimeError);
-        expect(error.message).toEqual(
-          "The first CZML packet is required to be the document object.",
-        );
-      });
-  });
-
-  it("rejects if document packet contains bad version", function () {
-    return CzmlDataSource.load({
-      id: "document",
-    })
-      .then(function () {
-        fail("should not be called");
-      })
-      .catch(function (error) {
-        expect(error).toBeInstanceOf(RuntimeError);
-        expect(error.message).toContain(
-          "CZML version information invalid.  It is expected to be a property on the document object in the <Major>.<Minor> version format.",
-        );
-      });
-  });
-
-  it("ignores color values not expressed as a known type", function () {
-    const packet = {
-      billboard: {
-        color: {
-          invalidType: "someValue",
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.billboard).toBeDefined();
-        expect(entity.billboard.color).toBeUndefined();
-      },
-    );
-  });
-
-  it("ignores rectangle values not expressed as a known type", function () {
-    const packet = {
-      rectangle: {
-        coordinates: {
-          invalidType: "someValue",
-        },
-      },
-    };
-
-    return CzmlDataSource.load(makeDocument(packet)).then(
-      function (dataSource) {
-        const entity = dataSource.entities.values[0];
-
-        expect(entity.rectangle).toBeDefined();
-        expect(entity.rectangle.coordinates).toBeUndefined();
-      },
-    );
-  });
-
-  it("converts followSurface to arcType for backwards compatibility", function () {
-    const packets = [
-      {
-        id: "document",
-        version: "1.0",
-      },
-      {
-        id: "followSurface-false",
-        polyline: {
-          followSurface: false,
-        },
-      },
-      {
-        id: "followSurface-true",
-        polyline: {
-          followSurface: true,
-        },
-      },
-      {
-        id: "followSurface-time-varying",
-        polyline: {
-          followSurface: [
-            {
-              interval: "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
-              boolean: true,
+                id: "target2",
+                position: {
+                    cartesian: [4.0, 5.0, 6.0],
+                },
             },
             {
-              interval: "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
-              boolean: false,
+                id: "target3",
+                position: {
+                    cartesian: [7.0, 8.0, 9.0],
+                },
             },
-          ],
-        },
-      },
-      {
-        id: "arcType-overrides-followSurface",
-        polyline: {
-          followSurface: true,
-          arcType: "RHUMB",
-        },
-      },
-    ];
+            {
+                id: "target4",
+                position: {
+                    cartesian: [1.5, 2.5, 3.5],
+                },
+            },
+            {
+                id: "target5",
+                position: {
+                    cartesian: [1.5, 2.6, 3.5],
+                },
+            },
+            {
+                id: "target6",
+                position: {
+                    cartesian: [1.6, 2.5, 3.5],
+                },
+            },
+            {
+                id: "polygon",
+                polygon: {
+                    positions: {
+                        references: [
+                            "target1#position",
+                            "target2#position",
+                            "target3#position",
+                        ],
+                    },
+                    holes: {
+                        references: [
+                            [
+                                "target4#position",
+                                "target5#position",
+                                "target6#position",
+                            ],
+                        ],
+                    },
+                },
+            },
+        ];
 
-    return CzmlDataSource.load(packets).then(function (dataSource) {
-      const date = JulianDate.now();
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const entity = dataSource.entities.getById("polygon");
 
-      let entity = dataSource.entities.getById("followSurface-false");
-      expect(entity.polyline.arcType.isConstant).toEqual(true);
-      expect(entity.polyline.arcType.getValue(date)).toEqual(ArcType.NONE);
+            expect(entity.polygon).toBeDefined();
+            expect(entity.polygon.hierarchy).toBeDefined();
+            expect(entity.polygon.hierarchy.isConstant).toEqual(true);
 
-      entity = dataSource.entities.getById("followSurface-true");
-      expect(entity.polyline.arcType.isConstant).toEqual(true);
-      expect(entity.polyline.arcType.getValue(date)).toEqual(ArcType.GEODESIC);
-
-      entity = dataSource.entities.getById("followSurface-time-varying");
-      expect(entity.polyline.arcType.isConstant).toEqual(false);
-      expect(
-        entity.polyline.arcType.getValue(
-          JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
-        ),
-      ).toEqual(ArcType.GEODESIC);
-      expect(
-        entity.polyline.arcType.getValue(
-          JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
-        ),
-      ).toEqual(ArcType.NONE);
-
-      entity = dataSource.entities.getById("arcType-overrides-followSurface");
-      expect(entity.polyline.arcType.isConstant).toEqual(true);
-      expect(entity.polyline.arcType.getValue(date)).toEqual(ArcType.RHUMB);
+            const time = JulianDate.fromIso8601("2012-08-04T16:10:00Z");
+            const hierarchy = entity.polygon.hierarchy.getValue(time);
+            expect(hierarchy).toBeInstanceOf(PolygonHierarchy);
+            expect(hierarchy.positions).toEqual([
+                dataSource.entities.getById("target1").position.getValue(time),
+                dataSource.entities.getById("target2").position.getValue(time),
+                dataSource.entities.getById("target3").position.getValue(time),
+            ]);
+            expect(hierarchy.holes).toEqual([
+                new PolygonHierarchy([
+                    dataSource.entities
+                        .getById("target4")
+                        .position.getValue(time),
+                    dataSource.entities
+                        .getById("target5")
+                        .position.getValue(time),
+                    dataSource.entities
+                        .getById("target6")
+                        .position.getValue(time),
+                ]),
+            ]);
+        });
     });
-  });
 
-  // The below test was generated, along with ValidationDocument.czml,
-  // by the czml-writer ValidationDocumentationGenerator.
-  // https://github.com/AnalyticalGraphicsInc/czml-writer/blob/master/DotNet/GenerateFromSchema/ValidationDocumentGenerator.cs
-  // using command line
-  // GenerateFromSchema.exe -p ..\..\..\..\Schema\Packet.json -t validation -o ..\..\..\CesiumLanguageWriterTests\
-  // then running the generated TestGenerateValidationDocument unit test
-  // to produce ValidationDocument.czml and ValidationDocumentAssertions.js
+    it("reports correct value of isConstant for polygon hierarchy", function () {
+        const document = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "constantPositionsTimeVaryingHoles",
+                polygon: {
+                    positions: {
+                        cartographicDegrees: [
+                            -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
+                        ],
+                    },
+                    holes: [
+                        {
+                            interval:
+                                "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                            cartographicDegrees: [
+                                [-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0],
+                            ],
+                        },
+                        {
+                            interval:
+                                "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
+                            cartographicDegrees: [
+                                [-40, 34, 0, -37, 26, 0, -41.2, 31, 0],
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                id: "timeVaryingPositionsConstantHoles",
+                polygon: {
+                    positions: [
+                        {
+                            interval:
+                                "2012-08-04T16:00:00Z/2012-08-04T16:20:00Z",
+                            cartographicDegrees: [
+                                -50, 20, 0, -50, 40, 0, -40, 40, 0, -40, 20, 0,
+                            ],
+                        },
+                        {
+                            interval:
+                                "2012-08-04T16:20:00Z/2012-08-04T16:40:00Z",
+                            cartographicDegrees: [
+                                -35, 50, 0, -35, 10, 0, -45, 30, 0,
+                            ],
+                        },
+                    ],
+                    holes: {
+                        cartographicDegrees: [
+                            [-45.2, 21, 0, -43.5, 27, 0, -41.6, 21.1, 0],
+                        ],
+                    },
+                },
+            },
+        ];
 
-  // Since this is generated code, keep the existing formatting.
-  // prettier-ignore
-  it("checks validation document", function () {
+        return CzmlDataSource.load(document).then(function (dataSource) {
+            let entity = dataSource.entities.getById(
+                "constantPositionsTimeVaryingHoles",
+            );
+
+            expect(entity.polygon).toBeDefined();
+            expect(entity.polygon.hierarchy).toBeDefined();
+            expect(entity.polygon.hierarchy.isConstant).toEqual(false);
+
+            entity = dataSource.entities.getById(
+                "timeVaryingPositionsConstantHoles",
+            );
+
+            expect(entity.polygon).toBeDefined();
+            expect(entity.polygon.hierarchy).toBeDefined();
+            expect(entity.polygon.hierarchy.isConstant).toEqual(false);
+        });
+    });
+
+    it("can load constant data for polyline", function () {
+        const packet = {
+            polyline: {
+                material: {
+                    polylineOutline: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                        outlineColor: {
+                            rgbaf: [0.2, 0.2, 0.2, 0.2],
+                        },
+                        outlineWidth: 1.0,
+                    },
+                },
+                width: 1.0,
+                show: true,
+                shadows: "ENABLED",
+                classificationType: "CESIUM_3D_TILE",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polyline).toBeDefined();
+                expect(entity.polyline.material.color.getValue(time)).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineOutline.color.rgbaf,
+                    ),
+                );
+                expect(
+                    entity.polyline.material.outlineColor.getValue(time),
+                ).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineOutline.outlineColor
+                            .rgbaf,
+                    ),
+                );
+                expect(
+                    entity.polyline.material.outlineWidth.getValue(time),
+                ).toEqual(
+                    packet.polyline.material.polylineOutline.outlineWidth,
+                );
+                expect(entity.polyline.width.getValue(time)).toEqual(
+                    packet.polyline.width,
+                );
+                expect(entity.polyline.show.getValue(time)).toEqual(
+                    packet.polyline.show,
+                );
+                expect(entity.polyline.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.polyline.shadows],
+                );
+                expect(
+                    entity.polyline.classificationType.getValue(time),
+                ).toEqual(
+                    ClassificationType[packet.polyline.classificationType],
+                );
+            },
+        );
+    });
+
+    it("can load interval data for polyline", function () {
+        const packet = {
+            polyline: {
+                interval: "2000-01-01/2001-01-01",
+                material: {
+                    polylineOutline: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                        outlineColor: {
+                            rgbaf: [0.2, 0.2, 0.2, 0.2],
+                        },
+                        outlineWidth: 1.0,
+                    },
+                },
+                width: 1.0,
+                show: true,
+                shadows: "ENABLED",
+            },
+        };
+
+        const validTime = TimeInterval.fromIso8601({
+            iso8601: packet.polyline.interval,
+        }).start;
+        const invalidTime = JulianDate.addSeconds(
+            validTime,
+            -1,
+            new JulianDate(),
+        );
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polyline).toBeDefined();
+                expect(
+                    entity.polyline.material.getValue(validTime).color,
+                ).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineOutline.color.rgbaf,
+                    ),
+                );
+                expect(
+                    entity.polyline.material.getValue(validTime).outlineColor,
+                ).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineOutline.outlineColor
+                            .rgbaf,
+                    ),
+                );
+                expect(
+                    entity.polyline.material.getValue(validTime).outlineWidth,
+                ).toEqual(
+                    packet.polyline.material.polylineOutline.outlineWidth,
+                );
+                expect(entity.polyline.width.getValue(validTime)).toEqual(
+                    packet.polyline.width,
+                );
+                expect(entity.polyline.show.getValue(validTime)).toEqual(
+                    packet.polyline.show,
+                );
+                expect(entity.polyline.shadows.getValue(validTime)).toEqual(
+                    ShadowMode[packet.polyline.shadows],
+                );
+
+                expect(
+                    entity.polyline.material.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.polyline.width.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.polyline.show.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.polyline.shadows.getValue(invalidTime),
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load constant data for polyline clamped to terrain.", function () {
+        const packet = {
+            polyline: {
+                material: {
+                    polylineOutline: {
+                        color: {
+                            rgbaf: [0.1, 0.1, 0.1, 0.1],
+                        },
+                        outlineColor: {
+                            rgbaf: [0.2, 0.2, 0.2, 0.2],
+                        },
+                        outlineWidth: 1.0,
+                    },
+                },
+                width: 1.0,
+                show: true,
+                clampToGround: true,
+                zIndex: 1,
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.polyline).toBeDefined();
+                expect(entity.polyline.material.color.getValue(time)).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineOutline.color.rgbaf,
+                    ),
+                );
+                expect(
+                    entity.polyline.material.outlineColor.getValue(time),
+                ).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineOutline.outlineColor
+                            .rgbaf,
+                    ),
+                );
+                expect(
+                    entity.polyline.material.outlineWidth.getValue(time),
+                ).toEqual(
+                    packet.polyline.material.polylineOutline.outlineWidth,
+                );
+                expect(entity.polyline.width.getValue(time)).toEqual(
+                    packet.polyline.width,
+                );
+                expect(entity.polyline.show.getValue(time)).toEqual(
+                    packet.polyline.show,
+                );
+                expect(entity.polyline.clampToGround.getValue(time)).toEqual(
+                    packet.polyline.clampToGround,
+                );
+                expect(entity.polyline.zIndex.getValue(time)).toEqual(
+                    packet.polyline.zIndex,
+                );
+            },
+        );
+    });
+
+    it("can load constant data for polylineVolume", function () {
+        const packet = {
+            id: "id",
+            polylineVolume: {
+                positions: {
+                    cartesian: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
+                },
+                shape: {
+                    cartesian2: [1.0, 2.0, 3.0, 4.0],
+                },
+                cornerType: "MITERED",
+                show: true,
+                fill: true,
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                    },
+                },
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                granularity: 3,
+                shadows: "ENABLED",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        const dataSource = new CzmlDataSource();
+        return dataSource
+            .load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.id).toEqual("id");
+
+                expect(entity.polylineVolume).toBeDefined();
+                expect(entity.polylineVolume.positions.getValue(time)).toEqual(
+                    Cartesian3.unpackArray(
+                        packet.polylineVolume.positions.cartesian,
+                    ),
+                );
+                expect(entity.polylineVolume.shape.getValue(time)).toEqual(
+                    Cartesian2.unpackArray(
+                        packet.polylineVolume.shape.cartesian2,
+                    ),
+                );
+                expect(entity.polylineVolume.cornerType.getValue(time)).toEqual(
+                    CornerType[packet.polylineVolume.cornerType],
+                );
+                expect(entity.polylineVolume.show.getValue(time)).toEqual(
+                    packet.polylineVolume.show,
+                );
+                expect(entity.polylineVolume.fill.getValue(time)).toEqual(
+                    packet.polylineVolume.fill,
+                );
+                expect(
+                    entity.polylineVolume.material.getValue(time).color,
+                ).toEqual(
+                    Color.unpack(
+                        packet.polylineVolume.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.polylineVolume.outline.getValue(time)).toEqual(
+                    true,
+                );
+                expect(
+                    entity.polylineVolume.outlineColor.getValue(time),
+                ).toEqual(
+                    Color.unpack(packet.polylineVolume.outlineColor.rgbaf),
+                );
+                expect(
+                    entity.polylineVolume.outlineWidth.getValue(time),
+                ).toEqual(6);
+                expect(
+                    entity.polylineVolume.granularity.getValue(time),
+                ).toEqual(packet.polylineVolume.granularity);
+                expect(entity.polylineVolume.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.polylineVolume.shadows],
+                );
+
+                // for backwards compatibility, also accept `shape` specified as `cartesian`
+                // (which normally always refers to a Cartesian3)
+                packet.polylineVolume.shape = {
+                    cartesian: [1.0, 2.0, 3.0, 4.0],
+                };
+
+                return dataSource.load(makeDocument(packet));
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.id).toEqual("id");
+
+                expect(entity.polylineVolume.shape.getValue(time)).toEqual(
+                    Cartesian2.unpackArray(
+                        packet.polylineVolume.shape.cartesian,
+                    ),
+                );
+            });
+    });
+
+    it("can load constant data for model", function () {
+        const packet = {
+            model: {
+                show: true,
+                scale: 3.0,
+                minimumPixelSize: 5.0,
+                maximumScale: 4.0,
+                gltf: "./Data/Models/glTF-2.0/BoxArticulations/glTF/BoxArticulations.gltf",
+                incrementallyLoadTextures: true,
+                shadows: "ENABLED",
+                heightReference: "CLAMP_TO_GROUND",
+                silhouetteColor: {
+                    rgbaf: [1.0, 0.0, 0.0, 1.0],
+                },
+                silhouetteSize: 2.0,
+                color: {
+                    rgbaf: [0.0, 1.0, 0.0, 0.2],
+                },
+                colorBlendMode: "HIGHLIGHT",
+                colorBlendAmount: 0.5,
+                nodeTransformations: {
+                    Mesh: {
+                        scale: {
+                            cartesian: [1.0, 2.0, 3.0],
+                        },
+                        translation: {
+                            cartesian: [4.0, 5.0, 6.0],
+                        },
+                        rotation: {
+                            unitQuaternion: [0.0, 0.7071, 0.0, 0.7071],
+                        },
+                    },
+                },
+                articulations: {
+                    "SampleArticulation Yaw": 30,
+                    "SampleArticulation Pitch": 45,
+                    "SampleArticulation Roll": 60,
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.model).toBeDefined();
+                expect(entity.model.show.getValue(time)).toEqual(
+                    packet.model.show,
+                );
+                expect(entity.model.scale.getValue(time)).toEqual(
+                    packet.model.scale,
+                );
+                expect(entity.model.minimumPixelSize.getValue(time)).toEqual(
+                    packet.model.minimumPixelSize,
+                );
+                expect(entity.model.maximumScale.getValue(time)).toEqual(
+                    packet.model.maximumScale,
+                );
+                expect(entity.model.uri.getValue(time).url).toEqual(
+                    packet.model.gltf,
+                );
+                expect(
+                    entity.model.incrementallyLoadTextures.getValue(time),
+                ).toEqual(packet.model.incrementallyLoadTextures);
+                expect(entity.model.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.model.shadows],
+                );
+                expect(entity.model.heightReference.getValue(time)).toEqual(
+                    HeightReference[packet.model.heightReference],
+                );
+                expect(entity.model.silhouetteColor.getValue(time)).toEqual(
+                    Color.unpack(packet.model.silhouetteColor.rgbaf),
+                );
+                expect(entity.model.silhouetteSize.getValue(time)).toEqual(
+                    packet.model.silhouetteSize,
+                );
+                expect(entity.model.color.getValue(time)).toEqual(
+                    Color.unpack(packet.model.color.rgbaf),
+                );
+                expect(entity.model.colorBlendMode.getValue(time)).toEqual(
+                    ColorBlendMode[packet.model.colorBlendMode],
+                );
+                expect(entity.model.colorBlendAmount.getValue(time)).toEqual(
+                    packet.model.colorBlendAmount,
+                );
+
+                const nodeTransform =
+                    entity.model.nodeTransformations.getValue(time).Mesh;
+                expect(nodeTransform).toBeDefined();
+                expect(nodeTransform.scale).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.scale.cartesian,
+                    ),
+                );
+                expect(nodeTransform.translation).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.translation
+                            .cartesian,
+                    ),
+                );
+
+                const expectedRotation = Quaternion.unpack(
+                    packet.model.nodeTransformations.Mesh.rotation
+                        .unitQuaternion,
+                );
+                Quaternion.normalize(expectedRotation, expectedRotation);
+                expect(nodeTransform.rotation).toEqual(expectedRotation);
+
+                expect(
+                    entity.model.nodeTransformations.Mesh.scale.getValue(time),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.scale.cartesian,
+                    ),
+                );
+                expect(
+                    entity.model.nodeTransformations.Mesh.translation.getValue(
+                        time,
+                    ),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.translation
+                            .cartesian,
+                    ),
+                );
+                expect(
+                    entity.model.nodeTransformations.Mesh.rotation.getValue(
+                        time,
+                    ),
+                ).toEqual(expectedRotation);
+
+                const articulations = entity.model.articulations.getValue(time);
+                expect(articulations).toBeDefined();
+                expect(articulations["SampleArticulation Yaw"]).toEqual(
+                    packet.model.articulations["SampleArticulation Yaw"],
+                );
+                expect(articulations["SampleArticulation Pitch"]).toEqual(
+                    packet.model.articulations["SampleArticulation Pitch"],
+                );
+                expect(articulations["SampleArticulation Roll"]).toEqual(
+                    packet.model.articulations["SampleArticulation Roll"],
+                );
+            },
+        );
+    });
+
+    it("can load interval data for model", function () {
+        const packet = {
+            model: {
+                interval: "2000-01-01/2001-01-01",
+                show: true,
+                scale: 3.0,
+                minimumPixelSize: 5.0,
+                gltf: "./Data/Models/glTF-2.0/BoxArticulations/glTF/BoxArticulations.gltf",
+                incrementallyLoadTextures: true,
+                shadows: "ENABLED",
+                heightReference: "CLAMP_TO_GROUND",
+                silhouetteColor: {
+                    rgbaf: [1.0, 0.0, 0.0, 1.0],
+                },
+                silhouetteSize: 2.0,
+                color: {
+                    rgbaf: [0.0, 1.0, 0.0, 0.2],
+                },
+                colorBlendMode: "HIGHLIGHT",
+                colorBlendAmount: 0.5,
+                nodeTransformations: {
+                    Mesh: {
+                        scale: {
+                            cartesian: [1.0, 2.0, 3.0],
+                        },
+                        translation: {
+                            cartesian: [4.0, 5.0, 6.0],
+                        },
+                        rotation: {
+                            unitQuaternion: [0.0, 0.7071, 0.0, 0.7071],
+                        },
+                    },
+                },
+                articulations: {
+                    "SampleArticulation Yaw": 30,
+                    "SampleArticulation Pitch": 45,
+                    "SampleArticulation Roll": 60,
+                },
+            },
+        };
+
+        const validTime = TimeInterval.fromIso8601({
+            iso8601: packet.model.interval,
+        }).start;
+        const invalidTime = JulianDate.addSeconds(
+            validTime,
+            -1,
+            new JulianDate(),
+        );
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.model).toBeDefined();
+                expect(entity.model.show.getValue(validTime)).toEqual(
+                    packet.model.show,
+                );
+                expect(entity.model.scale.getValue(validTime)).toEqual(
+                    packet.model.scale,
+                );
+                expect(
+                    entity.model.minimumPixelSize.getValue(validTime),
+                ).toEqual(packet.model.minimumPixelSize);
+                expect(entity.model.uri.getValue(validTime).url).toEqual(
+                    packet.model.gltf,
+                );
+                expect(
+                    entity.model.incrementallyLoadTextures.getValue(validTime),
+                ).toEqual(packet.model.incrementallyLoadTextures);
+                expect(entity.model.shadows.getValue(validTime)).toEqual(
+                    ShadowMode[packet.model.shadows],
+                );
+                expect(
+                    entity.model.heightReference.getValue(validTime),
+                ).toEqual(HeightReference[packet.model.heightReference]);
+                expect(
+                    entity.model.silhouetteColor.getValue(validTime),
+                ).toEqual(Color.unpack(packet.model.silhouetteColor.rgbaf));
+                expect(entity.model.silhouetteSize.getValue(validTime)).toEqual(
+                    packet.model.silhouetteSize,
+                );
+                expect(entity.model.color.getValue(validTime)).toEqual(
+                    Color.unpack(packet.model.color.rgbaf),
+                );
+                expect(entity.model.colorBlendMode.getValue(validTime)).toEqual(
+                    ColorBlendMode[packet.model.colorBlendMode],
+                );
+                expect(
+                    entity.model.colorBlendAmount.getValue(validTime),
+                ).toEqual(packet.model.colorBlendAmount);
+
+                const nodeTransform =
+                    entity.model.nodeTransformations.getValue(validTime).Mesh;
+                expect(nodeTransform).toBeDefined();
+                expect(nodeTransform.scale).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.scale.cartesian,
+                    ),
+                );
+                expect(nodeTransform.translation).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.translation
+                            .cartesian,
+                    ),
+                );
+
+                const expectedRotation = Quaternion.unpack(
+                    packet.model.nodeTransformations.Mesh.rotation
+                        .unitQuaternion,
+                );
+                Quaternion.normalize(expectedRotation, expectedRotation);
+                expect(nodeTransform.rotation).toEqual(expectedRotation);
+
+                expect(
+                    entity.model.nodeTransformations.Mesh.scale.getValue(
+                        validTime,
+                    ),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.scale.cartesian,
+                    ),
+                );
+                expect(
+                    entity.model.nodeTransformations.Mesh.translation.getValue(
+                        validTime,
+                    ),
+                ).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations.Mesh.translation
+                            .cartesian,
+                    ),
+                );
+                expect(
+                    entity.model.nodeTransformations.Mesh.rotation.getValue(
+                        validTime,
+                    ),
+                ).toEqual(expectedRotation);
+
+                const articulations =
+                    entity.model.articulations.getValue(validTime);
+                expect(articulations).toBeDefined();
+                expect(articulations["SampleArticulation Yaw"]).toEqual(
+                    packet.model.articulations["SampleArticulation Yaw"],
+                );
+                expect(articulations["SampleArticulation Pitch"]).toEqual(
+                    packet.model.articulations["SampleArticulation Pitch"],
+                );
+                expect(articulations["SampleArticulation Roll"]).toEqual(
+                    packet.model.articulations["SampleArticulation Roll"],
+                );
+
+                expect(entity.model.show.getValue(invalidTime)).toBeUndefined();
+                expect(
+                    entity.model.scale.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.model.minimumPixelSize.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(entity.model.uri.getValue(invalidTime)).toBeUndefined();
+                expect(
+                    entity.model.incrementallyLoadTextures.getValue(
+                        invalidTime,
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.model.shadows.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.model.heightReference.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.model.color.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.model.silhouetteColor.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.model.silhouetteSize.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.model.colorBlendMode.getValue(invalidTime),
+                ).toBeUndefined();
+                expect(
+                    entity.model.colorBlendAmount.getValue(invalidTime),
+                ).toBeUndefined();
+
+                expect(
+                    entity.model.nodeTransformations.Mesh.getValue(invalidTime),
+                ).toEqual(new TranslationRotationScale());
+                expect(
+                    entity.model.nodeTransformations.Mesh.scale.getValue(
+                        invalidTime,
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.model.nodeTransformations.Mesh.translation.getValue(
+                        invalidTime,
+                    ),
+                ).toBeUndefined();
+                expect(
+                    entity.model.nodeTransformations.Mesh.rotation.getValue(
+                        invalidTime,
+                    ),
+                ).toBeUndefined();
+
+                const invalidArticulations =
+                    entity.model.articulations.getValue(invalidTime);
+                expect(invalidArticulations).toBeDefined();
+                expect(
+                    invalidArticulations["SampleArticulation Yaw"],
+                ).toBeUndefined();
+                expect(
+                    invalidArticulations["SampleArticulation Pitch"],
+                ).toBeUndefined();
+                expect(
+                    invalidArticulations["SampleArticulation Roll"],
+                ).toBeUndefined();
+            },
+        );
+    });
+
+    it("can load node transformations expressed as intervals", function () {
+        const packet = {
+            model: {
+                interval: "2012-04-02T12:00:00Z/2012-04-02T13:00:00Z",
+                nodeTransformations: [
+                    {
+                        interval: "2012-04-02T12:00:00Z/2012-04-02T12:00:01Z",
+                        Mesh: {
+                            scale: {
+                                cartesian: [1.0, 2.0, 3.0],
+                            },
+                            translation: {
+                                cartesian: [4.0, 5.0, 6.0],
+                            },
+                            rotation: {
+                                unitQuaternion: [0.0, 0.7071, 0.0, 0.0],
+                            },
+                        },
+                    },
+                    {
+                        interval: "2012-04-02T12:00:01Z/2012-04-02T12:00:02Z",
+                        Mesh: {
+                            scale: {
+                                cartesian: [10.0, 20.0, 30.0],
+                            },
+                            translation: {
+                                cartesian: [40.0, 50.0, 60.0],
+                            },
+                            rotation: {
+                                unitQuaternion: [0.0, 0.0, 0.0, 0.7071],
+                            },
+                        },
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.model).toBeDefined();
+
+                let time = JulianDate.fromIso8601("2012-04-02T12:00:00Z");
+                let nodeTransform =
+                    entity.model.nodeTransformations.getValue(time).Mesh;
+                expect(nodeTransform).toBeDefined();
+                expect(nodeTransform.scale).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations[0].Mesh.scale
+                            .cartesian,
+                    ),
+                );
+                expect(nodeTransform.translation).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations[0].Mesh.translation
+                            .cartesian,
+                    ),
+                );
+
+                let expectedRotation = Quaternion.unpack(
+                    packet.model.nodeTransformations[0].Mesh.rotation
+                        .unitQuaternion,
+                );
+                Quaternion.normalize(expectedRotation, expectedRotation);
+                expect(nodeTransform.rotation).toEqual(expectedRotation);
+
+                time = JulianDate.fromIso8601("2012-04-02T12:00:01Z");
+                nodeTransform =
+                    entity.model.nodeTransformations.getValue(time).Mesh;
+                expect(nodeTransform).toBeDefined();
+                expect(nodeTransform.scale).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations[1].Mesh.scale
+                            .cartesian,
+                    ),
+                );
+                expect(nodeTransform.translation).toEqual(
+                    Cartesian3.unpack(
+                        packet.model.nodeTransformations[1].Mesh.translation
+                            .cartesian,
+                    ),
+                );
+
+                expectedRotation = Quaternion.unpack(
+                    packet.model.nodeTransformations[1].Mesh.rotation
+                        .unitQuaternion,
+                );
+                Quaternion.normalize(expectedRotation, expectedRotation);
+                expect(nodeTransform.rotation).toEqual(expectedRotation);
+            },
+        );
+    });
+
+    it("can load articulations expressed as intervals", function () {
+        const packet = {
+            model: {
+                interval: "2012-04-02T12:00:00Z/2012-04-02T13:00:00Z",
+                articulations: [
+                    {
+                        interval: "2012-04-02T12:00:00Z/2012-04-02T12:00:01Z",
+                        "SampleArticulation Yaw": 30,
+                        "SampleArticulation Pitch": 45,
+                        "SampleArticulation Roll": 60,
+                    },
+                    {
+                        interval: "2012-04-02T12:00:01Z/2012-04-02T12:00:02Z",
+                        "SampleArticulation Yaw": 20,
+                        "SampleArticulation Pitch": 25,
+                        "SampleArticulation Roll": 30,
+                    },
+                ],
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.model).toBeDefined();
+
+                let time = JulianDate.fromIso8601("2012-04-02T12:00:00Z");
+                let articulations = entity.model.articulations.getValue(time);
+                expect(articulations).toBeDefined();
+                expect(articulations["SampleArticulation Yaw"]).toEqual(
+                    packet.model.articulations[0]["SampleArticulation Yaw"],
+                );
+                expect(articulations["SampleArticulation Pitch"]).toEqual(
+                    packet.model.articulations[0]["SampleArticulation Pitch"],
+                );
+                expect(articulations["SampleArticulation Roll"]).toEqual(
+                    packet.model.articulations[0]["SampleArticulation Roll"],
+                );
+
+                time = JulianDate.fromIso8601("2012-04-02T12:00:01Z");
+                articulations = entity.model.articulations.getValue(time);
+                expect(articulations).toBeDefined();
+                expect(articulations["SampleArticulation Yaw"]).toEqual(
+                    packet.model.articulations[1]["SampleArticulation Yaw"],
+                );
+                expect(articulations["SampleArticulation Pitch"]).toEqual(
+                    packet.model.articulations[1]["SampleArticulation Pitch"],
+                );
+                expect(articulations["SampleArticulation Roll"]).toEqual(
+                    packet.model.articulations[1]["SampleArticulation Roll"],
+                );
+            },
+        );
+    });
+
+    it("can delete an existing object", function () {
+        const dataSource = new CzmlDataSource();
+        return dataSource
+            .load(makeDocument(staticCzml))
+            .then(function (dataSource) {
+                expect(dataSource.entities.values.length).toEqual(1);
+                return dataSource.load(makeDocument(czmlDelete));
+            })
+            .then(function (dataSource) {
+                expect(dataSource.entities.values.length).toEqual(0);
+            });
+    });
+
+    it("loads parent", function () {
+        const document = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "parent",
+            },
+            {
+                id: "child",
+                parent: "parent",
+            },
+        ];
+
+        return CzmlDataSource.load(document).then(function (dataSource) {
+            const parent = dataSource.entities.getById("parent");
+            expect(parent.parent).toBeUndefined();
+
+            const child = dataSource.entities.getById("child");
+            expect(child.parent).toBe(parent);
+        });
+    });
+
+    it("loads parent specified out of order", function () {
+        const document = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "child",
+                parent: "parent",
+            },
+            {
+                id: "child2",
+                parent: "parent",
+            },
+            {
+                id: "grandparent",
+            },
+            {
+                id: "grandparent2",
+            },
+            {
+                id: "parent",
+                parent: "grandparent",
+            },
+            {
+                id: "parent2",
+                parent: "grandparent",
+            },
+        ];
+
+        return CzmlDataSource.load(document).then(function (dataSource) {
+            const grandparent = dataSource.entities.getById("grandparent");
+            expect(grandparent.parent).toBeUndefined();
+
+            const grandparent2 = dataSource.entities.getById("grandparent");
+            expect(grandparent2.parent).toBeUndefined();
+
+            const parent = dataSource.entities.getById("parent");
+            expect(parent.parent).toBe(grandparent);
+
+            const parent2 = dataSource.entities.getById("parent2");
+            expect(parent2.parent).toBe(grandparent);
+
+            const child = dataSource.entities.getById("child");
+            expect(child.parent).toBe(parent);
+
+            const child2 = dataSource.entities.getById("child2");
+            expect(child2.parent).toBe(parent);
+        });
+    });
+
+    it("can process JulianDate data in packets", function () {
+        const date = JulianDate.fromIso8601("2000-01-01");
+
+        const object = {};
+        CzmlDataSource.processPacketData(
+            JulianDate,
+            object,
+            "simpleDate",
+            JulianDate.toIso8601(date),
+        );
+
+        expect(object.simpleDate).toBeDefined();
+        expect(object.simpleDate.getValue()).toEqual(date);
+
+        CzmlDataSource.processPacketData(JulianDate, object, "objDate", {
+            date: JulianDate.toIso8601(date),
+        });
+
+        expect(object.objDate).toBeDefined();
+        expect(object.objDate.getValue()).toEqual(date);
+    });
+
+    it("can process array data in packets", function () {
+        const packet = {
+            array: [1, 2, 3, 4, 5],
+        };
+
+        const object = {};
+        CzmlDataSource.processPacketData(Array, object, "arrayData", packet);
+
+        expect(object.arrayData).toBeDefined();
+        expect(object.arrayData.getValue()).toEqual(packet.array);
+    });
+
+    it("loading CZML suspends events.", function () {
+        const document = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                point: {
+                    show: true,
+                    color: {
+                        rgbaf: [0.1, 0.1, 0.1, 0.1],
+                    },
+                },
+            },
+            {
+                point: {
+                    show: false,
+                    color: {
+                        rgbaf: [0.1, 0.1, 0.1, 0.1],
+                    },
+                },
+            },
+        ];
+
+        const spy = jasmine.createSpy("changedEvent");
+
+        const dataSource = new CzmlDataSource();
+        dataSource.entities.collectionChanged.addEventListener(spy);
+        return dataSource.load(document).then(function (dataSource) {
+            expect(spy.calls.count()).toEqual(1);
+        });
+    });
+
+    function printInterval(startTime, stopTime) {
+        return TimeInterval.toIso8601(
+            new TimeInterval({
+                start: startTime,
+                stop: stopTime,
+            }),
+        );
+    }
+
+    it("can load materials specified with composite interval", function () {
+        const beforeTime = JulianDate.fromIso8601("2012-03-15T09:23:59Z");
+        const solidTime = JulianDate.fromIso8601("2012-03-15T10:00:00Z");
+        const gridTime1 = JulianDate.fromIso8601("2012-03-15T11:00:00Z");
+        const gridTime2 = JulianDate.fromIso8601("2012-03-15T12:00:00Z");
+        const afterTime = JulianDate.fromIso8601("2012-03-15T12:00:01Z");
+
+        const packet = {
+            id: "obj",
+            polygon: {
+                material: [
+                    {
+                        interval: printInterval(solidTime, gridTime1),
+                        solidColor: {
+                            color: {
+                                rgba: [240, 0, 0, 0],
+                            },
+                        },
+                    },
+                    {
+                        interval: printInterval(gridTime1, gridTime2),
+                        grid: {
+                            color: {
+                                rgba: [240, 255, 255, 255],
+                            },
+                            cellAlpha: 0,
+                            lineCount: {
+                                cartesian2: [36, 9],
+                            },
+                            lineThickness: {
+                                cartesian2: [1, 1],
+                            },
+                            lineOffset: {
+                                cartesian2: [0.5, 0.5],
+                            },
+                        },
+                    },
+                ],
+            },
+        };
+        let secondPacket;
+
+        return CzmlDataSource.load(makeDocument(packet))
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("obj");
+
+                expect(entity.polygon.material).toBeInstanceOf(
+                    CompositeMaterialProperty,
+                );
+
+                expect(entity.polygon.material.getType(solidTime)).toEqual(
+                    "Color",
+                );
+                expect(
+                    entity.polygon.material.getValue(solidTime).color,
+                ).toEqual(
+                    Color.unpack(
+                        packet.polygon.material[0].solidColor.color.rgba.map(
+                            Color.byteToFloat,
+                        ),
+                    ),
+                );
+
+                function assertValuesForGridMaterial(time) {
+                    expect(
+                        entity.polygon.material.getValue(time).color,
+                    ).toEqual(
+                        Color.unpack(
+                            packet.polygon.material[1].grid.color.rgba.map(
+                                Color.byteToFloat,
+                            ),
+                        ),
+                    );
+                    expect(
+                        entity.polygon.material.getValue(time).cellAlpha,
+                    ).toEqual(packet.polygon.material[1].grid.cellAlpha);
+                    expect(
+                        entity.polygon.material.getValue(time).lineCount,
+                    ).toEqual(
+                        Cartesian2.unpack(
+                            packet.polygon.material[1].grid.lineCount
+                                .cartesian2,
+                        ),
+                    );
+                    expect(
+                        entity.polygon.material.getValue(time).lineThickness,
+                    ).toEqual(
+                        Cartesian2.unpack(
+                            packet.polygon.material[1].grid.lineThickness
+                                .cartesian2,
+                        ),
+                    );
+                    expect(
+                        entity.polygon.material.getValue(time).lineOffset,
+                    ).toEqual(
+                        Cartesian2.unpack(
+                            packet.polygon.material[1].grid.lineOffset
+                                .cartesian2,
+                        ),
+                    );
+                }
+
+                expect(entity.polygon.material.getType(gridTime1)).toEqual(
+                    "Grid",
+                );
+                assertValuesForGridMaterial(gridTime1);
+
+                expect(entity.polygon.material.getType(gridTime2)).toEqual(
+                    "Grid",
+                );
+                assertValuesForGridMaterial(gridTime2);
+
+                expect(
+                    entity.polygon.material.getType(beforeTime),
+                ).toBeUndefined();
+                expect(
+                    entity.polygon.material.getType(afterTime),
+                ).toBeUndefined();
+                return dataSource;
+            })
+            .then(function (dataSource) {
+                // processing new data into an existing interval updates the existing material property
+                secondPacket = {
+                    id: "obj",
+                    polygon: {
+                        material: [
+                            {
+                                interval: printInterval(solidTime, gridTime1),
+                                solidColor: {
+                                    color: {
+                                        rgba: [200, 100, 50, 255],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                };
+                return dataSource.process(secondPacket);
+            })
+            .then(function (dataSource) {
+                const entity = dataSource.entities.getById("obj");
+
+                expect(entity.polygon.material).toBeInstanceOf(
+                    CompositeMaterialProperty,
+                );
+                expect(entity.polygon.material.getType(solidTime)).toEqual(
+                    "Color",
+                );
+                expect(
+                    entity.polygon.material.getValue(solidTime).color,
+                ).toEqual(
+                    Color.unpack(
+                        secondPacket.polygon.material[0].solidColor.color.rgba.map(
+                            Color.byteToFloat,
+                        ),
+                    ),
+                );
+            });
+    });
+
+    it("can load constant data for rectangle", function () {
+        const packet = {
+            rectangle: {
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                    },
+                },
+                coordinates: {
+                    wsen: [0, 1, 2, 3],
+                },
+                height: 1,
+                extrudedHeight: 2,
+                granularity: 3,
+                rotation: 4,
+                stRotation: 5,
+                show: true,
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                shadows: "ENABLED",
+                zIndex: 6,
+                classificationType: "TERRAIN",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.rectangle).toBeDefined();
+                expect(entity.rectangle.coordinates.getValue(time)).toEqual(
+                    Rectangle.unpack(packet.rectangle.coordinates.wsen),
+                );
+                expect(entity.rectangle.material.getValue(time).color).toEqual(
+                    Color.unpack(
+                        packet.rectangle.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.rectangle.show.getValue(time)).toEqual(
+                    packet.rectangle.show,
+                );
+                expect(entity.rectangle.height.getValue(time)).toEqual(
+                    packet.rectangle.height,
+                );
+                expect(entity.rectangle.extrudedHeight.getValue(time)).toEqual(
+                    packet.rectangle.extrudedHeight,
+                );
+                expect(entity.rectangle.granularity.getValue(time)).toEqual(
+                    packet.rectangle.granularity,
+                );
+                expect(entity.rectangle.rotation.getValue(time)).toEqual(
+                    packet.rectangle.rotation,
+                );
+                expect(entity.rectangle.stRotation.getValue(time)).toEqual(
+                    packet.rectangle.stRotation,
+                );
+                expect(entity.rectangle.outline.getValue(time)).toEqual(
+                    packet.rectangle.outline,
+                );
+                expect(entity.rectangle.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.rectangle.outlineColor.rgbaf),
+                );
+                expect(entity.rectangle.outlineWidth.getValue(time)).toEqual(
+                    packet.rectangle.outlineWidth,
+                );
+                expect(entity.rectangle.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.rectangle.shadows],
+                );
+                expect(entity.rectangle.zIndex.getValue(time)).toEqual(
+                    packet.rectangle.zIndex,
+                );
+                expect(
+                    entity.rectangle.classificationType.getValue(time),
+                ).toEqual(
+                    ClassificationType[packet.rectangle.classificationType],
+                );
+            },
+        );
+    });
+
+    it("can handle constant rectangle coordinates in degrees.", function () {
+        const packet = {
+            rectangle: {
+                coordinates: {
+                    wsenDegrees: [0, 1, 2, 3],
+                },
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+                expect(entity.rectangle.coordinates.getValue(time)).toEqual(
+                    Rectangle.fromDegrees(0, 1, 2, 3),
+                );
+            },
+        );
+    });
+
+    it("can handle sampled rectangle coordinates.", function () {
+        const epoch = JulianDate.now();
+
+        const packet = {
+            rectangle: {
+                coordinates: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    wsen: [0.0, 1.0, 2.0, 3.0, 4.0, 1.0, 3.0, 4.0, 5.0, 6.0],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.rectangle).toBeDefined();
+                const date1 = epoch;
+                const date2 = JulianDate.addSeconds(
+                    epoch,
+                    0.5,
+                    new JulianDate(),
+                );
+                const date3 = JulianDate.addSeconds(
+                    epoch,
+                    1.0,
+                    new JulianDate(),
+                );
+                expect(entity.rectangle.coordinates.getValue(date1)).toEqual(
+                    new Rectangle(1.0, 2.0, 3.0, 4.0),
+                );
+                expect(entity.rectangle.coordinates.getValue(date2)).toEqual(
+                    new Rectangle(2.0, 3.0, 4.0, 5.0),
+                );
+                expect(entity.rectangle.coordinates.getValue(date3)).toEqual(
+                    new Rectangle(3.0, 4.0, 5.0, 6.0),
+                );
+            },
+        );
+    });
+
+    it("can handle sampled rectangle coordinates in degrees.", function () {
+        const epoch = JulianDate.now();
+
+        const packet = {
+            rectangle: {
+                coordinates: {
+                    epoch: JulianDate.toIso8601(epoch),
+                    wsenDegrees: [
+                        0.0, 1.0, 2.0, 3.0, 4.0, 1.0, 3.0, 4.0, 5.0, 6.0,
+                    ],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.rectangle).toBeDefined();
+                const date1 = epoch;
+                const date2 = JulianDate.addSeconds(
+                    epoch,
+                    0.5,
+                    new JulianDate(),
+                );
+                const date3 = JulianDate.addSeconds(
+                    epoch,
+                    1.0,
+                    new JulianDate(),
+                );
+                expect(entity.rectangle.coordinates.getValue(date1)).toEqual(
+                    Rectangle.fromDegrees(1.0, 2.0, 3.0, 4.0),
+                );
+                expect(
+                    entity.rectangle.coordinates.getValue(date2),
+                ).toEqualEpsilon(
+                    Rectangle.fromDegrees(2.0, 3.0, 4.0, 5.0),
+                    CesiumMath.EPSILON15,
+                );
+                expect(entity.rectangle.coordinates.getValue(date3)).toEqual(
+                    Rectangle.fromDegrees(3.0, 4.0, 5.0, 6.0),
+                );
+            },
+        );
+    });
+
+    it("can load constant data for wall", function () {
+        const packet = {
+            wall: {
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                    },
+                },
+                granularity: 3,
+                minimumHeights: {
+                    array: [1, 2, 3],
+                },
+                maximumHeights: {
+                    array: [4, 5, 6],
+                },
+                show: true,
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                shadows: "ENABLED",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.wall).toBeDefined();
+                expect(entity.wall.material.getValue(time).color).toEqual(
+                    Color.unpack(packet.wall.material.solidColor.color.rgbaf),
+                );
+                expect(entity.wall.show.getValue(time)).toEqual(
+                    packet.wall.show,
+                );
+                expect(entity.wall.granularity.getValue(time)).toEqual(
+                    packet.wall.granularity,
+                );
+                expect(entity.wall.minimumHeights.getValue(time)).toEqual(
+                    packet.wall.minimumHeights.array,
+                );
+                expect(entity.wall.maximumHeights.getValue(time)).toEqual(
+                    packet.wall.maximumHeights.array,
+                );
+                expect(entity.wall.outline.getValue(time)).toEqual(
+                    packet.wall.outline,
+                );
+                expect(entity.wall.outlineColor.getValue(time)).toEqual(
+                    new Color(0.2, 0.2, 0.2, 0.2),
+                );
+                expect(entity.wall.outlineWidth.getValue(time)).toEqual(
+                    packet.wall.outlineWidth,
+                );
+                expect(entity.wall.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.wall.shadows],
+                );
+            },
+        );
+    });
+
+    it("can load data for wall with minimumHeights as references.", function () {
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "obj1",
+                billboard: {
+                    scale: 1.0,
+                },
+            },
+            {
+                id: "obj2",
+                billboard: {
+                    scale: 4.0,
+                },
+            },
+            {
+                id: "wall",
+                wall: {
+                    minimumHeights: {
+                        references: [
+                            "obj1#billboard.scale",
+                            "obj2#billboard.scale",
+                        ],
+                    },
+                    maximumHeights: {
+                        references: [
+                            "obj2#billboard.scale",
+                            "obj1#billboard.scale",
+                        ],
+                    },
+                },
+            },
+        ];
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const entity = dataSource.entities.getById("wall");
+
+            expect(entity.wall).toBeDefined();
+            expect(entity.wall.minimumHeights.getValue(time)).toEqual([
+                packets[1].billboard.scale,
+                packets[2].billboard.scale,
+            ]);
+            expect(entity.wall.maximumHeights.getValue(time)).toEqual([
+                packets[2].billboard.scale,
+                packets[1].billboard.scale,
+            ]);
+        });
+    });
+
+    it("can load array of references expressed using intervals", function () {
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "obj1",
+                billboard: {
+                    scale: 1.0,
+                },
+            },
+            {
+                id: "obj2",
+                billboard: {
+                    scale: 4.0,
+                },
+            },
+            {
+                id: "obj3",
+                billboard: {
+                    scale: 6.0,
+                },
+            },
+            {
+                id: "wall",
+                wall: {
+                    minimumHeights: [
+                        {
+                            interval:
+                                "2010-01-01T00:00:00Z/2010-01-01T01:00:00Z",
+                            references: [
+                                "obj1#billboard.scale",
+                                "obj2#billboard.scale",
+                            ],
+                        },
+                        {
+                            interval:
+                                "2010-01-01T01:00:00Z/2010-01-01T02:00:00Z",
+                            references: [
+                                "obj2#billboard.scale",
+                                "obj3#billboard.scale",
+                            ],
+                        },
+                    ],
+                },
+            },
+        ];
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const entity = dataSource.entities.getById("wall");
+
+            expect(entity.wall).toBeDefined();
+            expect(entity.wall.minimumHeights).toBeInstanceOf(
+                CompositeProperty,
+            );
+            expect(
+                entity.wall.minimumHeights.getValue(
+                    JulianDate.fromIso8601("2009-01-01T00:00:00Z"),
+                ),
+            ).toBeUndefined();
+            expect(
+                entity.wall.minimumHeights.getValue(
+                    JulianDate.fromIso8601("2010-01-01T00:00:00Z"),
+                ),
+            ).toEqual([packets[1].billboard.scale, packets[2].billboard.scale]);
+            expect(
+                entity.wall.minimumHeights.getValue(
+                    JulianDate.fromIso8601("2010-01-01T01:00:00Z"),
+                ),
+            ).toEqual([packets[2].billboard.scale, packets[3].billboard.scale]);
+        });
+    });
+
+    it("can load constant data for box", function () {
+        const packet = {
+            box: {
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                    },
+                },
+                dimensions: {
+                    cartesian: [1, 2, 3],
+                },
+                show: true,
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                shadows: "ENABLED",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.box).toBeDefined();
+                expect(entity.box.dimensions.getValue(time)).toEqual(
+                    Cartesian3.unpack(packet.box.dimensions.cartesian),
+                );
+                expect(entity.box.material.getValue(time).color).toEqual(
+                    Color.unpack(packet.box.material.solidColor.color.rgbaf),
+                );
+                expect(entity.box.show.getValue(time)).toEqual(packet.box.show);
+                expect(entity.box.outline.getValue(time)).toEqual(
+                    packet.box.outline,
+                );
+                expect(entity.box.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.box.outlineColor.rgbaf),
+                );
+                expect(entity.box.outlineWidth.getValue(time)).toEqual(
+                    packet.box.outlineWidth,
+                );
+                expect(entity.box.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.box.shadows],
+                );
+            },
+        );
+    });
+
+    it("can load constant data for cylinder", function () {
+        const packet = {
+            cylinder: {
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                    },
+                },
+                length: 5,
+                topRadius: 6,
+                bottomRadius: 7,
+                show: true,
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                numberOfVerticalLines: 15,
+                slices: 100,
+                shadows: "ENABLED",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.cylinder).toBeDefined();
+                expect(entity.cylinder.length.getValue(time)).toEqual(
+                    packet.cylinder.length,
+                );
+                expect(entity.cylinder.topRadius.getValue(time)).toEqual(
+                    packet.cylinder.topRadius,
+                );
+                expect(entity.cylinder.bottomRadius.getValue(time)).toEqual(
+                    packet.cylinder.bottomRadius,
+                );
+                expect(entity.cylinder.material.getValue(time).color).toEqual(
+                    Color.unpack(
+                        packet.cylinder.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.cylinder.show.getValue(time)).toEqual(
+                    packet.cylinder.show,
+                );
+                expect(entity.cylinder.outline.getValue(time)).toEqual(
+                    packet.cylinder.outline,
+                );
+                expect(entity.cylinder.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.cylinder.outlineColor.rgbaf),
+                );
+                expect(entity.cylinder.outlineWidth.getValue(time)).toEqual(
+                    packet.cylinder.outlineWidth,
+                );
+                expect(
+                    entity.cylinder.numberOfVerticalLines.getValue(time),
+                ).toEqual(packet.cylinder.numberOfVerticalLines);
+                expect(entity.cylinder.slices.getValue(time)).toEqual(
+                    packet.cylinder.slices,
+                );
+                expect(entity.cylinder.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.cylinder.shadows],
+                );
+            },
+        );
+    });
+
+    it("can load constant data for corridor", function () {
+        const packet = {
+            corridor: {
+                material: {
+                    solidColor: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                    },
+                },
+                positions: {
+                    cartesian: [1.0, 2.0, 3.0, 5.0, 6.0, 7.0],
+                },
+                cornerType: "MITERED",
+                extrudedHeight: 2,
+                granularity: 3,
+                height: 4,
+                width: 9,
+                show: true,
+                outline: true,
+                outlineColor: {
+                    rgbaf: [0.2, 0.2, 0.2, 0.2],
+                },
+                outlineWidth: 6,
+                shadows: "ENABLED",
+                zIndex: 5,
+                classificationType: "TERRAIN",
+            },
+        };
+
+        const time = Iso8601.MINIMUM_VALUE;
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.corridor).toBeDefined();
+                expect(entity.corridor.positions.getValue(time)).toEqual(
+                    Cartesian3.unpackArray(packet.corridor.positions.cartesian),
+                );
+                expect(entity.corridor.material.getValue(time).color).toEqual(
+                    Color.unpack(
+                        packet.corridor.material.solidColor.color.rgbaf,
+                    ),
+                );
+                expect(entity.corridor.show.getValue(time)).toEqual(
+                    packet.corridor.show,
+                );
+                expect(entity.corridor.height.getValue(time)).toEqual(
+                    packet.corridor.height,
+                );
+                expect(entity.corridor.width.getValue(time)).toEqual(
+                    packet.corridor.width,
+                );
+                expect(entity.corridor.cornerType.getValue(time)).toEqual(
+                    CornerType[packet.corridor.cornerType],
+                );
+                expect(entity.corridor.extrudedHeight.getValue(time)).toEqual(
+                    packet.corridor.extrudedHeight,
+                );
+                expect(entity.corridor.granularity.getValue(time)).toEqual(
+                    packet.corridor.granularity,
+                );
+                expect(entity.corridor.outline.getValue(time)).toEqual(
+                    packet.corridor.outline,
+                );
+                expect(entity.corridor.outlineColor.getValue(time)).toEqual(
+                    Color.unpack(packet.corridor.outlineColor.rgbaf),
+                );
+                expect(entity.corridor.outlineWidth.getValue(time)).toEqual(
+                    packet.corridor.outlineWidth,
+                );
+                expect(entity.corridor.shadows.getValue(time)).toEqual(
+                    ShadowMode[packet.corridor.shadows],
+                );
+                expect(entity.corridor.zIndex.getValue(time)).toEqual(
+                    packet.corridor.zIndex,
+                );
+                expect(
+                    entity.corridor.classificationType.getValue(time),
+                ).toEqual(
+                    ClassificationType[packet.corridor.classificationType],
+                );
+            },
+        );
+    });
+
+    it("has entity collection with link to data source", function () {
+        return CzmlDataSource.load(nameCzml).then(function (dataSource) {
+            expect(dataSource.entities.owner).toEqual(dataSource);
+        });
+    });
+
+    it("has entity with link to entity collection", function () {
+        return CzmlDataSource.load(makeDocument(staticCzml)).then(
+            function (dataSource) {
+                const entities = dataSource.entities;
+                expect(entities.values[0].entityCollection).toEqual(entities);
+            },
+        );
+    });
+
+    it("can use constant reference properties", function () {
+        const time = JulianDate.now();
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "targetId",
+                point: {
+                    pixelSize: 1.0,
+                },
+            },
+            {
+                id: "referenceId",
+                point: {
+                    pixelSize: {
+                        reference: "targetId#point.pixelSize",
+                    },
+                },
+            },
+        ];
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const targetEntity = dataSource.entities.getById("targetId");
+            const referenceObject = dataSource.entities.getById("referenceId");
+
+            expect(referenceObject.point.pixelSize).toBeInstanceOf(
+                ReferenceProperty,
+            );
+            expect(targetEntity.point.pixelSize.getValue(time)).toEqual(
+                referenceObject.point.pixelSize.getValue(time),
+            );
+        });
+    });
+
+    it("can use interval reference properties", function () {
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "targetId",
+                point: {
+                    pixelSize: 1.0,
+                },
+            },
+            {
+                id: "targetId2",
+                point: {
+                    pixelSize: 2.0,
+                },
+            },
+            {
+                id: "referenceId",
+                point: {
+                    pixelSize: [
+                        {
+                            interval: "2012/2013",
+                            reference: "targetId#point.pixelSize",
+                        },
+                        {
+                            interval: "2013/2014",
+                            reference: "targetId2#point.pixelSize",
+                        },
+                    ],
+                },
+            },
+        ];
+
+        const time1 = JulianDate.fromIso8601("2012");
+        const time2 = JulianDate.fromIso8601("2014");
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const targetEntity = dataSource.entities.getById("targetId");
+            const targetEntity2 = dataSource.entities.getById("targetId2");
+            const referenceObject = dataSource.entities.getById("referenceId");
+
+            expect(targetEntity.point.pixelSize.getValue(time1)).toEqual(
+                referenceObject.point.pixelSize.getValue(time1),
+            );
+            expect(targetEntity2.point.pixelSize.getValue(time2)).toEqual(
+                referenceObject.point.pixelSize.getValue(time2),
+            );
+        });
+    });
+
+    it("can use constant reference properties for position", function () {
+        const time = JulianDate.now();
+
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "targetId",
+                position: {
+                    cartesian: [1.0, 2.0, 3.0],
+                },
+            },
+            {
+                id: "referenceId",
+                position: {
+                    reference: "targetId#position",
+                },
+            },
+        ];
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const targetEntity = dataSource.entities.getById("targetId");
+            const referenceObject = dataSource.entities.getById("referenceId");
+
+            expect(referenceObject.position).toBeInstanceOf(ReferenceProperty);
+            expect(targetEntity.position.getValue(time)).toEqual(
+                referenceObject.position.getValue(time),
+            );
+        });
+    });
+
+    it("can use interval reference properties for positions", function () {
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "targetId",
+                position: {
+                    cartesian: [1.0, 2.0, 3.0],
+                },
+            },
+            {
+                id: "targetId2",
+                position: {
+                    cartesian: [4.0, 5.0, 6.0],
+                },
+            },
+            {
+                id: "referenceId",
+                position: [
+                    {
+                        interval: "2012/2013",
+                        reference: "targetId#position",
+                    },
+                    {
+                        interval: "2013/2014",
+                        reference: "targetId2#position",
+                    },
+                ],
+            },
+        ];
+
+        const time1 = JulianDate.fromIso8601("2012");
+        const time2 = JulianDate.fromIso8601("2014");
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const targetEntity = dataSource.entities.getById("targetId");
+            const targetEntity2 = dataSource.entities.getById("targetId2");
+            const referenceObject = dataSource.entities.getById("referenceId");
+
+            expect(targetEntity.position.getValue(time1)).toEqual(
+                referenceObject.position.getValue(time1),
+            );
+            expect(targetEntity2.position.getValue(time2)).toEqual(
+                referenceObject.position.getValue(time2),
+            );
+        });
+    });
+
+    it("can reference properties before they exist.", function () {
+        const time = JulianDate.now();
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "referenceId",
+                point: {
+                    pixelSize: {
+                        reference: "targetId#point.pixelSize",
+                    },
+                },
+            },
+            {
+                id: "targetId",
+                point: {
+                    pixelSize: 1.0,
+                },
+            },
+        ];
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const targetEntity = dataSource.entities.getById("targetId");
+            const referenceObject = dataSource.entities.getById("referenceId");
+
+            expect(referenceObject.point.pixelSize).toBeInstanceOf(
+                ReferenceProperty,
+            );
+            expect(targetEntity.point.pixelSize.getValue(time)).toEqual(
+                referenceObject.point.pixelSize.getValue(time),
+            );
+        });
+    });
+
+    it("can reference local properties.", function () {
+        const time = JulianDate.now();
+        const packet = {
+            id: "testObject",
+            point: {
+                pixelSize: 1.0,
+                outlineWidth: {
+                    reference: "#point.pixelSize",
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const targetEntity = dataSource.entities.getById("testObject");
+                expect(targetEntity.point.outlineWidth).toBeInstanceOf(
+                    ReferenceProperty,
+                );
+                expect(targetEntity.point.outlineWidth.getValue(time)).toEqual(
+                    targetEntity.point.pixelSize.getValue(time),
+                );
+            },
+        );
+    });
+
+    it("can load a polyline with polyline glow material", function () {
+        const packet = {
+            id: "polylineGlow",
+            polyline: {
+                material: {
+                    polylineGlow: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                        glowPower: 0.75,
+                        taperPower: 0.55,
+                    },
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.getById("polylineGlow");
+
+                expect(entity.polyline.material.color.getValue()).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineGlow.color.rgbaf,
+                    ),
+                );
+                expect(entity.polyline.material.glowPower.getValue()).toEqual(
+                    packet.polyline.material.polylineGlow.glowPower,
+                );
+                expect(entity.polyline.material.taperPower.getValue()).toEqual(
+                    packet.polyline.material.polylineGlow.taperPower,
+                );
+            },
+        );
+    });
+
+    it("can load a polyline with polyline arrow material", function () {
+        const packet = {
+            id: "polylineArrow",
+            polyline: {
+                material: {
+                    polylineArrow: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                    },
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.getById("polylineArrow");
+
+                expect(entity.polyline.material.color.getValue()).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineArrow.color.rgbaf,
+                    ),
+                );
+            },
+        );
+    });
+
+    it("can load a polyline with polyline dash material", function () {
+        const packet = {
+            id: "polylineDash",
+            polyline: {
+                material: {
+                    polylineDash: {
+                        color: {
+                            rgbaf: [0.1, 0.2, 0.3, 0.4],
+                        },
+                        dashLength: 16.0,
+                        dashPattern: 7.0,
+                    },
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.getById("polylineDash");
+
+                expect(entity.polyline.material.color.getValue()).toEqual(
+                    Color.unpack(
+                        packet.polyline.material.polylineDash.color.rgbaf,
+                    ),
+                );
+                expect(entity.polyline.material.dashLength.getValue()).toEqual(
+                    packet.polyline.material.polylineDash.dashLength,
+                );
+                expect(entity.polyline.material.dashPattern.getValue()).toEqual(
+                    packet.polyline.material.polylineDash.dashPattern,
+                );
+            },
+        );
+    });
+
+    it("loads extrapolation options", function () {
+        const packet = {
+            id: "point",
+            position: {
+                forwardExtrapolationType: "HOLD",
+                forwardExtrapolationDuration: 2.0,
+                backwardExtrapolationType: "NONE",
+                backwardExtrapolationDuration: 1.0,
+                cartesian: ["2012", 0, 0, 0],
+            },
+            point: {
+                color: {
+                    forwardExtrapolationType: "NONE",
+                    forwardExtrapolationDuration: 1.0,
+                    backwardExtrapolationType: "HOLD",
+                    backwardExtrapolationDuration: 2.0,
+                    rgbaf: ["2012", 0.1, 0.2, 0.3, 0.4],
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.getById("point");
+                const color = entity.point.color;
+                expect(color.forwardExtrapolationType).toEqual(
+                    ExtrapolationType[
+                        packet.point.color.forwardExtrapolationType
+                    ],
+                );
+                expect(color.forwardExtrapolationDuration).toEqual(
+                    packet.point.color.forwardExtrapolationDuration,
+                );
+                expect(color.backwardExtrapolationType).toEqual(
+                    ExtrapolationType[
+                        packet.point.color.backwardExtrapolationType
+                    ],
+                );
+                expect(color.backwardExtrapolationDuration).toEqual(
+                    packet.point.color.backwardExtrapolationDuration,
+                );
+
+                const position = entity.position;
+                expect(position.forwardExtrapolationType).toEqual(
+                    ExtrapolationType[packet.position.forwardExtrapolationType],
+                );
+                expect(position.forwardExtrapolationDuration).toEqual(
+                    packet.position.forwardExtrapolationDuration,
+                );
+                expect(position.backwardExtrapolationType).toEqual(
+                    ExtrapolationType[
+                        packet.position.backwardExtrapolationType
+                    ],
+                );
+                expect(position.backwardExtrapolationDuration).toEqual(
+                    packet.position.backwardExtrapolationDuration,
+                );
+            },
+        );
+    });
+
+    it("rejects if first document packet lacks version information", function () {
+        return CzmlDataSource.load({
+            id: "document",
+        })
+            .then(function () {
+                fail("should not be called");
+            })
+            .catch(function (error) {
+                expect(error).toBeInstanceOf(RuntimeError);
+                expect(error.message).toEqual(
+                    "CZML version information invalid.  It is expected to be a property on the document object in the <Major>.<Minor> version format.",
+                );
+            });
+    });
+
+    it("rejects if first packet is not document", function () {
+        return CzmlDataSource.load({
+            id: "someId",
+        })
+            .then(function () {
+                fail("should not be called");
+            })
+            .catch(function (error) {
+                expect(error).toBeInstanceOf(RuntimeError);
+                expect(error.message).toEqual(
+                    "The first CZML packet is required to be the document object.",
+                );
+            });
+    });
+
+    it("rejects if document packet contains bad version", function () {
+        return CzmlDataSource.load({
+            id: "document",
+        })
+            .then(function () {
+                fail("should not be called");
+            })
+            .catch(function (error) {
+                expect(error).toBeInstanceOf(RuntimeError);
+                expect(error.message).toContain(
+                    "CZML version information invalid.  It is expected to be a property on the document object in the <Major>.<Minor> version format.",
+                );
+            });
+    });
+
+    it("ignores color values not expressed as a known type", function () {
+        const packet = {
+            billboard: {
+                color: {
+                    invalidType: "someValue",
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.billboard).toBeDefined();
+                expect(entity.billboard.color).toBeUndefined();
+            },
+        );
+    });
+
+    it("ignores rectangle values not expressed as a known type", function () {
+        const packet = {
+            rectangle: {
+                coordinates: {
+                    invalidType: "someValue",
+                },
+            },
+        };
+
+        return CzmlDataSource.load(makeDocument(packet)).then(
+            function (dataSource) {
+                const entity = dataSource.entities.values[0];
+
+                expect(entity.rectangle).toBeDefined();
+                expect(entity.rectangle.coordinates).toBeUndefined();
+            },
+        );
+    });
+
+    it("converts followSurface to arcType for backwards compatibility", function () {
+        const packets = [
+            {
+                id: "document",
+                version: "1.0",
+            },
+            {
+                id: "followSurface-false",
+                polyline: {
+                    followSurface: false,
+                },
+            },
+            {
+                id: "followSurface-true",
+                polyline: {
+                    followSurface: true,
+                },
+            },
+            {
+                id: "followSurface-time-varying",
+                polyline: {
+                    followSurface: [
+                        {
+                            interval:
+                                "2013-01-01T00:00:00Z/2013-01-01T01:00:00Z",
+                            boolean: true,
+                        },
+                        {
+                            interval:
+                                "2013-01-01T01:00:00Z/2013-01-01T02:00:00Z",
+                            boolean: false,
+                        },
+                    ],
+                },
+            },
+            {
+                id: "arcType-overrides-followSurface",
+                polyline: {
+                    followSurface: true,
+                    arcType: "RHUMB",
+                },
+            },
+        ];
+
+        return CzmlDataSource.load(packets).then(function (dataSource) {
+            const date = JulianDate.now();
+
+            let entity = dataSource.entities.getById("followSurface-false");
+            expect(entity.polyline.arcType.isConstant).toEqual(true);
+            expect(entity.polyline.arcType.getValue(date)).toEqual(
+                ArcType.NONE,
+            );
+
+            entity = dataSource.entities.getById("followSurface-true");
+            expect(entity.polyline.arcType.isConstant).toEqual(true);
+            expect(entity.polyline.arcType.getValue(date)).toEqual(
+                ArcType.GEODESIC,
+            );
+
+            entity = dataSource.entities.getById("followSurface-time-varying");
+            expect(entity.polyline.arcType.isConstant).toEqual(false);
+            expect(
+                entity.polyline.arcType.getValue(
+                    JulianDate.fromIso8601("2013-01-01T00:00:00Z"),
+                ),
+            ).toEqual(ArcType.GEODESIC);
+            expect(
+                entity.polyline.arcType.getValue(
+                    JulianDate.fromIso8601("2013-01-01T01:00:00Z"),
+                ),
+            ).toEqual(ArcType.NONE);
+
+            entity = dataSource.entities.getById(
+                "arcType-overrides-followSurface",
+            );
+            expect(entity.polyline.arcType.isConstant).toEqual(true);
+            expect(entity.polyline.arcType.getValue(date)).toEqual(
+                ArcType.RHUMB,
+            );
+        });
+    });
+
+    // The below test was generated, along with ValidationDocument.czml,
+    // by the czml-writer ValidationDocumentationGenerator.
+    // https://github.com/AnalyticalGraphicsInc/czml-writer/blob/master/DotNet/GenerateFromSchema/ValidationDocumentGenerator.cs
+    // using command line
+    // GenerateFromSchema.exe -p ..\..\..\..\Schema\Packet.json -t validation -o ..\..\..\CesiumLanguageWriterTests\
+    // then running the generated TestGenerateValidationDocument unit test
+    // to produce ValidationDocument.czml and ValidationDocumentAssertions.js
+
+    // Since this is generated code, keep the existing formatting.
+    // prettier-ignore
+    it("checks validation document", function () {
     return CzmlDataSource.load('Data/CZML/ValidationDocument.czml').then(function(dataSource) {
       let e;
       const documentStartDate = JulianDate.fromIso8601('2016-06-17T12:00:00Z');
@@ -10133,23 +10761,23 @@ describe("DataSources/CzmlDataSource", function () {
     });
   });
 
-  it("registers custom updaters", () => {
-    function processFakeEntity() {}
+    it("registers custom updaters", () => {
+        function processFakeEntity() {}
 
-    expect(CzmlDataSource.updaters.length)
-      .withContext("length before register")
-      .toEqual(23);
+        expect(CzmlDataSource.updaters.length)
+            .withContext("length before register")
+            .toEqual(23);
 
-    CzmlDataSource.registerUpdater(processFakeEntity);
+        CzmlDataSource.registerUpdater(processFakeEntity);
 
-    expect(CzmlDataSource.updaters.length)
-      .withContext("length after register")
-      .toEqual(24);
-    expect(CzmlDataSource.updaters[23]).toEqual(processFakeEntity);
+        expect(CzmlDataSource.updaters.length)
+            .withContext("length after register")
+            .toEqual(24);
+        expect(CzmlDataSource.updaters[23]).toEqual(processFakeEntity);
 
-    CzmlDataSource.unregisterUpdater(processFakeEntity);
-    expect(CzmlDataSource.updaters.length)
-      .withContext("length after unregister")
-      .toEqual(23);
-  });
+        CzmlDataSource.unregisterUpdater(processFakeEntity);
+        expect(CzmlDataSource.updaters.length)
+            .withContext("length after unregister")
+            .toEqual(23);
+    });
 });
