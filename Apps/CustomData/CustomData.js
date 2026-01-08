@@ -3,14 +3,15 @@ window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
   : "../../Build/CesiumUnminified/";
 
 import {
-  Cesium3DTileset,
-  formatError,
-  Viewer,
-  Terrain,
-  RequestScheduler,
-  Matrix4,
-  Cartesian3,
-  Cartographic,
+    Ion,
+    Cesium3DTileset,
+    formatError,
+    Viewer,
+    Terrain,
+    RequestScheduler,
+    Matrix4,
+    Cartesian3,
+    Cartographic,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -40,31 +41,35 @@ async function main() {
   RequestScheduler.maximumRequests = 2000000;
   RequestScheduler.maximumRequestsPerServer = 100000;
 
-  let viewer;
-  try {
-    viewer = new Viewer("cesiumContainer", {
-      terrain: Terrain.fromWorldTerrain(),
-      timeline: false,
-      animation: false,
-      geocoder: false,
-      baseLayerPicker: false,
-      sceneModePicker: false,
-      navigationHelpButton: false,
-      selectionIndicator: false,
-      infoBox: false,
-    });
-  } catch (exception) {
-    loadingIndicator.style.display = "none";
-    const message = formatError(exception);
-    console.error(message);
-    if (!document.querySelector(".cesium-widget-errorPanel")) {
-      //eslint-disable-next-line no-alert
-      window.alert(message);
-    }
-    return;
-  }
+    Ion.defaultAccessToken =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZDgxMjNjMi03MTRlLTRjNzctODgyMi05ZWRiYTllZGQzN2YiLCJpZCI6MzU3ODE2LCJpYXQiOjE3NjI0Mjk2NDJ9.vD7C8Iy8dFXX21tneNfCYl51FtbUGIrBfJHwiQsRNp0";
 
-  //const scene = viewer.scene;
+    let viewer;
+    try {
+        viewer = new Viewer("cesiumContainer", {
+            terrain: Terrain.fromWorldTerrain(),
+            timeline: false,
+            animation: false,
+            geocoder: false,
+            baseLayerPicker: false,
+            sceneModePicker: false,
+            navigationHelpButton: false,
+            selectionIndicator: false,
+            infoBox: false,
+        });
+    } catch (exception) {
+        loadingIndicator.style.display = "none";
+        const message = formatError(exception);
+        console.error(message);
+        if (!document.querySelector(".cesium-widget-errorPanel")) {
+            //eslint-disable-next-line no-alert
+            window.alert(message);
+        }
+        return;
+    }
+
+    const scene = viewer.scene;
+    let tileset;
 
   // // OPTIONAL — black background but keep the globe
   // scene.skyBox = undefined;
@@ -77,11 +82,21 @@ async function main() {
       // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
       const heightOffsetMeters = 15.0;
 
-      // Load Tileset from URL with various options for performance and LOD management
-      const tileset = await Cesium3DTileset.fromUrl(
-        "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_0_1_TRANSFORMED_2024-12-12_13h21_05_585_georef/tileset.json",
-        {
-          skipLevelOfDetail: false,
+            // Load Tileset from URL with various options for performance and LOD management
+
+            tileset = await Cesium3DTileset.fromUrl(
+                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_2_0_TRANSFORMED_2024-12-12_13h37_33_000_georef/tileset.json",
+            ); /**/
+
+            /*
+            tileset = viewer.scene.primitives.add(
+                await Cesium3DTileset.fromIonAssetId(4332925),
+            );
+            /**/
+
+            /*
+            {
+                    skipLevelOfDetail: false,
 
           preferLeaves: true,
 
@@ -93,12 +108,12 @@ async function main() {
 
           cullRequestsWhileMoving: false,
 
-          maximumScreenSpaceError: 0.0001,
+                    maximumScreenSpaceError: 1,
 
-          preloadWhenHidden: true,
-          preloadFlightDestinations: true,
-        },
-      );
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },),
+            */
 
       // Add tileset to the scene
       viewer.scene.primitives.add(tileset);
@@ -130,8 +145,16 @@ async function main() {
         new Cartesian3(),
       );
 
-      // Apply model matrix
-      tileset.modelMatrix = Matrix4.fromTranslation(translation);
+            // Apply model matrix
+            tileset.modelMatrix = Matrix4.fromTranslation(translation);
+
+            //testing
+            tileset.pointCloudShading.maximumAttenuation = 3.0;
+            tileset.pointCloudShading.baseResolution = 0.02;
+            tileset.pointCloudShading.geometricErrorScale = 0.5;
+            tileset.pointCloudShading.attenuation = true;
+
+            tileset.debugShowBoundingVolume = true;
 
       // Fly to point cloud
       viewer.flyTo(tileset);
@@ -140,7 +163,64 @@ async function main() {
     }
   };
 
-  await loadTileset();
+    await loadTileset();
+
+    // ==================== PERFORMANCE MEASUREMENT ====================
+
+    let requestsCompleted = 0;
+    let totalRequests = 0;
+
+    RequestScheduler.requestCompletedEvent.addEventListener(() => {
+        requestsCompleted++;
+        totalRequests++;
+    });
+
+    let lastSecond = performance.now();
+    let frames = 0;
+    let pointsPerSecond = 0;
+    let maxPointsPerFrame = 0;
+
+    scene.postRender.addEventListener(() => {
+        if (!tileset || !tileset._selectedTiles) {
+            return;
+        }
+
+        frames++;
+
+        let pointsThisFrame = 0;
+
+        tileset._selectedTiles.forEach((tile) => {
+            const content = tile.content;
+            if (content && content.pointsLength) {
+                pointsThisFrame += content.pointsLength;
+            }
+        });
+
+        pointsPerSecond += pointsThisFrame;
+        maxPointsPerFrame = Math.max(maxPointsPerFrame, pointsThisFrame);
+
+        const now = performance.now();
+        if (now - lastSecond >= 1000) {
+            console.log(
+                "FPS:",
+                frames,
+                "| points/s:",
+                pointsPerSecond.toLocaleString(),
+                "| req/s:",
+                requestsCompleted,
+                "| total req:",
+                totalRequests,
+                "| max points/frame:",
+                maxPointsPerFrame.toLocaleString(),
+            );
+
+            frames = 0;
+            pointsPerSecond = 0;
+            requestsCompleted = 0;
+            maxPointsPerFrame = 0;
+            lastSecond = now;
+        }
+    });
 
   loadingIndicator.style.display = "none";
 }
