@@ -84,15 +84,25 @@ async function main() {
 
             // Load Tileset from URL with various options for performance and LOD management
 
+            /*
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_2_0_TRANSFORMED_2024-12-12_13h37_33_000_georef/tileset.json",
+                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_3_1_TRANSFORMED_2024-12-12_13h48_53_169_georef/tileset.json",
+            ); /**/
+
+            tileset = await Cesium3DTileset.fromUrl(
+                "http://172.19.0.1:8001/output_georef/tileset.json",
             ); /**/
 
             /*
             tileset = viewer.scene.primitives.add(
-                await Cesium3DTileset.fromIonAssetId(4332925),
+                await Cesium3DTileset.fromIonAssetId(4331253),
             );
             /**/
+
+            /*
+            tileset = await Cesium3DTileset.fromUrl(
+                "https://3d.oslandia.com/lidar_hd/tileset.json",
+            ); /**/
 
             /*
             {
@@ -149,12 +159,12 @@ async function main() {
             tileset.modelMatrix = Matrix4.fromTranslation(translation);
 
             //testing
-            tileset.pointCloudShading.maximumAttenuation = 3.0;
+            tileset.pointCloudShading.maximumAttenuation = 4.0;
             tileset.pointCloudShading.baseResolution = 0.02;
             tileset.pointCloudShading.geometricErrorScale = 0.5;
             tileset.pointCloudShading.attenuation = true;
 
-            tileset.debugShowBoundingVolume = true;
+            // tileset.debugShowBoundingVolume = true;
 
       // Fly to point cloud
       viewer.flyTo(tileset);
