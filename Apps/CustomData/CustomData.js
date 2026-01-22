@@ -92,6 +92,11 @@ async function main() {
                     preloadWhenHidden: true,
                     preloadFlightDestinations: true,
                 },
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
             ); /**/
 
             tileset = await Cesium3DTileset.fromUrl(
@@ -101,15 +106,23 @@ async function main() {
                     preloadWhenHidden: true,
                     preloadFlightDestinations: true,
                 },
-            ); /**/
-
-            /*
-            tileset = viewer.scene.primitives.add(
-                await Cesium3DTileset.fromIonAssetId(4332925),
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
                     preloadFlightDestinations: true,
+                },
+            ); /**/
+
+            /*
+            tileset = viewer.scene.primitives.add(
+                await Cesium3DTileset.fromIonAssetId(4331253),
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
+            );
+            /**/
                 },
             );
             /**/
