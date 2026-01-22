@@ -1,6 +1,6 @@
 window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
-  ? window.CESIUM_BASE_URL
-  : "../../Build/CesiumUnminified/";
+    ? window.CESIUM_BASE_URL
+    : "../../Build/CesiumUnminified/";
 
 import {
     Ion,
@@ -15,7 +15,7 @@ import {
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
-  /*
+    /*
      Options parsed from query string:
        source=url          The URL of a CZML/GeoJSON/KML data source to load at startup.
                            Automatic data type detection uses file extension.
@@ -34,12 +34,12 @@ async function main() {
                            [height,heading,pitch,roll] default is looking straight down, [300,0,-90,0]
        saveCamera=false    Don't automatically update the camera view in the URL when it changes.
      */
-  // const endUserOptions = queryToObject(window.location.search.substring(1));
+    // const endUserOptions = queryToObject(window.location.search.substring(1));
 
-  const loadingIndicator = document.getElementById("loadingIndicator");
+    const loadingIndicator = document.getElementById("loadingIndicator");
 
-  RequestScheduler.maximumRequests = 2000000;
-  RequestScheduler.maximumRequestsPerServer = 100000;
+    RequestScheduler.maximumRequests = 2000000;
+    RequestScheduler.maximumRequestsPerServer = 100000;
 
     Ion.defaultAccessToken =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZDgxMjNjMi03MTRlLTRjNzctODgyMi05ZWRiYTllZGQzN2YiLCJpZCI6MzU3ODE2LCJpYXQiOjE3NjI0Mjk2NDJ9.vD7C8Iy8dFXX21tneNfCYl51FtbUGIrBfJHwiQsRNp0";
@@ -71,16 +71,16 @@ async function main() {
     const scene = viewer.scene;
     let tileset;
 
-  // // OPTIONAL — black background but keep the globe
-  // scene.skyBox = undefined;
-  // scene.skyAtmosphere = undefined;
+    // // OPTIONAL — black background but keep the globe
+    // scene.skyBox = undefined;
+    // scene.skyAtmosphere = undefined;
 
-  // scene.backgroundColor = Color.RED;
+    // scene.backgroundColor = Color.RED;
 
-  const loadTileset = async () => {
-    try {
-      // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
-      const heightOffsetMeters = 15.0;
+    const loadTileset = async () => {
+        try {
+            // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
+            const heightOffsetMeters = 15.0;
 
             // Load Tileset from URL with various options for performance and LOD management
 
@@ -108,15 +108,15 @@ async function main() {
             {
                     skipLevelOfDetail: false,
 
-          preferLeaves: true,
+                    preferLeaves: true,
 
-          dynamicScreenSpaceError: false,
+                    dynamicScreenSpaceError: false,
 
-          progressiveResolutionHeightFraction: 0.0,
+                    progressiveResolutionHeightFraction: 0.0,
 
-          foveatedScreenSpaceError: false,
+                    foveatedScreenSpaceError: false,
 
-          cullRequestsWhileMoving: false,
+                    cullRequestsWhileMoving: false,
 
                     maximumScreenSpaceError: 1,
 
@@ -125,35 +125,37 @@ async function main() {
                 },),
             */
 
-      // Add tileset to the scene
-      viewer.scene.primitives.add(tileset);
+            // Add tileset to the scene
+            viewer.scene.primitives.add(tileset);
 
-      await tileset.readyPromise;
+            await tileset.readyPromise;
 
-      // Compute offset to raise tileset above terrain
+            // Compute offset to raise tileset above terrain
 
-      const boundingSphere = tileset.boundingSphere;
-      const cartographic = Cartographic.fromCartesian(boundingSphere.center);
+            const boundingSphere = tileset.boundingSphere;
+            const cartographic = Cartographic.fromCartesian(
+                boundingSphere.center,
+            );
 
-      // Create surface and offset positions
-      const surface = Cartesian3.fromRadians(
-        cartographic.longitude,
-        cartographic.latitude,
-        cartographic.height,
-      );
+            // Create surface and offset positions
+            const surface = Cartesian3.fromRadians(
+                cartographic.longitude,
+                cartographic.latitude,
+                cartographic.height,
+            );
 
-      const offset = Cartesian3.fromRadians(
-        cartographic.longitude,
-        cartographic.latitude,
-        cartographic.height + heightOffsetMeters,
-      );
+            const offset = Cartesian3.fromRadians(
+                cartographic.longitude,
+                cartographic.latitude,
+                cartographic.height + heightOffsetMeters,
+            );
 
-      // Compute translation vector
-      const translation = Cartesian3.subtract(
-        offset,
-        surface,
-        new Cartesian3(),
-      );
+            // Compute translation vector
+            const translation = Cartesian3.subtract(
+                offset,
+                surface,
+                new Cartesian3(),
+            );
 
             // Apply model matrix
             tileset.modelMatrix = Matrix4.fromTranslation(translation);
@@ -166,12 +168,12 @@ async function main() {
 
             // tileset.debugShowBoundingVolume = true;
 
-      // Fly to point cloud
-      viewer.flyTo(tileset);
-    } catch (error) {
-      console.log("Error loading tileset:", error);
-    }
-  };
+            // Fly to point cloud
+            viewer.flyTo(tileset);
+        } catch (error) {
+            console.log("Error loading tileset:", error);
+        }
+    };
 
     await loadTileset();
 
@@ -232,7 +234,7 @@ async function main() {
         }
     });
 
-  loadingIndicator.style.display = "none";
+    loadingIndicator.style.display = "none";
 }
 
 main();
