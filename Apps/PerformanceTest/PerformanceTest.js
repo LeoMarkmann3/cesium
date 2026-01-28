@@ -92,7 +92,7 @@ async function main() {
             ); /**/
 
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.37:8001/out_tileset/tileset.json",
+                "http://172.18.21.37:8002/out_tileset/tileset.json",
             ); /**/
 
             /*
