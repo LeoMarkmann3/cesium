@@ -12,6 +12,7 @@ import {
     Matrix4,
     Cartesian3,
     Cartographic,
+    PerformanceMeasurer,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -68,7 +69,7 @@ async function main() {
         return;
     }
 
-    const scene = viewer.scene;
+    // const scene = viewer.scene;
     let tileset;
 
     // // OPTIONAL — black background but keep the globe
@@ -95,7 +96,7 @@ async function main() {
             ); /**/
 
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.37:8001/out_tileset/tileset.json",
+                "http://172.18.21.37:8002/out_tileset/tileset.json",
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
@@ -105,7 +106,7 @@ async function main() {
 
             /*
             tileset = viewer.scene.primitives.add(
-                await Cesium3DTileset.fromIonAssetId(4332925),
+                await Cesium3DTileset.fromIonAssetId(4331253),
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
@@ -166,6 +167,10 @@ async function main() {
 
     await loadTileset();
 
+    const _performance = new PerformanceMeasurer(10, 10000);
+    _performance.start();
+
+    /*
     // ==================== PERFORMANCE MEASUREMENT ====================
 
     let requestsCompleted = 0;
@@ -221,7 +226,7 @@ async function main() {
             maxPointsPerFrame = 0;
             lastSecond = now;
         }
-    });
+    });/**/
 
     loadingIndicator.style.display = "none";
 }
