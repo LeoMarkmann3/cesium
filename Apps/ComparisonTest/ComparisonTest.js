@@ -12,6 +12,8 @@ import {
     Matrix4,
     Cartesian3,
     Cartographic,
+    Math,
+    JulianDate,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -95,7 +97,7 @@ async function main() {
             ); /**/
 
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.37:8001/out_tileset/tileset.json",
+                "http://172.18.21.37:8002/out_tileset/tileset.json",
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
@@ -158,7 +160,7 @@ async function main() {
             // tileset.debugShowBoundingVolume = true;
 
             // Fly to point cloud
-            viewer.flyTo(tileset);
+            // viewer.flyTo(tileset);
         } catch (error) {
             console.log("Error loading tileset:", error);
         }
@@ -166,9 +168,200 @@ async function main() {
 
     await loadTileset();
 
+    // ==================== CAMERA LOGGER ====================
+
+    /*const CAMERA_LOG_INTERVAL_MS = 2000;
+    let lastCameraLog = performance.now();
+
+    scene.postRender.addEventListener(() => {
+        const now = performance.now();
+        if (now - lastCameraLog < CAMERA_LOG_INTERVAL_MS) {
+        return;
+        }
+        lastCameraLog = now;
+
+        const camera = viewer.camera;
+        const carto = Cartographic.fromCartesian(camera.position);
+
+        const lon = Math.toDegrees(carto.longitude);
+        const lat = Math.toDegrees(carto.latitude);
+        const height = carto.height;
+
+        // Normalize angles (avoid 360 / tiny eps values)
+        const heading = (Math.toDegrees(camera.heading) + 360) % 360;
+        const pitch = Math.toDegrees(camera.pitch);
+        const roll = (Math.toDegrees(camera.roll) + 360) % 360;
+
+        console.log(
+        "CAM | lon:",
+        lon.toFixed(5),
+        "| lat:",
+        lat.toFixed(5),
+        "| h:",
+        height.toFixed(2),
+        "| hdg:",
+        heading.toFixed(2),
+        "| pit:",
+        pitch.toFixed(2),
+        "| rol:",
+        roll.toFixed(2),
+        );
+    }); /**/
+
+    // ==================== CAMERA PATH ====================
+
+    const cameraPath = [
+        {
+            time: 0,
+            position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
+            orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
+        },
+        {
+            time: 10,
+            position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
+            orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
+        },
+        {
+            time: 15,
+            position: { lon: 14.19719, lat: 52.28058, height: 121.7 },
+            orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
+        },
+        {
+            time: 20,
+            position: { lon: 14.19704, lat: 52.28054, height: 121.94 },
+            orientation: { heading: 347.99, pitch: 2.13, roll: 0.0 },
+        },
+        {
+            time: 35,
+            position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
+            orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
+        },
+        {
+            time: 36,
+            position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
+            orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
+        },
+        {
+            time: 40,
+            position: { lon: 14.19605, lat: 52.28066, height: 126.18 },
+            orientation: { heading: 359.14, pitch: 2.29, roll: 0.0 },
+        },
+        {
+            time: 45,
+            position: { lon: 14.19605, lat: 52.281, height: 134.66 },
+            orientation: { heading: 356.97, pitch: 12.09, roll: 0.0 },
+        },
+        {
+            time: 50,
+            position: { lon: 14.19724, lat: 52.28124, height: 133.67 },
+            orientation: { heading: 153.36, pitch: -3.18, roll: 0 },
+        },
+        {
+            time: 55,
+            position: { lon: 14.19704, lat: 52.28157, height: 154.87 },
+            orientation: { heading: 179.61, pitch: -16.77, roll: 0.0 },
+        },
+        {
+            time: 60,
+            position: { lon: 14.20069, lat: 52.28102, height: 178.99 },
+            orientation: { heading: 269.51, pitch: -15.07, roll: 0 },
+        },
+        {
+            time: 65,
+            position: { lon: 14.19767, lat: 52.2807, height: 131.89 },
+            orientation: { heading: 269.45, pitch: 4.74, roll: 0.0 },
+        },
+        {
+            time: 75,
+            position: { lon: 14.19767, lat: 52.2807, height: 131.89 },
+            orientation: { heading: 269.45, pitch: 4.74, roll: 0.0 },
+        },
+        {
+            time: 80,
+            position: { lon: 14.20541, lat: 52.28069, height: 284.25 },
+            orientation: { heading: 274.44, pitch: -14.5, roll: 0 },
+        },
+    ];
+
+    const startTime = JulianDate.now();
+    const stopTime = JulianDate.addSeconds(
+        startTime,
+        cameraPath[cameraPath.length - 1].time,
+        new JulianDate(),
+    );
+
+    viewer.clock.startTime = startTime.clone();
+    viewer.clock.stopTime = stopTime.clone();
+    viewer.clock.currentTime = startTime.clone();
+    viewer.clock.multiplier = 1;
+    viewer.clock.shouldAnimate = true;
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+
+    function interpolateCamera(path, elapsed) {
+        for (let i = 0; i < path.length - 1; i++) {
+            const a = path[i];
+            const b = path[i + 1];
+
+            if (elapsed >= a.time && elapsed <= b.time) {
+                const t = (elapsed - a.time) / (b.time - a.time);
+
+                return {
+                    position: {
+                        lon: lerp(a.position.lon, b.position.lon, t),
+                        lat: lerp(a.position.lat, b.position.lat, t),
+                        height: lerp(a.position.height, b.position.height, t),
+                    },
+                    orientation: {
+                        heading: Math.toRadians(
+                            lerp(
+                                a.orientation.heading,
+                                b.orientation.heading,
+                                t,
+                            ),
+                        ),
+                        pitch: Math.toRadians(
+                            lerp(a.orientation.pitch, b.orientation.pitch, t),
+                        ),
+                        roll: Math.toRadians(
+                            lerp(a.orientation.roll, b.orientation.roll, t),
+                        ),
+                    },
+                };
+            }
+        }
+        return null;
+    }
+
+    // Camera Path
+    scene.preUpdate.addEventListener(() => {
+        const elapsed = JulianDate.secondsDifference(
+            viewer.clock.currentTime,
+            startTime,
+        );
+
+        const frame = interpolateCamera(cameraPath, elapsed);
+        if (!frame) {
+            return;
+        }
+
+        const destination = Cartesian3.fromDegrees(
+            frame.position.lon,
+            frame.position.lat,
+            frame.position.height,
+        );
+
+        viewer.camera.setView({
+            destination,
+            orientation: frame.orientation,
+        });
+    }); /**/
+
     // ==================== PERFORMANCE MEASUREMENT ====================
 
-    let requestsCompleted = 0;
+    /*let requestsCompleted = 0;
     let totalRequests = 0;
 
     RequestScheduler.requestCompletedEvent.addEventListener(() => {
@@ -221,7 +414,7 @@ async function main() {
             maxPointsPerFrame = 0;
             lastSecond = now;
         }
-    });
+    });*/
 
     loadingIndicator.style.display = "none";
 }
