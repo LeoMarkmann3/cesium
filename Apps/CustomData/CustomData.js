@@ -87,43 +87,32 @@ async function main() {
             /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_3_1_TRANSFORMED_2024-12-12_13h48_53_169_georef/tileset.json",
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
             ); /**/
 
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.37:8001/out_tileset/tileset.json",
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
             ); /**/
 
             /*
             tileset = viewer.scene.primitives.add(
-                await Cesium3DTileset.fromIonAssetId(4331253),
-            );
-            /**/
-
-            /*
-            tileset = await Cesium3DTileset.fromUrl(
-                "https://3d.oslandia.com/lidar_hd/tileset.json",
-            ); /**/
-
-            /*
-            {
-                    skipLevelOfDetail: false,
-
-          preferLeaves: true,
-
-          dynamicScreenSpaceError: false,
-
-          progressiveResolutionHeightFraction: 0.0,
-
-          foveatedScreenSpaceError: false,
-
-          cullRequestsWhileMoving: false,
-
-                    maximumScreenSpaceError: 1,
-
+                await Cesium3DTileset.fromIonAssetId(4332925),
+                {
+                    cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
                     preloadFlightDestinations: true,
-                },),
-            */
+                },
+            );
+            /**/
 
       // Add tileset to the scene
       viewer.scene.primitives.add(tileset);
