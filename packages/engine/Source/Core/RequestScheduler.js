@@ -218,13 +218,13 @@ function issueRequest(request) {
 
 function getRequestReceivedFunction(request) {
     return function (results) {
+        if (RequestScheduler._onRequestReceived) {
+            RequestScheduler._onRequestReceived(request, performance.now());
+        }
+
         if (request.state === RequestState.CANCELLED) {
             // If the data request comes back but the request is cancelled, ignore it.
             return;
-        }
-
-        if (RequestScheduler._onRequestReceived) {
-            RequestScheduler._onRequestReceived(request, performance.now());
         }
 
         // explicitly set to undefined to ensure GC of request response data. See #8843
@@ -242,13 +242,13 @@ function getRequestReceivedFunction(request) {
 
 function getRequestFailedFunction(request) {
     return function (error) {
+        if (RequestScheduler._onRequestReceived) {
+            RequestScheduler._onRequestReceived(request, performance.now());
+        }
+
         if (request.state === RequestState.CANCELLED) {
             // If the data request comes back but the request is cancelled, ignore it.
             return;
-        }
-
-        if (RequestScheduler._onRequestReceived) {
-            RequestScheduler._onRequestReceived(request, performance.now());
         }
 
         ++statistics.numberOfFailedRequests;
