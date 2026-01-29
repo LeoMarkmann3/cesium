@@ -106,6 +106,24 @@ RequestScheduler.debugShowStatistics = false;
  */
 RequestScheduler.requestCompletedEvent = requestCompletedEvent;
 
+/**
+ * An event that's raised when a request is sent, which can be activated and configured by another module.
+ *
+ * @type {Event}
+ * @default undefined
+ * @public
+ */
+RequestScheduler._onRequestSent = undefined;
+
+/**
+ * An event that's raised when a request is received, which can be activated and configured by another module.
+ *
+ * @type {Event}
+ * @default undefined
+ * @public
+ */
+RequestScheduler._onRequestReceived = undefined;
+
 Object.defineProperties(RequestScheduler, {
     /**
      * Returns the statistics used by the request scheduler.
@@ -206,6 +224,11 @@ function getRequestReceivedFunction(request) {
             // If the data request comes back but the request is cancelled, ignore it.
             return;
         }
+
+        if (RequestScheduler._onRequestReceived) {
+            RequestScheduler._onRequestReceived(request, performance.now());
+        }
+
         // explicitly set to undefined to ensure GC of request response data. See #8843
         const deferred = request.deferred;
 
@@ -225,6 +248,11 @@ function getRequestFailedFunction(request) {
             // If the data request comes back but the request is cancelled, ignore it.
             return;
         }
+
+        if (RequestScheduler._onRequestReceived) {
+            RequestScheduler._onRequestReceived(request, performance.now());
+        }
+
         ++statistics.numberOfFailedRequests;
         --statistics.numberOfActiveRequests;
         --numberOfActiveRequestsByServer[request.serverKey];
@@ -241,10 +269,16 @@ function startRequest(request) {
     ++statistics.numberOfActiveRequests;
     ++statistics.numberOfActiveRequestsEver;
     ++numberOfActiveRequestsByServer[request.serverKey];
+
+    if (RequestScheduler._onRequestSent) {
+        RequestScheduler._onRequestSent(request, performance.now());
+    }
+
     request
         .requestFunction()
         .then(getRequestReceivedFunction(request))
         .catch(getRequestFailedFunction(request));
+
     return promise;
 }
 

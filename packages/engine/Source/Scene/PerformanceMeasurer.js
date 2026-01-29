@@ -6,6 +6,9 @@ class PerformanceMeasurer {
         this.startTime = undefined;
         this.endTime = undefined;
         this._interval = null;
+
+        this._requestsSent = [];
+        this._requestsReceived = [];
     }
 
     start() {
@@ -32,16 +35,58 @@ class PerformanceMeasurer {
     }
 
     collectData(timestamp) {
+        const avgResponseTime = this._computeAverageResponseTime();
+
         this.buffer.push({
             timestamp,
-            value: Math.random(),
+            avgResponseTime,
         });
     }
 
+    _computeAverageResponseTime() {
+        let sum = 0;
+        let count = 0;
+
+        for (let i = this._requestsReceived.length - 1; i >= 0; i--) {
+            const received = this._requestsReceived[i];
+
+            const sentIndex = this._requestsSent.findIndex(
+                (s) => s.request === received.request,
+            );
+
+            if (sentIndex !== -1) {
+                const sent = this._requestsSent[sentIndex];
+                const responseTime = received.t - sent.t;
+
+                sum += responseTime;
+                count++;
+
+                // delete matched pair
+                this._requestsReceived.splice(i, 1);
+                this._requestsSent.splice(sentIndex, 1);
+            }
+        }
+
+        return count > 0 ? sum / count : null;
+    }
+
+    attachToRequestScheduler(RequestScheduler) {
+        RequestScheduler._onRequestSent = (request, t) => {
+            this._requestsSent.push({ request, t });
+        };
+
+        RequestScheduler._onRequestReceived = (request, t) => {
+            this._requestsReceived.push({ request, t });
+        };
+    }
+
     dumpData() {
-        const header = "timestamp,value\n";
+        const header = "timestamp,avgResponseTime\n";
         const body = this.buffer
-            .map((d) => `${d.timestamp},${d.value}`)
+            .map(
+                (d) =>
+                    `${d.timestamp},${d.avgResponseTime !== null ? d.avgResponseTime : "-"}`,
+            )
             .join("\n");
 
         const blob = new Blob([header + body], { type: "text/csv" });
