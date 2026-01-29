@@ -69,7 +69,7 @@ async function main() {
         return;
     }
 
-    // const scene = viewer.scene;
+    const scene = viewer.scene;
     let tileset;
 
   // // OPTIONAL — black background but keep the globe
@@ -180,6 +180,7 @@ async function main() {
 
     const _performance = new PerformanceMeasurer(100, 10000);
     _performance.attachToRequestScheduler(RequestScheduler);
+    _performance.attachToSceneRenderer(scene);
     _performance.start();
 
     /*

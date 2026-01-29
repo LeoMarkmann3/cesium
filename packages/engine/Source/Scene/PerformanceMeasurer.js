@@ -5,10 +5,13 @@ class PerformanceMeasurer {
         this.buffer = [];
         this.startTime = undefined;
         this.endTime = undefined;
-        this._interval = null;
 
         this._requestsSent = [];
         this._requestsReceived = [];
+
+        this._renderStartTime = undefined;
+        this._renderFinishTime = undefined;
+        this._frameTimes = [];
     }
 
     start() {
@@ -36,10 +39,12 @@ class PerformanceMeasurer {
 
     collectData(timestamp) {
         const avgResponseTime = this._computeAverageResponseTime();
+        const avgFrameTime = this._computeAverageFrameTime();
 
         this.buffer.push({
             timestamp,
             avgResponseTime,
+            avgFrameTime,
         });
     }
 
@@ -61,13 +66,25 @@ class PerformanceMeasurer {
                 sum += responseTime;
                 count++;
 
-                // delete matched pair
                 this._requestsReceived.splice(i, 1);
                 this._requestsSent.splice(sentIndex, 1);
             }
         }
 
         return count > 0 ? sum / count : null;
+    }
+
+    _computeAverageFrameTime() {
+        if (this._frameTimes.length === 0) {
+            return null;
+        }
+
+        const sum = this._frameTimes.reduce((a, b) => a + b, 0);
+        const averaged = sum / this._frameTimes.length;
+
+        this._frameTimes = [];
+
+        return averaged;
     }
 
     attachToRequestScheduler(RequestScheduler) {
@@ -80,12 +97,25 @@ class PerformanceMeasurer {
         };
     }
 
+    attachToSceneRenderer(Scene) {
+        Scene.preRender.addEventListener(() => {
+            this._renderStartTime = performance.now();
+        });
+
+        Scene.postRender.addEventListener(() => {
+            this._renderFinishTime = performance.now();
+            this._frameTimes.push(
+                this._renderFinishTime - this._renderStartTime,
+            );
+        });
+    }
+
     dumpData() {
-        const header = "timestamp,avgResponseTime\n";
+        const header = "timestamp,avgResponseTime,avgFrameTime\n";
         const body = this.buffer
             .map(
                 (d) =>
-                    `${d.timestamp},${d.avgResponseTime !== null ? d.avgResponseTime : "-"}`,
+                    `${d.timestamp},${d.avgResponseTime !== null ? d.avgResponseTime : "-"},${d.avgFrameTime !== null ? d.avgFrameTime : "-"}`,
             )
             .join("\n");
 
