@@ -178,7 +178,8 @@ async function main() {
 
     await loadTileset();
 
-    const _performance = new PerformanceMeasurer(10, 10000);
+    const _performance = new PerformanceMeasurer(100, 10000);
+    _performance.attachToRequestScheduler(RequestScheduler);
     _performance.start();
 
     /*

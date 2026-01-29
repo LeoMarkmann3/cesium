@@ -105,6 +105,24 @@ RequestScheduler.debugShowStatistics = false;
  */
 RequestScheduler.requestCompletedEvent = requestCompletedEvent;
 
+/**
+ * An event that's raised when a request is sent, which can be activated and configured by another module.
+ *
+ * @type {Event}
+ * @default undefined
+ * @public
+ */
+RequestScheduler._onRequestSent = undefined;
+
+/**
+ * An event that's raised when a request is received, which can be activated and configured by another module.
+ *
+ * @type {Event}
+ * @default undefined
+ * @public
+ */
+RequestScheduler._onRequestReceived = undefined;
+
 Object.defineProperties(RequestScheduler, {
   /**
    * Returns the statistics used by the request scheduler.
@@ -199,13 +217,18 @@ function issueRequest(request) {
 }
 
 function getRequestReceivedFunction(request) {
-  return function (results) {
-    if (request.state === RequestState.CANCELLED) {
-      // If the data request comes back but the request is cancelled, ignore it.
-      return;
-    }
-    // explicitly set to undefined to ensure GC of request response data. See #8843
-    const deferred = request.deferred;
+    return function (results) {
+        if (request.state === RequestState.CANCELLED) {
+            // If the data request comes back but the request is cancelled, ignore it.
+            return;
+        }
+
+        if (RequestScheduler._onRequestReceived) {
+            RequestScheduler._onRequestReceived(request, performance.now());
+        }
+
+        // explicitly set to undefined to ensure GC of request response data. See #8843
+        const deferred = request.deferred;
 
     --statistics.numberOfActiveRequests;
     --numberOfActiveRequestsByServer[request.serverKey];
@@ -218,33 +241,43 @@ function getRequestReceivedFunction(request) {
 }
 
 function getRequestFailedFunction(request) {
-  return function (error) {
-    if (request.state === RequestState.CANCELLED) {
-      // The error is handled in cancelRequest()
-      // If the data request comes back but the request is cancelled, ignore it.
-      return;
-    }
-    ++statistics.numberOfFailedRequests;
-    --statistics.numberOfActiveRequests;
-    --numberOfActiveRequestsByServer[request.serverKey];
-    requestCompletedEvent.raiseEvent(error);
-    request.state = RequestState.FAILED;
-    request.deferred.reject(error);
-  };
+    return function (error) {
+        if (request.state === RequestState.CANCELLED) {
+            // If the data request comes back but the request is cancelled, ignore it.
+            return;
+        }
+
+        if (RequestScheduler._onRequestReceived) {
+            RequestScheduler._onRequestReceived(request, performance.now());
+        }
+
+        ++statistics.numberOfFailedRequests;
+        --statistics.numberOfActiveRequests;
+        --numberOfActiveRequestsByServer[request.serverKey];
+        requestCompletedEvent.raiseEvent(error);
+        request.state = RequestState.FAILED;
+        request.deferred.reject(error);
+    };
 }
 
 function startRequest(request) {
-  const promise = issueRequest(request);
-  request.state = RequestState.ACTIVE;
-  activeRequests.push(request);
-  ++statistics.numberOfActiveRequests;
-  ++statistics.numberOfActiveRequestsEver;
-  ++numberOfActiveRequestsByServer[request.serverKey];
-  request
-    .requestFunction()
-    .then(getRequestReceivedFunction(request))
-    .catch(getRequestFailedFunction(request));
-  return promise;
+    const promise = issueRequest(request);
+    request.state = RequestState.ACTIVE;
+    activeRequests.push(request);
+    ++statistics.numberOfActiveRequests;
+    ++statistics.numberOfActiveRequestsEver;
+    ++numberOfActiveRequestsByServer[request.serverKey];
+
+    if (RequestScheduler._onRequestSent) {
+        RequestScheduler._onRequestSent(request, performance.now());
+    }
+
+    request
+        .requestFunction()
+        .then(getRequestReceivedFunction(request))
+        .catch(getRequestFailedFunction(request));
+
+    return promise;
 }
 
 function cancelRequest(request) {
