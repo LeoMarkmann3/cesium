@@ -12,6 +12,14 @@ class PerformanceMeasurer {
         this._renderStartTime = undefined;
         this._renderFinishTime = undefined;
         this._frameTimes = [];
+
+        this._tileStats = {
+            requestedTiles: 0,
+            abortedTiles: 0,
+            loadedTiles: 0,
+            unloadedTiles: 0,
+            activeRequests: new Map(),
+        };
     }
 
     start() {
@@ -38,13 +46,57 @@ class PerformanceMeasurer {
     }
 
     collectData(timestamp) {
+        console.log("collectData running");
+        if (!this.tileset) {
+            return;
+        }
         const avgResponseTime = this._computeAverageResponseTime();
         const avgFrameTime = this._computeAverageFrameTime();
+
+        const stats = this.tileset._statistics;
+
+        const tileEfficiency =
+            stats.selected / stats.numberOfTilesWithContentReady || 0;
+        const requestEfficiency =
+            stats.selected / stats.numberOfAttemptedRequests || 0;
+        const pointEfficiency =
+            stats.numberOfPointsSelected / stats.numberOfPointsLoaded || 0;
+        const tileRequestEfficiency =
+            this._tileStats.loadedTiles / this._tileStats.requestedTiles || 0;
+        const tileUseEfficiency =
+            stats.selected / this._tileStats.loadedTiles || 0;
+        const tileAbortRate =
+            this._tileStats.abortedTiles / this._tileStats.requestedTiles || 0;
+        const tileCacheTurnover =
+            this._tileStats.unloadedTiles / this._tileStats.loadedTiles || 0;
 
         this.buffer.push({
             timestamp,
             avgResponseTime,
             avgFrameTime,
+
+            requestedTiles: this._tileStats.requestedTiles,
+            abortedTiles: this._tileStats.abortedTiles,
+            loadedTiles: this._tileStats.loadedTiles,
+            unloadedTiles: this._tileStats.unloadedTiles,
+
+            selected: stats.selected,
+            numberOfAttemptedRequests: stats.numberOfAttemptedRequests,
+            numberOfPendingRequests: stats.numberOfPendingRequests,
+            numberOfTilesProcessing: stats.numberOfTilesProcessing,
+            numberOfTilesWithContentReady: stats.numberOfTilesWithContentReady,
+            numberOfTilesTotal: stats.numberOfTilesTotal,
+            numberOfLoadedTilesTotal: stats.numberOfLoadedTilesTotal,
+            numberOfPointsSelected: stats.numberOfPointsSelected,
+            numberOfPointsLoaded: stats.numberOfPointsLoaded,
+
+            tileEfficiency,
+            requestEfficiency,
+            pointEfficiency,
+            tileRequestEfficiency,
+            tileUseEfficiency,
+            tileAbortRate,
+            tileCacheTurnover,
         });
     }
 
@@ -89,12 +141,33 @@ class PerformanceMeasurer {
 
     attachToRequestScheduler(RequestScheduler) {
         RequestScheduler._onRequestSent = (request, t) => {
+            this._tileStats.requestedTiles++;
+            this._tileStats.activeRequests.set(request, true);
             this._requestsSent.push({ request, t });
         };
 
         RequestScheduler._onRequestReceived = (request, t) => {
+            if (this._tileStats.activeRequests.has(request)) {
+                if (request.state === 3) {
+                    // CANCELLED
+                    this._tileStats.abortedTiles++;
+                }
+                this._tileStats.activeRequests.delete(request);
+            }
             this._requestsReceived.push({ request, t });
         };
+    }
+
+    attachToTileset(tileset) {
+        this.tileset = tileset;
+
+        tileset.tileLoad.addEventListener((tile) => {
+            this._tileStats.loadedTiles++;
+        });
+
+        tileset.tileUnload.addEventListener((tile) => {
+            this._tileStats.unloadedTiles++;
+        });
     }
 
     attachToSceneRenderer(Scene) {
@@ -111,11 +184,65 @@ class PerformanceMeasurer {
     }
 
     dumpData() {
-        const header = "timestamp,avgResponseTime,avgFrameTime\n";
+        const header = [
+            "timestamp",
+            "avgResponseTime",
+            "avgFrameTime",
+
+            "requestedTiles",
+            "abortedTiles",
+            "loadedTiles",
+            "unloadedTiles",
+
+            "selected",
+            "numberOfAttemptedRequests",
+            "numberOfPendingRequests",
+            "numberOfTilesProcessing",
+            "numberOfTilesWithContentReady",
+            "numberOfTilesTotal",
+            "numberOfLoadedTilesTotal",
+            "numberOfPointsSelected",
+            "numberOfPointsLoaded",
+
+            "tileEfficiency",
+            "requestEfficiency",
+            "pointEfficiency", //nearest to LOD Efficiency (Points)
+            "tileRequestEfficiency", // LOD Efficiency (Tiles)
+            "tileUseEfficiency",
+            "tileAbortRate",
+            "tileCacheTurnover",
+        ].join(",");
+
         const body = this.buffer
-            .map(
-                (d) =>
-                    `${d.timestamp},${d.avgResponseTime !== null ? d.avgResponseTime : "-"},${d.avgFrameTime !== null ? d.avgFrameTime : "-"}`,
+            .map((d) =>
+                [
+                    d.timestamp,
+                    d.avgResponseTime ?? "-",
+                    d.avgFrameTime ?? "-",
+
+                    d.requestedTiles,
+                    d.abortedTiles,
+                    d.loadedTiles,
+                    d.unloadedTiles,
+
+                    d.selected,
+                    d.numberOfAttemptedRequests,
+                    d.numberOfPendingRequests,
+                    d.numberOfTilesProcessing,
+                    d.numberOfTilesWithContentReady,
+                    d.numberOfTilesTotal,
+                    d.numberOfLoadedTilesTotal,
+                    d.numberOfPointsSelected,
+                    d.numberOfPointsLoaded,
+
+                    d.tileEfficiency,
+                    d.requestEfficiency,
+                    d.pointEfficiency,
+                    d.tileRequestEfficiency,
+                    d.tileUseEfficiency,
+                    d.tileAbortRate,
+                    d.tileCacheTurnover,
+                ].join(","),
             )
             .join("\n");
 
