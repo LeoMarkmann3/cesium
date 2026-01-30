@@ -85,7 +85,6 @@ async function main() {
 
             // Load Tileset from URL with various options for performance and LOD management
 
-            /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_3_1_TRANSFORMED_2024-12-12_13h48_53_169_georef/tileset.json",
                 {
@@ -100,6 +99,7 @@ async function main() {
                 },
             ); /**/
 
+            /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.37:8002/out_tileset/tileset.json",
                 {
@@ -178,8 +178,22 @@ async function main() {
 
     await loadTileset();
 
+    /*
+    scene.postRender.addEventListener(() => {
+        const s = tileset._statistics;
+
+        console.log(
+            "selected tiles:", s.selected,
+            "points selected:", s.numberOfPointsSelected,
+            "points loaded:", s.numberOfPointsLoaded,
+            "tiles loaded:", s.numberOfTilesWithContentReady,
+            "attempted requests:", s.numberOfAttemptedRequests
+        );
+    });/**/
+
     const _performance = new PerformanceMeasurer(100, 10000);
     _performance.attachToRequestScheduler(RequestScheduler);
+    _performance.attachToTileset(tileset);
     _performance.attachToSceneRenderer(scene);
     _performance.start();
 
