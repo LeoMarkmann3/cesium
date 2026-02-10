@@ -1,3 +1,5 @@
+import RequestState from "../Core/RequestState.js";
+
 class PerformanceMeasurer {
     constructor(sampleRate, totalTime) {
         this.sampleRate = sampleRate;
@@ -5,6 +7,7 @@ class PerformanceMeasurer {
         this.buffer = [];
         this.startTime = undefined;
         this.endTime = undefined;
+        this.tileset = undefined;
 
         this._requestsSent = [];
         this._requestsReceived = [];
@@ -12,6 +15,11 @@ class PerformanceMeasurer {
         this._renderStartTime = undefined;
         this._renderFinishTime = undefined;
         this._frameTimes = [];
+
+        this._pointsRendered = 0;
+        this._numberOfFrames = 0;
+        this._previousTimeStamp = 0;
+        this._previousFPS = 0;
 
         this._tileStats = {
             requestedTiles: 0,
@@ -30,7 +38,7 @@ class PerformanceMeasurer {
             const now = performance.now();
 
             while (this.nextSampleTime <= now) {
-                this.collectData(this.nextSampleTime - this.startTime);
+                this._collectData(this.nextSampleTime - this.startTime);
                 this.nextSampleTime += this.sampleRate;
             }
 
@@ -45,13 +53,19 @@ class PerformanceMeasurer {
         requestAnimationFrame(tick);
     }
 
-    collectData(timestamp) {
-        console.log("collectData running");
+    _collectData(timestamp) {
+        // console.log("collectData running");
+
         if (!this.tileset) {
             return;
         }
+
+        const fps = this._computeFps(timestamp);
         const avgResponseTime = this._computeAverageResponseTime();
         const avgFrameTime = this._computeAverageFrameTime();
+
+        const pointsRendered = this._pointsRendered;
+        this._pointsRendered = 0;
 
         const stats = this.tileset._statistics;
 
@@ -74,6 +88,8 @@ class PerformanceMeasurer {
             timestamp,
             avgResponseTime,
             avgFrameTime,
+            fps,
+            pointsRendered,
 
             requestedTiles: this._tileStats.requestedTiles,
             abortedTiles: this._tileStats.abortedTiles,
@@ -139,6 +155,29 @@ class PerformanceMeasurer {
         return averaged;
     }
 
+    _computeFps(timestamp) {
+        let fps = 0;
+
+        if (this._previousTimeStamp === 0) {
+            this._previousTimeStamp = timestamp;
+            return [0, 0];
+        }
+
+        const timeDiff = timestamp - this._previousTimeStamp;
+
+        if (timeDiff >= 500) {
+            fps = (this._numberOfFrames * 1000) / timeDiff;
+
+            this._numberOfFrames = 0;
+            this._previousFPS = fps;
+            this._previousTimeStamp = timestamp;
+        } else {
+            fps = this._previousFPS;
+        }
+
+        return fps;
+    }
+
     attachToRequestScheduler(RequestScheduler) {
         RequestScheduler._onRequestSent = (request, t) => {
             this._tileStats.requestedTiles++;
@@ -148,8 +187,7 @@ class PerformanceMeasurer {
 
         RequestScheduler._onRequestReceived = (request, t) => {
             if (this._tileStats.activeRequests.has(request)) {
-                if (request.state === 3) {
-                    // CANCELLED
+                if (request.state === RequestState.CANCELLED) {
                     this._tileStats.abortedTiles++;
                 }
                 this._tileStats.activeRequests.delete(request);
@@ -177,6 +215,11 @@ class PerformanceMeasurer {
 
         Scene.postRender.addEventListener(() => {
             this._renderFinishTime = performance.now();
+            this._numberOfFrames++;
+
+            this._pointsRendered +=
+                this.tileset._statistics.numberOfPointsSelected;
+
             this._frameTimes.push(
                 this._renderFinishTime - this._renderStartTime,
             );
@@ -188,6 +231,8 @@ class PerformanceMeasurer {
             "timestamp",
             "avgResponseTime",
             "avgFrameTime",
+            "fps",
+            "pointsRendered",
 
             "requestedTiles",
             "abortedTiles",
@@ -219,6 +264,8 @@ class PerformanceMeasurer {
                     d.timestamp,
                     d.avgResponseTime ?? "-",
                     d.avgFrameTime ?? "-",
+                    d.fps,
+                    d.pointsRendered,
 
                     d.requestedTiles,
                     d.abortedTiles,
@@ -246,7 +293,7 @@ class PerformanceMeasurer {
             )
             .join("\n");
 
-        const blob = new Blob([header + body], { type: "text/csv" });
+        const blob = new Blob([`${header}\n${body}`], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
 
         const a = document.createElement("a");
