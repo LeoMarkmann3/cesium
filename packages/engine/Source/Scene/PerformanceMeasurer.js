@@ -1,337 +1,41 @@
-// ##############################################################
-// ##############################################################
-// ##############################################################
-// ----------------- Original Class-based Code ------------------
-// ##############################################################
-// ##############################################################
-// ##############################################################
-
-// import RequestState from "../Core/RequestState.js";
-
-// class PerformanceMeasurer {
-//     constructor(sampleRate, totalTime) {
-//         this.sampleRate = sampleRate;
-//         this.totalTime = totalTime;
-//         this.buffer = [];
-//         this.startTime = undefined;
-//         this.endTime = undefined;
-//         this.tileset = undefined;
-
-//         this._requestsSent = [];
-//         this._requestsReceived = [];
-
-//         this._renderStartTime = undefined;
-//         this._renderFinishTime = undefined;
-//         this._frameTimes = [];
-
-//         this._pointsRendered = 0;
-//         this._numberOfFrames = 0;
-//         this._previousTimeStamp = 0;
-//         this._previousFPS = 0;
-
-//         this._tileStats = {
-//             requestedTiles: 0,
-//             abortedTiles: 0,
-//             loadedTiles: 0,
-//             unloadedTiles: 0,
-//             activeRequests: new Map(),
-//         };
-//     }
-
-//     start() {
-//         this.startTime = performance.now();
-//         this.nextSampleTime = this.startTime;
-
-//         const tick = () => {
-//             const now = performance.now();
-
-//             while (this.nextSampleTime <= now) {
-//                 this._collectData(this.nextSampleTime - this.startTime);
-//                 this.nextSampleTime += this.sampleRate;
-//             }
-
-//             if (now - this.startTime < this.totalTime) {
-//                 requestAnimationFrame(tick);
-//             } else {
-//                 this.endTime = now;
-//                 this.dumpData();
-//             }
-//         };
-
-//         requestAnimationFrame(tick);
-//     }
-
-//     _collectData(timestamp) {
-//         // console.log("collectData running");
-
-//         if (!this.tileset) {
-//             return;
-//         }
-
-//         const fps = this._computeFps(timestamp);
-//         const avgResponseTime = this._computeAverageResponseTime();
-//         const avgFrameTime = this._computeAverageFrameTime();
-
-//         const pointsRendered = this._pointsRendered;
-//         this._pointsRendered = 0;
-
-//         const stats = this.tileset._statistics;
-
-//         const tileEfficiency =
-//             stats.selected / stats.numberOfTilesWithContentReady || 0;
-//         const requestEfficiency =
-//             stats.selected / stats.numberOfAttemptedRequests || 0;
-//         const pointEfficiency =
-//             stats.numberOfPointsSelected / stats.numberOfPointsLoaded || 0;
-//         const tileRequestEfficiency =
-//             this._tileStats.loadedTiles / this._tileStats.requestedTiles || 0;
-//         const tileUseEfficiency =
-//             stats.selected / this._tileStats.loadedTiles || 0;
-//         const tileAbortRate =
-//             this._tileStats.abortedTiles / this._tileStats.requestedTiles || 0;
-//         const tileCacheTurnover =
-//             this._tileStats.unloadedTiles / this._tileStats.loadedTiles || 0;
-
-//         this.buffer.push({
-//             timestamp,
-//             avgResponseTime,
-//             avgFrameTime,
-//             fps,
-//             pointsRendered,
-
-//             requestedTiles: this._tileStats.requestedTiles,
-//             abortedTiles: this._tileStats.abortedTiles,
-//             loadedTiles: this._tileStats.loadedTiles,
-//             unloadedTiles: this._tileStats.unloadedTiles,
-
-//             selected: stats.selected,
-//             numberOfAttemptedRequests: stats.numberOfAttemptedRequests,
-//             numberOfPendingRequests: stats.numberOfPendingRequests,
-//             numberOfTilesProcessing: stats.numberOfTilesProcessing,
-//             numberOfTilesWithContentReady: stats.numberOfTilesWithContentReady,
-//             numberOfTilesTotal: stats.numberOfTilesTotal,
-//             numberOfLoadedTilesTotal: stats.numberOfLoadedTilesTotal,
-//             numberOfPointsSelected: stats.numberOfPointsSelected,
-//             numberOfPointsLoaded: stats.numberOfPointsLoaded,
-
-//             tileEfficiency,
-//             requestEfficiency,
-//             pointEfficiency,
-//             tileRequestEfficiency,
-//             tileUseEfficiency,
-//             tileAbortRate,
-//             tileCacheTurnover,
-//         });
-//     }
-
-//     _computeAverageResponseTime() {
-//         let sum = 0;
-//         let count = 0;
-
-//         for (let i = this._requestsReceived.length - 1; i >= 0; i--) {
-//             const received = this._requestsReceived[i];
-
-//             const sentIndex = this._requestsSent.findIndex(
-//                 (s) => s.request === received.request,
-//             );
-
-//             if (sentIndex !== -1) {
-//                 const sent = this._requestsSent[sentIndex];
-//                 const responseTime = received.t - sent.t;
-
-//                 sum += responseTime;
-//                 count++;
-
-//                 this._requestsReceived.splice(i, 1);
-//                 this._requestsSent.splice(sentIndex, 1);
-//             }
-//         }
-
-//         return count > 0 ? sum / count : null;
-//     }
-
-//     _computeAverageFrameTime() {
-//         if (this._frameTimes.length === 0) {
-//             return null;
-//         }
-
-//         const sum = this._frameTimes.reduce((a, b) => a + b, 0);
-//         const averaged = sum / this._frameTimes.length;
-
-//         this._frameTimes = [];
-
-//         return averaged;
-//     }
-
-//     _computeFps(timestamp) {
-//         let fps = 0;
-
-//         if (this._previousTimeStamp === 0) {
-//             this._previousTimeStamp = timestamp;
-//             return [0, 0];
-//         }
-
-//         const timeDiff = timestamp - this._previousTimeStamp;
-
-//         if (timeDiff >= 500) {
-//             fps = (this._numberOfFrames * 1000) / timeDiff;
-
-//             this._numberOfFrames = 0;
-//             this._previousFPS = fps;
-//             this._previousTimeStamp = timestamp;
-//         } else {
-//             fps = this._previousFPS;
-//         }
-
-//         return fps;
-//     }
-
-//     attachToRequestScheduler(RequestScheduler) {
-//         RequestScheduler._onRequestSent = (request, t) => {
-//             this._tileStats.requestedTiles++;
-//             this._tileStats.activeRequests.set(request, true);
-//             this._requestsSent.push({ request, t });
-//         };
-
-//         RequestScheduler._onRequestReceived = (request, t) => {
-//             if (this._tileStats.activeRequests.has(request)) {
-//                 if (request.state === RequestState.CANCELLED) {
-//                     this._tileStats.abortedTiles++;
-//                 }
-//                 this._tileStats.activeRequests.delete(request);
-//             }
-//             this._requestsReceived.push({ request, t });
-//         };
-//     }
-
-//     attachToTileset(tileset) {
-//         this.tileset = tileset;
-
-//         tileset.tileLoad.addEventListener((tile) => {
-//             this._tileStats.loadedTiles++;
-//         });
-
-//         tileset.tileUnload.addEventListener((tile) => {
-//             this._tileStats.unloadedTiles++;
-//         });
-//     }
-
-//     attachToSceneRenderer(Scene) {
-//         Scene.preRender.addEventListener(() => {
-//             this._renderStartTime = performance.now();
-//         });
-
-//         Scene.postRender.addEventListener(() => {
-//             this._renderFinishTime = performance.now();
-//             this._numberOfFrames++;
-
-//             this._pointsRendered +=
-//                 this.tileset._statistics.numberOfPointsSelected;
-
-//             this._frameTimes.push(
-//                 this._renderFinishTime - this._renderStartTime,
-//             );
-//         });
-//     }
-
-//     dumpData() {
-//         const header = [
-//             "timestamp",
-//             "avgResponseTime",
-//             "avgFrameTime",
-//             "fps",
-//             "pointsRendered",
-
-//             "requestedTiles",
-//             "abortedTiles",
-//             "loadedTiles",
-//             "unloadedTiles",
-
-//             "selected",
-//             "numberOfAttemptedRequests",
-//             "numberOfPendingRequests",
-//             "numberOfTilesProcessing",
-//             "numberOfTilesWithContentReady",
-//             "numberOfTilesTotal",
-//             "numberOfLoadedTilesTotal",
-//             "numberOfPointsSelected",
-//             "numberOfPointsLoaded",
-
-//             "tileEfficiency",
-//             "requestEfficiency",
-//             "pointEfficiency", //nearest to LOD Efficiency (Points)
-//             "tileRequestEfficiency", // LOD Efficiency (Tiles)
-//             "tileUseEfficiency",
-//             "tileAbortRate",
-//             "tileCacheTurnover",
-//         ].join(",");
-
-//         const body = this.buffer
-//             .map((d) =>
-//                 [
-//                     d.timestamp,
-//                     d.avgResponseTime ?? "-",
-//                     d.avgFrameTime ?? "-",
-//                     d.fps,
-//                     d.pointsRendered,
-
-//                     d.requestedTiles,
-//                     d.abortedTiles,
-//                     d.loadedTiles,
-//                     d.unloadedTiles,
-
-//                     d.selected,
-//                     d.numberOfAttemptedRequests,
-//                     d.numberOfPendingRequests,
-//                     d.numberOfTilesProcessing,
-//                     d.numberOfTilesWithContentReady,
-//                     d.numberOfTilesTotal,
-//                     d.numberOfLoadedTilesTotal,
-//                     d.numberOfPointsSelected,
-//                     d.numberOfPointsLoaded,
-
-//                     d.tileEfficiency,
-//                     d.requestEfficiency,
-//                     d.pointEfficiency,
-//                     d.tileRequestEfficiency,
-//                     d.tileUseEfficiency,
-//                     d.tileAbortRate,
-//                     d.tileCacheTurnover,
-//                 ].join(","),
-//             )
-//             .join("\n");
-
-//         const blob = new Blob([`${header}\n${body}`], { type: "text/csv" });
-//         const url = URL.createObjectURL(blob);
-
-//         const a = document.createElement("a");
-//         a.href = url;
-//         a.download = "performanceData.csv";
-//         a.click();
-
-//         URL.revokeObjectURL(url);
-//     }
-// }
-
-// export default PerformanceMeasurer;
-
-// ##############################################################
-// ##############################################################
-// ##############################################################
-// ----------------- Cesium-style adapted Code ------------------
-// ##############################################################
-// ##############################################################
-// ##############################################################
-
 import RequestState from "../Core/RequestState.js";
 
+/**
+ * A tool that measures different metrics of performance.
+ *
+ * @alias PerformanceMeasurer
+ * @constructor
+ *
+ * @param {Number} sampleRate The measurement interval in milliseconds.
+ * @param {Number} totalTime The total measurement duration in milliseconds.
+ */
 function PerformanceMeasurer(sampleRate, totalTime) {
+    /**
+     * The measurement interval in milliseconds.
+     * @type {Number}
+     */
     this.sampleRate = sampleRate;
+
+    /**
+     * The total time in milliseconds.
+     * @type {Number}
+     */
     this.totalTime = totalTime;
-    this.buffer = [];
+
+    /**
+     * The start time in milliseconds.
+     * @type {Number}
+     */
     this.startTime = undefined;
+
+    /**
+     * The end time in milliseconds.
+     * @type {Number}
+     */
     this.endTime = undefined;
-    this.tileset = undefined;
+
+    this._buffer = [];
+    this._tileset = undefined;
 
     this._requestsSent = [];
     this._requestsReceived = [];
@@ -354,6 +58,9 @@ function PerformanceMeasurer(sampleRate, totalTime) {
     };
 }
 
+/**
+ * Starts the measurement process.
+ */
 PerformanceMeasurer.prototype.start = function () {
     this.startTime = performance.now();
     this.nextSampleTime = this.startTime;
@@ -379,8 +86,15 @@ PerformanceMeasurer.prototype.start = function () {
     requestAnimationFrame(tick);
 };
 
+/**
+ * Collects the data necessary for analyzing the metrics and writes to a buffer.
+ *
+ * @param {Number} timestamp The timestamp for the currently evaluated time interval.
+ *
+ * @private
+ */
 PerformanceMeasurer.prototype._collectData = function (timestamp) {
-    if (!this.tileset) {
+    if (!this._tileset) {
         return;
     }
 
@@ -391,7 +105,7 @@ PerformanceMeasurer.prototype._collectData = function (timestamp) {
     const pointsRendered = this._pointsRendered;
     this._pointsRendered = 0;
 
-    const stats = this.tileset._statistics;
+    const stats = this._tileset._statistics;
 
     const tileEfficiency =
         stats.selected / stats.numberOfTilesWithContentReady || 0;
@@ -407,7 +121,7 @@ PerformanceMeasurer.prototype._collectData = function (timestamp) {
     const tileCacheTurnover =
         this._tileStats.unloadedTiles / this._tileStats.loadedTiles || 0;
 
-    this.buffer.push({
+    this._buffer.push({
         timestamp: timestamp,
         avgResponseTime: avgResponseTime,
         avgFrameTime: avgFrameTime,
@@ -439,6 +153,14 @@ PerformanceMeasurer.prototype._collectData = function (timestamp) {
     });
 };
 
+/**
+ * Computes the average response times of the requests send by the {@link RequestScheduler} in one time interval.
+ *
+ * @returns {Number|undefined} The average response time in milliseconds, or <code>undefined</code> if no requests were completed.
+
+ *
+ * @private
+ */
 PerformanceMeasurer.prototype._computeAverageResponseTime = function () {
     let sum = 0;
     let count = 0;
@@ -462,12 +184,19 @@ PerformanceMeasurer.prototype._computeAverageResponseTime = function () {
         }
     }
 
-    return count > 0 ? sum / count : null;
+    return count > 0 ? sum / count : undefined;
 };
 
+/**
+ * Computes the average frame generation time, to be precise, the time between {@link Scene#preRender} and {@link Scene#postRender}, in one time interval.
+ *
+ * @returns {Number|undefined} The average frame time in ms, or <code>undefined</code> if no frames were completed.
+ *
+ * @private
+ */
 PerformanceMeasurer.prototype._computeAverageFrameTime = function () {
     if (this._frameTimes.length === 0) {
-        return null;
+        return undefined;
     }
 
     const sum = this._frameTimes.reduce(function (a, b) {
@@ -481,6 +210,14 @@ PerformanceMeasurer.prototype._computeAverageFrameTime = function () {
     return averaged;
 };
 
+/**
+ * Computes the average FPS for one time interval.
+ *
+ * @param {Number} timestamp The timestamp for the currently evaluated time interval.
+ * @returns {Number} The average FPS.
+ *
+ * @private
+ */
 PerformanceMeasurer.prototype._computeFps = function (timestamp) {
     let fps = 0;
 
@@ -504,6 +241,11 @@ PerformanceMeasurer.prototype._computeFps = function (timestamp) {
     return fps;
 };
 
+/**
+ * Attaches events to the {@link RequestScheduler} to measure response times.
+ *
+ * @param {RequestScheduler} RequestScheduler The current RequestScheduler.
+ */
 PerformanceMeasurer.prototype.attachToRequestScheduler = function (
     RequestScheduler,
 ) {
@@ -526,8 +268,13 @@ PerformanceMeasurer.prototype.attachToRequestScheduler = function (
     };
 };
 
+/**
+ * Attaches events to the {@link Cesium3DTileset} to measure load behaviour.
+ *
+ * @param {Cesium3DTileset} tileset The to be measured Cesium3DTileset.
+ */
 PerformanceMeasurer.prototype.attachToTileset = function (tileset) {
-    this.tileset = tileset;
+    this._tileset = tileset;
 
     const that = this;
 
@@ -540,6 +287,11 @@ PerformanceMeasurer.prototype.attachToTileset = function (tileset) {
     });
 };
 
+/**
+ * Attaches events to the {@link Scene} to measure frame times via {@link Scene#preRender} and {@link Scene#postRender}.
+ *
+ * @param {Scene} scene The current Scene.
+ */
 PerformanceMeasurer.prototype.attachToSceneRenderer = function (scene) {
     const that = this;
 
@@ -551,12 +303,16 @@ PerformanceMeasurer.prototype.attachToSceneRenderer = function (scene) {
         that._renderFinishTime = performance.now();
         that._numberOfFrames++;
 
-        that._pointsRendered += that.tileset._statistics.numberOfPointsSelected;
+        that._pointsRendered +=
+            that._tileset._statistics.numberOfPointsSelected;
 
         that._frameTimes.push(that._renderFinishTime - that._renderStartTime);
     });
 };
 
+/**
+ * Writes the collected data to a csv and downloads it.
+ */
 PerformanceMeasurer.prototype.dumpData = function () {
     const header = [
         "timestamp",
@@ -586,7 +342,7 @@ PerformanceMeasurer.prototype.dumpData = function () {
         "tileCacheTurnover",
     ].join(",");
 
-    const body = this.buffer
+    const body = this._buffer
         .map(function (d) {
             return [
                 d.timestamp,

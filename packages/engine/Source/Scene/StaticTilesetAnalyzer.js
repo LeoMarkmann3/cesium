@@ -1,6 +1,12 @@
 import Resource from "../Core/Resource.js";
 import defined from "../Core/defined.js";
 
+/**
+ * A tool that performs static analysis of a 3D Tiles tileset.
+ *
+ * @alias StaticTilesetAnalyzer
+ * @constructor
+ */
 function StaticTilesetAnalyzer() {
     this._visitedTilesets = new Set();
 
@@ -14,6 +20,12 @@ function StaticTilesetAnalyzer() {
     this._result = null;
 }
 
+/**
+ * Starts the static analysis of a tileset.
+ *
+ * @param {String|Resource} input The tileset URL or resource.
+ * @returns {Promise<void>} A promise that resolves when analysis is complete.
+ */
 StaticTilesetAnalyzer.prototype.startAnalyze = async function (input) {
     this._reset();
 
@@ -38,6 +50,11 @@ StaticTilesetAnalyzer.prototype.startAnalyze = async function (input) {
     this.dumpData();
 };
 
+/**
+ * Resets the internal state of the analyzer.
+ *
+ * @private
+ */
 StaticTilesetAnalyzer.prototype._reset = function () {
     this._visitedTilesets.clear();
 
@@ -49,6 +66,14 @@ StaticTilesetAnalyzer.prototype._reset = function () {
     this._result = null;
 };
 
+/**
+ * Analyzes a tileset JSON resource.
+ *
+ * @param {Resource} resource The tileset resource.
+ * @param {Number} depth The current traversal depth.
+ * @returns {Promise<void>} A promise that resolves when traversal is complete.
+ * @private
+ */
 StaticTilesetAnalyzer.prototype._analyzeTileset = async function (
     resource,
     depth,
@@ -68,6 +93,15 @@ StaticTilesetAnalyzer.prototype._analyzeTileset = async function (
     await this._traverseTile(tilesetJson.root, resource, depth);
 };
 
+/**
+ * Traverses a tile and its children.
+ *
+ * @param {Object} tile The tile JSON definition.
+ * @param {Resource} baseResource The base resource used for resolving content URIs.
+ * @param {Number} depth The current traversal depth.
+ * @returns {Promise<void>} A promise that resolves when traversal is complete.
+ * @private
+ */
 StaticTilesetAnalyzer.prototype._traverseTile = async function (
     tile,
     baseResource,
@@ -109,6 +143,15 @@ StaticTilesetAnalyzer.prototype._traverseTile = async function (
     }
 };
 
+/**
+ * Reads the POINTS_LENGTH value from a PNTS file.
+ *
+ * @param {Resource} resource The PNTS resource.
+ * @returns {Promise<Number>} A promise that resolves to the number of points in the tile.
+ *
+ * @exception {Error} The PNTS file does not contain a POINTS_LENGTH field.
+ * @private
+ */
 StaticTilesetAnalyzer.prototype._readPointsFromPnts = async function (
     resource,
 ) {
@@ -137,6 +180,11 @@ StaticTilesetAnalyzer.prototype._readPointsFromPnts = async function (
     return featureTable.POINTS_LENGTH;
 };
 
+/**
+ * Writes the analysis result to a CSV file and initiates a download.
+ *
+ * @exception {Error} Static analysis has not been executed yet.
+ */
 StaticTilesetAnalyzer.prototype.dumpData = function () {
     if (!defined(this._result)) {
         throw new Error("Static analysis has not been executed yet.");
