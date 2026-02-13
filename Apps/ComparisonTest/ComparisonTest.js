@@ -96,6 +96,7 @@ async function main() {
                 },
             ); /**/
 
+            /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.37:8002/out_tileset/tileset.json",
                 {
@@ -105,7 +106,6 @@ async function main() {
                 },
             ); /**/
 
-            /*
             tileset = viewer.scene.primitives.add(
                 await Cesium3DTileset.fromIonAssetId(4332925),
                 {

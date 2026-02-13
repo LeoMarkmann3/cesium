@@ -14,6 +14,7 @@ import {
     Cartographic,
     Math,
     JulianDate,
+    PerformanceMeasurer,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -86,11 +87,11 @@ async function main() {
 
             // Load Tileset from URL with various options for performance and LOD management
 
-            /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_3_1_TRANSFORMED_2024-12-12_13h48_53_169_georef/tileset.json",
             ); /**/
 
+            /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.37:8002/out_tileset/tileset.json",
             ); /**/
@@ -415,62 +416,11 @@ async function main() {
         });
     }); /**/
 
-    // ==================== PERFORMANCE MEASUREMENT ====================
-
-    /*let requestsCompleted = 0;
-    let totalRequests = 0;
-
-    RequestScheduler.requestCompletedEvent.addEventListener(() => {
-        requestsCompleted++;
-        totalRequests++;
-    });
-
-    let lastSecond = performance.now();
-    let frames = 0;
-    let pointsPerSecond = 0;
-    let maxPointsPerFrame = 0;
-
-    scene.postRender.addEventListener(() => {
-        if (!tileset || !tileset._selectedTiles) {
-            return;
-        }
-
-        frames++;
-
-        let pointsThisFrame = 0;
-
-        tileset._selectedTiles.forEach((tile) => {
-            const content = tile.content;
-            if (content && content.pointsLength) {
-                pointsThisFrame += content.pointsLength;
-            }
-        });
-
-        pointsPerSecond += pointsThisFrame;
-        maxPointsPerFrame = Math.max(maxPointsPerFrame, pointsThisFrame);
-
-        const now = performance.now();
-        if (now - lastSecond >= 1000) {
-            console.log(
-                "FPS:",
-                frames,
-                "| points/s:",
-                pointsPerSecond.toLocaleString(),
-                "| req/s:",
-                requestsCompleted,
-                "| total req:",
-                totalRequests,
-                "| max points/frame:",
-                maxPointsPerFrame.toLocaleString(),
-            );
-
-            frames = 0;
-            pointsPerSecond = 0;
-            requestsCompleted = 0;
-            maxPointsPerFrame = 0;
-            lastSecond = now;
-        }
-    });*/
+    const _performance = new PerformanceMeasurer(100, 10000);
+    _performance.attachToRequestScheduler(RequestScheduler);
+    _performance.attachToTileset(tileset);
+    _performance.attachToSceneRenderer(scene);
+    _performance.start();
 
     loadingIndicator.style.display = "none";
 }
