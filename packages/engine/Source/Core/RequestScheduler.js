@@ -123,6 +123,15 @@ RequestScheduler._onRequestSent = undefined;
  */
 RequestScheduler._onRequestReceived = undefined;
 
+/**
+ * An event that's raised when a request is cancelled, which can be activated and configured by another module.
+ *
+ * @type {Event}
+ * @default undefined
+ * @public
+ */
+RequestScheduler._onRequestReceived = undefined;
+
 Object.defineProperties(RequestScheduler, {
   /**
    * Returns the statistics used by the request scheduler.
@@ -281,19 +290,21 @@ function startRequest(request) {
 }
 
 function cancelRequest(request) {
-  const active = request.state === RequestState.ACTIVE;
-  request.state = RequestState.CANCELLED;
-  ++statistics.numberOfCancelledRequests;
-  // If the request has resolved, request.deferred should now be undefined
-  // If it's in progress, fail the promise immediately and discard it, but ensure the failure is handled so the failure does not bubble up, e.g. by clearForSpecs during tests
-  if (defined(request.deferred)) {
-    const deferred = request.deferred;
-    deferred.promise.catch(() => {
-      // noop fallback handler
-    });
-    request.deferred = undefined;
-    deferred.reject(new RuntimeError(`Request cancelled: "${request.url}"`));
-  }
+    const active = request.state === RequestState.ACTIVE;
+    request.state = RequestState.CANCELLED;
+    ++statistics.numberOfCancelledRequests;
+
+    if (RequestScheduler._onRequestCancelled) {
+        RequestScheduler._onRequestCancelled(request, performance.now());
+    }
+
+    // check that deferred has not been cleared since cancelRequest can be called
+    // on a finished request, e.g. by clearForSpecs during tests
+    if (defined(request.deferred)) {
+        const deferred = request.deferred;
+        request.deferred = undefined;
+        deferred.reject();
+    }
 
   if (active) {
     --statistics.numberOfActiveRequests;

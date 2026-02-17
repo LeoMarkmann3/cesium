@@ -110,7 +110,7 @@ PerformanceMeasurer.prototype._collectData = function (timestamp) {
     const tileEfficiency =
         stats.selected / stats.numberOfTilesWithContentReady || 0;
     const requestEfficiency =
-        stats.selected / stats.numberOfAttemptedRequests || 0;
+        stats.selected / this._tileStats.requestedTiles || 0;
     const pointEfficiency =
         stats.numberOfPointsSelected / stats.numberOfPointsLoaded || 0;
     const tileRequestEfficiency =
@@ -260,11 +260,15 @@ PerformanceMeasurer.prototype.attachToRequestScheduler = function (
     RequestScheduler._onRequestReceived = function (request, t) {
         if (that._tileStats.activeRequests.has(request)) {
             if (request.state === RequestState.CANCELLED) {
-                that._tileStats.abortedTiles++;
+                return;
             }
-            that._tileStats.activeRequests.delete(request);
         }
         that._requestsReceived.push({ request: request, t: t });
+    };
+
+    RequestScheduler._onRequestCancelled = function (request, t) {
+        that._tileStats.abortedTiles++;
+        that._tileStats.activeRequests.delete(request);
     };
 };
 
