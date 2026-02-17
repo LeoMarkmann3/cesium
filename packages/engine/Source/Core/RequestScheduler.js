@@ -124,6 +124,15 @@ RequestScheduler._onRequestSent = undefined;
  */
 RequestScheduler._onRequestReceived = undefined;
 
+/**
+ * An event that's raised when a request is cancelled, which can be activated and configured by another module.
+ *
+ * @type {Event}
+ * @default undefined
+ * @public
+ */
+RequestScheduler._onRequestReceived = undefined;
+
 Object.defineProperties(RequestScheduler, {
     /**
      * Returns the statistics used by the request scheduler.
@@ -286,6 +295,11 @@ function cancelRequest(request) {
     const active = request.state === RequestState.ACTIVE;
     request.state = RequestState.CANCELLED;
     ++statistics.numberOfCancelledRequests;
+
+    if (RequestScheduler._onRequestCancelled) {
+        RequestScheduler._onRequestCancelled(request, performance.now());
+    }
+
     // check that deferred has not been cleared since cancelRequest can be called
     // on a finished request, e.g. by clearForSpecs during tests
     if (defined(request.deferred)) {

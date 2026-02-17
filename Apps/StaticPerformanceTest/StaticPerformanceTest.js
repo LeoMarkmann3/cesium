@@ -88,7 +88,7 @@ async function main() {
 
             /*
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_3_1_TRANSFORMED_2024-12-12_13h48_53_169_georef/tileset.json",
+                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_2_0_TRANSFORMED_2024-12-12_13h37_33_000_georef/tileset.json",
             ); /**/
 
             /*
@@ -97,7 +97,7 @@ async function main() {
             ); /**/
 
             tileset = viewer.scene.primitives.add(
-                await Cesium3DTileset.fromIonAssetId(4331253),
+                await Cesium3DTileset.fromIonAssetId(4332925),
             );
             /**/
 
