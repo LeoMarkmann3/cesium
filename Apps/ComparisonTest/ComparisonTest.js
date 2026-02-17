@@ -14,6 +14,7 @@ import {
     Cartographic,
     Math,
     JulianDate,
+    PerformanceMeasurer,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -156,57 +157,12 @@ async function main() {
             tileset.pointCloudShading.baseResolution = 0.02;
             tileset.pointCloudShading.geometricErrorScale = 0.5;
             tileset.pointCloudShading.attenuation = true;
-
-            // tileset.debugShowBoundingVolume = true;
-
-            // Fly to point cloud
-            // viewer.flyTo(tileset);
         } catch (error) {
             console.log("Error loading tileset:", error);
         }
     };
 
     await loadTileset();
-
-    // ==================== CAMERA LOGGER ====================
-
-    /*const CAMERA_LOG_INTERVAL_MS = 2000;
-    let lastCameraLog = performance.now();
-
-    scene.postRender.addEventListener(() => {
-        const now = performance.now();
-        if (now - lastCameraLog < CAMERA_LOG_INTERVAL_MS) {
-        return;
-        }
-        lastCameraLog = now;
-
-        const camera = viewer.camera;
-        const carto = Cartographic.fromCartesian(camera.position);
-
-        const lon = Math.toDegrees(carto.longitude);
-        const lat = Math.toDegrees(carto.latitude);
-        const height = carto.height;
-
-        // Normalize angles (avoid 360 / tiny eps values)
-        const heading = (Math.toDegrees(camera.heading) + 360) % 360;
-        const pitch = Math.toDegrees(camera.pitch);
-        const roll = (Math.toDegrees(camera.roll) + 360) % 360;
-
-        console.log(
-        "CAM | lon:",
-        lon.toFixed(5),
-        "| lat:",
-        lat.toFixed(5),
-        "| h:",
-        height.toFixed(2),
-        "| hdg:",
-        heading.toFixed(2),
-        "| pit:",
-        pitch.toFixed(2),
-        "| rol:",
-        roll.toFixed(2),
-        );
-    }); /**/
 
     // ==================== CAMERA PATH ====================
 
@@ -335,6 +291,16 @@ async function main() {
         return null;
     }
 
+    // ================== MEASURER SETUP ===================
+
+    const _performance = new PerformanceMeasurer(
+        100,
+        (cameraPath[cameraPath.length - 1].time + 5) * 1000,
+    );
+    _performance.attachToRequestScheduler(RequestScheduler);
+    _performance.attachToTileset(tileset);
+    _performance.attachToSceneRenderer(scene);
+
     // Camera Path
     scene.preUpdate.addEventListener(() => {
         const elapsed = JulianDate.secondsDifference(
@@ -359,62 +325,7 @@ async function main() {
         });
     }); /**/
 
-    // ==================== PERFORMANCE MEASUREMENT ====================
-
-    /*let requestsCompleted = 0;
-    let totalRequests = 0;
-
-    RequestScheduler.requestCompletedEvent.addEventListener(() => {
-        requestsCompleted++;
-        totalRequests++;
-    });
-
-    let lastSecond = performance.now();
-    let frames = 0;
-    let pointsPerSecond = 0;
-    let maxPointsPerFrame = 0;
-
-    scene.postRender.addEventListener(() => {
-        if (!tileset || !tileset._selectedTiles) {
-            return;
-        }
-
-        frames++;
-
-        let pointsThisFrame = 0;
-
-        tileset._selectedTiles.forEach((tile) => {
-            const content = tile.content;
-            if (content && content.pointsLength) {
-                pointsThisFrame += content.pointsLength;
-            }
-        });
-
-        pointsPerSecond += pointsThisFrame;
-        maxPointsPerFrame = Math.max(maxPointsPerFrame, pointsThisFrame);
-
-        const now = performance.now();
-        if (now - lastSecond >= 1000) {
-            console.log(
-                "FPS:",
-                frames,
-                "| points/s:",
-                pointsPerSecond.toLocaleString(),
-                "| req/s:",
-                requestsCompleted,
-                "| total req:",
-                totalRequests,
-                "| max points/frame:",
-                maxPointsPerFrame.toLocaleString(),
-            );
-
-            frames = 0;
-            pointsPerSecond = 0;
-            requestsCompleted = 0;
-            maxPointsPerFrame = 0;
-            lastSecond = now;
-        }
-    });*/
+    _performance.start();
 
     loadingIndicator.style.display = "none";
 }
