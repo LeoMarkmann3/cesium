@@ -325,43 +325,6 @@ async function main() {
         });
     }); /**/
 
-    function waitUntil(conditionFn, interval = 100) {
-        return new Promise((resolve) => {
-            const handle = setInterval(() => {
-                if (conditionFn()) {
-                    clearInterval(handle);
-                    resolve();
-                }
-            }, interval);
-        });
-    }
-
-    const screenshotTimes = [10, 20, 36, 45, 60];
-    const takenScreenshots = new Set();
-
-    async function takeScreenshot(time) {
-        console.log("Taking screenshot at t =", time);
-
-        // Warten bis Szene stabil ist
-        await waitUntil(
-            () =>
-                viewer.scene.globe.tilesLoaded &&
-                tileset._statistics.numberOfPendingRequests === 0,
-        );
-
-        // Render erzwingen
-        viewer.render();
-
-        // Screenshot erzeugen
-        const dataUrl = viewer.canvas.toDataURL("image/png");
-
-        // Download im Browser
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = `screenshot_t${time}.png`;
-        a.click();
-    }
-
     scene.preUpdate.addEventListener(() => {
         const elapsed = JulianDate.secondsDifference(
             viewer.clock.currentTime,
@@ -380,14 +343,6 @@ async function main() {
                 destination,
                 orientation: frame.orientation,
             });
-        }
-
-        // Screenshot auslösen
-        for (const t of screenshotTimes) {
-            if (elapsed >= t && !takenScreenshots.has(t)) {
-                takenScreenshots.add(t);
-                takeScreenshot(t);
-            }
         }
     });
 
