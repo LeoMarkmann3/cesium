@@ -134,6 +134,7 @@ PerformanceMeasurer.prototype._collectData = function (timestamp) {
         unloadedTiles: this._tileStats.unloadedTiles,
 
         selected: stats.selected,
+        visited: stats.visited,
         numberOfAttemptedRequests: stats.numberOfAttemptedRequests,
         numberOfPendingRequests: stats.numberOfPendingRequests,
         numberOfTilesProcessing: stats.numberOfTilesProcessing,
@@ -329,6 +330,7 @@ PerformanceMeasurer.prototype.dumpData = function () {
         "loadedTiles",
         "unloadedTiles",
         "selected",
+        "visited",
         "numberOfAttemptedRequests",
         "numberOfPendingRequests",
         "numberOfTilesProcessing",
@@ -359,6 +361,7 @@ PerformanceMeasurer.prototype.dumpData = function () {
                 d.loadedTiles,
                 d.unloadedTiles,
                 d.selected,
+                d.visited,
                 d.numberOfAttemptedRequests,
                 d.numberOfPendingRequests,
                 d.numberOfTilesProcessing,
