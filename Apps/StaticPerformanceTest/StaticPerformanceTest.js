@@ -264,10 +264,39 @@ async function main() {
         });
     }
 
-    const screenshotTimes = [15, 25, 35, 45, 55];
+    const screenshotConfigs = [
+        { time: 15, area: "full" },
+        { time: 25, area: "full" },
+        { time: 35, area: "full" },
+        { time: 45, area: "full" },
+        { time: 55, area: { x: 400, y: 100, width: 1000, height: 700 } },
+    ];
     const takenScreenshots = new Set();
 
-    async function takeScreenshot(time) {
+    function cropCanvas(sourceCanvas, crop) {
+        const { x, y, width, height } = crop;
+
+        const cropped = document.createElement("canvas");
+        cropped.width = width;
+        cropped.height = height;
+
+        const ctx = cropped.getContext("2d");
+        ctx.drawImage(
+            sourceCanvas,
+            x,
+            y,
+            width,
+            height, // Quelle
+            0,
+            0,
+            width,
+            height, // Ziel
+        );
+
+        return cropped;
+    }
+
+    async function takeScreenshot(time, area) {
         console.log("Taking screenshot at t =", time);
 
         // Warten bis Szene stabil ist
@@ -280,8 +309,13 @@ async function main() {
         // Render erzwingen
         viewer.render();
 
-        // Screenshot erzeugen
-        const dataUrl = viewer.canvas.toDataURL("image/png");
+        let dataUrl;
+        if (area === "full") {
+            dataUrl = viewer.canvas.toDataURL("image/png");
+        } else {
+            const croppedCanvas = cropCanvas(viewer.canvas, area);
+            dataUrl = croppedCanvas.toDataURL("image/png");
+        }
 
         // Download im Browser
         const a = document.createElement("a");
@@ -326,10 +360,10 @@ async function main() {
         }
 
         // Screenshot auslösen
-        for (const t of screenshotTimes) {
-            if (elapsed >= t && !takenScreenshots.has(t)) {
-                takenScreenshots.add(t);
-                takeScreenshot(t);
+        for (const cfg of screenshotConfigs) {
+            if (elapsed >= cfg.time && !takenScreenshots.has(cfg.time)) {
+                takenScreenshots.add(cfg.time);
+                takeScreenshot(cfg.time, cfg.area);
             }
         }
     });
