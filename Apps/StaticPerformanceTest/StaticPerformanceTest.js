@@ -13,7 +13,9 @@ import {
     Cartesian3,
     Cartographic,
     Math,
-    StaticTilesetAnalyzer,
+    // StaticTilesetAnalyzer,
+    JulianDate,
+    Cesium3DTileStyle,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -70,7 +72,7 @@ async function main() {
         return;
     }
 
-    // const scene = viewer.scene;
+    const scene = viewer.scene;
     let tileset;
 
     // // OPTIONAL — black background but keep the globe
@@ -89,15 +91,30 @@ async function main() {
             /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_2_0_TRANSFORMED_2024-12-12_13h37_33_000_georef/tileset.json",
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
+            ); /**/
+
+            tileset = await Cesium3DTileset.fromUrl(
+                "http://172.18.21.37:8002/out_tileset/tileset.json",
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
             ); /**/
 
             /*
-            tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.37:8002/out_tileset/tileset.json",
-            ); /**/
-
             tileset = viewer.scene.primitives.add(
                 await Cesium3DTileset.fromIonAssetId(4332925),
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
             );
             /**/
 
@@ -132,6 +149,10 @@ async function main() {
 
             await tileset.readyPromise;
 
+            tileset.style = new Cesium3DTileStyle({
+                pointSize: "3.0",
+            });
+
             // Compute offset to raise tileset above terrain
 
             const boundingSphere = tileset.boundingSphere;
@@ -163,10 +184,12 @@ async function main() {
             tileset.modelMatrix = Matrix4.fromTranslation(translation);
 
             //testing
-            tileset.pointCloudShading.maximumAttenuation = 4.0;
-            tileset.pointCloudShading.baseResolution = 0.02;
-            tileset.pointCloudShading.geometricErrorScale = 0.5;
+            // tileset.pointCloudShading.maximumAttenuation = 4.0;
+            // tileset.pointCloudShading.baseResolution = 0.02;
+            // tileset.pointCloudShading.geometricErrorScale = 0.5;
             tileset.pointCloudShading.attenuation = true;
+
+            tileset.pointCloudShading.eyeDomeLighting = true;
 
             // tileset.debugShowBoundingVolume = true;
 
@@ -199,8 +222,117 @@ async function main() {
 
     await loadTileset();
 
-    const analyzer = new StaticTilesetAnalyzer();
-    await analyzer.startAnalyze(tileset._resource);
+    const viewpoints = [
+        {
+            time: 10,
+            position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
+            orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
+        },
+        {
+            time: 20,
+            position: { lon: 14.19704, lat: 52.28054, height: 121.94 },
+            orientation: { heading: 347.99, pitch: 2.13, roll: 0.0 },
+        },
+        {
+            time: 30,
+            position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
+            orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
+        },
+        {
+            time: 40,
+            position: { lon: 14.19704, lat: 52.28157, height: 154.87 },
+            orientation: { heading: 179.61, pitch: -16.77, roll: 0.0 },
+        },
+        {
+            time: 50,
+            position: { lon: 14.20069, lat: 52.28102, height: 178.99 },
+            orientation: { heading: 269.51, pitch: -15.07, roll: 0 },
+        },
+    ];
+
+    // const analyzer = new StaticTilesetAnalyzer();
+    // await analyzer.startAnalyze(tileset._resource);
+
+    function waitUntil(conditionFn, interval = 100) {
+        return new Promise((resolve) => {
+            const handle = setInterval(() => {
+                if (conditionFn()) {
+                    clearInterval(handle);
+                    resolve();
+                }
+            }, interval);
+        });
+    }
+
+    const screenshotTimes = [15, 25, 35, 45, 55];
+    const takenScreenshots = new Set();
+
+    async function takeScreenshot(time) {
+        console.log("Taking screenshot at t =", time);
+
+        // Warten bis Szene stabil ist
+        await waitUntil(
+            () =>
+                viewer.scene.globe.tilesLoaded &&
+                tileset._statistics.numberOfPendingRequests === 0,
+        );
+
+        // Render erzwingen
+        viewer.render();
+
+        // Screenshot erzeugen
+        const dataUrl = viewer.canvas.toDataURL("image/png");
+
+        // Download im Browser
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = `image-t${time}.png`;
+        a.click();
+    }
+
+    const startTime = JulianDate.now();
+    viewer.clock.startTime = startTime.clone();
+    viewer.clock.currentTime = startTime.clone();
+    viewer.clock.multiplier = 1;
+    viewer.clock.shouldAnimate = true;
+
+    const visited = new Set();
+
+    scene.preUpdate.addEventListener(() => {
+        const elapsed = JulianDate.secondsDifference(
+            viewer.clock.currentTime,
+            startTime,
+        );
+
+        for (const vp of viewpoints) {
+            if (elapsed >= vp.time && !visited.has(vp.time)) {
+                visited.add(vp.time);
+
+                const destination = Cartesian3.fromDegrees(
+                    vp.position.lon,
+                    vp.position.lat,
+                    vp.position.height,
+                );
+
+                viewer.camera.setView({
+                    destination,
+                    orientation: {
+                        heading: Math.toRadians(vp.orientation.heading),
+                        pitch: Math.toRadians(vp.orientation.pitch),
+                        roll: Math.toRadians(vp.orientation.roll),
+                    },
+                });
+            }
+        }
+
+        // Screenshot auslösen
+        for (const t of screenshotTimes) {
+            if (elapsed >= t && !takenScreenshots.has(t)) {
+                takenScreenshots.add(t);
+                takeScreenshot(t);
+            }
+        }
+    });
 
     loadingIndicator.style.display = "none";
 }
