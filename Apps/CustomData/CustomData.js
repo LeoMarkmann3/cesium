@@ -109,7 +109,7 @@ async function main() {
                 },
             ); /**/
 
-            /*
+            
             tileset = viewer.scene.primitives.add(
                 await Cesium3DTileset.fromIonAssetId(4331253),
                 {
