@@ -78,20 +78,16 @@ async function main() {
 
   // scene.backgroundColor = Color.RED;
 
-  const loadTileset = async () => {
-    try {
-      // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
-      const heightOffsetMeters = 15.0;
+    const loadTileset = async () => {
+        try {
+            // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
+            const heightOffsetMeters = 50.0;
 
             // Load Tileset from URL with various options for performance and LOD management
 
+            /*
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_3_1_TRANSFORMED_2024-12-12_13h48_53_169_georef/tileset.json",
-                {
-                    cullRequestsWhileMoving: false,
-                    preloadWhenHidden: true,
-                    preloadFlightDestinations: true,
-                },
+                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_2_0_TRANSFORMED_2024-12-12_13h37_33_000_georef/tileset.json",
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
@@ -99,7 +95,6 @@ async function main() {
                 },
             ); /**/
 
-            /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.37:8002/out_tileset/tileset.json",
                 {
@@ -164,10 +159,10 @@ async function main() {
             //testing
             tileset.pointCloudShading.maximumAttenuation = 4.0;
             tileset.pointCloudShading.baseResolution = 0.02;
-            tileset.pointCloudShading.geometricErrorScale = 0.5;
+            tileset.pointCloudShading.geometricErrorScale = 1.0;
             tileset.pointCloudShading.attenuation = true;
 
-            // tileset.debugShowBoundingVolume = true;
+            tileset.debugShowBoundingVolume = true;
 
       // Fly to point cloud
       viewer.flyTo(tileset);
@@ -191,11 +186,11 @@ async function main() {
         );
     });/**/
 
-    const _performance = new PerformanceMeasurer(100, 10000);
-    _performance.attachToRequestScheduler(RequestScheduler);
-    _performance.attachToTileset(tileset);
-    _performance.attachToSceneRenderer(scene);
-    _performance.start();
+    // const _performance = new PerformanceMeasurer(100, 10000);
+    // _performance.attachToRequestScheduler(RequestScheduler);
+    // _performance.attachToTileset(tileset);
+    // _performance.attachToSceneRenderer(scene);
+    // _performance.start();
 
     /*
     // ==================== PERFORMANCE MEASUREMENT ====================

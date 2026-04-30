@@ -88,12 +88,22 @@ async function main() {
             // Load Tileset from URL with various options for performance and LOD management
 
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_3_1_TRANSFORMED_2024-12-12_13h48_53_169_georef/tileset.json",
+                "http://172.18.21.46:8000/get/Mar19_train_georef/tileset.json",
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
             ); /**/
 
             /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.37:8002/out_tileset/tileset.json",
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
             ); /**/
 
             /*
@@ -172,7 +182,7 @@ async function main() {
             // tileset.debugShowBoundingVolume = true;
 
             // Fly to point cloud
-            // viewer.flyTo(tileset);
+            viewer.flyTo(tileset);
         } catch (error) {
             console.log("Error loading tileset:", error);
         }
@@ -182,13 +192,13 @@ async function main() {
 
     // ==================== CAMERA LOGGER ====================
 
-    /*const CAMERA_LOG_INTERVAL_MS = 2000;
+    const CAMERA_LOG_INTERVAL_MS = 2000;
     let lastCameraLog = performance.now();
 
     scene.postRender.addEventListener(() => {
         const now = performance.now();
         if (now - lastCameraLog < CAMERA_LOG_INTERVAL_MS) {
-        return;
+            return;
         }
         lastCameraLog = now;
 
@@ -205,23 +215,24 @@ async function main() {
         const roll = (Math.toDegrees(camera.roll) + 360) % 360;
 
         console.log(
-        "CAM | lon:",
-        lon.toFixed(5),
-        "| lat:",
-        lat.toFixed(5),
-        "| h:",
-        height.toFixed(2),
-        "| hdg:",
-        heading.toFixed(2),
-        "| pit:",
-        pitch.toFixed(2),
-        "| rol:",
-        roll.toFixed(2),
+            "CAM | lon:",
+            lon.toFixed(5),
+            "| lat:",
+            lat.toFixed(5),
+            "| h:",
+            height.toFixed(2),
+            "| hdg:",
+            heading.toFixed(2),
+            "| pit:",
+            pitch.toFixed(2),
+            "| rol:",
+            roll.toFixed(2),
         );
     }); /**/
 
     // ==================== CAMERA PATH ====================
 
+    /*
     const cameraPath = [
         {
             time: 0,
@@ -390,7 +401,18 @@ async function main() {
             }
         }
         return null;
-    } /**/
+    }/**/
+
+    // ================== MEASURER SETUP ===================
+
+    /*
+    const _performance = new PerformanceMeasurer(
+        100,
+        (cameraPath[cameraPath.length - 1].time + 5) * 1000,
+    );
+    _performance.attachToRequestScheduler(RequestScheduler);
+    _performance.attachToTileset(tileset);
+    _performance.attachToSceneRenderer(scene);
 
     // Camera Path
     scene.preUpdate.addEventListener(() => {
@@ -416,11 +438,30 @@ async function main() {
         });
     }); /**/
 
-    const _performance = new PerformanceMeasurer(100, 10000);
-    _performance.attachToRequestScheduler(RequestScheduler);
-    _performance.attachToTileset(tileset);
-    _performance.attachToSceneRenderer(scene);
-    _performance.start();
+    /*
+    scene.preUpdate.addEventListener(() => {
+        const elapsed = JulianDate.secondsDifference(
+            viewer.clock.currentTime,
+            startTime,
+        );
+
+        // Kamera interpolieren 
+        
+        const frame = interpolateCamera(cameraPath, elapsed);
+        if (frame) {
+            const destination = Cartesian3.fromDegrees(
+                frame.position.lon,
+                frame.position.lat,
+                frame.position.height,
+            );
+            viewer.camera.setView({
+                destination,
+                orientation: frame.orientation,
+            });
+        }
+    });/**/
+
+    // _performance.start();
 
     loadingIndicator.style.display = "none";
 }
