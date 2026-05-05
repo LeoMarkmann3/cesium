@@ -139,62 +139,40 @@ echo "  root    → $NEW_ROOT"
 node <<EOF
 const fs = require("fs");
 
-function update(file, version, deps = {}, rewriteScope = false) {
+function update(file, version, engineVersion, widgetsVersion, isRoot = false) {
   if (!fs.existsSync(file)) return;
 
   const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
   pkg.version = version;
 
-  function rewriteDeps(obj) {
-    if (!obj) return;
+  if (isRoot) {
+    pkg.dependencies = {
+      "@cesium/engine": \`npm:@${GH_ORG}/engine@^\${engineVersion}\`,
+      "@cesium/widgets": \`npm:@${GH_ORG}/widgets@^\${widgetsVersion}\`,
+      "nosleep.js": "0.12.0",
+    };
+  } else {
+    // workspace packages still use internal deps
+    if (!pkg.dependencies) pkg.dependencies = {};
 
-    // rewrite scope
-    for (const key of Object.keys(obj)) {
-      if (rewriteScope && key.startsWith("@cesium/")) {
-        const newKey = key.replace("@cesium/", "@${GH_ORG}/");
-        obj[newKey] = obj[key];
-        delete obj[key];
-      }
-    }
-
-    // update versions
-    for (const key of Object.keys(obj)) {
-      if (deps[key]) {
-        obj[key] = "^" + deps[key];
-      }
-    }
-  }
-
-  rewriteDeps(pkg.dependencies);
-  rewriteDeps(pkg.devDependencies);
-  rewriteDeps(pkg.peerDependencies);
-
-  if (pkg.overrides) {
-    for (const key of Object.keys(pkg.overrides)) {
-      if (rewriteScope && key.startsWith("@cesium/")) {
-        const newKey = key.replace("@cesium/", "@${GH_ORG}/");
-        pkg.overrides[newKey] = pkg.overrides[key];
-        delete pkg.overrides[key];
-      }
+    if (file.includes("widgets")) {
+      pkg.dependencies = {
+        "@${GH_ORG}/engine": "^" + engineVersion
+      };
     }
   }
 
   fs.writeFileSync(file, JSON.stringify(pkg, null, 2));
 }
 
-// engine
-update("packages/engine/package.json", "$NEW_ENGINE", {}, false);
+// engine (no deps)
+update("packages/engine/package.json", "$NEW_ENGINE", "$NEW_ENGINE", "$NEW_WIDGETS");
 
-// widgets → depends on engine
-update("packages/widgets/package.json", "$NEW_WIDGETS", {
-  "@${GH_ORG}/engine": "$NEW_ENGINE"
-}, true);
+// widgets
+update("packages/widgets/package.json", "$NEW_WIDGETS", "$NEW_ENGINE", "$NEW_WIDGETS");
 
-// root → depends on both
-update("package.json", "$NEW_ROOT", {
-  "@${GH_ORG}/engine": "$NEW_ENGINE",
-  "@${GH_ORG}/widgets": "$NEW_WIDGETS"
-}, true);
+// root (FULL override)
+update("package.json", "$NEW_ROOT", "$NEW_ENGINE", "$NEW_WIDGETS", true);
 
 EOF
 
