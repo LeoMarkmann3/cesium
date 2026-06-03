@@ -7,7 +7,6 @@ import {
     Cesium3DTileset,
     formatError,
     Viewer,
-    Terrain,
     RequestScheduler,
     Matrix4,
     Cartesian3,
@@ -45,12 +44,12 @@ async function main() {
     RequestScheduler.maximumRequestsPerServer = 100000;
 
     Ion.defaultAccessToken =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZDgxMjNjMi03MTRlLTRjNzctODgyMi05ZWRiYTllZGQzN2YiLCJpZCI6MzU3ODE2LCJpYXQiOjE3NjI0Mjk2NDJ9.vD7C8Iy8dFXX21tneNfCYl51FtbUGIrBfJHwiQsRNp0";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OTg0MjRlZS0zYmI4LTRkYWItODRhNy1jMDIwMmJmNDkxNDYiLCJpZCI6NDE4OTYyLCJpYXQiOjE3NzYzMjQyODR9.W_gO7B42NhhAKQ8xMgmH7ZI3_Uz1qnCcuqIgxdthQ2s";
 
     let viewer;
     try {
         viewer = new Viewer("cesiumContainer", {
-            terrain: Terrain.fromWorldTerrain(),
+            terrain: false,
             timeline: false,
             animation: false,
             geocoder: false,
@@ -99,7 +98,7 @@ async function main() {
 
             /*
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.37:8002/out_tileset/tileset.json",
+                "http://172.18.21.46:8002/out_tileset/tileset.json",
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
@@ -108,7 +107,7 @@ async function main() {
             ); /**/
 
             tileset = viewer.scene.primitives.add(
-                await Cesium3DTileset.fromIonAssetId(4332925),
+                await Cesium3DTileset.fromIonAssetId(4657810),
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,

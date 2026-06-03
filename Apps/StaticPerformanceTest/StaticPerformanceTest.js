@@ -7,8 +7,6 @@ import {
     Cesium3DTileset,
     formatError,
     Viewer,
-    Terrain,
-    RequestScheduler,
     Matrix4,
     Cartesian3,
     Cartographic,
@@ -16,6 +14,7 @@ import {
     // StaticTilesetAnalyzer,
     JulianDate,
     Cesium3DTileStyle,
+    SceneMode,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -42,24 +41,28 @@ async function main() {
 
     const loadingIndicator = document.getElementById("loadingIndicator");
 
-    RequestScheduler.maximumRequests = 2000000;
-    RequestScheduler.maximumRequestsPerServer = 100000;
+    // RequestScheduler.maximumRequests = 2000000;
+    // RequestScheduler.maximumRequestsPerServer = 100000;
 
     Ion.defaultAccessToken =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZDgxMjNjMi03MTRlLTRjNzctODgyMi05ZWRiYTllZGQzN2YiLCJpZCI6MzU3ODE2LCJpYXQiOjE3NjI0Mjk2NDJ9.vD7C8Iy8dFXX21tneNfCYl51FtbUGIrBfJHwiQsRNp0";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OTg0MjRlZS0zYmI4LTRkYWItODRhNy1jMDIwMmJmNDkxNDYiLCJpZCI6NDE4OTYyLCJpYXQiOjE3NzYzMjQyODR9.W_gO7B42NhhAKQ8xMgmH7ZI3_Uz1qnCcuqIgxdthQ2s";
 
     let viewer;
     try {
         viewer = new Viewer("cesiumContainer", {
-            terrain: Terrain.fromWorldTerrain(),
+            sceneMode: SceneMode.SCENE3D,
+            skyBox: false,
             timeline: false,
-            animation: false,
-            geocoder: false,
-            baseLayerPicker: false,
-            sceneModePicker: false,
-            navigationHelpButton: false,
-            selectionIndicator: false,
+            globe: false,
             infoBox: false,
+            homeButton: false,
+            sceneModePicker: false,
+            animation: false,
+            baseLayerPicker: false,
+            geocoder: false,
+            selectionIndicator: false,
+            fullscreenButton: false,
+            navigationHelpButton: false,
         });
     } catch (exception) {
         loadingIndicator.style.display = "none";
@@ -99,7 +102,7 @@ async function main() {
             ); /**/
 
             tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.37:8002/out_tileset/tileset.json",
+                "http://172.18.21.46:8002/out_tileset/tileset.json",
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
@@ -109,7 +112,7 @@ async function main() {
 
             /*
             tileset = viewer.scene.primitives.add(
-                await Cesium3DTileset.fromIonAssetId(4332925),
+                await Cesium3DTileset.fromIonAssetId(4657810),
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
@@ -224,52 +227,48 @@ async function main() {
 
     const viewpoints = [
         {
-            time: 10,
+            time: 5,
             position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
             orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
         },
         {
-            time: 20,
+            time: 10,
             position: { lon: 14.19704, lat: 52.28054, height: 121.94 },
             orientation: { heading: 347.99, pitch: 2.13, roll: 0.0 },
         },
         {
-            time: 30,
+            time: 15,
             position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
             orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
         },
         {
-            time: 40,
+            time: 20,
             position: { lon: 14.19704, lat: 52.28157, height: 154.87 },
             orientation: { heading: 179.61, pitch: -16.77, roll: 0.0 },
         },
         {
-            time: 50,
+            time: 25,
             position: { lon: 14.20069, lat: 52.28102, height: 178.99 },
             orientation: { heading: 269.51, pitch: -15.07, roll: 0 },
         },
     ];
 
-    // const analyzer = new StaticTilesetAnalyzer();
-    // await analyzer.startAnalyze(tileset._resource);
-
-    function waitUntil(conditionFn, interval = 100) {
-        return new Promise((resolve) => {
-            const handle = setInterval(() => {
-                if (conditionFn()) {
-                    clearInterval(handle);
-                    resolve();
-                }
-            }, interval);
-        });
-    }
-
     const screenshotConfigs = [
-        { time: 15, area: "full" },
-        { time: 25, area: "full" },
-        { time: 35, area: "full" },
-        { time: 45, area: "full" },
-        { time: 55, area: { x: 400, y: 100, width: 1000, height: 700 } },
+        { time: 5.1, area: "full" },
+        { time: 5.5, area: "full" },
+        { time: 5.9, area: "full" },
+        { time: 10.1, area: "full" },
+        { time: 10.5, area: "full" },
+        { time: 10.9, area: "full" },
+        { time: 15.1, area: "full" },
+        { time: 15.5, area: "full" },
+        { time: 15.9, area: "full" },
+        { time: 20.1, area: "full" },
+        { time: 20.5, area: "full" },
+        { time: 20.9, area: "full" },
+        { time: 25.1, area: { x: 400, y: 100, width: 1000, height: 700 } },
+        { time: 25.5, area: { x: 400, y: 100, width: 1000, height: 700 } },
+        { time: 25.9, area: { x: 400, y: 100, width: 1000, height: 700 } },
     ];
     const takenScreenshots = new Set();
 
@@ -297,16 +296,6 @@ async function main() {
     }
 
     async function takeScreenshot(time, area) {
-        console.log("Taking screenshot at t =", time);
-
-        // Warten bis Szene stabil ist
-        await waitUntil(
-            () =>
-                viewer.scene.globe.tilesLoaded &&
-                tileset._statistics.numberOfPendingRequests === 0,
-        );
-
-        // Render erzwingen
         viewer.render();
 
         let dataUrl;
@@ -356,6 +345,8 @@ async function main() {
                         roll: Math.toRadians(vp.orientation.roll),
                     },
                 });
+
+                break;
             }
         }
 
@@ -364,6 +355,7 @@ async function main() {
             if (elapsed >= cfg.time && !takenScreenshots.has(cfg.time)) {
                 takenScreenshots.add(cfg.time);
                 takeScreenshot(cfg.time, cfg.area);
+                break;
             }
         }
     });
