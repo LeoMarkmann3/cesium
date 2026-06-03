@@ -15,7 +15,6 @@ import {
     JulianDate,
     Cesium3DTileStyle,
     SceneMode,
-    // RequestScheduler
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -51,13 +50,6 @@ async function main() {
     let viewer;
     try {
         viewer = new Viewer("cesiumContainer", {
-            // Keep the rendered frame in the drawing buffer so it can be read
-            // asynchronously (canvas.toBlob) without blocking the render loop.
-            contextOptions: {
-                webgl: {
-                    preserveDrawingBuffer: true,
-                },
-            },
             sceneMode: SceneMode.SCENE3D,
             skyBox: false,
             timeline: false,
@@ -280,9 +272,6 @@ async function main() {
     ];
     const takenScreenshots = new Set();
 
-    // Wall-clock baseline for elapsed-time calculations (clock starts animating below).
-    const startTime = JulianDate.now();
-
     function cropCanvas(sourceCanvas, crop) {
         const { x, y, width, height } = crop;
 
@@ -306,45 +295,25 @@ async function main() {
         return cropped;
     }
 
-    function canvasToBlob(canvas) {
-        return new Promise((resolve) => {
-            canvas.toBlob((blob) => resolve(blob), "image/png");
-        });
-    }
-
     async function takeScreenshot(time, area) {
         viewer.render();
 
-        // --- DIAGNOSTIC: actual capture time + tile-load state at capture ---
-        const shotElapsed = JulianDate.secondsDifference(
-            viewer.clock.currentTime,
-            startTime,
-        );
-        const s = tileset?._statistics;
-        console.log(
-            `[shot] cfg=${time}s actual=${shotElapsed.toFixed(3)}s ` +
-                `points=${s?.numberOfPointsSelected} ` +
-                `tilesReady=${s?.numberOfTilesWithContentReady} ` +
-                `pending=${s?.numberOfPendingRequests} ` +
-                `processing=${s?.numberOfTilesProcessing} ` +
-                `tilesLoaded=${tileset?.tilesLoaded}`,
-        );
-        // --- END DIAGNOSTIC ---
+        let dataUrl;
+        if (area === "full") {
+            dataUrl = viewer.canvas.toDataURL("image/png");
+        } else {
+            const croppedCanvas = cropCanvas(viewer.canvas, area);
+            dataUrl = croppedCanvas.toDataURL("image/png");
+        }
 
-        const sourceCanvas =
-            area === "full" ? viewer.canvas : cropCanvas(viewer.canvas, area);
-
-        const blob = await canvasToBlob(sourceCanvas);
-
-        const url = URL.createObjectURL(blob);
+        // Download im Browser
         const a = document.createElement("a");
-        a.href = url;
+        a.href = dataUrl;
         a.download = `image-t${time}.png`;
         a.click();
-
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 
+    const startTime = JulianDate.now();
     viewer.clock.startTime = startTime.clone();
     viewer.clock.currentTime = startTime.clone();
     viewer.clock.multiplier = 1;
@@ -390,30 +359,6 @@ async function main() {
             }
         }
     });
-
-    // --- DIAGNOSTIC: log the refinement curve (only when rendered points change) ---
-    let lastPoints = -1;
-    scene.postRender.addEventListener(() => {
-        const s = tileset?._statistics;
-        if (!s) {
-            return;
-        }
-        if (s.numberOfPointsSelected !== lastPoints) {
-            lastPoints = s.numberOfPointsSelected;
-            const elapsed = JulianDate.secondsDifference(
-                viewer.clock.currentTime,
-                startTime,
-            );
-            console.log(
-                `[load] t=${elapsed.toFixed(3)}s ` +
-                    `points=${s.numberOfPointsSelected} ` +
-                    `tilesReady=${s.numberOfTilesWithContentReady} ` +
-                    `pending=${s.numberOfPendingRequests} ` +
-                    `processing=${s.numberOfTilesProcessing}`,
-            );
-        }
-    });
-    // --- END DIAGNOSTIC ---
 
     loadingIndicator.style.display = "none";
 }
