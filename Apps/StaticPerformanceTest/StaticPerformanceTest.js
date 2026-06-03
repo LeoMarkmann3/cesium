@@ -15,6 +15,7 @@ import {
     JulianDate,
     Cesium3DTileStyle,
     SceneMode,
+    // RequestScheduler
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -50,6 +51,13 @@ async function main() {
     let viewer;
     try {
         viewer = new Viewer("cesiumContainer", {
+            // Keep the rendered frame in the drawing buffer so it can be read
+            // asynchronously (canvas.toBlob) without blocking the render loop.
+            contextOptions: {
+                webgl: {
+                    preserveDrawingBuffer: true,
+                },
+            },
             sceneMode: SceneMode.SCENE3D,
             skyBox: false,
             timeline: false,
@@ -295,22 +303,27 @@ async function main() {
         return cropped;
     }
 
+    function canvasToBlob(canvas) {
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => resolve(blob), "image/png");
+        });
+    }
+
     async function takeScreenshot(time, area) {
         viewer.render();
 
-        let dataUrl;
-        if (area === "full") {
-            dataUrl = viewer.canvas.toDataURL("image/png");
-        } else {
-            const croppedCanvas = cropCanvas(viewer.canvas, area);
-            dataUrl = croppedCanvas.toDataURL("image/png");
-        }
+        const sourceCanvas =
+            area === "full" ? viewer.canvas : cropCanvas(viewer.canvas, area);
 
-        // Download im Browser
+        const blob = await canvasToBlob(sourceCanvas);
+
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = dataUrl;
+        a.href = url;
         a.download = `image-t${time}.png`;
         a.click();
+
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 
     const startTime = JulianDate.now();
