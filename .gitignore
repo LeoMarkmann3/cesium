@@ -31,6 +31,10 @@ Thumbs.db
 /Tools/jsdoc/cesium_template/static/styles/prism.css
 
 /node_modules
+
+# Claude session working notes / indexing (not for upstream)
+/CLAUDE/
+
 npm-debug.log
 npm-debug.log.*
 package-lock.json
