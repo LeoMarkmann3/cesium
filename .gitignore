@@ -45,3 +45,5 @@ yarn.lock
 GoogleConfig.json
 
 config.local.json
+# Local npm auth for private GitHub Packages registry (contains token)
+.npmrc

@@ -109,7 +109,7 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.30.1",
     "yargs": "^18.0.0",
-    "@cesium/eslint-config": "^12.0.0"
+    "@cesium/eslint-config": "^14.0.0"
   },
   "scripts": {
     "prepare": "gulp prepare && husky && node scripts/isCI.js || playwright install --with-deps",
