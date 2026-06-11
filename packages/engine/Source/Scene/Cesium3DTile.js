@@ -33,6 +33,7 @@ import findContentMetadata from "./findContentMetadata.js";
 import findGroupMetadata from "./findGroupMetadata.js";
 import findTileMetadata from "./findTileMetadata.js";
 import hasExtension from "./hasExtension.js";
+import MTContent from "./MTContent.js";
 import Multiple3DTileContent from "./Multiple3DTileContent.js";
 import BoundingVolumeSemantics from "./BoundingVolumeSemantics.js";
 import preprocess3DTileContent from "./preprocess3DTileContent.js";
@@ -63,7 +64,7 @@ function Cesium3DTile(tileset, baseResource, header, parent) {
   this._header = header;
 
   const hasContentsArray = defined(header.contents);
-  const hasMultipleContents =
+  let hasMultipleContents =
     (hasContentsArray && header.contents.length > 1) ||
     hasExtension(header, "3DTILES_multiple_contents");
 
@@ -72,6 +73,17 @@ function Cesium3DTile(tileset, baseResource, header, parent) {
     hasContentsArray && !hasMultipleContents
       ? header.contents[0]
       : header.content;
+
+  const isMultiTemporal =
+    hasContentsArray &&
+    header.contents.length > 0 &&
+    header.contents.every(
+      (element) => defined(element.key) && defined(element.content?.uri),
+    );
+
+  if (isMultiTemporal) {
+    hasMultipleContents = false;
+  }
 
   this._contentHeader = contentHeader;
 
@@ -237,7 +249,7 @@ function Cesium3DTile(tileset, baseResource, header, parent) {
 
   baseResource = Resource.createIfNeeded(baseResource);
 
-  if (hasMultipleContents) {
+  if (hasMultipleContents || isMultiTemporal) {
     contentState = Cesium3DTileContentState.UNLOADED;
     // Each content may have its own URI, but they all need to be resolved
     // relative to the tileset, so the base resource is used.
@@ -363,6 +375,11 @@ function Cesium3DTile(tileset, baseResource, header, parent) {
    * @private
    */
   this.hasMultipleContents = hasMultipleContents;
+
+  /**
+   * TODO
+   */
+  this.isMultiTemporal = isMultiTemporal;
 
   /**
    * The node in the tileset's LRU cache, used to determine when to unload a tile's content.
@@ -1129,6 +1146,10 @@ Cesium3DTile.prototype.requestContent = function () {
     return;
   }
 
+  if (this.isMultiTemporal) {
+    return requestMTContent(this);
+  }
+
   if (this.hasMultipleContents) {
     return requestMultipleContents(this);
   }
@@ -1192,6 +1213,57 @@ function requestMultipleContents(tile) {
 
       tile._contentState = Cesium3DTileContentState.PROCESSING;
       return multipleContents;
+    })
+    .catch((error) => {
+      if (tile.isDestroyed()) {
+        // Tile is unloaded before the content can process
+        return;
+      }
+
+      tile._contentState = Cesium3DTileContentState.FAILED;
+      throw error;
+    });
+}
+
+/**
+ * TODO
+ */
+function requestMTContent(tile) {
+  let mtContent = tile._content;
+  const tileset = tile._tileset;
+
+  if (!defined(mtContent)) {
+    mtContent = new MTContent(
+      tileset,
+      tile,
+      tile._contentResource.clone(),
+      tile._header.contents,
+    );
+    tile._content = mtContent;
+  }
+
+  const promise = mtContent.requestInnerContents();
+
+  if (!defined(promise)) {
+    // Request could not all be scheduled this frame
+    return;
+  }
+
+  tile._contentState = Cesium3DTileContentState.LOADING;
+  return promise
+    .then((content) => {
+      if (tile.isDestroyed()) {
+        // Tile is unloaded before the content can process
+        return;
+      }
+
+      // Tile was canceled, try again later
+      if (!defined(content)) {
+        return;
+      }
+
+      tile._contentState = Cesium3DTileContentState.PROCESSING;
+      return mtContent;
     })
     .catch((error) => {
       if (tile.isDestroyed()) {

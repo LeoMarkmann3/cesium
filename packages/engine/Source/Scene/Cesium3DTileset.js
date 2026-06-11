@@ -64,6 +64,7 @@ import Cesium3DTilesetSkipTraversal from "./Cesium3DTilesetSkipTraversal.js";
 import Ray from "../Core/Ray.js";
 import DynamicEnvironmentMapManager from "./DynamicEnvironmentMapManager.js";
 import ImageryLayerCollection from "./ImageryLayerCollection.js";
+import DeveloperError from "../Core/DeveloperError.js";
 
 /**
  * @typedef {object} Cesium3DTileset.ConstructorOptions
@@ -224,6 +225,8 @@ function Cesium3DTileset(options) {
   this._requestedTiles = [];
   this._selectedTilesToStyle = [];
   this._loadTimestamp = undefined;
+  this._timestampKeys = undefined;
+  this._activeTimestamp = undefined;
   this._timeSinceLoad = 0.0;
   this._updatedVisibilityFrame = 0;
   this._updatedModelMatrixFrame = 0;
@@ -744,6 +747,11 @@ function Cesium3DTileset(options) {
    * });
    */
   this.tileVisible = new Event();
+
+  /**
+   * TODO
+   */
+  this.activeTimestampChanged = new Event();
 
   /**
    * Optimization option. Determines if level of detail skipping should be applied during the traversal.
@@ -1333,6 +1341,43 @@ Object.defineProperties(Cesium3DTileset.prototype, {
         "Cesium3DTileset.basePath has been deprecated. All tiles are relative to the url of the tileset JSON file that contains them. Use the url property instead.",
       );
       return this._basePath;
+    },
+  },
+
+  /**
+   * TODO
+   */
+  timestampKeys: {
+    get: function () {
+      return this._timestampKeys;
+    },
+  },
+
+  /**
+   * TODO
+   */
+  activeTimestamp: {
+    get: function () {
+      return this._activeTimestamp;
+    },
+    set: function (value) {
+      //>>includeStart('debug', pragmas.debug);
+      if (this._timestampKeys === undefined) {
+        throw new DeveloperError(
+          "activeTimestamp can only be set on a multi-temporal tileset.",
+        );
+      }
+      if (!this._timestampKeys.includes(value)) {
+        throw new DeveloperError(`Unknown timestamp key: ${value}`);
+      }
+      //>>includeEnd('debug');
+
+      if (value === this._activeTimestamp) {
+        return;
+      }
+
+      this._activeTimestamp = value;
+      this.activeTimestampChanged.raiseEvent(value);
     },
   },
 
@@ -2271,6 +2316,14 @@ Cesium3DTileset.fromUrl = async function (url, options) {
   tileset._properties = tilesetJson.properties;
   tileset._extensionsUsed = tilesetJson.extensionsUsed;
   tileset._extensions = tilesetJson.extensions;
+
+  const mtExtension = tileset._extensions?.[MTExtension];
+  const timestampDimension = mtExtension?.dimensions?.find(
+    (dimension) => dimension.name === "timestamp",
+  );
+  tileset._timestampKeys = timestampDimension?.keySet;
+  tileset._activeTimestamp = tileset._timestampKeys?.[0];
+
   tileset._modelUpAxis = modelUpAxis;
   tileset._modelForwardAxis = modelForwardAxis;
 
@@ -3706,6 +3759,8 @@ Cesium3DTileset.prototype.destroy = function () {
   return destroyObject(this);
 };
 
+export const MTExtension = "3DTILES_xxx";
+
 Cesium3DTileset.supportedExtensions = {
   "3DTILES_metadata": true,
   "3DTILES_implicit_tiling": true,
@@ -3715,6 +3770,7 @@ Cesium3DTileset.supportedExtensions = {
   "3DTILES_bounding_volume_S2": true,
   "3DTILES_batch_table_hierarchy": true,
   "3DTILES_draco_point_compression": true,
+  [MTExtension]: true,
   MAXAR_content_geojson: true,
 };
 

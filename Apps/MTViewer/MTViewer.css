@@ -1,0 +1,88 @@
+@import url(../../Source/Widgets/widgets.css);
+@import url(../../Source/Widgets/lighter.css);
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  background: #000;
+}
+
+.fullWindow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+.loadingIndicator {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -33px;
+  margin-left: -33px;
+  width: 66px;
+  height: 66px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.mtPanel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  background: rgba(20, 20, 20, 0.85);
+  color: #eee;
+  font-family: sans-serif;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.mtPanel .mtTitle {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.mtPanel .mtRow {
+  margin: 4px 0;
+}
+
+.mtPanel .mtHelp {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.mtPanel button {
+  margin: 2px 4px 2px 0;
+  padding: 3px 8px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mtPanel button.active {
+  background: #f5d020;
+  color: #111;
+  border-color: #f5d020;
+  font-weight: bold;
+}

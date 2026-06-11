@@ -139,6 +139,14 @@ class Model3DTileContent {
     this._group = value;
   }
 
+  get show() {
+    return this._model.show;
+  }
+
+  set show(value) {
+    this._model.show = value;
+  }
+
   /**
    * Returns an array containing the `texture.id` values for all textures
    * that are part of this content.
