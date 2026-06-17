@@ -3100,7 +3100,7 @@ function addTileDebugLabel(tile, tileset, position) {
   }
 
   if (tileset.debugShowUrl) {
-    if (tile.hasMultipleContents) {
+    if (tile.hasMultipleContents || tile.isMultiTemporal) {
       labelString += "\nUrls:";
       const urls = tile.content.innerContentUrls;
       for (let i = 0; i < urls.length; i++) {

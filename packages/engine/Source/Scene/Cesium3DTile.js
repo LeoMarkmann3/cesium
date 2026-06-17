@@ -1530,7 +1530,7 @@ async function makeContent(tile, arrayBuffer) {
  * @private
  */
 Cesium3DTile.prototype.cancelRequests = function () {
-  if (this.hasMultipleContents) {
+  if (this.hasMultipleContents || this.isMultiTemporal) {
     this._content.cancelRequests();
   } else {
     this._request.cancel();

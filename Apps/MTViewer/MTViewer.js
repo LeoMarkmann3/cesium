@@ -72,8 +72,8 @@ async function main() {
       maximumScreenSpaceError: 4,
     });
     scene.primitives.add(tileset);
-    // tileset.pointCloudShading.attenuation = true;
-    // tileset.pointCloudShading.maximumAttenuation = 4.0;
+    tileset.pointCloudShading.attenuation = true;
+    tileset.pointCloudShading.maximumAttenuation = 4.0;
     await viewer.flyTo(tileset);
   } catch (error) {
     loadingIndicator.style.display = "none";

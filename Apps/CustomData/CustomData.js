@@ -3,16 +3,18 @@ window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
   : "../../Build/CesiumUnminified/";
 
 import {
-    Ion,
-    Cesium3DTileset,
-    formatError,
-    Viewer,
-    Terrain,
-    RequestScheduler,
-    Matrix4,
-    Cartesian3,
-    Cartographic,
-    PerformanceMeasurer,
+  Ion,
+  Cesium3DTileset,
+  formatError,
+  Viewer,
+  // Terrain,
+  RequestScheduler,
+  Matrix4,
+  Cartesian3,
+  Cartographic,
+  // PerformanceMeasurer,
+  SceneMode,
+  Math,
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -42,35 +44,39 @@ async function main() {
   RequestScheduler.maximumRequests = 2000000;
   RequestScheduler.maximumRequestsPerServer = 100000;
 
-    Ion.defaultAccessToken =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZDgxMjNjMi03MTRlLTRjNzctODgyMi05ZWRiYTllZGQzN2YiLCJpZCI6MzU3ODE2LCJpYXQiOjE3NjI0Mjk2NDJ9.vD7C8Iy8dFXX21tneNfCYl51FtbUGIrBfJHwiQsRNp0";
+  Ion.defaultAccessToken =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZDgxMjNjMi03MTRlLTRjNzctODgyMi05ZWRiYTllZGQzN2YiLCJpZCI6MzU3ODE2LCJpYXQiOjE3NjI0Mjk2NDJ9.vD7C8Iy8dFXX21tneNfCYl51FtbUGIrBfJHwiQsRNp0";
 
-    let viewer;
-    try {
-        viewer = new Viewer("cesiumContainer", {
-            terrain: Terrain.fromWorldTerrain(),
-            timeline: false,
-            animation: false,
-            geocoder: false,
-            baseLayerPicker: false,
-            sceneModePicker: false,
-            navigationHelpButton: false,
-            selectionIndicator: false,
-            infoBox: false,
-        });
-    } catch (exception) {
-        loadingIndicator.style.display = "none";
-        const message = formatError(exception);
-        console.error(message);
-        if (!document.querySelector(".cesium-widget-errorPanel")) {
-            //eslint-disable-next-line no-alert
-            window.alert(message);
-        }
-        return;
+  let viewer;
+  try {
+    viewer = new Viewer("cesiumContainer", {
+      sceneMode: SceneMode.SCENE3D,
+      skyBox: false,
+      timeline: false,
+      globe: false,
+      infoBox: false,
+      homeButton: false,
+      sceneModePicker: false,
+      animation: false,
+      baseLayerPicker: false,
+      geocoder: false,
+      selectionIndicator: false,
+      fullscreenButton: false,
+      navigationHelpButton: false,
+    });
+  } catch (exception) {
+    loadingIndicator.style.display = "none";
+    const message = formatError(exception);
+    console.error(message);
+    if (!document.querySelector(".cesium-widget-errorPanel")) {
+      //eslint-disable-next-line no-alert
+      window.alert(message);
     }
+    return;
+  }
 
-    const scene = viewer.scene;
-    let tileset;
+  const scene = viewer.scene;
+  let tileset;
 
   // // OPTIONAL — black background but keep the globe
   // scene.skyBox = undefined;
@@ -78,14 +84,14 @@ async function main() {
 
   // scene.backgroundColor = Color.RED;
 
-    const loadTileset = async () => {
-        try {
-            // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
-            const heightOffsetMeters = 50.0;
+  const loadTileset = async () => {
+    try {
+      // Offset height in meters - due to inaccuracies in the terrain provided by fromWorldTerrain
+      const heightOffsetMeters = 50.0;
 
-            // Load Tileset from URL with various options for performance and LOD management
+      // Load Tileset from URL with various options for performance and LOD management
 
-            /*
+      /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.46:8000/get/20240820_Sauen_3512a1_UAV_PLS_fused_2_0_TRANSFORMED_2024-12-12_13h37_33_000_georef/tileset.json",
                 {
@@ -95,30 +101,22 @@ async function main() {
                 },
             ); /**/
 
-            tileset = await Cesium3DTileset.fromUrl(
-                "http://172.18.21.37:8002/out_tileset/tileset.json",
-                {
-                    cullRequestsWhileMoving: false,
-                    preloadWhenHidden: true,
-                    preloadFlightDestinations: true,
-                },
-                {
-                    cullRequestsWhileMoving: false,
-                    preloadWhenHidden: true,
-                    preloadFlightDestinations: true,
-                },
-            ); /**/
+      tileset = await Cesium3DTileset.fromUrl(
+        "http://172.18.21.37:8002/out_tileset/tileset.json",
+        {
+          cullRequestsWhileMoving: false,
+          preloadWhenHidden: true,
+          preloadFlightDestinations: true,
+        },
+      ); /**/
 
-            
+      /*
             tileset = viewer.scene.primitives.add(
                 await Cesium3DTileset.fromIonAssetId(4331253),
                 {
                     cullRequestsWhileMoving: false,
                     preloadWhenHidden: true,
                     preloadFlightDestinations: true,
-                },
-            );
-            /**/
                 },
             );
             /**/
@@ -153,16 +151,16 @@ async function main() {
         new Cartesian3(),
       );
 
-            // Apply model matrix
-            tileset.modelMatrix = Matrix4.fromTranslation(translation);
+      // Apply model matrix
+      tileset.modelMatrix = Matrix4.fromTranslation(translation);
 
-            //testing
-            tileset.pointCloudShading.maximumAttenuation = 4.0;
-            tileset.pointCloudShading.baseResolution = 0.02;
-            tileset.pointCloudShading.geometricErrorScale = 1.0;
-            tileset.pointCloudShading.attenuation = true;
+      //testing
+      tileset.pointCloudShading.maximumAttenuation = 4.0;
+      tileset.pointCloudShading.baseResolution = 0.02;
+      tileset.pointCloudShading.geometricErrorScale = 1.0;
+      tileset.pointCloudShading.attenuation = true;
 
-            tileset.debugShowBoundingVolume = true;
+      // tileset.debugShowBoundingVolume = true;
 
       // Fly to point cloud
       viewer.flyTo(tileset);
@@ -171,9 +169,9 @@ async function main() {
     }
   };
 
-    await loadTileset();
+  await loadTileset();
 
-    /*
+  /*
     scene.postRender.addEventListener(() => {
         const s = tileset._statistics;
 
@@ -186,13 +184,13 @@ async function main() {
         );
     });/**/
 
-    // const _performance = new PerformanceMeasurer(100, 10000);
-    // _performance.attachToRequestScheduler(RequestScheduler);
-    // _performance.attachToTileset(tileset);
-    // _performance.attachToSceneRenderer(scene);
-    // _performance.start();
+  // const _performance = new PerformanceMeasurer(100, 10000);
+  // _performance.attachToRequestScheduler(RequestScheduler);
+  // _performance.attachToTileset(tileset);
+  // _performance.attachToSceneRenderer(scene);
+  // _performance.start();
 
-    /*
+  /*
     // ==================== PERFORMANCE MEASUREMENT ====================
 
     let requestsCompleted = 0;
@@ -249,6 +247,46 @@ async function main() {
             lastSecond = now;
         }
     });/**/
+
+  // ==================== CAMERA LOGGER ====================
+
+  const CAMERA_LOG_INTERVAL_MS = 2000;
+  let lastCameraLog = performance.now();
+
+  scene.postRender.addEventListener(() => {
+    const now = performance.now();
+    if (now - lastCameraLog < CAMERA_LOG_INTERVAL_MS) {
+      return;
+    }
+    lastCameraLog = now;
+
+    const camera = viewer.camera;
+    const carto = Cartographic.fromCartesian(camera.position);
+
+    const lon = Math.toDegrees(carto.longitude);
+    const lat = Math.toDegrees(carto.latitude);
+    const height = carto.height;
+
+    // Normalize angles (avoid 360 / tiny eps values)
+    const heading = (Math.toDegrees(camera.heading) + 360) % 360;
+    const pitch = Math.toDegrees(camera.pitch);
+    const roll = (Math.toDegrees(camera.roll) + 360) % 360;
+
+    console.log(
+      "CAM | lon:",
+      lon.toFixed(5),
+      "| lat:",
+      lat.toFixed(5),
+      "| h:",
+      height.toFixed(2),
+      "| hdg:",
+      heading.toFixed(2),
+      "| pit:",
+      pitch.toFixed(2),
+      "| rol:",
+      roll.toFixed(2),
+    );
+  }); /**/
 
   loadingIndicator.style.display = "none";
 }
