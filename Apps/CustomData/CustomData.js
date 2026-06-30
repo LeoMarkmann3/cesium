@@ -15,6 +15,8 @@ import {
   // PerformanceMeasurer,
   SceneMode,
   Math,
+  Cesium3DTileStyle,
+  // CustomShader
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -107,6 +109,11 @@ async function main() {
           cullRequestsWhileMoving: false,
           preloadWhenHidden: true,
           preloadFlightDestinations: true,
+          foveatedScreenSpaceError: true,
+          foveatedConeSize: 0.3,
+          dynamicScreenSpaceError: true,
+          skipLevelOfDetail: false,
+          preferLeaves: true,
         },
       ); /**/
 
@@ -155,10 +162,31 @@ async function main() {
       tileset.modelMatrix = Matrix4.fromTranslation(translation);
 
       //testing
-      tileset.pointCloudShading.maximumAttenuation = 4.0;
-      tileset.pointCloudShading.baseResolution = 0.02;
-      tileset.pointCloudShading.geometricErrorScale = 1.0;
-      tileset.pointCloudShading.attenuation = true;
+      // tileset.pointCloudShading.maximumAttenuation = 4.0;
+      // tileset.pointCloudShading.baseResolution = 0.02;
+      // tileset.pointCloudShading.geometricErrorScale = 1.0;
+      // tileset.pointCloudShading.attenuation = true;
+
+      tileset.style = new Cesium3DTileStyle({
+        pointSize: 2.5,
+        color:
+          "rgb((${instance_id} * 137) % 256, (${instance_id} * 149) % 256, (${instance_id} * 83) % 256)",
+      });
+
+      // // Fixed point size: style.pointSize is ignored for batch-table point clouds,
+      // // so set gl_PointSize directly via a CustomShader. Change the value to resize.
+      // tileset.customShader = new CustomShader({
+      //   vertexShaderText: [
+      //     "void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {",
+      //     "  vsOutput.pointSize = 2.0;",
+      //     "}",
+      //   ].join("\n"),
+      // });
+
+      // tileset.pointCloudShading.attenuation = true;
+      // tileset.pointCloudShading.eyeDomeLighting = true;
+      // tileset.pointCloudShading.eyeDomeLightingStrength = 1.5;
+      // tileset.pointCloudShading.eyeDomeLightingRadius = 2.0;
 
       // tileset.debugShowBoundingVolume = true;
 
