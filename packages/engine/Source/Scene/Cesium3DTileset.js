@@ -227,6 +227,11 @@ function Cesium3DTileset(options) {
   this._loadTimestamp = undefined;
   this._timestampKeys = undefined;
   this._activeTimestamp = undefined;
+  this._mtPrefetchWindow = MT_DEFAULT_PREFETCH_WINDOW;
+  this._mtRetainedHistory = MT_DEFAULT_RETAINED_HISTORY;
+  // Timestamps the user has switched away from, most-recent first (capped at
+  // mtRetainedHistory). Kept resident so jumping back to a recent epoch is instant.
+  this._recentTimestamps = [];
   this._timeSinceLoad = 0.0;
   this._updatedVisibilityFrame = 0;
   this._updatedModelMatrixFrame = 0;
@@ -1376,8 +1381,73 @@ Object.defineProperties(Cesium3DTileset.prototype, {
         return;
       }
 
+      // Record the epoch we are switching away from, most-recent first (dedup),
+      // capped at mtRetainedHistory. MTContent keeps these resident.
+      const previous = this._activeTimestamp;
+      if (defined(previous)) {
+        const recent = this._recentTimestamps;
+        const existingIndex = recent.indexOf(previous);
+        if (existingIndex !== -1) {
+          recent.splice(existingIndex, 1);
+        }
+        recent.unshift(previous);
+        if (recent.length > this.mtRetainedHistory) {
+          recent.length = this.mtRetainedHistory;
+        }
+      }
+
       this._activeTimestamp = value;
       this.activeTimestampChanged.raiseEvent(value);
+    },
+  },
+
+  /**
+   * For a multi-temporal tileset, the number of neighboring timestamps on each
+   * side of the active one to prefetch and keep resident (a symmetric ±N window
+   * over the ordered {@link Cesium3DTileset#timestampKeys}). Read live, so it can
+   * be changed at runtime. Ignored for non-multi-temporal tilesets.
+   *
+   * @memberof Cesium3DTileset.prototype
+   * @type {number}
+   * @default 2
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+   */
+  mtPrefetchWindow: {
+    get: function () {
+      return this._mtPrefetchWindow;
+    },
+    set: function (value) {
+      //>>includeStart('debug', pragmas.debug);
+      Check.typeOf.number.greaterThanOrEquals("mtPrefetchWindow", value, 0);
+      //>>includeEnd('debug');
+      this._mtPrefetchWindow = value;
+    },
+  },
+
+  /**
+   * For a multi-temporal tileset, how many recently-selected timestamps (the ones
+   * the user switched away from) to keep resident even when they fall outside the
+   * prefetch window, so jumping back to a recent epoch is instant. Read live.
+   * Ignored for non-multi-temporal tilesets.
+   *
+   * @memberof Cesium3DTileset.prototype
+   * @type {number}
+   * @default 2
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+   */
+  mtRetainedHistory: {
+    get: function () {
+      return this._mtRetainedHistory;
+    },
+    set: function (value) {
+      //>>includeStart('debug', pragmas.debug);
+      Check.typeOf.number.greaterThanOrEquals("mtRetainedHistory", value, 0);
+      //>>includeEnd('debug');
+      this._mtRetainedHistory = value;
+      // Trim the retained history if it is now shorter.
+      if (this._recentTimestamps.length > value) {
+        this._recentTimestamps.length = value;
+      }
     },
   },
 
@@ -3760,6 +3830,11 @@ Cesium3DTileset.prototype.destroy = function () {
 };
 
 export const MTExtension = "3DTILES_xxx";
+
+// Multi-temporal prefetch/retention defaults (single source of truth for the
+// tileset's mtPrefetchWindow / mtRetainedHistory tunables). See MTContent.js.
+export const MT_DEFAULT_PREFETCH_WINDOW = 2;
+export const MT_DEFAULT_RETAINED_HISTORY = 2;
 
 Cesium3DTileset.supportedExtensions = {
   "3DTILES_metadata": true,
