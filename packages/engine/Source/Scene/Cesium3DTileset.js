@@ -2781,7 +2781,10 @@ function requestContent(tileset, tile) {
     if (tile.hasTilesetContent || tile.hasImplicitContent) {
       destroySubtree(tileset, tile);
     } else {
-      statistics.decrementLoadCounts(tile.content);
+      // Multi-temporal tiles manage their own per-epoch load statistics.
+      if (!tile.isMultiTemporal) {
+        statistics.decrementLoadCounts(tile.content);
+      }
       --statistics.numberOfTilesWithContentReady;
     }
   }
@@ -3142,10 +3145,14 @@ function addTileDebugLabel(tile, tileset, position) {
     labelString += `\nCommands: ${tile.commandsLength}`;
     attributes++;
 
-    // Don't display number of points or triangles if 0.
-    const numberOfPoints = tile.content.pointsLength;
+    // Don't display number of points or triangles if 0. For a multi-temporal tile
+    // the aggregate pointsLength is 0 (statistics are per-epoch), so report the
+    // active epoch's points.
+    const numberOfPoints = tile.isMultiTemporal
+      ? tile.content.activePointsLength
+      : tile.content.pointsLength;
     if (numberOfPoints > 0) {
-      labelString += `\nPoints: ${tile.content.pointsLength}`;
+      labelString += `\nPoints: ${numberOfPoints}`;
       attributes++;
     }
 
@@ -3284,6 +3291,7 @@ function updateTiles(tileset, frameState, passOptions) {
     statistics.incrementSelectionCounts(tile.content);
     ++statistics.selected;
   }
+
   const emptyTiles = tileset._emptyTiles;
   for (let i = 0; i < emptyTiles.length; ++i) {
     const tile = emptyTiles[i];
@@ -3406,7 +3414,11 @@ function destroySubtree(tileset, tile) {
  */
 function unloadTile(tileset, tile) {
   tileset.tileUnload.raiseEvent(tile);
-  tileset._statistics.decrementLoadCounts(tile.content);
+  // Multi-temporal tiles release their per-epoch load statistics themselves (in
+  // MTContent.destroy, via unloadContent below), so skip the generic decrement.
+  if (!tile.isMultiTemporal) {
+    tileset._statistics.decrementLoadCounts(tile.content);
+  }
   --tileset._statistics.numberOfTilesWithContentReady;
   tile.unloadContent();
 }

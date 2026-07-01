@@ -16,7 +16,8 @@ import {
   SceneMode,
   Math,
   Cesium3DTileStyle,
-  // CustomShader
+  // CustomShader,
+  // Color
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -47,7 +48,7 @@ async function main() {
   RequestScheduler.maximumRequestsPerServer = 100000;
 
   Ion.defaultAccessToken =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZDgxMjNjMi03MTRlLTRjNzctODgyMi05ZWRiYTllZGQzN2YiLCJpZCI6MzU3ODE2LCJpYXQiOjE3NjI0Mjk2NDJ9.vD7C8Iy8dFXX21tneNfCYl51FtbUGIrBfJHwiQsRNp0";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OTg0MjRlZS0zYmI4LTRkYWItODRhNy1jMDIwMmJmNDkxNDYiLCJpZCI6NDE4OTYyLCJpYXQiOjE3NzYzMjQyODR9.W_gO7B42NhhAKQ8xMgmH7ZI3_Uz1qnCcuqIgxdthQ2s";
 
   let viewer;
   try {
@@ -84,7 +85,7 @@ async function main() {
   // scene.skyBox = undefined;
   // scene.skyAtmosphere = undefined;
 
-  // scene.backgroundColor = Color.RED;
+  // scene.backgroundColor = Color.GRAY;
 
   const loadTileset = async () => {
     try {
@@ -169,8 +170,8 @@ async function main() {
 
       tileset.style = new Cesium3DTileStyle({
         pointSize: 2.5,
-        color:
-          "rgb((${instance_id} * 137) % 256, (${instance_id} * 149) % 256, (${instance_id} * 83) % 256)",
+        //   color:
+        //     "rgb((${instance_id} * 137) % 256, (${instance_id} * 149) % 256, (${instance_id} * 83) % 256)",
       });
 
       // // Fixed point size: style.pointSize is ignored for batch-table point clouds,

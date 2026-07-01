@@ -77,8 +77,8 @@ async function main() {
       cullRequestsWhileMoving: false,
       preloadWhenHidden: true,
       preloadFlightDestinations: true,
-      cacheBytes: 10000000,
-      maximumCacheOverflowBytes: 5000000,
+      // cacheBytes: 10000000,
+      // maximumCacheOverflowBytes: 5000000,
     });
     scene.primitives.add(tileset);
     tileset.style = new Cesium3DTileStyle({ pointSize: 2.0 });

@@ -2413,7 +2413,12 @@ Cesium3DTile.prototype.process = function (tileset, frameState) {
     if (!this.hasTilesetContent && !this.hasImplicitContent) {
       // RESEARCH_IDEA: ability to unload tiles (without content) for an
       // external tileset when all the tiles are unloaded.
-      tileset._statistics.incrementLoadCounts(this.content);
+      // Multi-temporal tiles manage their own per-epoch load statistics (their
+      // epochs load/evict lazily after the tile is ready), so skip the generic
+      // one-time recursion for them.
+      if (!this.isMultiTemporal) {
+        tileset._statistics.incrementLoadCounts(this.content);
+      }
       ++tileset._statistics.numberOfTilesWithContentReady;
       ++tileset._statistics.numberOfLoadedTilesTotal;
 

@@ -68,7 +68,13 @@ Cesium3DTilesetStatistics.prototype.incrementSelectionCounts = function (
   if (defined(contents)) {
     const length = contents.length;
     for (let i = 0; i < length; ++i) {
-      this.incrementSelectionCounts(contents[i]);
+      const innerContent = contents[i];
+      // A hidden inner content is not rendered (e.g. the inactive epochs of a
+      // multi-temporal tile), so it must not count toward the selected totals.
+      if (defined(innerContent.show) && !innerContent.show) {
+        continue;
+      }
+      this.incrementSelectionCounts(innerContent);
     }
   }
 };
