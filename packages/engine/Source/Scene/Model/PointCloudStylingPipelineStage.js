@@ -77,7 +77,15 @@ PointCloudStylingPipelineStage.process = function (
     defined(model.featureTableId) &&
     model.featureTables[model.featureTableId].featuresLength > 0;
 
-  const hasBatchTable = !defined(propertyAttributes) && hasFeatureTable;
+  // StructuralMetadata initializes propertyAttributes to an empty array (never
+  // undefined), so `!defined(propertyAttributes)` is always false and would wrongly
+  // treat a feature-table (batch-table) point cloud as lacking a batch table, adding
+  // the GPU color-style (replace) path on top of the CPU feature-table styling that
+  // Model.applyStyle already applies. Detect actual property attributes by their first
+  // entry, mirroring Model.applyStyle's hasPropertyAttributes check, so both agree.
+  const hasPropertyAttributes =
+    defined(propertyAttributes) && defined(propertyAttributes[0]);
+  const hasBatchTable = !hasPropertyAttributes && hasFeatureTable;
 
   if (defined(style) && !hasBatchTable) {
     const variableSubstitutionMap =

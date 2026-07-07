@@ -6,6 +6,8 @@ import {
   Cesium3DTileset,
   Cesium3DTileStyle,
   Color,
+  CustomShader,
+  UniformType,
   Viewer,
   RequestScheduler,
   ScreenSpaceEventHandler,
@@ -84,9 +86,11 @@ async function main() {
     tileset.style = new Cesium3DTileStyle({ pointSize: 2.0 });
 
     // Eye-dome lighting
+    tileset.pointCloudShading.attenuation = true;
     tileset.pointCloudShading.eyeDomeLighting = true;
     tileset.pointCloudShading.eyeDomeLightingStrength = 1.0;
     tileset.pointCloudShading.eyeDomeLightingRadius = 1.0;
+
     await viewer.flyTo(tileset);
   } catch (error) {
     loadingIndicator.style.display = "none";
@@ -166,6 +170,36 @@ async function main() {
   });
 
   // -------------------------------------------------------------------------
+  // Point size: driven by a CustomShader (vsOutput.pointSize -> gl_PointSize).
+  // A custom vertex shader takes precedence over attenuation for gl_PointSize, so
+  // eye-dome lighting (which needs attenuation) stays on while we size points here.
+  // This is the only way to size these instance-segmented clouds cleanly.
+  // -------------------------------------------------------------------------
+  const pointSizeShader = new CustomShader({
+    uniforms: {
+      u_pointSize: { type: UniformType.FLOAT, value: 4.0 },
+    },
+    vertexShaderText: `
+void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+    vsOutput.pointSize = u_pointSize;
+}
+`,
+  });
+  tileset.customShader = pointSizeShader;
+
+  const sizeRow = document.createElement("div");
+  sizeRow.textContent = "Point size: ";
+  [1, 2, 4, 8, 16].forEach((size) => {
+    const button = document.createElement("button");
+    button.textContent = String(size);
+    button.addEventListener("click", () => {
+      pointSizeShader.setUniform("u_pointSize", size);
+    });
+    sizeRow.appendChild(button);
+  });
+  panel.appendChild(sizeRow);
+
+  // -------------------------------------------------------------------------
   // Picking: left-click reads the picked feature's instance_id and highlights
   // every point of that tree (persists across epoch switches). Right-click clears.
   // -------------------------------------------------------------------------
@@ -176,7 +210,6 @@ async function main() {
     if (defined(picked) && defined(picked.getProperty)) {
       const instanceId = picked.getProperty("instance_id");
       pickedRow.textContent = `Picked instance_id: ${instanceId}`;
-      console.log("MTViewer: picked instance_id =", instanceId);
       tileset.style = new Cesium3DTileStyle({
         color: `\${instance_id} === ${instanceId} ? color('yellow') : color('white')`,
       });
