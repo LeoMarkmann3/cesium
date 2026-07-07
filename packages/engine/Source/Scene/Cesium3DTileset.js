@@ -754,7 +754,21 @@ function Cesium3DTileset(options) {
   this.tileVisible = new Event();
 
   /**
-   * TODO
+   * The event fired to indicate that the active timestamp of a multi-temporal tileset changed.
+   * <p>
+   * The new timestamp key (a <code>string</code> from {@link Cesium3DTileset#timestampKeys})
+   * is passed to the event listener.
+   * </p>
+   *
+   * @type {Event}
+   * @default new Event()
+   *
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+   *
+   * @example
+   * tileset.activeTimestampChanged.addEventListener(function(timestamp) {
+   *     console.log(`Now rendering epoch ${timestamp}`);
+   * });
    */
   this.activeTimestampChanged = new Event();
 
@@ -1350,7 +1364,14 @@ Object.defineProperties(Cesium3DTileset.prototype, {
   },
 
   /**
-   * TODO
+   * Gets the ordered timestamp keys of a multi-temporal tileset, or <code>undefined</code>
+   * if the tileset is not multi-temporal. The order defines the epoch sequence used by the
+   * prefetch window and by {@link Cesium3DTileset#activeTimestamp}.
+   *
+   * @memberof Cesium3DTileset.prototype
+   * @type {string[]|undefined}
+   * @readonly
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
    */
   timestampKeys: {
     get: function () {
@@ -1359,7 +1380,18 @@ Object.defineProperties(Cesium3DTileset.prototype, {
   },
 
   /**
-   * TODO
+   * Gets or sets the active timestamp of a multi-temporal tileset, i.e. the epoch that is
+   * currently rendered. Must be one of {@link Cesium3DTileset#timestampKeys}. Setting it
+   * raises {@link Cesium3DTileset#activeTimestampChanged} and records the previous epoch in
+   * the retained history. <code>undefined</code> if the tileset is not multi-temporal.
+   *
+   * @memberof Cesium3DTileset.prototype
+   * @type {string|undefined}
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+   *
+   * @example
+   * // Switch to the first epoch of a multi-temporal tileset.
+   * tileset.activeTimestamp = tileset.timestampKeys[0];
    */
   activeTimestamp: {
     get: function () {
@@ -1880,6 +1912,46 @@ Object.defineProperties(Cesium3DTileset.prototype, {
         statistics.geometryByteLength +
         statistics.batchTableByteLength
       );
+    },
+  },
+
+  /**
+   * Gets the number of points rendered for the active timestamp in the most recent frame.
+   * For a multi-temporal tileset this reflects only the active epoch, because content for
+   * other epochs is not selected. The value is <code>0</code> before the first render.
+   *
+   * @memberof Cesium3DTileset.prototype
+   *
+   * @type {number}
+   * @readonly
+   *
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+   *
+   * @see Cesium3DTileset#activeFeaturesRendered
+   */
+  activePointsRendered: {
+    get: function () {
+      return this._statistics.numberOfPointsSelected;
+    },
+  },
+
+  /**
+   * Gets the number of features rendered for the active timestamp in the most recent frame.
+   * For a multi-temporal tileset this reflects only the active epoch, because content for
+   * other epochs is not selected. The value is <code>0</code> before the first render.
+   *
+   * @memberof Cesium3DTileset.prototype
+   *
+   * @type {number}
+   * @readonly
+   *
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+   *
+   * @see Cesium3DTileset#activePointsRendered
+   */
+  activeFeaturesRendered: {
+    get: function () {
+      return this._statistics.numberOfFeaturesSelected;
     },
   },
 
