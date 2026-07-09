@@ -331,7 +331,6 @@ async function main() {
       startTime,
     );
 
-    // Kamera interpolieren (dein bestehender Code)
     const frame = interpolateCamera(cameraPath, elapsed);
     if (frame) {
       const destination = Cartesian3.fromDegrees(
