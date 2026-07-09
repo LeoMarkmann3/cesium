@@ -87,6 +87,7 @@ async function main() {
 
             // Load Tileset from URL with various options for performance and LOD management
 
+            /*
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.46:8000/get/Mar19_train_georef/tileset.json",
                 {
@@ -96,7 +97,7 @@ async function main() {
                 },
             ); /**/
 
-            /*
+            
             tileset = await Cesium3DTileset.fromUrl(
                 "http://172.18.21.37:8002/out_tileset/tileset.json",
                 {

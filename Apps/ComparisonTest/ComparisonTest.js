@@ -3,18 +3,18 @@ window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
   : "../../Build/CesiumUnminified/";
 
 import {
-  Ion,
-  Cesium3DTileset,
-  formatError,
-  Viewer,
-  Terrain,
-  RequestScheduler,
-  Matrix4,
-  Cartesian3,
-  Cartographic,
-  // Math,
-  // JulianDate,
-  // PerformanceMeasurer,
+    Ion,
+    Cesium3DTileset,
+    formatError,
+    Viewer,
+    RequestScheduler,
+    Matrix4,
+    Cartesian3,
+    Cartographic,
+    Math,
+    JulianDate,
+    PerformanceMeasurer,
+    SceneMode
 } from "../../Build/CesiumUnminified/index.js";
 
 async function main() {
@@ -47,29 +47,33 @@ async function main() {
   Ion.defaultAccessToken =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OTg0MjRlZS0zYmI4LTRkYWItODRhNy1jMDIwMmJmNDkxNDYiLCJpZCI6NDE4OTYyLCJpYXQiOjE3NzYzMjQyODR9.W_gO7B42NhhAKQ8xMgmH7ZI3_Uz1qnCcuqIgxdthQ2s";
 
-  let viewer;
-  try {
-    viewer = new Viewer("cesiumContainer", {
-      terrain: Terrain.fromWorldTerrain(),
-      timeline: false,
-      animation: false,
-      geocoder: false,
-      baseLayerPicker: false,
-      sceneModePicker: false,
-      navigationHelpButton: false,
-      selectionIndicator: false,
-      infoBox: false,
-    });
-  } catch (exception) {
-    loadingIndicator.style.display = "none";
-    const message = formatError(exception);
-    console.error(message);
-    if (!document.querySelector(".cesium-widget-errorPanel")) {
-      //eslint-disable-next-line no-alert
-      window.alert(message);
+    let viewer;
+    try {
+        viewer = new Viewer("cesiumContainer", {
+            sceneMode: SceneMode.SCENE3D,
+            skyBox: false,
+            timeline: false,
+            globe: false,
+            infoBox: false,
+            homeButton: false,
+            sceneModePicker: false,
+            animation: false,
+            baseLayerPicker: false,
+            geocoder: false,
+            selectionIndicator: false,
+            fullscreenButton: false,
+            navigationHelpButton: false,
+        });
+    } catch (exception) {
+        loadingIndicator.style.display = "none";
+        const message = formatError(exception);
+        console.error(message);
+        if (!document.querySelector(".cesium-widget-errorPanel")) {
+            //eslint-disable-next-line no-alert
+            window.alert(message);
+        }
+        return;
     }
-    return;
-  }
 
   // const scene = viewer.scene;
   let tileset;
@@ -97,16 +101,17 @@ async function main() {
                 },
             ); /**/
 
-      tileset = await Cesium3DTileset.fromUrl(
-        "http://172.18.21.37:8002/out_tileset/tileset.json",
-        {
-          cullRequestsWhileMoving: false,
-          preloadWhenHidden: true,
-          preloadFlightDestinations: true,
-        },
-      ); /**/
+            
+            tileset = await Cesium3DTileset.fromUrl(
+                "http://172.18.21.46:8002/out_tileset/tileset.json",
+                {
+                    cullRequestsWhileMoving: false,
+                    preloadWhenHidden: true,
+                    preloadFlightDestinations: true,
+                },
+            ); /**/
 
-      /*
+            /*
             tileset = viewer.scene.primitives.add(
                 await Cesium3DTileset.fromIonAssetId(4332925),
                 {
@@ -166,187 +171,187 @@ async function main() {
 
   // ==================== CAMERA PATH ====================
 
-  // const cameraPath = [
-  //     {
-  //         time: 0,
-  //         position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
-  //         orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 10,
-  //         position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
-  //         orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 15,
-  //         position: { lon: 14.19719, lat: 52.28058, height: 121.7 },
-  //         orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 20,
-  //         position: { lon: 14.19704, lat: 52.28054, height: 121.94 },
-  //         orientation: { heading: 347.99, pitch: 2.13, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 35,
-  //         position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
-  //         orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 36,
-  //         position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
-  //         orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 40,
-  //         position: { lon: 14.19605, lat: 52.28066, height: 126.18 },
-  //         orientation: { heading: 359.14, pitch: 2.29, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 45,
-  //         position: { lon: 14.19605, lat: 52.281, height: 134.66 },
-  //         orientation: { heading: 356.97, pitch: 12.09, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 50,
-  //         position: { lon: 14.19724, lat: 52.28124, height: 133.67 },
-  //         orientation: { heading: 153.36, pitch: -3.18, roll: 0 },
-  //     },
-  //     {
-  //         time: 55,
-  //         position: { lon: 14.19704, lat: 52.28157, height: 154.87 },
-  //         orientation: { heading: 179.61, pitch: -16.77, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 60,
-  //         position: { lon: 14.20069, lat: 52.28102, height: 178.99 },
-  //         orientation: { heading: 269.51, pitch: -15.07, roll: 0 },
-  //     },
-  //     {
-  //         time: 65,
-  //         position: { lon: 14.19767, lat: 52.2807, height: 131.89 },
-  //         orientation: { heading: 269.45, pitch: 4.74, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 75,
-  //         position: { lon: 14.19767, lat: 52.2807, height: 131.89 },
-  //         orientation: { heading: 269.45, pitch: 4.74, roll: 0.0 },
-  //     },
-  //     {
-  //         time: 80,
-  //         position: { lon: 14.20541, lat: 52.28069, height: 284.25 },
-  //         orientation: { heading: 274.44, pitch: -14.5, roll: 0 },
-  //     },
-  // ];
+  const cameraPath = [
+      {
+          time: 0,
+          position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
+          orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
+      },
+      {
+          time: 10,
+          position: { lon: 14.19816, lat: 52.28058, height: 124.47 },
+          orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
+      },
+      {
+          time: 15,
+          position: { lon: 14.19719, lat: 52.28058, height: 121.7 },
+          orientation: { heading: 272.49, pitch: -0.35, roll: 0.0 },
+      },
+      {
+          time: 20,
+          position: { lon: 14.19704, lat: 52.28054, height: 121.94 },
+          orientation: { heading: 347.99, pitch: 2.13, roll: 0.0 },
+      },
+      {
+          time: 35,
+          position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
+          orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
+      },
+      {
+          time: 36,
+          position: { lon: 14.19603, lat: 52.28054, height: 125.33 },
+          orientation: { heading: 358.32, pitch: -11.33, roll: 0.0 },
+      },
+      {
+          time: 40,
+          position: { lon: 14.19605, lat: 52.28066, height: 126.18 },
+          orientation: { heading: 359.14, pitch: 2.29, roll: 0.0 },
+      },
+      {
+          time: 45,
+          position: { lon: 14.19605, lat: 52.281, height: 134.66 },
+          orientation: { heading: 356.97, pitch: 12.09, roll: 0.0 },
+      },
+      {
+          time: 50,
+          position: { lon: 14.19724, lat: 52.28124, height: 133.67 },
+          orientation: { heading: 153.36, pitch: -3.18, roll: 0 },
+      },
+      {
+          time: 55,
+          position: { lon: 14.19704, lat: 52.28157, height: 154.87 },
+          orientation: { heading: 179.61, pitch: -16.77, roll: 0.0 },
+      },
+      {
+          time: 60,
+          position: { lon: 14.20069, lat: 52.28102, height: 178.99 },
+          orientation: { heading: 269.51, pitch: -15.07, roll: 0 },
+      },
+      {
+          time: 65,
+          position: { lon: 14.19767, lat: 52.2807, height: 131.89 },
+          orientation: { heading: 269.45, pitch: 4.74, roll: 0.0 },
+      },
+      {
+          time: 75,
+          position: { lon: 14.19767, lat: 52.2807, height: 131.89 },
+          orientation: { heading: 269.45, pitch: 4.74, roll: 0.0 },
+      },
+      {
+          time: 80,
+          position: { lon: 14.20541, lat: 52.28069, height: 284.25 },
+          orientation: { heading: 274.44, pitch: -14.5, roll: 0 },
+      },
+  ];
 
-  // const startTime = JulianDate.now();
-  // const stopTime = JulianDate.addSeconds(
-  //     startTime,
-  //     cameraPath[cameraPath.length - 1].time,
-  //     new JulianDate(),
-  // );
+  const startTime = JulianDate.now();
+  const stopTime = JulianDate.addSeconds(
+      startTime,
+      cameraPath[cameraPath.length - 1].time,
+      new JulianDate(),
+  );
 
-  // viewer.clock.startTime = startTime.clone();
-  // viewer.clock.stopTime = stopTime.clone();
-  // viewer.clock.currentTime = startTime.clone();
-  // viewer.clock.multiplier = 1;
-  // viewer.clock.shouldAnimate = true;
+  viewer.clock.startTime = startTime.clone();
+  viewer.clock.stopTime = stopTime.clone();
+  viewer.clock.currentTime = startTime.clone();
+  viewer.clock.multiplier = 1;
+  viewer.clock.shouldAnimate = true;
 
-  // function lerp(a, b, t) {
-  //     return a + (b - a) * t;
-  // }
+  function lerp(a, b, t) {
+      return a + (b - a) * t;
+  }
 
-  // function interpolateCamera(path, elapsed) {
-  //     for (let i = 0; i < path.length - 1; i++) {
-  //         const a = path[i];
-  //         const b = path[i + 1];
+  function interpolateCamera(path, elapsed) {
+      for (let i = 0; i < path.length - 1; i++) {
+          const a = path[i];
+          const b = path[i + 1];
 
-  //         if (elapsed >= a.time && elapsed <= b.time) {
-  //             const t = (elapsed - a.time) / (b.time - a.time);
+          if (elapsed >= a.time && elapsed <= b.time) {
+              const t = (elapsed - a.time) / (b.time - a.time);
 
-  //             return {
-  //                 position: {
-  //                     lon: lerp(a.position.lon, b.position.lon, t),
-  //                     lat: lerp(a.position.lat, b.position.lat, t),
-  //                     height: lerp(a.position.height, b.position.height, t),
-  //                 },
-  //                 orientation: {
-  //                     heading: Math.toRadians(
-  //                         lerp(
-  //                             a.orientation.heading,
-  //                             b.orientation.heading,
-  //                             t,
-  //                         ),
-  //                     ),
-  //                     pitch: Math.toRadians(
-  //                         lerp(a.orientation.pitch, b.orientation.pitch, t),
-  //                     ),
-  //                     roll: Math.toRadians(
-  //                         lerp(a.orientation.roll, b.orientation.roll, t),
-  //                     ),
-  //                 },
-  //             };
-  //         }
-  //     }
-  //     return null;
-  // }
+              return {
+                  position: {
+                      lon: lerp(a.position.lon, b.position.lon, t),
+                      lat: lerp(a.position.lat, b.position.lat, t),
+                      height: lerp(a.position.height, b.position.height, t),
+                  },
+                  orientation: {
+                      heading: Math.toRadians(
+                          lerp(
+                              a.orientation.heading,
+                              b.orientation.heading,
+                              t,
+                          ),
+                      ),
+                      pitch: Math.toRadians(
+                          lerp(a.orientation.pitch, b.orientation.pitch, t),
+                      ),
+                      roll: Math.toRadians(
+                          lerp(a.orientation.roll, b.orientation.roll, t),
+                      ),
+                  },
+              };
+          }
+      }
+      return null;
+  }
 
-  // // ================== MEASURER SETUP ===================
+  // ================== MEASURER SETUP ===================
 
-  // const _performance = new PerformanceMeasurer(
-  //     100,
-  //     (cameraPath[cameraPath.length - 1].time + 5) * 1000,
-  // );
-  // _performance.attachToRequestScheduler(RequestScheduler);
-  // _performance.attachToTileset(tileset);
-  // _performance.attachToSceneRenderer(scene);
+  const _performance = new PerformanceMeasurer(
+      100,
+      (cameraPath[cameraPath.length - 1].time + 5) * 1000,
+  );
+  _performance.attachToRequestScheduler(RequestScheduler);
+  _performance.attachToTileset(tileset);
+  _performance.attachToSceneRenderer(scene);
 
-  // // Camera Path
-  // scene.preUpdate.addEventListener(() => {
-  //     const elapsed = JulianDate.secondsDifference(
-  //         viewer.clock.currentTime,
-  //         startTime,
-  //     );
+  // Camera Path
+  scene.preUpdate.addEventListener(() => {
+      const elapsed = JulianDate.secondsDifference(
+          viewer.clock.currentTime,
+          startTime,
+      );
 
-  //     const frame = interpolateCamera(cameraPath, elapsed);
-  //     if (!frame) {
-  //         return;
-  //     }
+      const frame = interpolateCamera(cameraPath, elapsed);
+      if (!frame) {
+          return;
+      }
 
-  //     const destination = Cartesian3.fromDegrees(
-  //         frame.position.lon,
-  //         frame.position.lat,
-  //         frame.position.height,
-  //     );
+      const destination = Cartesian3.fromDegrees(
+          frame.position.lon,
+          frame.position.lat,
+          frame.position.height,
+      );
 
-  //     viewer.camera.setView({
-  //         destination,
-  //         orientation: frame.orientation,
-  //     });
-  // }); /**/
+      viewer.camera.setView({
+          destination,
+          orientation: frame.orientation,
+      });
+  }); /**/
 
-  // scene.preUpdate.addEventListener(() => {
-  //     const elapsed = JulianDate.secondsDifference(
-  //         viewer.clock.currentTime,
-  //         startTime,
-  //     );
+  scene.preUpdate.addEventListener(() => {
+      const elapsed = JulianDate.secondsDifference(
+          viewer.clock.currentTime,
+          startTime,
+      );
 
-  //     // Kamera interpolieren (dein bestehender Code)
-  //     const frame = interpolateCamera(cameraPath, elapsed);
-  //     if (frame) {
-  //         const destination = Cartesian3.fromDegrees(
-  //             frame.position.lon,
-  //             frame.position.lat,
-  //             frame.position.height,
-  //         );
-  //         viewer.camera.setView({
-  //             destination,
-  //             orientation: frame.orientation,
-  //         });
-  //     }
-  // });
+      // Kamera interpolieren (dein bestehender Code)
+      const frame = interpolateCamera(cameraPath, elapsed);
+      if (frame) {
+          const destination = Cartesian3.fromDegrees(
+              frame.position.lon,
+              frame.position.lat,
+              frame.position.height,
+          );
+          viewer.camera.setView({
+              destination,
+              orientation: frame.orientation,
+          });
+      }
+  });
 
-  // _performance.start();
+  _performance.start();
 
   loadingIndicator.style.display = "none";
 }
