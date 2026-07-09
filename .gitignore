@@ -3,7 +3,6 @@
 /Cesium-*.zip
 /cesium-*.tgz
 /packages/**/*.tgz
-/packages
 .directory
 .DS_Store
 Thumbs.db
