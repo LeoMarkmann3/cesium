@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <title>A/B Test — point-cloud tileset comparison</title>
+    <link rel="stylesheet" href="ABTest.css" media="screen" />
+  </head>
+  <body>
+    <div class="viewers">
+      <div class="viewerCell">
+        <div id="leftContainer" class="cesium"></div>
+        <div class="viewerLabel">Ours (py3dtiles)</div>
+      </div>
+      <div class="viewerCell">
+        <div id="rightContainer" class="cesium"></div>
+        <div class="viewerLabel">Cesium Ion (reference)</div>
+      </div>
+    </div>
+
+    <div id="abPanel" class="abPanel">
+      <div class="abTitle">A/B point-cloud comparison</div>
+
+      <div class="abRow" id="datasetRow">
+        <label>Dataset:</label>
+      </div>
+
+      <div class="abRow">
+        <label for="sseRange">maximumScreenSpaceError</label>
+        <input
+          id="sseRange"
+          type="range"
+          min="1"
+          max="64"
+          step="1"
+          value="16"
+        />
+        <span id="sseValue" class="sseValue">16</span>
+      </div>
+
+      <div class="abRow">
+        <label for="cacheInput">Cache budget (MB)</label>
+        <input
+          id="cacheInput"
+          type="number"
+          min="1"
+          step="16"
+          value="512"
+          style="width: 6em"
+        />
+        <button id="cacheApply">Apply</button>
+      </div>
+
+      <div class="abRow">
+        <label
+          ><input type="checkbox" id="colorizeToggle" />
+          debugColorizeTiles</label
+        >
+        <label
+          ><input type="checkbox" id="bvToggle" />
+          debugShowBoundingVolume</label
+        >
+        <label
+          ><input type="checkbox" id="freezeToggle" /> debugFreezeFrame</label
+        >
+      </div>
+
+      <div class="abRow">
+        <label>Preset:</label>
+        <button data-preset="top">Top-down</button>
+        <button data-preset="oblique">Oblique</button>
+        <button data-preset="close">Close-up</button>
+      </div>
+
+      <div class="abRow">
+        <button id="captureBtn">Capture</button>
+        <button id="downloadCsvBtn">Download CSV</button>
+        <button id="downloadJsonBtn">Download JSON</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <div id="loadingIndicator" class="loadingIndicator">Loading…</div>
+
+    <div class="abTableWrap">
+      <table id="captureTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <script src="ABTest.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,181 @@
+@import url(../../Source/Widgets/widgets.css);
+@import url(../../Source/Widgets/lighter.css);
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  background: #000;
+  font-family: sans-serif;
+}
+
+/* Two viewers side by side. */
+.viewers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+}
+
+.viewerCell {
+  position: relative;
+  flex: 1 1 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.viewerCell + .viewerCell {
+  border-left: 2px solid #000;
+}
+
+.viewerCell .cesium {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.viewerLabel {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  background: rgba(20, 20, 20, 0.85);
+  color: #eee;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.loadingIndicator {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 20;
+  transform: translate(-50%, -50%);
+  background: rgba(20, 20, 20, 0.9);
+  color: #eee;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 6px;
+}
+
+/* Control panel. */
+.abPanel {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(20, 20, 20, 0.9);
+  color: #eee;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  line-height: 1.6;
+  max-width: 760px;
+}
+
+.abPanel .abTitle {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.abPanel .abRow {
+  margin: 4px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.abPanel label {
+  color: #ccc;
+}
+
+.abPanel button {
+  padding: 3px 8px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.abPanel button.active {
+  background: #f5d020;
+  color: #111;
+  border-color: #f5d020;
+  font-weight: bold;
+}
+
+.abPanel input[type="range"] {
+  vertical-align: middle;
+}
+
+.abPanel .sseValue {
+  min-width: 2.5em;
+  display: inline-block;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Capture table. */
+.abTableWrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 40%;
+  overflow: auto;
+  background: rgba(15, 15, 15, 0.92);
+  color: #eee;
+  font-size: 11px;
+}
+
+.abTableWrap table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.abTableWrap th,
+.abTableWrap td {
+  border: 1px solid #444;
+  padding: 2px 6px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.abTableWrap th {
+  position: sticky;
+  top: 0;
+  background: #222;
+}
+
+.abTableWrap td.text,
+.abTableWrap th.text {
+  text-align: left;
+}
+
+.abTableWrap .oursCol {
+  background: rgba(80, 130, 200, 0.15);
+}
+
+.abTableWrap .ionCol {
+  background: rgba(200, 130, 80, 0.15);
+}
