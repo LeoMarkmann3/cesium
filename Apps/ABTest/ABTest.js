@@ -24,11 +24,11 @@ const DEFAULT_BASE_URL = "http://localhost:8003";
 
 const DATASETS = {
   Sauen: {
-    ours: "/ImprovedV34/out_tileset/tileset.json",
+    ours: "/ImprovedV36/out_tileset/tileset.json",
     ion: "/CesiumIon/out_tileset/tileset.json",
   },
   Synthetic: {
-    ours: "/ImprovedV35/out_tileset/tileset.json",
+    ours: "/ImprovedV37/out_tileset/tileset.json",
     ion: "/CesiumIon2/out_tileset/tileset.json",
   },
 };
@@ -154,6 +154,7 @@ async function main() {
     colorize: false,
     boundingVolume: false,
     freeze: false,
+    settle: true,
   };
   let currentDataset = "Sauen";
   let oursTileset;
@@ -177,14 +178,80 @@ async function main() {
   }
 
   // -------------------------------------------------------------------------
-  // Camera presets, derived from the loaded bounding sphere so they work for any
-  // dataset pair. Applied to the left (active) viewer; sync propagates to the right.
+  // Settle gate. A capture is only meaningful once the scene has quiesced; reading
+  // mid-stream makes selected/points/fps depend on network timing, not the tileset.
+  // Gate on BOTH tilesets reporting no pending requests and no tiles processing for a
+  // couple of consecutive frames. Toggleable — turn it off to sample mid-load.
+  // -------------------------------------------------------------------------
+  function bothStable() {
+    const stable = (tileset) => {
+      if (!defined(tileset)) {
+        return true;
+      }
+      const s = tileset.statistics;
+      return s.numberOfPendingRequests === 0 && s.numberOfTilesProcessing === 0;
+    };
+    return stable(oursTileset) && stable(ionTileset);
+  }
+
+  function waitForSettle(timeoutMs = 15000) {
+    return new Promise((resolve) => {
+      const start = performance.now();
+      let stableFrames = 0;
+      function tick(now) {
+        stableFrames = bothStable() ? stableFrames + 1 : 0;
+        if (stableFrames >= 2) {
+          resolve(true);
+        } else if (now - start > timeoutMs) {
+          resolve(false);
+        } else {
+          requestAnimationFrame(tick);
+        }
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Self-describing capture: record the exact camera pose and viewport so every row
+  // is verifiable and two captures can be confirmed identical-camera before comparing.
+  // -------------------------------------------------------------------------
+  function readCameraPose() {
+    const cam = leftViewer.camera;
+    const p = cam.positionWC;
+    const frustum = cam.frustum;
+    return {
+      posX: p.x,
+      posY: p.y,
+      posZ: p.z,
+      heading: CesiumMath.toDegrees(cam.heading),
+      pitch: CesiumMath.toDegrees(cam.pitch),
+      roll: CesiumMath.toDegrees(cam.roll),
+      fovy: defined(frustum.fovy) ? CesiumMath.toDegrees(frustum.fovy) : null,
+    };
+  }
+
+  function readViewport() {
+    const s = leftViewer.scene;
+    return {
+      bufferWidth: s.drawingBufferWidth,
+      bufferHeight: s.drawingBufferHeight,
+      pixelRatio: s.pixelRatio,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Camera presets. Anchored to the ION tileset's bounding sphere, NOT ours: Ion is
+  // the fixed reference and never changes, so a preset reproduces the same pose every
+  // session regardless of which "ours" (the variable under test) is loaded. Applied
+  // to the left (active) viewer; sync propagates to the right.
   // -------------------------------------------------------------------------
   function applyPreset(name) {
-    if (!defined(oursTileset)) {
+    const anchor = defined(ionTileset) ? ionTileset : oursTileset;
+    if (!defined(anchor)) {
       return;
     }
-    const sphere = oursTileset.boundingSphere;
+    const sphere = anchor.boundingSphere;
     const r = sphere.radius;
     let hpr;
     if (name === "top") {
@@ -248,6 +315,13 @@ async function main() {
       return;
     }
 
+    oursTileset.tileFailed.addEventListener((e) =>
+      console.error("ABTest[ours] tileFailed:", e.url, e.message),
+    );
+    ionTileset.tileFailed.addEventListener((e) =>
+      console.error("ABTest[ion] tileFailed:", e.url, e.message),
+    );
+
     leftViewer.scene.primitives.add(oursTileset);
     rightViewer.scene.primitives.add(ionTileset);
     applyControlsToBoth();
@@ -303,6 +377,10 @@ async function main() {
     applyControlsToBoth();
   });
 
+  document.getElementById("settleToggle").addEventListener("change", (e) => {
+    controls.settle = e.target.checked;
+  });
+
   let lastPreset = "oblique";
   document.querySelectorAll("[data-preset]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -335,19 +413,41 @@ async function main() {
   }
 
   const captures = [];
+  let capturing = false;
 
-  function capture() {
+  async function capture() {
+    // Ignore re-entrant triggers (e.g. holding 'c') while a settle is in flight.
+    if (capturing) {
+      return;
+    }
+    capturing = true;
+
+    let settled = null;
+    if (controls.settle) {
+      loadingIndicator.style.display = "block";
+      loadingIndicator.textContent = "Settling…";
+      settled = await waitForSettle();
+      loadingIndicator.style.display = "none";
+      if (!settled) {
+        console.warn("ABTest: settle gate timed out; capturing anyway.");
+      }
+    }
+
     const row = {
       dataset: currentDataset,
       preset: lastPreset,
       sse: controls.sse,
       cacheMB: Math.round(controls.cacheBytes / (1024 * 1024)),
       fps: Math.round(fps * 10) / 10,
+      settled: settled,
+      camera: readCameraPose(),
+      viewport: readViewport(),
       ours: readSide(oursTileset),
       ion: readSide(ionTileset),
     };
     captures.push(row);
     renderTable();
+    capturing = false;
   }
 
   const SIDE_LABELS = {
@@ -437,8 +537,29 @@ async function main() {
     URL.revokeObjectURL(url);
   }
 
+  const CAMERA_FIELDS = [
+    "posX",
+    "posY",
+    "posZ",
+    "heading",
+    "pitch",
+    "roll",
+    "fovy",
+  ];
+  const VIEWPORT_FIELDS = ["bufferWidth", "bufferHeight", "pixelRatio"];
+
   function toCsv() {
-    const header = ["#", "dataset", "preset", "sse", "cacheMB", "fps"];
+    const header = [
+      "#",
+      "dataset",
+      "preset",
+      "sse",
+      "cacheMB",
+      "fps",
+      "settled",
+      ...CAMERA_FIELDS,
+      ...VIEWPORT_FIELDS,
+    ];
     ["ours", "ion"].forEach((side) => {
       SIDE_FIELDS.forEach((f) => header.push(`${side}_${f}`));
     });
@@ -450,6 +571,9 @@ async function main() {
         row.sse,
         row.cacheMB,
         row.fps,
+        row.settled,
+        ...CAMERA_FIELDS.map((f) => row.camera[f]),
+        ...VIEWPORT_FIELDS.map((f) => row.viewport[f]),
       ];
       ["ours", "ion"].forEach((side) => {
         SIDE_FIELDS.forEach((f) => values.push(row[side][f]));

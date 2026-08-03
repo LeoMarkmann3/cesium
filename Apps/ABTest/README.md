@@ -53,8 +53,18 @@ frames both.
 - **debugColorizeTiles** — colors each tile differently (shows tile partitioning).
 - **debugShowBoundingVolume** — draws the tile boxes.
 - **debugFreezeFrame** — freezes LOD selection so stats hold still while reading.
-- **Presets** — Top-down / Oblique / Close-up camera bookmarks (derived from the loaded
-  bounding sphere; the oblique mid-range view is the most telling).
+- **Presets** — Top-down / Oblique / Close-up camera bookmarks. These are anchored to the
+  **Ion** tileset's bounding sphere (the fixed reference), not ours, so a preset reproduces
+  the exact same pose every session regardless of which `ours` is loaded — the camera is
+  never coupled to the variable under test. The oblique mid-range view is the most telling.
+- **Settle before capture** (default on) — a capture waits until _both_ tilesets report no
+  pending requests and no tiles processing for a couple of frames before recording. Turn it
+  **off** to sample mid-load. If the gate times out (~15 s) it records anyway and warns.
+
+Screen-space error also scales with the canvas height, so keep the window the same size
+between capture sessions for reproducible selection. The viewport
+(`bufferWidth/bufferHeight/pixelRatio`) is recorded on every capture, so any mismatch between
+two rows is detectable after the fact.
 
 Point rendering (`pointCloudShading`) is left at defaults on both sides so per-point cost
 is equal.
@@ -70,9 +80,23 @@ Per side, each row records: `selected` (tiles rendered — the key metric), `num
 `numberOfTilesProcessing`, `numberOfTilesWithContentReady`, `numberOfTilesTotal`, plus the
 shared `fps`, `sse`, `cacheMB`, `dataset`, and `preset`.
 
+Each row is also **self-describing** for reproducibility: the CSV/JSON carry `settled`
+(whether the settle gate was satisfied), the camera pose (`posX/posY/posZ` in ECEF,
+`heading/pitch/roll` in degrees, `fovy`), and the viewport (`bufferWidth/bufferHeight/pixelRatio`).
+Two captures can therefore be confirmed identical-camera before they're compared. (These extra
+columns are in the export only, to keep the on-page table readable.)
+
 > FPS is the **page** FPS: both viewers render in the same `requestAnimationFrame` loop,
 > so it reflects the combined side-by-side cost, not one tileset in isolation. Each viewer
 > also shows its own `debugShowFramesPerSecond` overlay for an eyeball figure.
+
+## Reproducibility check
+
+Run the same preset twice in separate sessions on the same Ion tileset; the Ion `selected` /
+`numberOfPointsSelected` must be **identical** (not just close). With presets anchored to Ion,
+the settle gate on, and the same window size, that equality should now hold for all three
+presets (previously only `close` held). If it ever doesn't, compare the recorded camera-pose
+and viewport columns between the two rows to find what differed.
 
 ## Expected result
 
