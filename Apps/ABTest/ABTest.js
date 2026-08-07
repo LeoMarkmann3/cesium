@@ -16,22 +16,61 @@ import {
 } from "../../Build/CesiumUnminified/index.js";
 
 // ---------------------------------------------------------------------------
-// Tileset locations. All four are LOCAL 3D Tiles; serve ~/output over HTTP with
+// Tileset locations. All entries are LOCAL 3D Tiles; serve ~/output over HTTP with
 // permissive CORS (see README) and point BASE_URL at it. Override with ?base=<url>.
-// The "ion" entries are local copies of Cesium Ion's output — no token needed.
+//
+// Each dataset declares exactly TWO sides, and their KEYS ARE FREE-FORM: whatever you
+// name them here is what labels the viewers, the table column groups and the CSV column
+// prefixes. Declaration order decides the layout — first key is the left viewer, second
+// the right. A side is either a URL string or an object { url, anchor }, where
+// anchor: true marks the side whose bounding sphere the camera presets are anchored to
+// (defaults to the right side; anchor the fixed reference, not the variable under test).
+//
+// Multi-temporal tilesets need no special declaration: if a side exposes timestampKeys,
+// the epoch controls appear automatically and switching is applied to both sides.
 // ---------------------------------------------------------------------------
 const DEFAULT_BASE_URL = "http://localhost:8003";
 
 const DATASETS = {
   Sauen: {
-    ours: "/ImprovedV36/out_tileset/tileset.json",
-    ion: "/CesiumIon/out_tileset/tileset.json",
+    "ours (py3dtiles)": "/ImprovedV36/out_tileset/tileset.json",
+    "Cesium Ion": { url: "/CesiumIon/out_tileset/tileset.json", anchor: true },
   },
   Synthetic: {
-    ours: "/ImprovedV37/out_tileset/tileset.json",
-    ion: "/CesiumIon2/out_tileset/tileset.json",
+    "ours (py3dtiles)": "/ImprovedV37/out_tileset/tileset.json",
+    "Cesium Ion": { url: "/CesiumIon2/out_tileset/tileset.json", anchor: true },
+  },
+  MT: {
+    "shared tree": "/MT_REAL_shared/out_tileset/tileset.json",
+    "referenced tilesets": "/MT_REAL_referenced/out_tileset/tileset.json",
   },
 };
+
+/**
+ * Normalize a dataset entry into the two sides the app works with, in declaration order.
+ * @param {object} spec The dataset entry from DATASETS.
+ * @returns {object[]} Two side descriptors: { key, path, anchor }.
+ */
+function readSides(spec) {
+  const sides = Object.entries(spec).map(([key, value]) => {
+    const isObject = typeof value === "object" && value !== null;
+    return {
+      key: key,
+      path: isObject ? value.url : value,
+      anchor: isObject ? value.anchor === true : false,
+    };
+  });
+  if (sides.length !== 2) {
+    throw new Error(
+      `A dataset must declare exactly two sides, got ${sides.length}: ${Object.keys(spec).join(", ")}`,
+    );
+  }
+  if (!sides.some((side) => side.anchor)) {
+    // Default: anchor presets to the right side.
+    sides[1].anchor = true;
+  }
+  return sides;
+}
 
 function getBaseUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -156,9 +195,23 @@ async function main() {
     freeze: false,
     settle: true,
   };
-  let currentDataset = "Sauen";
-  let oursTileset;
-  let ionTileset;
+  let currentDataset = Object.keys(DATASETS)[0];
+
+  // The two sides of the loaded dataset, in declaration order: [left, right]. Each is
+  // { key, path, anchor, viewer, labelElement, tileset }.
+  let sides = [];
+  // Timestamp keys offered by the loaded pair (union, in first-seen order), and the epoch
+  // currently requested. Empty when neither side is multi-temporal.
+  let epochKeys = [];
+  let currentEpoch = null;
+
+  function eachTileset(fn) {
+    sides.forEach((side) => {
+      if (defined(side.tileset)) {
+        fn(side.tileset, side);
+      }
+    });
+  }
 
   function applyControls(tileset) {
     if (!defined(tileset)) {
@@ -173,8 +226,7 @@ async function main() {
   }
 
   function applyControlsToBoth() {
-    applyControls(oursTileset);
-    applyControls(ionTileset);
+    eachTileset((tileset) => applyControls(tileset));
   }
 
   // -------------------------------------------------------------------------
@@ -183,15 +235,16 @@ async function main() {
   // Gate on BOTH tilesets reporting no pending requests and no tiles processing for a
   // couple of consecutive frames. Toggleable — turn it off to sample mid-load.
   // -------------------------------------------------------------------------
+  function tilesetStable(tileset) {
+    if (!defined(tileset)) {
+      return true;
+    }
+    const s = tileset.statistics;
+    return s.numberOfPendingRequests === 0 && s.numberOfTilesProcessing === 0;
+  }
+
   function bothStable() {
-    const stable = (tileset) => {
-      if (!defined(tileset)) {
-        return true;
-      }
-      const s = tileset.statistics;
-      return s.numberOfPendingRequests === 0 && s.numberOfTilesProcessing === 0;
-    };
-    return stable(oursTileset) && stable(ionTileset);
+    return sides.every((side) => tilesetStable(side.tileset));
   }
 
   function waitForSettle(timeoutMs = 15000) {
@@ -241,17 +294,19 @@ async function main() {
   }
 
   // -------------------------------------------------------------------------
-  // Camera presets. Anchored to the ION tileset's bounding sphere, NOT ours: Ion is
-  // the fixed reference and never changes, so a preset reproduces the same pose every
-  // session regardless of which "ours" (the variable under test) is loaded. Applied
-  // to the left (active) viewer; sync propagates to the right.
+  // Camera presets, anchored to the side marked anchor: true in DATASETS (by default the
+  // right one). Anchor the fixed reference rather than the variable under test, so a
+  // preset reproduces the same pose across sessions no matter what the other side is.
+  // Applied to the left (active) viewer; sync propagates to the right.
   // -------------------------------------------------------------------------
   function applyPreset(name) {
-    const anchor = defined(ionTileset) ? ionTileset : oursTileset;
-    if (!defined(anchor)) {
+    const anchorSide =
+      sides.find((side) => side.anchor && defined(side.tileset)) ??
+      sides.find((side) => defined(side.tileset));
+    if (!defined(anchorSide)) {
       return;
     }
-    const sphere = anchor.boundingSphere;
+    const sphere = anchorSide.tileset.boundingSphere;
     const r = sphere.radius;
     let hpr;
     if (name === "top") {
@@ -275,56 +330,243 @@ async function main() {
   }
 
   // -------------------------------------------------------------------------
+  // Multi-temporal controls. A side is multi-temporal when it exposes timestampKeys;
+  // the epoch buttons offer the union of both sides' keys, and switching applies to
+  // every side that actually has that key (so an MT tileset can be compared against a
+  // single-epoch one, or two multi-temporal tilesets against each other).
+  // -------------------------------------------------------------------------
+  const epochRow = document.getElementById("epochRow");
+  const switchSweepBtn = document.getElementById("switchSweepBtn");
+  const epochButtons = new Map();
+
+  function isMultiTemporal(side) {
+    return defined(side.tileset) && defined(side.tileset.timestampKeys);
+  }
+
+  function buildEpochControls() {
+    epochButtons.forEach((button) => button.remove());
+    epochButtons.clear();
+
+    epochKeys = [];
+    sides.forEach((side) => {
+      if (!isMultiTemporal(side)) {
+        return;
+      }
+      side.tileset.timestampKeys.forEach((key) => {
+        if (!epochKeys.includes(key)) {
+          epochKeys.push(key);
+        }
+      });
+    });
+
+    const hasEpochs = epochKeys.length > 0;
+    epochRow.style.display = hasEpochs ? "" : "none";
+    switchSweepBtn.style.display = hasEpochs ? "" : "none";
+    if (!hasEpochs) {
+      currentEpoch = null;
+      return;
+    }
+
+    currentEpoch = epochKeys[0];
+    epochKeys.forEach((key) => {
+      const button = document.createElement("button");
+      button.textContent = key;
+      button.addEventListener("click", () => switchEpoch(key));
+      epochRow.appendChild(button);
+      epochButtons.set(key, button);
+    });
+    markEpochButton(currentEpoch);
+  }
+
+  function markEpochButton(key) {
+    epochButtons.forEach((button, buttonKey) => {
+      button.classList.toggle("active", buttonKey === key);
+    });
+  }
+
+  function readEpochState(side) {
+    const tileset = side.tileset;
+    if (!defined(tileset) || !defined(tileset.timestampKeys)) {
+      return { layout: null, epoch: null, activePoints: null };
+    }
+    return {
+      layout: tileset.resolvedMTLayout ?? null,
+      epoch: tileset.activeTimestamp ?? null,
+      activePoints: tileset.activePointsRendered,
+    };
+  }
+
+  /**
+   * Switch every side that has the given timestamp key, and measure how long each side
+   * takes to show the new epoch. Two markers per side, because the formats differ in
+   * exactly this: <code>firstRenderMs</code> is the first frame whose selected-point count
+   * reflects the new epoch, <code>settleMs</code> is when that side has no pending requests
+   * and no tiles processing for two consecutive frames. A shared-tree tileset that already
+   * has the epoch resident switches in about a frame; a referenced-tilesets tileset must
+   * refetch its sub-tileset, so its points drop to zero first (recorded as dippedToZero).
+   *
+   * @param {string} key The timestamp key to switch to.
+   * @param {boolean} [record=true] Whether to append a capture row for the switch.
+   * @returns {Promise<object>} The measurement, one entry per side.
+   */
+  function switchEpoch(key, record = true) {
+    const participants = sides.filter(
+      (side) =>
+        isMultiTemporal(side) && side.tileset.timestampKeys.includes(key),
+    );
+    if (participants.length === 0) {
+      return Promise.resolve(null);
+    }
+
+    currentEpoch = key;
+    markEpochButton(key);
+
+    const start = performance.now();
+    const tracked = participants.map((side) => ({
+      side: side,
+      baseline: side.tileset.statistics.numberOfPointsSelected,
+      firstRenderMs: null,
+      settleMs: null,
+      dippedToZero: false,
+      stableFrames: 0,
+    }));
+
+    participants.forEach((side) => {
+      side.tileset.activeTimestamp = key;
+    });
+
+    return new Promise((resolve) => {
+      function tick(now) {
+        const elapsed = now - start;
+        tracked.forEach((entry) => {
+          const stats = entry.side.tileset.statistics;
+          const points = stats.numberOfPointsSelected;
+          if (points === 0) {
+            entry.dippedToZero = true;
+          }
+          if (
+            entry.firstRenderMs === null &&
+            points > 0 &&
+            points !== entry.baseline
+          ) {
+            entry.firstRenderMs = Math.round(elapsed);
+          }
+          if (entry.settleMs === null) {
+            const quiet = tilesetStable(entry.side.tileset) && points > 0;
+            entry.stableFrames = quiet ? entry.stableFrames + 1 : 0;
+            if (entry.stableFrames >= 2 && entry.firstRenderMs !== null) {
+              entry.settleMs = Math.round(elapsed);
+            }
+          }
+        });
+
+        const done = tracked.every((entry) => entry.settleMs !== null);
+        if (done || elapsed > 30000) {
+          const measurement = tracked.map((entry) => ({
+            key: entry.side.key,
+            firstRenderMs: entry.firstRenderMs,
+            settleMs: entry.settleMs,
+            dippedToZero: entry.dippedToZero,
+          }));
+          if (record) {
+            pushRow("switch", key, measurement);
+          }
+          resolve(measurement);
+        } else {
+          requestAnimationFrame(tick);
+        }
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  /**
+   * Walk every epoch once, measuring each switch — the epoch-switch-latency benchmark in
+   * one click. Starts from the epoch after the current one and comes back round to it.
+   * @returns {Promise<void>}
+   */
+  async function sweepSwitches() {
+    if (epochKeys.length < 2) {
+      return;
+    }
+    switchSweepBtn.disabled = true;
+    loadingIndicator.style.display = "block";
+    const startIndex = Math.max(0, epochKeys.indexOf(currentEpoch));
+    for (let i = 1; i <= epochKeys.length; ++i) {
+      const key = epochKeys[(startIndex + i) % epochKeys.length];
+      loadingIndicator.textContent = `Measuring switch to ${key}…`;
+      // Sequential on purpose: overlapping switches would measure each other's streaming.
+      await switchEpoch(key);
+    }
+    loadingIndicator.style.display = "none";
+    switchSweepBtn.disabled = false;
+  }
+
+  // -------------------------------------------------------------------------
   // Load (or reload) a dataset pair.
   // -------------------------------------------------------------------------
+  const viewerLabels = [
+    document.getElementById("leftLabel"),
+    document.getElementById("rightLabel"),
+  ];
+  const viewers = [leftViewer, rightViewer];
+
   async function loadPair(datasetName) {
     currentDataset = datasetName;
     loadingIndicator.style.display = "block";
     loadingIndicator.textContent = `Loading ${datasetName}…`;
 
-    if (defined(oursTileset)) {
-      leftViewer.scene.primitives.remove(oursTileset);
-      oursTileset = undefined;
-    }
-    if (defined(ionTileset)) {
-      rightViewer.scene.primitives.remove(ionTileset);
-      ionTileset = undefined;
-    }
+    sides.forEach((side) => {
+      if (defined(side.tileset)) {
+        side.viewer.scene.primitives.remove(side.tileset);
+        side.tileset = undefined;
+      }
+    });
 
-    const spec = DATASETS[datasetName];
-    const oursUrl = baseUrl + spec.ours;
-    const ionUrl = baseUrl + spec.ion;
+    sides = readSides(DATASETS[datasetName]).map((side, index) => ({
+      ...side,
+      viewer: viewers[index],
+      tileset: undefined,
+    }));
+    sides.forEach((side, index) => {
+      viewerLabels[index].textContent = side.anchor
+        ? `${side.key} (anchor)`
+        : side.key;
+    });
+
     const options = {
       cullRequestsWhileMoving: false,
       preloadWhenHidden: true,
       preloadFlightDestinations: true,
     };
+    const urls = sides.map((side) => baseUrl + side.path);
 
+    let tilesets;
     try {
-      [oursTileset, ionTileset] = await Promise.all([
-        Cesium3DTileset.fromUrl(oursUrl, options),
-        Cesium3DTileset.fromUrl(ionUrl, options),
-      ]);
+      tilesets = await Promise.all(
+        urls.map((url) => Cesium3DTileset.fromUrl(url, options)),
+      );
     } catch (error) {
       loadingIndicator.textContent = `Error loading ${datasetName}`;
       console.error("ABTest: error loading tileset pair:", error);
       // eslint-disable-next-line no-alert
       window.alert(
-        `Error loading ${datasetName}.\nExpected:\n  ${oursUrl}\n  ${ionUrl}\n\n${error}`,
+        `Error loading ${datasetName}.\nExpected:\n  ${urls.join("\n  ")}\n\n${error}`,
       );
       return;
     }
 
-    oursTileset.tileFailed.addEventListener((e) =>
-      console.error("ABTest[ours] tileFailed:", e.url, e.message),
-    );
-    ionTileset.tileFailed.addEventListener((e) =>
-      console.error("ABTest[ion] tileFailed:", e.url, e.message),
-    );
+    sides.forEach((side, index) => {
+      side.tileset = tilesets[index];
+      side.tileset.tileFailed.addEventListener((e) =>
+        console.error(`ABTest[${side.key}] tileFailed:`, e.url, e.message),
+      );
+      side.viewer.scene.primitives.add(side.tileset);
+    });
 
-    leftViewer.scene.primitives.add(oursTileset);
-    rightViewer.scene.primitives.add(ionTileset);
     applyControlsToBoth();
+    buildEpochControls();
+    renderTable();
 
     loadingIndicator.style.display = "none";
     applyPreset("oblique");
@@ -389,11 +631,15 @@ async function main() {
     });
   });
 
+  switchSweepBtn.addEventListener("click", sweepSwitches);
+
   // -------------------------------------------------------------------------
   // Capture. One row per capture holds both sides' statistics under a matched
   // camera + SSE. FPS is the shared page FPS (both viewers render together).
+  // Rows are self-describing: they carry the side keys they were captured with, so a
+  // table (or CSV) may mix datasets whose sides are named differently.
   // -------------------------------------------------------------------------
-  const SIDE_FIELDS = [
+  const STAT_FIELDS = [
     "selected",
     "numberOfCommands",
     "numberOfPointsSelected",
@@ -402,18 +648,62 @@ async function main() {
     "numberOfTilesWithContentReady",
     "numberOfTilesTotal",
   ];
+  const EPOCH_FIELDS = ["epoch", "activePoints"];
+  const SWITCH_FIELDS = ["firstRenderMs", "settleMs"];
+  const SIDE_COLUMNS = [...STAT_FIELDS, ...EPOCH_FIELDS, ...SWITCH_FIELDS];
 
-  function readSide(tileset) {
-    const s = defined(tileset) ? tileset.statistics : undefined;
-    const out = {};
-    SIDE_FIELDS.forEach((f) => {
-      out[f] = defined(s) ? s[f] : 0;
+  const SIDE_LABELS = {
+    selected: "Selected",
+    numberOfCommands: "Commands",
+    numberOfPointsSelected: "Points",
+    numberOfPendingRequests: "Pending",
+    numberOfTilesProcessing: "Processing",
+    numberOfTilesWithContentReady: "Ready",
+    numberOfTilesTotal: "Total",
+    epoch: "Epoch",
+    activePoints: "Active pts",
+    firstRenderMs: "First ms",
+    settleMs: "Settle ms",
+  };
+
+  function readSide(side, switchMeasurement) {
+    const stats = defined(side.tileset) ? side.tileset.statistics : undefined;
+    const out = { key: side.key };
+    STAT_FIELDS.forEach((f) => {
+      out[f] = defined(stats) ? stats[f] : 0;
     });
+    const epochState = readEpochState(side);
+    out.layout = epochState.layout;
+    out.epoch = epochState.epoch;
+    out.activePoints = epochState.activePoints;
+    const measured = defined(switchMeasurement)
+      ? switchMeasurement.find((m) => m.key === side.key)
+      : undefined;
+    out.firstRenderMs = defined(measured) ? measured.firstRenderMs : null;
+    out.settleMs = defined(measured) ? measured.settleMs : null;
+    out.dippedToZero = defined(measured) ? measured.dippedToZero : null;
     return out;
   }
 
   const captures = [];
   let capturing = false;
+
+  function pushRow(kind, requestedEpoch, switchMeasurement, settled) {
+    captures.push({
+      kind: kind,
+      dataset: currentDataset,
+      preset: lastPreset,
+      sse: controls.sse,
+      cacheMB: Math.round(controls.cacheBytes / (1024 * 1024)),
+      fps: Math.round(fps * 10) / 10,
+      settled: settled ?? null,
+      requestedEpoch: requestedEpoch ?? null,
+      camera: readCameraPose(),
+      viewport: readViewport(),
+      sides: sides.map((side) => readSide(side, switchMeasurement)),
+    });
+    renderTable();
+  }
 
   async function capture() {
     // Ignore re-entrant triggers (e.g. holding 'c') while a settle is in flight.
@@ -433,93 +723,85 @@ async function main() {
       }
     }
 
-    const row = {
-      dataset: currentDataset,
-      preset: lastPreset,
-      sse: controls.sse,
-      cacheMB: Math.round(controls.cacheBytes / (1024 * 1024)),
-      fps: Math.round(fps * 10) / 10,
-      settled: settled,
-      camera: readCameraPose(),
-      viewport: readViewport(),
-      ours: readSide(oursTileset),
-      ion: readSide(ionTileset),
-    };
-    captures.push(row);
-    renderTable();
+    pushRow("state", currentEpoch, undefined, settled);
     capturing = false;
   }
 
-  const SIDE_LABELS = {
-    selected: "Selected",
-    numberOfCommands: "Commands",
-    numberOfPointsSelected: "Points",
-    numberOfPendingRequests: "Pending",
-    numberOfTilesProcessing: "Processing",
-    numberOfTilesWithContentReady: "Ready",
-    numberOfTilesTotal: "Total",
-  };
+  const META_COLUMNS = [
+    "#",
+    "Kind",
+    "Dataset",
+    "Preset",
+    "SSE",
+    "Cache MB",
+    "FPS",
+  ];
 
   function renderTable() {
     const thead = document.querySelector("#captureTable thead");
     const tbody = document.querySelector("#captureTable tbody");
 
-    if (thead.childElementCount === 0) {
-      const top = document.createElement("tr");
-      const bottom = document.createElement("tr");
-      const meta = ["#", "Dataset", "Preset", "SSE", "Cache MB", "FPS"];
-      meta.forEach((label) => {
-        const th = document.createElement("th");
-        th.className = "text";
-        th.rowSpan = 2;
-        th.textContent = label;
-        top.appendChild(th);
+    // The header carries the ACTIVE dataset's side keys, so it is rebuilt whenever the
+    // pair changes; each row still records the keys it was captured with.
+    thead.innerHTML = "";
+    const top = document.createElement("tr");
+    const bottom = document.createElement("tr");
+    META_COLUMNS.forEach((label) => {
+      const th = document.createElement("th");
+      th.className = "text";
+      th.rowSpan = 2;
+      th.textContent = label;
+      top.appendChild(th);
+    });
+    const columnClasses = ["oursCol", "ionCol"];
+    sides.forEach((side, index) => {
+      const th = document.createElement("th");
+      th.className = `text ${columnClasses[index]}`;
+      th.colSpan = SIDE_COLUMNS.length;
+      th.textContent = side.anchor ? `${side.key} (anchor)` : side.key;
+      top.appendChild(th);
+      SIDE_COLUMNS.forEach((f) => {
+        const sub = document.createElement("th");
+        sub.className = columnClasses[index];
+        sub.textContent = SIDE_LABELS[f];
+        bottom.appendChild(sub);
       });
-      [
-        ["Ours (py3dtiles)", "oursCol"],
-        ["Cesium Ion", "ionCol"],
-      ].forEach(([label, cls]) => {
-        const th = document.createElement("th");
-        th.className = `text ${cls}`;
-        th.colSpan = SIDE_FIELDS.length;
-        th.textContent = label;
-        top.appendChild(th);
-        SIDE_FIELDS.forEach((f) => {
-          const sub = document.createElement("th");
-          sub.className = cls;
-          sub.textContent = SIDE_LABELS[f];
-          bottom.appendChild(sub);
-        });
-      });
-      thead.appendChild(top);
-      thead.appendChild(bottom);
-    }
+    });
+    thead.appendChild(top);
+    thead.appendChild(bottom);
+
+    const format = (value) => {
+      if (value === null || !defined(value)) {
+        return "—";
+      }
+      return typeof value === "number" ? value.toLocaleString() : value;
+    };
 
     tbody.innerHTML = "";
     captures.forEach((row, index) => {
       const tr = document.createElement("tr");
-      const cells = [
+      [
         [index + 1, "text"],
+        [
+          row.kind === "switch" ? `switch → ${row.requestedEpoch}` : "state",
+          "text",
+        ],
         [row.dataset, "text"],
         [row.preset, "text"],
         [row.sse, ""],
         [row.cacheMB, ""],
         [row.fps, ""],
-      ];
-      cells.forEach(([value, cls]) => {
+      ].forEach(([value, cls]) => {
         const td = document.createElement("td");
         td.className = cls;
         td.textContent = value;
         tr.appendChild(td);
       });
-      [
-        [row.ours, "oursCol"],
-        [row.ion, "ionCol"],
-      ].forEach(([side, cls]) => {
-        SIDE_FIELDS.forEach((f) => {
+      row.sides.forEach((side, sideIndex) => {
+        SIDE_COLUMNS.forEach((f) => {
           const td = document.createElement("td");
-          td.className = cls;
-          td.textContent = side[f].toLocaleString();
+          td.className = columnClasses[sideIndex];
+          td.textContent = format(side[f]);
           tr.appendChild(td);
         });
       });
@@ -547,11 +829,33 @@ async function main() {
     "fovy",
   ];
   const VIEWPORT_FIELDS = ["bufferWidth", "bufferHeight", "pixelRatio"];
+  // Per-side CSV columns. "key" and "layout" ride along so a CSV that mixes datasets with
+  // differently named sides stays readable.
+  const CSV_SIDE_FIELDS = [
+    "key",
+    "layout",
+    ...STAT_FIELDS,
+    ...EPOCH_FIELDS,
+    ...SWITCH_FIELDS,
+    "dippedToZero",
+  ];
+
+  function csvValue(value) {
+    if (value === null || !defined(value)) {
+      return "";
+    }
+    const text = String(value);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
 
   function toCsv() {
+    // Sides are positional (a = left, b = right); each row carries their keys.
+    const prefixes = ["a", "b"];
     const header = [
       "#",
+      "kind",
       "dataset",
+      "requestedEpoch",
       "preset",
       "sse",
       "cacheMB",
@@ -560,13 +864,16 @@ async function main() {
       ...CAMERA_FIELDS,
       ...VIEWPORT_FIELDS,
     ];
-    ["ours", "ion"].forEach((side) => {
-      SIDE_FIELDS.forEach((f) => header.push(`${side}_${f}`));
+    prefixes.forEach((prefix) => {
+      CSV_SIDE_FIELDS.forEach((f) => header.push(`${prefix}_${f}`));
     });
+
     const lines = captures.map((row, index) => {
       const values = [
         index + 1,
+        row.kind,
         row.dataset,
+        row.requestedEpoch,
         row.preset,
         row.sse,
         row.cacheMB,
@@ -575,10 +882,13 @@ async function main() {
         ...CAMERA_FIELDS.map((f) => row.camera[f]),
         ...VIEWPORT_FIELDS.map((f) => row.viewport[f]),
       ];
-      ["ours", "ion"].forEach((side) => {
-        SIDE_FIELDS.forEach((f) => values.push(row[side][f]));
+      prefixes.forEach((prefix, sideIndex) => {
+        const side = row.sides[sideIndex];
+        CSV_SIDE_FIELDS.forEach((f) =>
+          values.push(defined(side) ? side[f] : null),
+        );
       });
-      return values.join(",");
+      return values.map(csvValue).join(",");
     });
     return [header.join(","), ...lines].join("\n");
   }
@@ -599,10 +909,26 @@ async function main() {
     renderTable();
   });
 
-  // Keyboard: 'c' captures, so screenshots and captures stay in sync.
+  // Keyboard: 'c' captures, so screenshots and captures stay in sync. Number keys and the
+  // arrow keys switch epochs (and measure the switch) when the pair is multi-temporal.
   document.addEventListener("keydown", (event) => {
     if (event.key === "c" || event.key === "C") {
       capture();
+      return;
+    }
+    if (epochKeys.length === 0) {
+      return;
+    }
+    const index = epochKeys.indexOf(currentEpoch);
+    if (event.key === "ArrowRight" && index < epochKeys.length - 1) {
+      switchEpoch(epochKeys[index + 1]);
+    } else if (event.key === "ArrowLeft" && index > 0) {
+      switchEpoch(epochKeys[index - 1]);
+    } else if (/^[1-9]$/.test(event.key)) {
+      const target = epochKeys[Number(event.key) - 1];
+      if (defined(target)) {
+        switchEpoch(target);
+      }
     }
   });
 

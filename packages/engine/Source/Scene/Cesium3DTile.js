@@ -34,6 +34,8 @@ import findGroupMetadata from "./findGroupMetadata.js";
 import findTileMetadata from "./findTileMetadata.js";
 import hasExtension from "./hasExtension.js";
 import MTContent from "./MTContent.js";
+import MTLayout from "./MTLayout.js";
+import MTTilesetContent from "./MTTilesetContent.js";
 import Multiple3DTileContent from "./Multiple3DTileContent.js";
 import BoundingVolumeSemantics from "./BoundingVolumeSemantics.js";
 import preprocess3DTileContent from "./preprocess3DTileContent.js";
@@ -1226,14 +1228,33 @@ function requestMultipleContents(tile) {
 }
 
 /**
- * TODO
+ * A tile of a multi-temporal tileset carries one keyed content per timestamp present at it
+ * (<code>contents: [{key, content:{uri}}]</code>), and renders the tileset's active
+ * timestamp. The tileset's layout decides how a timestamp's content is reached, and
+ * therefore which content type handles the tile: {@link MTContent} for one shared tile
+ * hierarchy whose keyed contents are tile payloads, {@link MTTilesetContent} for keyed
+ * contents that reference a standalone tileset per timestamp.
+ * <p>
+ * Both content types are created from the inline tile JSON — there is no top-level content
+ * to fetch first — and both schedule their own requests, so this drives the tile state
+ * machine the same way for either.
+ * </p>
+ *
+ * @private
+ * @param {Cesium3DTile} tile
+ * @returns {Promise<Cesium3DTileContent>|Promise<undefined>|undefined} A promise that resolves to the tile content once loaded, or a promise that resolves to undefined if the request was cancelled mid-flight, or undefined if the request cannot be scheduled this frame
  */
 function requestMTContent(tile) {
   let mtContent = tile._content;
   const tileset = tile._tileset;
 
   if (!defined(mtContent)) {
-    mtContent = new MTContent(
+    const ContentType =
+      tileset.resolvedMTLayout === MTLayout.REFERENCED_TILESETS
+        ? MTTilesetContent
+        : MTContent;
+
+    mtContent = new ContentType(
       tileset,
       tile,
       tile._contentResource.clone(),
