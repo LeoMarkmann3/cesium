@@ -318,8 +318,12 @@ PerformanceMeasurer.prototype.attachToSceneRenderer = function (scene) {
 
 /**
  * Writes the collected data to a csv and downloads it.
+ *
+ * @param {string} [filename="performanceData.csv"] Name of the downloaded file. Callers that
+ * measure several tilesets in one session (e.g. <code>Apps/MTMeasure</code>) pass a distinct
+ * name per run; omitting it keeps the original filename.
  */
-PerformanceMeasurer.prototype.dumpData = function () {
+PerformanceMeasurer.prototype.dumpData = function (filename) {
   const header = [
     "timestamp",
     "avgResponseTime",
@@ -390,7 +394,7 @@ PerformanceMeasurer.prototype.dumpData = function () {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "performanceData.csv";
+  a.download = filename ?? "performanceData.csv";
   a.click();
 
   URL.revokeObjectURL(url);

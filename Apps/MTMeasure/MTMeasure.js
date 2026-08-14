@@ -1,0 +1,1146 @@
+window.CESIUM_BASE_URL = window.CESIUM_BASE_URL
+  ? window.CESIUM_BASE_URL
+  : "../../Build/CesiumUnminified/";
+
+import {
+  Cartesian3,
+  Cesium3DTileset,
+  Color,
+  HeadingPitchRoll,
+  Math as CesiumMath,
+  Matrix4,
+  PerformanceMeasurer,
+  Quaternion,
+  RequestScheduler,
+  Resource,
+  SceneMode,
+  Transforms,
+  Viewer,
+  defined,
+  formatError,
+} from "../../Build/CesiumUnminified/index.js";
+
+// ---------------------------------------------------------------------------
+// A single-viewer measurement app for multi-temporal (MT) point-cloud tilesets. It is
+// driven entirely by URL parameters so an external pipeline can run it unattended: with
+// auto=1 it flies a camera path at a CONSTANT SPEED, stopping every switchEvery seconds of
+// flight to measure one epoch switch, and downloads two CSVs — its own per-stop rows plus the
+// fork's PerformanceMeasurer's continuous samples. The stop schedule is a distance schedule
+// (speed * switchEvery metres), so it does not depend on how many waypoints the path has, nor
+// on how fast a tileset renders. See README.md for the parameters and the column order.
+// ---------------------------------------------------------------------------
+const DEFAULT_SPEED = 15; // m/s along the camera path
+const DEFAULT_LAPS = 2;
+// Seconds of FLIGHT between measurement stops. Converted to metres with the camera speed, so
+// the schedule is a property of the path, not of how fast a tileset renders.
+const DEFAULT_SWITCH_EVERY_SECONDS = 4;
+const DEFAULT_SEED = 42;
+const PERF_SAMPLE_MS = 100; // fixed, as in Apps/ComparisonTest
+const SETTLE_TIMEOUT_MS = 2000;
+const SWITCH_TIMEOUT_MS = 2000;
+// A switch that never changes the frame (identical point counts, or a viewpoint that frames
+// nothing) still has to finish: once streaming is quiet for this long it counts as settled
+// with firstRenderMs left empty.
+const SWITCH_MIN_OBSERVE_MS = 500;
+const DOWNLOAD_GAP_MS = 400; // Firefox takes two programmatic downloads more reliably apart
+
+const VIEWER_OPTIONS = {
+  sceneMode: SceneMode.SCENE3D,
+  skyBox: false,
+  timeline: false,
+  globe: false,
+  infoBox: false,
+  homeButton: false,
+  sceneModePicker: false,
+  animation: false,
+  baseLayerPicker: false,
+  geocoder: false,
+  selectionIndicator: false,
+  fullscreenButton: false,
+  navigationHelpButton: false,
+};
+
+/**
+ * mulberry32 — a small deterministic 32-bit PRNG. One instance drives every random epoch
+ * draw of a run, so the whole switch sequence is reproducible from the seed alone.
+ * Math.random is deliberately not used anywhere in the measurement path.
+ *
+ * @param {number} seed The seed.
+ * @returns {Function} A function returning floats in [0, 1).
+ */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function nextFrame() {
+  return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+function csvValue(value) {
+  if (value === null || !defined(value)) {
+    return "";
+  }
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function download(filename, text, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function numberParam(params, key, fallback) {
+  const raw = params.get(key);
+  if (raw === null || raw === "") {
+    return fallback;
+  }
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+async function main() {
+  const params = new URLSearchParams(window.location.search);
+  const statusElement = document.getElementById("mtStatus");
+  const infoElement = document.getElementById("mtInfo");
+  const progressElement = document.getElementById("mtProgress");
+  const poseElement = document.getElementById("mtPose");
+  const loadingIndicator = document.getElementById("loadingIndicator");
+
+  function setStatus(text, cls) {
+    statusElement.textContent = text;
+    statusElement.className = `mtStatus${defined(cls) ? ` ${cls}` : ""}`;
+  }
+  function setProgress(text) {
+    progressElement.textContent = text;
+  }
+  function fail(message) {
+    loadingIndicator.style.display = "none";
+    setStatus("error", "error");
+    setProgress(message);
+    console.error(`MTMeasure: ${message}`);
+    // eslint-disable-next-line no-alert
+    window.alert(`MTMeasure: ${message}`);
+  }
+
+  const tilesetUrl = params.get("tileset");
+  const auto = params.get("auto") === "1";
+  const record = params.get("record") === "1";
+
+  if (auto && record) {
+    fail("auto=1 and record=1 are mutually exclusive.");
+    return;
+  }
+  if (!auto && !record) {
+    // No mode: usage overlay only, nothing is loaded or measured.
+    document.getElementById("mtUsage").style.display = "block";
+    loadingIndicator.style.display = "none";
+    setStatus("usage");
+    return;
+  }
+  if (!defined(tilesetUrl) || tilesetUrl === "") {
+    fail("the tileset parameter is required.");
+    return;
+  }
+
+  const name =
+    params.get("name") ??
+    tilesetUrl.split("?")[0].split("/").filter(Boolean).slice(-2, -1)[0] ??
+    "tileset";
+  const seed = numberParam(params, "seed", DEFAULT_SEED);
+  const laps = Math.max(1, numberParam(params, "laps", DEFAULT_LAPS));
+  const sseParam =
+    params.get("sse") === null ? null : numberParam(params, "sse", null);
+  const cacheMBParam =
+    params.get("cacheMB") === null
+      ? null
+      : numberParam(params, "cacheMB", null);
+  // The shared-tree layout's memory knobs. Worth exposing for their own sake — they are what
+  // decides how many epochs stay resident — and required to observe eviction at all: an epoch
+  // inside the prefetch window is never evicted, so with few epochs the default window of 2
+  // covers the whole set and nothing can ever be evicted.
+  const prefetchWindowParam =
+    params.get("prefetchWindow") === null
+      ? null
+      : numberParam(params, "prefetchWindow", null);
+  const retainedHistoryParam =
+    params.get("retainedHistory") === null
+      ? null
+      : numberParam(params, "retainedHistory", null);
+
+  // -------------------------------------------------------------------------
+  // Viewer. Same construction as Apps/ABTest so streaming behaves identically.
+  // -------------------------------------------------------------------------
+  RequestScheduler.maximumRequests = 2000000;
+  RequestScheduler.maximumRequestsPerServer = 100000;
+
+  let viewer;
+  try {
+    viewer = new Viewer("cesiumContainer", VIEWER_OPTIONS);
+  } catch (exception) {
+    fail(formatError(exception));
+    return;
+  }
+  const scene = viewer.scene;
+  scene.backgroundColor = Color.fromCssColorString("#1c1c1c");
+  scene.debugShowFramesPerSecond = true;
+
+  // Page-level FPS sampler over a 500 ms window, exactly as ABTest does it.
+  let fps = 0;
+  let frames = 0;
+  let fpsLast = performance.now();
+  function sampleFps(now) {
+    frames++;
+    const dt = now - fpsLast;
+    if (dt >= 500) {
+      fps = (frames * 1000) / dt;
+      frames = 0;
+      fpsLast = now;
+    }
+    requestAnimationFrame(sampleFps);
+  }
+  requestAnimationFrame(sampleFps);
+
+  // -------------------------------------------------------------------------
+  // Load the tileset and start counting the events the rows report.
+  // -------------------------------------------------------------------------
+  loadingIndicator.style.display = "block";
+  loadingIndicator.textContent = `Loading ${name}…`;
+  setStatus("loading");
+
+  let tileset;
+  try {
+    tileset = await Cesium3DTileset.fromUrl(tilesetUrl, {
+      cullRequestsWhileMoving: false,
+    });
+  } catch (error) {
+    fail(`could not load ${tilesetUrl}\n\n${error}`);
+    return;
+  }
+  if (sseParam !== null) {
+    tileset.maximumScreenSpaceError = sseParam;
+  }
+  if (cacheMBParam !== null) {
+    tileset.cacheBytes = cacheMBParam * 1024 * 1024;
+  }
+  if (prefetchWindowParam !== null) {
+    tileset.mtPrefetchWindow = prefetchWindowParam;
+  }
+  if (retainedHistoryParam !== null) {
+    tileset.mtRetainedHistory = retainedHistoryParam;
+  }
+  tileset.debugShowStatistics = true;
+  scene.primitives.add(tileset);
+
+  let tileLoads = 0;
+  let tileUnloads = 0;
+  let tileFailures = 0;
+  tileset.tileLoad.addEventListener(() => {
+    tileLoads++;
+  });
+  tileset.tileUnload.addEventListener(() => {
+    tileUnloads++;
+  });
+  tileset.tileFailed.addEventListener((event) => {
+    tileFailures++;
+    console.error("MTMeasure: tileFailed:", event.url, event.message);
+  });
+
+  const epochKeys = defined(tileset.timestampKeys)
+    ? tileset.timestampKeys.slice()
+    : [];
+  const isMT = epochKeys.length > 0;
+
+  infoElement.innerHTML = `${name} — ${
+    isMT
+      ? `${epochKeys.length} epochs (${tileset.resolvedMTLayout ?? "layout unknown"})`
+      : "single epoch"
+  }`;
+
+  // -------------------------------------------------------------------------
+  // Camera path. Either a recorded JSON (path=<url>) or a traverse generated from the
+  // tileset's bounding sphere, so any tileset can be flown without a recording.
+  // Waypoint poses are stored in radians; the JSON carries degrees.
+  // -------------------------------------------------------------------------
+  function makeWaypoint(label, position, headingDeg, pitchDeg, rollDeg) {
+    return {
+      label: label,
+      position: position,
+      heading: CesiumMath.toRadians(headingDeg),
+      pitch: CesiumMath.toRadians(pitchDeg),
+      roll: CesiumMath.toRadians(rollDeg ?? 0.0),
+    };
+  }
+
+  /**
+   * The heading/pitch that looks from <code>position</code> at <code>target</code>, expressed
+   * in the local ENU frame at <code>position</code> — which is the frame
+   * <code>camera.setView</code> interprets heading/pitch in.
+   *
+   * @param {Cartesian3} position Camera position, ECEF.
+   * @param {Cartesian3} target Point to look at, ECEF.
+   * @returns {object} <code>{ headingDeg, pitchDeg }</code>.
+   */
+  function lookAtAngles(position, target) {
+    const toTargetEcef = Cartesian3.subtract(
+      target,
+      position,
+      new Cartesian3(),
+    );
+    const enuAtPosition = Transforms.eastNorthUpToFixedFrame(position);
+    const ecefToEnu = Matrix4.inverseTransformation(
+      enuAtPosition,
+      new Matrix4(),
+    );
+    const local = Matrix4.multiplyByPointAsVector(
+      ecefToEnu,
+      toTargetEcef,
+      new Cartesian3(),
+    );
+    Cartesian3.normalize(local, local);
+    // ENU: x = east, y = north, z = up. Heading is measured from north, clockwise; pitch is
+    // negative when looking down.
+    return {
+      headingDeg: CesiumMath.toDegrees(Math.atan2(local.x, local.y)),
+      pitchDeg: CesiumMath.toDegrees(Math.asin(local.z)),
+    };
+  }
+
+  function generatePath() {
+    const sphere = tileset.boundingSphere;
+    const r = sphere.radius;
+    const enu = Transforms.eastNorthUpToFixedFrame(sphere.center);
+    const at = (east, north, up) =>
+      Matrix4.multiplyByPoint(
+        enu,
+        new Cartesian3(east * r, north * r, up * r),
+        new Cartesian3(),
+      );
+    // A real traverse across the site: in from the south-west, over the centre, out to the
+    // north-east. Every waypoint LOOKS AT the bounding-sphere centre, so the tileset stays
+    // framed for the whole flight (a fixed heading would leave the site behind the camera
+    // once past the centre, and nothing would be measured there). The look-at directions
+    // differ per waypoint, so the orientation interpolation is still exercised.
+    const positions = [
+      { label: "wp0-approach", position: at(-1.0, -1.0, 0.6) },
+      { label: "wp1-centre", position: at(0.0, 0.0, 0.45) },
+      { label: "wp2-exit", position: at(1.0, 1.0, 0.6) },
+    ];
+    return {
+      name: name,
+      speed: DEFAULT_SPEED,
+      generated: true,
+      waypoints: positions.map((entry) => {
+        // The centre waypoint sits above the middle of the site; looking straight at the
+        // centre from there would be a nadir view, which is a fine measurement stimulus.
+        const angles = lookAtAngles(entry.position, sphere.center);
+        return makeWaypoint(
+          entry.label,
+          entry.position,
+          angles.headingDeg,
+          angles.pitchDeg,
+          0.0,
+        );
+      }),
+    };
+  }
+
+  function parsePathJson(json) {
+    if (
+      !defined(json) ||
+      !Array.isArray(json.waypoints) ||
+      json.waypoints.length < 1
+    ) {
+      throw new Error(
+        "camera path JSON needs a waypoints array with at least one entry",
+      );
+    }
+    const waypoints = json.waypoints.map((wp, index) => {
+      const p = wp.position;
+      if (!Array.isArray(p) || p.length !== 3 || !p.every(Number.isFinite)) {
+        throw new Error(
+          `waypoint ${index}: position must be [x, y, z] in ECEF metres`,
+        );
+      }
+      const angles = [wp.heading, wp.pitch, wp.roll ?? 0.0];
+      if (!angles.every(Number.isFinite)) {
+        throw new Error(
+          `waypoint ${index}: heading/pitch/roll must be numbers (degrees)`,
+        );
+      }
+      return makeWaypoint(
+        wp.label ?? `wp${index}`,
+        new Cartesian3(p[0], p[1], p[2]),
+        wp.heading,
+        wp.pitch,
+        wp.roll,
+      );
+    });
+    return {
+      name: json.name ?? name,
+      speed: Number.isFinite(json.speed) ? json.speed : DEFAULT_SPEED,
+      generated: false,
+      waypoints: waypoints,
+    };
+  }
+
+  let path;
+  const pathUrl = params.get("path");
+  if (defined(pathUrl) && pathUrl !== "") {
+    try {
+      const json = await Resource.fetchJson({ url: pathUrl });
+      path = parsePathJson(json);
+    } catch (error) {
+      fail(`could not use the camera path ${pathUrl}\n\n${error}`);
+      return;
+    }
+  } else {
+    path = generatePath();
+  }
+
+  // URL speed wins over the JSON's, which wins over the default.
+  const speed = Math.max(0.01, numberParam(params, "speed", path.speed));
+  // The stop schedule: every switchEvery seconds of flight, i.e. every speed * switchEvery
+  // metres along the path.
+  const switchEverySeconds = Math.max(
+    0.01,
+    numberParam(params, "switchEvery", DEFAULT_SWITCH_EVERY_SECONDS),
+  );
+  const switchEveryMeters = speed * switchEverySeconds;
+
+  // Polyline geometry: per-segment lengths and the cumulative distance at each waypoint.
+  const segmentLengths = [];
+  const cumulativeAt = [0];
+  for (let i = 0; i < path.waypoints.length - 1; ++i) {
+    const length = Cartesian3.distance(
+      path.waypoints[i].position,
+      path.waypoints[i + 1].position,
+    );
+    segmentLengths.push(length);
+    cumulativeAt.push(cumulativeAt[i] + length);
+  }
+  const pathLength = cumulativeAt[cumulativeAt.length - 1];
+
+  // Metres travelled along the polyline so far; recorded on every row.
+  let pathMeters = 0;
+
+  function setPose(position, heading, pitch, roll) {
+    viewer.camera.setView({
+      destination: position,
+      orientation: { heading: heading, pitch: pitch, roll: roll },
+    });
+  }
+
+  const scratchQuaternionA = new Quaternion();
+  const scratchQuaternionB = new Quaternion();
+  const scratchQuaternion = new Quaternion();
+  const scratchHpr = new HeadingPitchRoll();
+  const scratchPosition = new Cartesian3();
+
+  /**
+   * The index of the path segment containing a distance along the polyline. Distances at or
+   * beyond the end map to the last segment, so the path end resolves to the final waypoint.
+   *
+   * @param {number} metres Distance along the polyline.
+   * @returns {number} Segment index, or -1 for a zero-length path.
+   */
+  function segmentAt(metres) {
+    if (segmentLengths.length === 0) {
+      return -1;
+    }
+    for (let i = 0; i < segmentLengths.length; ++i) {
+      if (metres <= cumulativeAt[i + 1] || i === segmentLengths.length - 1) {
+        return i;
+      }
+    }
+    return segmentLengths.length - 1;
+  }
+
+  /**
+   * Place the camera at a distance along the polyline. Position interpolates linearly within
+   * the segment; orientation is a shortest-arc slerp between the segment endpoints' poses
+   * (Quaternion.slerp negates the end quaternion when the dot product is negative, so a
+   * 350deg -> 10deg turn takes the 20deg route). Exactly at a waypoint the recorded pose is
+   * applied verbatim.
+   *
+   * @param {number} metres Distance along the polyline.
+   */
+  function setPoseAtDistance(metres) {
+    const index = segmentAt(metres);
+    if (index < 0) {
+      const only = path.waypoints[0];
+      setPose(only.position, only.heading, only.pitch, only.roll);
+      pathMeters = 0;
+      return;
+    }
+    const from = path.waypoints[index];
+    const to = path.waypoints[index + 1];
+    const length = segmentLengths[index];
+    const local = CesiumMath.clamp(metres - cumulativeAt[index], 0, length);
+    const t = length === 0 ? 1 : local / length;
+
+    if (t <= 0) {
+      setPose(from.position, from.heading, from.pitch, from.roll);
+    } else if (t >= 1) {
+      setPose(to.position, to.heading, to.pitch, to.roll);
+    } else {
+      Cartesian3.lerp(from.position, to.position, t, scratchPosition);
+      Quaternion.fromHeadingPitchRoll(
+        new HeadingPitchRoll(from.heading, from.pitch, from.roll),
+        scratchQuaternionA,
+      );
+      Quaternion.fromHeadingPitchRoll(
+        new HeadingPitchRoll(to.heading, to.pitch, to.roll),
+        scratchQuaternionB,
+      );
+      Quaternion.slerp(
+        scratchQuaternionA,
+        scratchQuaternionB,
+        t,
+        scratchQuaternion,
+      );
+      HeadingPitchRoll.fromQuaternion(scratchQuaternion, scratchHpr);
+      setPose(
+        scratchPosition,
+        scratchHpr.heading,
+        scratchHpr.pitch,
+        scratchHpr.roll,
+      );
+    }
+    pathMeters = Math.min(metres, pathLength);
+  }
+
+  /**
+   * Fly along the path to a distance at a CONSTANT SPEED, driven by the wall clock: on every
+   * frame the camera is placed at `startMetres + speed * elapsed` metres. Never a per-frame
+   * step — a slow-rendering tileset must not get a slower camera, and dropped frames must make
+   * the camera jump further, which is what keeps the stimulus fair between tilesets.
+   * <p>
+   * The flight clock advances only inside this function, so time spent settling or measuring a
+   * switch never moves the camera. That is what makes a given switch happen at the same pose in
+   * every run and for every tileset, however fast or slow each one renders.
+   * </p>
+   *
+   * @param {number} targetMetres Distance along the polyline to fly to.
+   * @returns {Promise<number>} Wall-clock duration of the flight in ms.
+   */
+  async function flyToDistance(targetMetres) {
+    const startMetres = pathMeters;
+    const distance = Math.min(targetMetres, pathLength) - startMetres;
+    const start = performance.now();
+    if (distance <= 0) {
+      setPoseAtDistance(Math.min(targetMetres, pathLength));
+      return 0;
+    }
+    for (;;) {
+      const now = await nextFrame();
+      const travelled = (speed * (now - start)) / 1000;
+      if (travelled >= distance) {
+        break;
+      }
+      setPoseAtDistance(startMetres + travelled);
+    }
+    setPoseAtDistance(startMetres + distance);
+    return performance.now() - start;
+  }
+
+  // -------------------------------------------------------------------------
+  // Settle gate and sampling helpers.
+  // -------------------------------------------------------------------------
+  function isStable() {
+    const s = tileset.statistics;
+    return s.numberOfPendingRequests === 0 && s.numberOfTilesProcessing === 0;
+  }
+
+  async function waitForSettle(timeoutMs = SETTLE_TIMEOUT_MS) {
+    const start = performance.now();
+    let stableFrames = 0;
+    while (performance.now() - start <= timeoutMs) {
+      await nextFrame();
+      stableFrames = isStable() ? stableFrames + 1 : 0;
+      if (stableFrames >= 2) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function readCameraPose() {
+    const cam = viewer.camera;
+    const p = cam.positionWC;
+    const frustum = cam.frustum;
+    return {
+      posX: p.x,
+      posY: p.y,
+      posZ: p.z,
+      heading: CesiumMath.toDegrees(cam.heading),
+      pitch: CesiumMath.toDegrees(cam.pitch),
+      roll: CesiumMath.toDegrees(cam.roll),
+      fovy: defined(frustum.fovy) ? CesiumMath.toDegrees(frustum.fovy) : null,
+    };
+  }
+
+  function readViewport() {
+    return {
+      bufferWidth: scene.drawingBufferWidth,
+      bufferHeight: scene.drawingBufferHeight,
+      pixelRatio: scene.pixelRatio,
+    };
+  }
+
+  /**
+   * How many epochs are resident inside the tiles selected this frame. Reads the fork's
+   * per-tile content (private _selectedTiles, guarded) and reports the spread, which is the
+   * only way to see prefetch/eviction behaviour from the outside.
+   *
+   * @returns {object} min / mean (2 dp) / max, all null when no selected tile exposes it.
+   */
+  function readResidentEpochs() {
+    const selected = tileset._selectedTiles;
+    if (!defined(selected)) {
+      return { min: null, mean: null, max: null };
+    }
+    let min = Number.POSITIVE_INFINITY;
+    let max = 0;
+    let sum = 0;
+    let count = 0;
+    for (let i = 0; i < selected.length; ++i) {
+      const content = selected[i].content;
+      const keys = defined(content) ? content.loadedTimestampKeys : undefined;
+      if (!defined(keys)) {
+        continue;
+      }
+      const n = keys.length;
+      min = Math.min(min, n);
+      max = Math.max(max, n);
+      sum += n;
+      count++;
+    }
+    if (count === 0) {
+      return { min: null, mean: null, max: null };
+    }
+    return {
+      min: min,
+      mean: Math.round((sum / count) * 100) / 100,
+      max: max,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Rows. One flat schema; switch-only columns stay empty on state rows.
+  // -------------------------------------------------------------------------
+  const CSV_COLUMNS = [
+    "kind",
+    "name",
+    "tilesetUrl",
+    "stop",
+    "stopCount",
+    "waypoint",
+    "waypointLabel",
+    "mode",
+    "lap",
+    "seed",
+    "requestedEpoch",
+    "elapsedMs",
+    "pathMeters",
+    "speed",
+    "switchEverySeconds",
+    "switchEveryMeters",
+    "sse",
+    "cacheMB",
+    "prefetchWindow",
+    "retainedHistory",
+    "fps",
+    "settled",
+    "tileFailures",
+    "posX",
+    "posY",
+    "posZ",
+    "heading",
+    "pitch",
+    "roll",
+    "fovy",
+    "bufferWidth",
+    "bufferHeight",
+    "pixelRatio",
+    "selected",
+    "visited",
+    "numberOfCommands",
+    "numberOfPointsSelected",
+    "numberOfPendingRequests",
+    "numberOfTilesProcessing",
+    "numberOfTilesWithContentReady",
+    "numberOfTilesTotal",
+    "numberOfLoadedTilesTotal",
+    "numberOfAttemptedRequests",
+    "layout",
+    "epoch",
+    "activePoints",
+    "residentEpochsMin",
+    "residentEpochsMean",
+    "residentEpochsMax",
+    "totalMemoryUsageInBytes",
+    "geometryByteLength",
+    "texturesByteLength",
+    "batchTableByteLength",
+    "tileLoads",
+    "tileUnloads",
+    "epochsEvicted",
+    "firstRenderMs",
+    "settleMs",
+    "dippedToZero",
+    "loadsDuring",
+    "unloadsDuring",
+    "epochsEvictedDuring",
+    "attemptedDuring",
+  ];
+
+  const rows = [];
+  let protocolStart = performance.now();
+  let currentStop = 0;
+  let lastSettled = null;
+
+  /**
+   * Append one row. `extra` carries the switch-only fields; everything else is sampled here
+   * so state and switch rows are directly comparable.
+   *
+   * @param {string} kind "state" or "switch".
+   * @param {object} [extra] Switch-only fields.
+   */
+  function pushRow(kind, extra) {
+    const s = tileset.statistics;
+    const pose = readCameraPose();
+    const viewport = readViewport();
+    const resident = readResidentEpochs();
+    const row = {
+      kind: kind,
+      name: name,
+      tilesetUrl: tilesetUrl,
+      stop: currentStop,
+      stopCount: stopDistances.length,
+      waypoint: segmentAt(pathMeters) < 0 ? 0 : segmentAt(pathMeters),
+      waypointLabel:
+        path.waypoints[segmentAt(pathMeters) < 0 ? 0 : segmentAt(pathMeters)]
+          .label,
+      mode: null,
+      lap: null,
+      seed: seed,
+      requestedEpoch: null,
+      elapsedMs: Math.round(performance.now() - protocolStart),
+      pathMeters: Math.round(pathMeters * 100) / 100,
+      speed: speed,
+      switchEverySeconds: switchEverySeconds,
+      switchEveryMeters: Math.round(switchEveryMeters * 100) / 100,
+      sse: tileset.maximumScreenSpaceError,
+      cacheMB: Math.round(tileset.cacheBytes / (1024 * 1024)),
+      prefetchWindow: isMT ? tileset.mtPrefetchWindow : null,
+      retainedHistory: isMT ? tileset.mtRetainedHistory : null,
+      fps: Math.round(fps * 10) / 10,
+      settled: lastSettled,
+      tileFailures: tileFailures,
+      ...pose,
+      ...viewport,
+      selected: s.selected,
+      visited: s.visited,
+      numberOfCommands: s.numberOfCommands,
+      numberOfPointsSelected: s.numberOfPointsSelected,
+      numberOfPendingRequests: s.numberOfPendingRequests,
+      numberOfTilesProcessing: s.numberOfTilesProcessing,
+      numberOfTilesWithContentReady: s.numberOfTilesWithContentReady,
+      numberOfTilesTotal: s.numberOfTilesTotal,
+      numberOfLoadedTilesTotal: s.numberOfLoadedTilesTotal,
+      numberOfAttemptedRequests: s.numberOfAttemptedRequests,
+      layout: tileset.resolvedMTLayout ?? null,
+      epoch: tileset.activeTimestamp ?? null,
+      activePoints: isMT ? tileset.activePointsRendered : null,
+      residentEpochsMin: resident.min,
+      residentEpochsMean: resident.mean,
+      residentEpochsMax: resident.max,
+      totalMemoryUsageInBytes: tileset.totalMemoryUsageInBytes,
+      geometryByteLength: s.geometryByteLength,
+      texturesByteLength: s.texturesByteLength,
+      batchTableByteLength: s.batchTableByteLength,
+      tileLoads: tileLoads,
+      tileUnloads: tileUnloads,
+      epochsEvicted: s.numberOfEpochsEvicted,
+      firstRenderMs: null,
+      settleMs: null,
+      dippedToZero: null,
+      loadsDuring: null,
+      unloadsDuring: null,
+      epochsEvictedDuring: null,
+      attemptedDuring: null,
+      ...(extra ?? {}),
+    };
+    rows.push(row);
+    renderTable();
+  }
+
+  /**
+   * Switch to an epoch and measure how long it takes to appear. Ported from ABTest's
+   * switchEpoch for a single tileset: firstRenderMs is the first frame whose selected-point
+   * count reflects the new epoch, settleMs the point at which streaming has quiesced.
+   * <p>
+   * The during-columns are deltas of cumulative counters, except attemptedDuring:
+   * statistics.numberOfAttemptedRequests is reset every frame, so it is SUMMED per frame
+   * across the switch instead of differenced.
+   * </p>
+   *
+   * @param {string} key The timestamp key to switch to.
+   * @param {string} mode "sequential" or "random".
+   * @param {number} lap Lap number, or the 1-based random draw index.
+   * @returns {Promise<object>} The measured values.
+   */
+  async function switchEpoch(key, mode, lap) {
+    const baselinePoints = tileset.statistics.numberOfPointsSelected;
+    const before = {
+      loads: tileLoads,
+      unloads: tileUnloads,
+      evicted: tileset.statistics.numberOfEpochsEvicted,
+    };
+
+    const start = performance.now();
+    tileset.activeTimestamp = key;
+
+    let firstRenderMs = null;
+    let settleMs = null;
+    let dippedToZero = false;
+    let attemptedDuring = 0;
+    let stableFrames = 0;
+    for (;;) {
+      const now = await nextFrame();
+      const elapsed = now - start;
+      const s = tileset.statistics;
+      const points = s.numberOfPointsSelected;
+      attemptedDuring += s.numberOfAttemptedRequests;
+
+      if (points === 0) {
+        dippedToZero = true;
+      }
+      if (firstRenderMs === null && points > 0 && points !== baselinePoints) {
+        firstRenderMs = Math.round(elapsed);
+      }
+
+      // Settle is judged from streaming alone, NOT from having seen a first render: the new
+      // epoch's frame content can legitimately be identical to the old one (equal selected
+      // point counts), and a viewpoint that frames nothing renders zero points either way.
+      // Gating settle on firstRenderMs would then hang until the timeout. The floor gives a
+      // switch a fair chance to start rendering before it is called settled without one.
+      stableFrames = isStable() ? stableFrames + 1 : 0;
+      if (
+        stableFrames >= 2 &&
+        (firstRenderMs !== null || elapsed >= SWITCH_MIN_OBSERVE_MS)
+      ) {
+        settleMs = Math.round(elapsed);
+        break;
+      }
+      if (elapsed > SWITCH_TIMEOUT_MS) {
+        break;
+      }
+    }
+
+    const measured = {
+      mode: mode,
+      lap: lap,
+      requestedEpoch: key,
+      firstRenderMs: firstRenderMs,
+      settleMs: settleMs,
+      dippedToZero: dippedToZero,
+      loadsDuring: tileLoads - before.loads,
+      unloadsDuring: tileUnloads - before.unloads,
+      epochsEvictedDuring:
+        tileset.statistics.numberOfEpochsEvicted - before.evicted,
+      attemptedDuring: attemptedDuring,
+    };
+    pushRow("switch", measured);
+    return measured;
+  }
+
+  // -------------------------------------------------------------------------
+  // On-page table: a readable subset. The CSV carries every column.
+  // -------------------------------------------------------------------------
+  const TABLE_COLUMNS = [
+    "kind",
+    "stop",
+    "waypointLabel",
+    "mode",
+    "lap",
+    "epoch",
+    "elapsedMs",
+    "pathMeters",
+    "fps",
+    "numberOfPointsSelected",
+    "totalMemoryUsageInBytes",
+    "residentEpochsMean",
+    "firstRenderMs",
+    "settleMs",
+    "loadsDuring",
+    "unloadsDuring",
+    "epochsEvictedDuring",
+    "attemptedDuring",
+  ];
+
+  function renderTable() {
+    const wrap = document.getElementById("mtTableWrap");
+    wrap.style.display = "block";
+    const thead = wrap.querySelector("thead");
+    const tbody = wrap.querySelector("tbody");
+    if (thead.childElementCount === 0) {
+      const tr = document.createElement("tr");
+      ["#", ...TABLE_COLUMNS].forEach((label) => {
+        const th = document.createElement("th");
+        th.className = "text";
+        th.textContent = label;
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+    }
+    tbody.innerHTML = "";
+    rows.forEach((row, index) => {
+      const tr = document.createElement("tr");
+      if (row.kind === "switch") {
+        tr.className = "switchRow";
+      }
+      const indexCell = document.createElement("td");
+      indexCell.textContent = index + 1;
+      tr.appendChild(indexCell);
+      TABLE_COLUMNS.forEach((column) => {
+        const td = document.createElement("td");
+        const value = row[column];
+        if (value === null || !defined(value)) {
+          td.textContent = "—";
+        } else if (typeof value === "number") {
+          td.textContent = value.toLocaleString();
+        } else {
+          td.className = "text";
+          td.textContent = value;
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function toCsv() {
+    const lines = rows.map((row) =>
+      CSV_COLUMNS.map((column) => csvValue(row[column])).join(","),
+    );
+    return [CSV_COLUMNS.join(","), ...lines].join("\n");
+  }
+
+  document.getElementById("downloadCsvBtn").addEventListener("click", () => {
+    download(`mtmeasure_${name}.csv`, toCsv(), "text/csv");
+  });
+  document.getElementById("downloadJsonBtn").addEventListener("click", () => {
+    download(
+      `mtmeasure_${name}.json`,
+      JSON.stringify(rows, null, 2),
+      "application/json",
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // Record mode: fly manually, collect waypoints, download the path JSON.
+  // -------------------------------------------------------------------------
+  if (record) {
+    loadingIndicator.style.display = "none";
+    setStatus("record");
+    document.getElementById("mtRecordHelp").style.display = "";
+    const listWrap = document.getElementById("mtWaypoints");
+    const list = document.getElementById("mtWaypointList");
+    listWrap.style.display = "block";
+    setPoseAtDistance(0);
+
+    const recorded = [];
+    function renderWaypoints() {
+      list.innerHTML = "";
+      recorded.forEach((wp) => {
+        const li = document.createElement("li");
+        li.textContent = `${wp.label} — h ${wp.heading.toFixed(1)}° p ${wp.pitch.toFixed(1)}°`;
+        list.appendChild(li);
+      });
+      setProgress(`${recorded.length} waypoint(s) recorded`);
+    }
+    renderWaypoints();
+
+    scene.postRender.addEventListener(() => {
+      const pose = readCameraPose();
+      poseElement.textContent = `pose: ${pose.posX.toFixed(1)}, ${pose.posY.toFixed(
+        1,
+      )}, ${pose.posZ.toFixed(1)} — h ${pose.heading.toFixed(1)}° p ${pose.pitch.toFixed(1)}°`;
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "w" || event.key === "W") {
+        const pose = readCameraPose();
+        recorded.push({
+          label: `wp${recorded.length}`,
+          position: [pose.posX, pose.posY, pose.posZ],
+          heading: pose.heading,
+          pitch: pose.pitch,
+          roll: pose.roll,
+        });
+        renderWaypoints();
+      } else if (event.key === "u" || event.key === "U") {
+        recorded.pop();
+        renderWaypoints();
+      } else if (event.key === "d" || event.key === "D") {
+        download(
+          `camera_path_${name}.json`,
+          JSON.stringify(
+            { name: name, speed: DEFAULT_SPEED, waypoints: recorded },
+            null,
+            2,
+          ),
+          "application/json",
+        );
+      }
+    });
+    return;
+  }
+
+  // -------------------------------------------------------------------------
+  // Auto mode: the measurement protocol.
+  // -------------------------------------------------------------------------
+  document.getElementById("mtButtons").style.display = "";
+  const controller = scene.screenSpaceCameraController;
+  const inputsWereEnabled = controller.enableInputs;
+  controller.enableInputs = false;
+
+  const random = mulberry32(seed);
+  const measurer = new PerformanceMeasurer(
+    PERF_SAMPLE_MS,
+    Number.MAX_SAFE_INTEGER,
+  );
+  measurer.attachToRequestScheduler(RequestScheduler);
+  measurer.attachToTileset(tileset);
+  measurer.attachToSceneRenderer(scene);
+
+  protocolStart = performance.now();
+  measurer.start();
+
+  setStatus("running");
+  loadingIndicator.textContent = "Settling…";
+
+  // Measurement stops are scheduled by DISTANCE along the path, every switchEveryMeters
+  // (= speed * switchEvery seconds of flight), independent of how many waypoints the path
+  // has. Since the flight clock only advances while flying, stop k sits at the same pose in
+  // every run and for every tileset, no matter how long that tileset takes to settle or to
+  // switch — which is what makes switch k comparable across formats.
+  const stopDistances = [0];
+  if (pathLength > 0) {
+    for (
+      let d = switchEveryMeters;
+      d < pathLength - 1e-6;
+      d += switchEveryMeters
+    ) {
+      stopDistances.push(d);
+    }
+  }
+  const stopCount = stopDistances.length;
+  // How many of the switches sweep the epochs in order before the seeded-random draws begin.
+  const sequentialTotal = isMT ? laps * epochKeys.length : 0;
+  let switchIndex = 0;
+  let randomDraw = 0;
+
+  console.log(
+    `MTMeasure: ${pathLength.toFixed(1)} m path, stop every ${switchEveryMeters.toFixed(1)} m ` +
+      `(${switchEverySeconds} s at ${speed} m/s) → ${stopCount} stops; ` +
+      `first ${sequentialTotal} switches sequential, rest random`,
+  );
+
+  setPoseAtDistance(0);
+
+  for (let stop = 0; stop < stopCount; ++stop) {
+    if (stop > 0) {
+      setProgress(
+        `stop ${stop + 1}/${stopCount} — flying to ${stopDistances[stop].toFixed(0)} m`,
+      );
+      const flightMs = await flyToDistance(stopDistances[stop]);
+      const flown = stopDistances[stop] - stopDistances[stop - 1];
+      console.log(
+        `MTMeasure: flew ${flown.toFixed(1)} m in ${Math.round(flightMs)} ms ` +
+          `(${(flown / (flightMs / 1000)).toFixed(2)} m/s target ${speed})`,
+      );
+    }
+    currentStop = stop + 1;
+
+    setProgress(`stop ${stop + 1}/${stopCount} — settling`);
+    lastSettled = await waitForSettle();
+    loadingIndicator.style.display = "none";
+
+    // One state row per measurement stop; the first is the baseline.
+    pushRow("state");
+
+    if (!isMT) {
+      continue;
+    }
+
+    // One switch per stop: sequential while the laps last, seeded-random afterwards. Random
+    // draws never re-select the epoch that is already active, since a same-epoch switch is a
+    // no-op that would corrupt the first-render measurement.
+    let key;
+    let mode;
+    let lap;
+    if (switchIndex < sequentialTotal) {
+      const activeIndex = epochKeys.indexOf(tileset.activeTimestamp);
+      key = epochKeys[(activeIndex + 1) % epochKeys.length];
+      mode = "sequential";
+      lap = Math.floor(switchIndex / epochKeys.length) + 1;
+    } else {
+      const candidates = epochKeys.filter(
+        (candidate) => candidate !== tileset.activeTimestamp,
+      );
+      if (candidates.length === 0) {
+        continue;
+      }
+      key = candidates[Math.floor(random() * candidates.length)];
+      mode = "random";
+      randomDraw++;
+      lap = randomDraw;
+    }
+    switchIndex++;
+    setProgress(`stop ${stop + 1}/${stopCount} — ${mode} switch → ${key}`);
+    await switchEpoch(key, mode, lap);
+  }
+
+  // Fly the remainder of the path, then take a closing state row at the end pose.
+  if (pathMeters < pathLength) {
+    setProgress("flying to the end of the path");
+    await flyToDistance(pathLength);
+  }
+  setProgress("final settle");
+  lastSettled = await waitForSettle();
+  currentStop = stopCount + 1;
+  pushRow("state");
+
+  // Two downloads: this app's rows, then the PerformanceMeasurer's continuous samples.
+  download(`mtmeasure_${name}.csv`, toCsv(), "text/csv");
+  await sleep(DOWNLOAD_GAP_MS);
+  measurer.dumpData(`perf_${name}.csv`);
+
+  controller.enableInputs = inputsWereEnabled;
+  setStatus("done", "done");
+  setProgress(
+    `${rows.length} rows, ${pathLength.toFixed(1)} m of path at ${speed} m/s, ` +
+      `stop every ${switchEveryMeters.toFixed(1)} m`,
+  );
+  window.MTMEASURE_DONE = true;
+}
+
+main();
