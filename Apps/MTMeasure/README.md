@@ -42,6 +42,7 @@ Without `auto` or `record` the page shows a usage overlay and loads nothing.
 | `speed`           | path JSON's `speed`, else `15` | Camera speed in m/s along the path. The URL wins over the JSON.                                |
 | `switchEvery`     | `4`                            | Seconds of **flight** between measurement stops, i.e. one stop per `speed × switchEvery` m.    |
 | `laps`            | `2`                            | How many of the run's switches sweep the epochs in order before the random draws start.        |
+| `randomSwitches`  | epoch count                    | Seeded-random switches after the sequential laps. `0` allowed; forced to 0 for one epoch.      |
 | `seed`            | `42`                           | Seed of the PRNG driving the random switch order. Recorded in every row.                       |
 | `sse`             | Cesium default (16)            | `maximumScreenSpaceError` override. Recorded either way.                                       |
 | `cacheMB`         | Cesium default                 | `cacheBytes` override in MB. Recorded either way.                                              |
@@ -104,19 +105,35 @@ exactly on the next waypoint's recorded pose. User input is disabled during an a
 
 ## Protocol (`auto=1`)
 
-Measurement stops are scheduled **by distance along the path** — every `speed × switchEvery`
-metres — so the schedule is independent of how many waypoints the path happens to have.
+Measurement stops are scheduled **by distance travelled** — every `speed × switchEvery` metres
+— so the schedule is independent of how many waypoints the path happens to have. **The switch
+schedule, not the path, ends the run:**
+
+```text
+switches = laps × epochCount   (sequential, in timestampKeys order)
+         + randomSwitches      (seeded-random draws, never the active epoch)
+```
 
 1. Load the tileset, start the `PerformanceMeasurer`, place the camera at the path start.
 2. At every stop: settle → capture a `state` row → (if multi-temporal) measure **one** epoch
    switch → fly on to the next stop at `speed`, capturing nothing during the flight.
-3. After the last stop, fly the remainder of the path, settle, capture a closing `state` row,
-   download `mtmeasure_<name>.csv` and `perf_<name>.csv`, and set
-   `window.MTMEASURE_DONE = true`.
+3. When the last scheduled switch has been measured, settle and capture a closing `state` row
+   **at that stop** — the remainder of the path is not flown — then download
+   `mtmeasure_<name>.csv` and `perf_<name>.csv` and set `window.MTMEASURE_DONE = true`.
 
-The first `state` row is the baseline. The first `laps × epochs` switches sweep the epochs in
-order; every switch after that is a seeded-random draw. A single-epoch tileset runs the same
-protocol minus all epoch machinery: `state` rows and the perf CSV, no `switch` rows.
+**The camera ping-pongs.** On reaching the end of the path it **reverses and flies back**, end
+over end, for as many traversals as the schedule needs. Reversal rather than a teleport back to
+the start, so the motion stays continuous and every leg remains a valid streaming stimulus.
+Traverse boundaries do **not** reset the stop spacing. This is what keeps a short recorded path
+from truncating a dataset with many timestamps: with ~500 epochs a dozen path stops would
+otherwise visit a dozen epochs and quit.
+
+Row count for a multi-temporal tileset is therefore `2 × switches + 1`, and `stopCount` is the
+scheduled total, so the progress line (`stop 7/1500`) stays meaningful.
+
+A tileset with **no** `timestampKeys` keeps the older behaviour, having no schedule to follow:
+one traverse of the path, one `state` row per path-derived stop, no `switch` rows, and the
+remainder of the path is flown before the closing row.
 
 **Why distance and not wall clock.** The camera is already wall-clock arc-length driven, so
 distance along the path equals `speed × accumulated flight time`, and the flight clock only
@@ -187,7 +204,8 @@ Fly manually with full camera controls. **`w`** appends the current pose as a wa
 are empty on `state` rows; a JSON export of the same rows is available from the panel):
 
 ```text
-kind, name, tilesetUrl, stop, stopCount, waypoint, waypointLabel, mode, lap, seed,
+kind, name, tilesetUrl, stop, stopCount, traverse, waypoint, waypointLabel, mode, lap,
+seed,
 requestedEpoch, elapsedMs, pathMeters, speed, switchEverySeconds, switchEveryMeters, sse,
 cacheMB, prefetchWindow, retainedHistory, anchor, fps, settled, tileFailures,
 posX, posY, posZ, heading, pitch, roll, fovy,
@@ -209,6 +227,14 @@ Notes on a few of them:
 - `stop` is the 1-based measurement stop (`stopCount` of them, plus the closing row);
   `waypoint`/`waypointLabel` say which path segment the stop falls in, so the waypoints keep
   describing the route without driving the schedule.
+- `traverse` is the 1-based traversal of the path: **odd is forward, even is backward**.
+  Arriving exactly at the far end still counts as the traversal that just finished, so a run
+  that flies the path once and stops reports `traverse` 1 throughout.
+- `pathMeters` is **total distance travelled** and never bounces with the direction, so stop
+  _k_ always sits at `k × switchEveryMeters`. The pose is that distance folded back onto the
+  path, which is what makes stop poses reproducible on backward traversals too. The `state` and
+  `switch` rows of one stop necessarily share a `pathMeters`: both are captured there, before
+  and after the switch, without moving the camera in between.
 - `residentEpochs*` sample how many epochs are resident inside the tiles selected that frame
   (min / mean / max). Empty for tilesets whose contents don't expose it.
 - `tileLoads`, `tileUnloads`, `epochsEvicted` are cumulative; the `*During` columns are the
@@ -253,5 +279,7 @@ Notes on a few of them:
   no-ops. They still emit `switch` rows, with `firstRenderMs` empty and `settleMs` pinned at the
   500 ms floor. Don't pool those with real switches. A tileset with no `timestampKeys` at all is
   handled properly and simply produces no `switch` rows.
-- Large datasets take minutes per run: every stop settles, switches and then flies on. Raise
-  `switchEvery` (fewer stops) or lower `laps` while iterating.
+- **Run length follows the schedule, not the path**:
+  `switches × (switchEvery + settle ≤ 2 s + switch ≤ 2 s)` plus load. A 500-epoch dataset with
+  `laps=2&randomSwitches=500` is 1500 switches — hours, by design. Lower `laps` /
+  `randomSwitches`, or raise `switchEvery`, while iterating.

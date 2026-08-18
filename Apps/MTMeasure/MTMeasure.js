@@ -28,7 +28,9 @@ import {
 // flight to measure one epoch switch, and downloads two CSVs — its own per-stop rows plus the
 // fork's PerformanceMeasurer's continuous samples. The stop schedule is a distance schedule
 // (speed * switchEvery metres), so it does not depend on how many waypoints the path has, nor
-// on how fast a tileset renders. See README.md for the parameters and the column order.
+// on how fast a tileset renders. The SWITCH SCHEDULE ends the run — laps * epochCount
+// sequential switches then randomSwitches random ones — and the camera ping-pongs along the
+// path for as long as that takes. See README.md for the parameters and the column order.
 // ---------------------------------------------------------------------------
 const DEFAULT_SPEED = 15; // m/s along the camera path
 const DEFAULT_LAPS = 2;
@@ -409,6 +411,13 @@ async function main() {
     ? tileset.timestampKeys.slice()
     : [];
   const isMT = epochKeys.length > 0;
+  // How many seeded-random switches follow the sequential laps. Defaults to one per epoch, and
+  // is forced to 0 for a single-key tileset: a draw must exclude the active epoch, so there is
+  // no legal target and the run would otherwise schedule stops it cannot fill.
+  const randomSwitches =
+    epochKeys.length < 2
+      ? 0
+      : Math.max(0, numberParam(params, "randomSwitches", epochKeys.length));
 
   infoElement.innerHTML = `${name} — ${
     isMT
@@ -601,8 +610,37 @@ async function main() {
   }
   const pathLength = cumulativeAt[cumulativeAt.length - 1];
 
-  // Metres travelled along the polyline so far; recorded on every row.
+  // Total metres travelled so far; recorded on every row. It counts UP for the whole run and
+  // never bounces with the direction, so stop k always sits at k * switchEveryMeters.
   let pathMeters = 0;
+  // 1-based index of the traversal the camera is on: odd = forward, even = backward.
+  let traverse = 1;
+
+  /**
+   * Ping-pong fold: total distance travelled to a distance along the polyline plus the
+   * traversal it belongs to. When the camera reaches the end of the path it REVERSES rather
+   * than teleporting back to the start, so the motion stays continuous and every leg remains a
+   * valid streaming stimulus. The schedule can then ask for more distance than the path is
+   * long, which is what lets the switch schedule — rather than the path — end a run.
+   *
+   * @param {number} travelled Total distance travelled, in metres.
+   * @returns {object} <code>{ along, traverse }</code>: distance along the polyline, and the
+   * 1-based traversal index (odd forward, even backward).
+   */
+  function foldDistance(travelled) {
+    if (pathLength <= 0) {
+      return { along: 0, traverse: 1 };
+    }
+    const cycle = 2 * pathLength;
+    const phase = travelled % cycle;
+    return {
+      along: phase <= pathLength ? phase : cycle - phase,
+      // Ceil, not floor+1, so arriving exactly AT the far end still counts as the traversal
+      // that just finished rather than flipping to the next one — otherwise a run that merely
+      // flies the path to its end reports traverse 2 and reads as though it had looped.
+      traverse: travelled <= 0 ? 1 : Math.ceil(travelled / pathLength),
+    };
+  }
 
   function setPose(position, heading, pitch, roll) {
     viewer.camera.setView({
@@ -642,15 +680,23 @@ async function main() {
    * (Quaternion.slerp negates the end quaternion when the dot product is negative, so a
    * 350deg -> 10deg turn takes the 20deg route). Exactly at a waypoint the recorded pose is
    * applied verbatim.
+   * <p>
+   * The argument is TOTAL distance travelled, folded onto the polyline (see foldDistance), so
+   * the pose is a pure function of it: the same travelled distance gives the same pose in every
+   * run, on backward traversals as much as forward ones.
+   * </p>
    *
-   * @param {number} metres Distance along the polyline.
+   * @param {number} travelled Total distance travelled, in metres.
    */
-  function setPoseAtDistance(metres) {
+  function setPoseAtDistance(travelled) {
+    const folded = foldDistance(travelled);
+    const metres = folded.along;
+    traverse = folded.traverse;
+    pathMeters = travelled;
     const index = segmentAt(metres);
     if (index < 0) {
       const only = path.waypoints[0];
       setPose(only.position, only.heading, only.pitch, only.roll);
-      pathMeters = 0;
       return;
     }
     const from = path.waypoints[index];
@@ -687,7 +733,6 @@ async function main() {
         scratchHpr.roll,
       );
     }
-    pathMeters = Math.min(metres, pathLength);
   }
 
   /**
@@ -701,15 +746,24 @@ async function main() {
    * every run and for every tileset, however fast or slow each one renders.
    * </p>
    *
-   * @param {number} targetMetres Distance along the polyline to fly to.
+   * The target is a TOTAL travelled distance and may exceed the path length: the camera then
+   * reverses at the end and flies back (see foldDistance), which is what keeps it moving until
+   * the switch schedule is finished. A zero-length path is the one case with nowhere to fly, so
+   * it returns immediately rather than idling for the scheduled time.
+   *
+   * @param {number} targetMetres Total travelled distance to fly to.
    * @returns {Promise<number>} Wall-clock duration of the flight in ms.
    */
   async function flyToDistance(targetMetres) {
     const startMetres = pathMeters;
-    const distance = Math.min(targetMetres, pathLength) - startMetres;
+    const distance = targetMetres - startMetres;
     const start = performance.now();
+    if (pathLength <= 0) {
+      setPoseAtDistance(0);
+      return 0;
+    }
     if (distance <= 0) {
-      setPoseAtDistance(Math.min(targetMetres, pathLength));
+      setPoseAtDistance(targetMetres);
       return 0;
     }
     for (;;) {
@@ -815,6 +869,7 @@ async function main() {
     "tilesetUrl",
     "stop",
     "stopCount",
+    "traverse",
     "waypoint",
     "waypointLabel",
     "mode",
@@ -882,6 +937,17 @@ async function main() {
   let lastSettled = null;
 
   /**
+   * The path segment the camera is currently in, from its folded position. Clamped to 0 so a
+   * zero-length path still names its single waypoint.
+   *
+   * @returns {number} Segment index.
+   */
+  function foldedSegment() {
+    const index = segmentAt(foldDistance(pathMeters).along);
+    return index < 0 ? 0 : index;
+  }
+
+  /**
    * Append one row. `extra` carries the switch-only fields; everything else is sampled here
    * so state and switch rows are directly comparable.
    *
@@ -898,11 +964,12 @@ async function main() {
       name: name,
       tilesetUrl: tilesetUrl,
       stop: currentStop,
-      stopCount: stopDistances.length,
-      waypoint: segmentAt(pathMeters) < 0 ? 0 : segmentAt(pathMeters),
-      waypointLabel:
-        path.waypoints[segmentAt(pathMeters) < 0 ? 0 : segmentAt(pathMeters)]
-          .label,
+      stopCount: stopCount,
+      traverse: traverse,
+      // The segment a stop falls in is a property of where it is ON the path, so the total
+      // travelled distance is folded back onto the polyline first.
+      waypoint: foldedSegment(),
+      waypointLabel: path.waypoints[foldedSegment()].label,
       mode: null,
       lap: null,
       seed: seed,
@@ -1212,46 +1279,56 @@ async function main() {
   setStatus("running");
   loadingIndicator.textContent = "Settling…";
 
-  // Measurement stops are scheduled by DISTANCE along the path, every switchEveryMeters
-  // (= speed * switchEvery seconds of flight), independent of how many waypoints the path
-  // has. Since the flight clock only advances while flying, stop k sits at the same pose in
-  // every run and for every tileset, no matter how long that tileset takes to settle or to
-  // switch — which is what makes switch k comparable across formats.
-  const stopDistances = [0];
-  if (pathLength > 0) {
-    for (
-      let d = switchEveryMeters;
-      d < pathLength - 1e-6;
-      d += switchEveryMeters
-    ) {
-      stopDistances.push(d);
-    }
-  }
-  const stopCount = stopDistances.length;
-  // How many of the switches sweep the epochs in order before the seeded-random draws begin.
+  // Measurement stops stay scheduled by DISTANCE — one every switchEveryMeters of travelled
+  // distance — but the SCHEDULE, not the path, ends the run: `laps * epochCount` sequential
+  // switches followed by `randomSwitches` seeded-random ones. When the camera reaches the end
+  // of the path it REVERSES and flies back (ping-pong, see foldDistance), over as many
+  // traversals as the schedule needs, so a short recorded path no longer truncates a dataset
+  // with many timestamps. Since the flight clock only advances while flying, stop k sits at
+  // travelled distance k * switchEveryMeters — the same pose in every run and for every
+  // tileset, no matter how long that tileset takes to settle or to switch.
   const sequentialTotal = isMT ? laps * epochKeys.length : 0;
+  const scheduledSwitches = sequentialTotal + randomSwitches;
+  // A tileset with no timestamps has no schedule to follow, so it keeps the as-built
+  // behaviour: a single traverse of the path, one state row per stop, no looping.
+  const pathStops =
+    1 +
+    (pathLength > 0 ? Math.floor((pathLength - 1e-6) / switchEveryMeters) : 0);
+  const stopCount = isMT ? scheduledSwitches : pathStops;
   let switchIndex = 0;
   let randomDraw = 0;
 
+  // How far the schedule will make the camera travel, and how many traversals of the path
+  // that folds into.
+  const plannedTravel = (stopCount - 1) * switchEveryMeters;
+  const plannedTraversals =
+    pathLength > 0 ? Math.floor(plannedTravel / pathLength) + 1 : 1;
+  const scheduleNote = isMT
+    ? `, ${sequentialTotal} sequential + ${randomSwitches} random switches over ` +
+      `${plannedTraversals} traversal(s) (${plannedTravel.toFixed(0)} m of travel)`
+    : " (single traverse, no epochs to switch)";
   console.log(
-    `MTMeasure: ${pathLength.toFixed(1)} m path, stop every ${switchEveryMeters.toFixed(1)} m ` +
-      `(${switchEverySeconds} s at ${speed} m/s) → ${stopCount} stops; ` +
-      `first ${sequentialTotal} switches sequential, rest random`,
+    `MTMeasure: ${pathLength.toFixed(1)} m path, stop every ` +
+      `${switchEveryMeters.toFixed(1)} m (${switchEverySeconds} s at ${speed} m/s) → ` +
+      `${stopCount} stops${scheduleNote}`,
   );
 
   setPoseAtDistance(0);
 
   for (let stop = 0; stop < stopCount; ++stop) {
+    const target = stop * switchEveryMeters;
     if (stop > 0) {
       setProgress(
-        `stop ${stop + 1}/${stopCount} — flying to ${stopDistances[stop].toFixed(0)} m`,
+        `stop ${stop + 1}/${stopCount} — flying to ${target.toFixed(0)} m`,
       );
-      const flightMs = await flyToDistance(stopDistances[stop]);
-      const flown = stopDistances[stop] - stopDistances[stop - 1];
-      console.log(
-        `MTMeasure: flew ${flown.toFixed(1)} m in ${Math.round(flightMs)} ms ` +
-          `(${(flown / (flightMs / 1000)).toFixed(2)} m/s target ${speed})`,
-      );
+      const flightMs = await flyToDistance(target);
+      if (flightMs > 0) {
+        console.log(
+          `MTMeasure: flew ${switchEveryMeters.toFixed(1)} m in ${Math.round(flightMs)} ms ` +
+            `(${(switchEveryMeters / (flightMs / 1000)).toFixed(2)} m/s target ${speed}), ` +
+            `traverse ${traverse} ${traverse % 2 === 1 ? "forward" : "backward"}`,
+        );
+      }
     }
     currentStop = stop + 1;
 
@@ -1282,7 +1359,13 @@ async function main() {
         (candidate) => candidate !== tileset.activeTimestamp,
       );
       if (candidates.length === 0) {
-        continue;
+        // Unreachable: randomSwitches is 0 unless there are at least two epochs. If it ever
+        // did happen the schedule could not be fulfilled, so end rather than leave a stop
+        // that carries a state row but no switch.
+        console.warn(
+          "MTMeasure: no epoch left to draw — ending the schedule early.",
+        );
+        break;
       }
       key = candidates[Math.floor(random() * candidates.length)];
       mode = "random";
@@ -1294,8 +1377,9 @@ async function main() {
     await switchEpoch(key, mode, lap);
   }
 
-  // Fly the remainder of the path, then take a closing state row at the end pose.
-  if (pathMeters < pathLength) {
+  // An MT run is over the moment its schedule is: the closing state row is taken at the last
+  // stop's pose, without flying the rest of the path. A non-MT run still finishes the path.
+  if (!isMT && pathMeters < pathLength) {
     setProgress("flying to the end of the path");
     await flyToDistance(pathLength);
   }
@@ -1312,7 +1396,8 @@ async function main() {
   controller.enableInputs = inputsWereEnabled;
   setStatus("done", "done");
   setProgress(
-    `${rows.length} rows, ${pathLength.toFixed(1)} m of path at ${speed} m/s, ` +
+    `${rows.length} rows, ${switchIndex} switches, ${pathMeters.toFixed(1)} m travelled ` +
+      `over ${traverse} traverse(s) of a ${pathLength.toFixed(1)} m path at ${speed} m/s, ` +
       `stop every ${switchEveryMeters.toFixed(1)} m`,
   );
   window.MTMEASURE_DONE = true;
