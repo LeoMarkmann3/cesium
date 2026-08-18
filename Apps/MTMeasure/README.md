@@ -34,19 +34,22 @@ Without `auto` or `record` the page shows a usage overlay and loads nothing.
 
 ## URL parameters
 
-| Param            | Default                        | Meaning                                                                                   |
-| ---------------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
-| `tileset`        | — (required)                   | Tileset URL, absolute or relative to the page. Alerts and stops if missing or unloadable. |
-| `name`           | second-to-last path segment    | Label used in rows and in both CSV filenames.                                             |
-| `path`           | generated (see below)          | URL of a camera-path JSON.                                                                |
-| `speed`          | path JSON's `speed`, else `15` | Camera speed in m/s along the path. The URL wins over the JSON.                           |
-| `laps`           | `2`                            | Sequential epoch-sweep laps per waypoint.                                                 |
-| `randomSwitches` | epoch count                    | Seeded-random epoch switches per waypoint, after the laps.                                |
-| `seed`           | `42`                           | Seed of the PRNG driving the random switch order. Recorded in every row.                  |
-| `sse`            | Cesium default (16)            | `maximumScreenSpaceError` override. Recorded either way.                                  |
-| `cacheMB`        | Cesium default                 | `cacheBytes` override in MB. Recorded either way.                                         |
-| `auto`           | off                            | `auto=1`: run the protocol, download both CSVs, set `window.MTMEASURE_DONE`.              |
-| `record`         | off                            | `record=1`: record a camera path. Mutually exclusive with `auto`.                         |
+| Param             | Default                        | Meaning                                                                                        |
+| ----------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `tileset`         | — (required)                   | Tileset URL, absolute or relative to the page. Alerts and stops if missing or unloadable.      |
+| `name`            | second-to-last path segment    | Label used in rows and in both CSV filenames.                                                  |
+| `path`            | generated (see below)          | URL of a camera-path JSON.                                                                     |
+| `speed`           | path JSON's `speed`, else `15` | Camera speed in m/s along the path. The URL wins over the JSON.                                |
+| `switchEvery`     | `4`                            | Seconds of **flight** between measurement stops, i.e. one stop per `speed × switchEvery` m.    |
+| `laps`            | `2`                            | How many of the run's switches sweep the epochs in order before the random draws start.        |
+| `seed`            | `42`                           | Seed of the PRNG driving the random switch order. Recorded in every row.                       |
+| `sse`             | Cesium default (16)            | `maximumScreenSpaceError` override. Recorded either way.                                       |
+| `cacheMB`         | Cesium default                 | `cacheBytes` override in MB. Recorded either way.                                              |
+| `prefetchWindow`  | fork default                   | `mtPrefetchWindow` override. `0` protects no epoch from eviction. Recorded either way.         |
+| `retainedHistory` | fork default                   | `mtRetainedHistory` override. Recorded either way.                                             |
+| `anchor`          | `0,0,0`                        | Where to plant a **local-coordinate** tileset: `lon,lat[,height]`, or `off` to leave it alone. |
+| `auto`            | off                            | `auto=1`: run the protocol, download both CSVs, set `window.MTMEASURE_DONE`.                   |
+| `record`          | off                            | `record=1`: record a camera path. Mutually exclusive with `auto`.                              |
 
 The `PerformanceMeasurer` sample rate is fixed at 100 ms, as in `Apps/ComparisonTest`.
 
@@ -58,6 +61,7 @@ With `path=<url>`, a JSON of this shape (positions in **ECEF metres**, angles in
 {
   "name": "ofental",
   "speed": 15,
+  "anchor": [0.0, 0.0, 0.0],
   "waypoints": [
     {
       "label": "start",
@@ -78,13 +82,18 @@ With `path=<url>`, a JSON of this shape (positions in **ECEF metres**, angles in
 ```
 
 At least one waypoint is required; a single waypoint means no flight, just the protocol at
-that pose. Malformed input alerts and stops.
+that pose. Malformed input alerts and stops. `anchor` is written only for a tileset that was
+anchored (see below) and must match the run's anchor.
 
 Without `path`, a three-waypoint traverse is **generated** from the tileset's bounding
 sphere in its local ENU frame — in from the south-west at (−1 r, −1 r, +0.6 r), over the
-centre at +0.45 r, out to the north-east at (+1 r, +1 r, +0.6 r), with headings 45° / 30° /
-60° and pitches −25° / −40° / −20°. It is a real flown path (≈2.83 r long), not a set of
-teleports, so any tileset can be measured without first recording a path.
+centre at +0.45 r, out to the north-east at (+1 r, +1 r, +0.6 r). Every generated waypoint
+**looks at the bounding-sphere centre**, so the site stays framed for the whole traverse; a
+fixed heading would leave it behind the camera past the centre and the exit leg would measure
+an empty screen. It is a real flown path (≈2.83 r long), not a set of teleports, so any
+tileset can be measured without first recording a path. Being derived from the bounding
+sphere it is reproducible for a given tileset but differs between tilesets whose spheres
+differ — record a path with `record=1` when comparing different datasets of one site.
 
 **Motion model.** The path is the polyline through the waypoints. On every frame the camera
 is placed at `speed × (now − flightStart)` metres along it — wall-clock, never a per-frame
@@ -126,9 +135,45 @@ becomes visible from three epochs on.
 
 **Switch measurement.** `firstRenderMs` is the first frame whose selected-point count differs
 from the pre-switch value and is non-zero; `settleMs` is when streaming has quiesced (no
-pending requests, no tiles processing, two consecutive frames) after that; `dippedToZero`
-records whether the scene went empty in between — the signature of a layout that refetches
-rather than swapping resident content. Timeout 30 s.
+pending requests, no tiles processing, two consecutive frames), judged from streaming alone
+with a 500 ms floor — gating it on `firstRenderMs` would hang whenever a switch legitimately
+changes nothing on screen. `dippedToZero` records whether the scene went empty in between —
+the signature of a layout that refetches rather than swapping resident content.
+
+The switch window is **2000 ms** (`SWITCH_TIMEOUT_MS`), and the settle gate the same. A switch
+that exceeds it leaves `settleMs` **empty rather than large**, so treat an empty `settleMs` as
+right-censored at 2 s and report how many were censored — averaging only the populated values
+silently drops the slow switches and flatters the slower layout.
+
+## Local-coordinate tilesets
+
+A convert without an output CRS (no `--srs_out`) leaves a tileset in a **local frame** near
+the geocentre instead of on the ellipsoid. Cesium's camera controls navigate the WGS84
+ellipsoid, and a camera inside it picks the far side, so the controls stop working: measured on
+a 577 m-wide local cloud, a 120 px orbit drag moved the camera **3.8 m** and one wheel notch
+jumped ~240 m regardless of the data's size.
+
+When the app is **certain** a tileset is local it anchors it: an east-north-up frame at
+`anchor` is assigned to `tileset.modelMatrix`, with the cloud's centre translated onto the
+anchor point (the ENU frame alone would plant the data's own origin there, which for a
+py3dtiles local convert is hundreds of metres off the cloud). To Cesium it is then an ordinary
+georeferenced tileset, and the same drag moves the camera **19.4 m**, in line with the 13.6 m
+measured on real georeferenced data.
+
+"Certain" is deliberately narrow — anchoring moves data, so it happens only when the tileset
+lies **wholly more than 100 km below the ellipsoid** _and_ is **less than 100 km across**. No
+georeferenced surface dataset can satisfy both. A georeferenced tileset is never moved, and
+passing `anchor` for one logs a warning and is ignored.
+
+**The catch, and why the anchor is recorded everywhere.** Waypoint positions are ECEF, so a
+path recorded on an anchored tileset only describes that scene at the same anchor. The anchor
+therefore goes into the recorded JSON (`"anchor": [lon, lat, height]`), into the `anchor` CSV
+column of every row, and onto the info line — and a path whose anchor disagrees with the run's
+is **refused with an explanation** rather than silently flying the camera through empty space.
+Use `anchor=off` to keep the old, unanchored behaviour.
+
+Anchoring changes nothing about geometric error, so a local tileset that also needs a low
+`sse` still needs one.
 
 ## Record mode (`record=1`)
 
@@ -144,7 +189,7 @@ are empty on `state` rows; a JSON export of the same rows is available from the 
 ```text
 kind, name, tilesetUrl, stop, stopCount, waypoint, waypointLabel, mode, lap, seed,
 requestedEpoch, elapsedMs, pathMeters, speed, switchEverySeconds, switchEveryMeters, sse,
-cacheMB, prefetchWindow, retainedHistory, fps, settled, tileFailures,
+cacheMB, prefetchWindow, retainedHistory, anchor, fps, settled, tileFailures,
 posX, posY, posZ, heading, pitch, roll, fovy,
 bufferWidth, bufferHeight, pixelRatio,
 selected, visited, numberOfCommands, numberOfPointsSelected, numberOfPendingRequests,
@@ -203,5 +248,10 @@ Notes on a few of them:
   `application/json` and the browser shows the source instead of running the app. Keeping any
   other parameter last (e.g. `…&path=…/path.json&auto=1`) avoids it. This is upstream Cesium
   dev-server behaviour, not an app bug.
-- Large datasets take minutes per run: each waypoint settles, sweeps `laps × epochs` switches
-  and then flies. Reduce `laps` / `randomSwitches` while iterating.
+- **A tileset with exactly one timestamp key** counts as multi-temporal, so its sequential
+  switches target the epoch that is already active — and that setter returns early, so they are
+  no-ops. They still emit `switch` rows, with `firstRenderMs` empty and `settleMs` pinned at the
+  500 ms floor. Don't pool those with real switches. A tileset with no `timestampKeys` at all is
+  handled properly and simply produces no `switch` rows.
+- Large datasets take minutes per run: every stop settles, switches and then flies on. Raise
+  `switchEvery` (fewer stops) or lower `laps` while iterating.

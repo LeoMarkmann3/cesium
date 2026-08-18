@@ -6,6 +6,7 @@ import {
   Cartesian3,
   Cesium3DTileset,
   Color,
+  Ellipsoid,
   HeadingPitchRoll,
   Math as CesiumMath,
   Matrix4,
@@ -43,6 +44,18 @@ const SWITCH_TIMEOUT_MS = 2000;
 // with firstRenderMs left empty.
 const SWITCH_MIN_OBSERVE_MS = 500;
 const DOWNLOAD_GAP_MS = 400; // Firefox takes two programmatic downloads more reliably apart
+
+// Where a local-coordinate tileset is planted when it is anchored (see anchorMatrix). The
+// exact spot is irrelevant — the globe is off and nothing else is in the scene — but it must
+// be deterministic, because a recorded camera path is only valid for the anchor it was
+// recorded at.
+const DEFAULT_ANCHOR = { lon: 0.0, lat: 0.0, height: 0.0 };
+// A tileset counts as local-coordinate only if BOTH hold: it lies wholly deeper than this
+// below the ellipsoid, and it is smaller than this across. Both together leave no room for a
+// georeferenced dataset to be misread — real surface data is never 100 km down, and local
+// point clouds are metres to kilometres wide, never continental.
+const LOCAL_DEPTH_MARGIN_METRES = 100000.0;
+const LOCAL_MAX_RADIUS_METRES = 100000.0;
 
 const VIEWER_OPTIONS = {
   sceneMode: SceneMode.SCENE3D,
@@ -114,6 +127,64 @@ function numberParam(params, key, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+/**
+ * Is this tileset in a local coordinate system rather than ECEF? Deliberately conservative:
+ * it must be certain, because anchoring moves the data. py3dtiles writes a local frame when
+ * the convert had no output CRS, which leaves the whole dataset sitting near the geocentre —
+ * i.e. thousands of kilometres inside the ellipsoid, where the camera controls stop working
+ * (Cesium navigates the WGS84 ellipsoid, and a camera inside it picks the far side).
+ *
+ * @param {BoundingSphere} sphere The tileset's bounding sphere, before any anchoring.
+ * @returns {boolean} True only when the frame cannot be ECEF.
+ */
+function isLocalFrame(sphere) {
+  const surface = Ellipsoid.default.minimumRadius;
+  const outerReach = Cartesian3.magnitude(sphere.center) + sphere.radius;
+  return (
+    sphere.radius < LOCAL_MAX_RADIUS_METRES &&
+    outerReach < surface - LOCAL_DEPTH_MARGIN_METRES
+  );
+}
+
+/**
+ * The east-north-up frame that puts a local tileset's centre on the ellipsoid at the anchor.
+ * The ENU frame alone would plant the data's own origin there, which for a py3dtiles local
+ * convert is some hundreds of metres off the cloud (the root transform carries that offset),
+ * so the cloud's centre is translated onto the anchor first. Local +X/+Y/+Z then read as
+ * east/north/up, which is how a projected CRS is meant to be interpreted.
+ *
+ * @param {object} anchor Anchor as { lon, lat, height } in degrees and metres.
+ * @param {Cartesian3} localCentre The bounding-sphere centre in the tileset's own frame.
+ * @returns {Matrix4} The matrix to assign to <code>tileset.modelMatrix</code>.
+ */
+function anchorMatrix(anchor, localCentre) {
+  const enu = Transforms.eastNorthUpToFixedFrame(
+    Cartesian3.fromDegrees(anchor.lon, anchor.lat, anchor.height),
+  );
+  return Matrix4.multiply(
+    enu,
+    Matrix4.fromTranslation(Cartesian3.negate(localCentre, new Cartesian3())),
+    new Matrix4(),
+  );
+}
+
+/**
+ * Canonical text for an anchor, used in the CSV column, the recorded path JSON and the
+ * mismatch check. Fixed precision so two anchors compare exactly.
+ *
+ * @param {object} [anchor] Anchor as { lon, lat, height }.
+ * @returns {string|null} <code>"lon,lat,height"</code>, or null when not anchored.
+ */
+function anchorLabel(anchor) {
+  if (!defined(anchor) || anchor === null) {
+    return null;
+  }
+  return (
+    `${anchor.lon.toFixed(6)},${anchor.lat.toFixed(6)},` +
+    `${anchor.height.toFixed(3)}`
+  );
+}
+
 async function main() {
   const params = new URLSearchParams(window.location.search);
   const statusElement = document.getElementById("mtStatus");
@@ -183,6 +254,31 @@ async function main() {
       ? null
       : numberParam(params, "retainedHistory", null);
 
+  // Where to plant a local-coordinate tileset: "off" leaves it where it is, "lon,lat[,height]"
+  // overrides the default spot. Only ever applied to a tileset that is certainly local.
+  const anchorParam = params.get("anchor");
+  let anchorRequest = DEFAULT_ANCHOR;
+  if (anchorParam === "off") {
+    anchorRequest = null;
+  } else if (anchorParam !== null && anchorParam !== "") {
+    const parts = anchorParam.split(",").map(Number);
+    if (
+      parts.length < 2 ||
+      parts.length > 3 ||
+      parts.some((value) => !Number.isFinite(value))
+    ) {
+      fail(
+        `anchor must be "off" or "lon,lat[,height]" — got "${anchorParam}".`,
+      );
+      return;
+    }
+    anchorRequest = {
+      lon: parts[0],
+      lat: parts[1],
+      height: parts.length === 3 ? parts[2] : 0.0,
+    };
+  }
+
   // -------------------------------------------------------------------------
   // Viewer. Same construction as Apps/ABTest so streaming behaves identically.
   // -------------------------------------------------------------------------
@@ -245,6 +341,54 @@ async function main() {
     tileset.mtRetainedHistory = retainedHistoryParam;
   }
   tileset.debugShowStatistics = true;
+
+  // -------------------------------------------------------------------------
+  // Local-coordinate tilesets. A convert without an output CRS leaves the data near the
+  // geocentre, thousands of kilometres inside the WGS84 ellipsoid — and since Cesium's camera
+  // controls navigate that ellipsoid, a camera inside it picks the far side: orbiting a
+  // 577 m-wide cloud then moves the camera ~4 m per 120 px drag, and one wheel notch jumps
+  // ~240 m regardless of how big the data is. Anchoring the data onto the ellipsoid with an
+  // east-north-up frame restores ordinary controls, because to Cesium it is then simply a
+  // georeferenced tileset. Applied before the tileset is added so nothing renders at the
+  // wrong place, and before the camera path is built so the path is in the anchored frame.
+  //
+  // Note the cost: a recorded path's positions are ECEF, hence only valid for the anchor they
+  // were recorded at. The anchor therefore goes into the path JSON, into every CSV row, and is
+  // checked on replay (see parsePathJson) rather than being allowed to fail silently.
+  const localCentre = Cartesian3.clone(
+    tileset.boundingSphere.center,
+    new Cartesian3(),
+  );
+  const localRadius = tileset.boundingSphere.radius;
+  const tilesetIsLocal = isLocalFrame(tileset.boundingSphere);
+  let anchor = null;
+  if (tilesetIsLocal && defined(anchorRequest) && anchorRequest !== null) {
+    anchor = anchorRequest;
+    tileset.modelMatrix = anchorMatrix(anchor, localCentre);
+    console.log(
+      `MTMeasure: local-coordinate tileset (centre ${Cartesian3.magnitude(
+        localCentre,
+      ).toFixed(
+        1,
+      )} m from the geocentre, radius ${localRadius.toFixed(1)} m) ` +
+        `anchored at ${anchorLabel(anchor)} so the camera controls behave normally.`,
+    );
+  } else if (tilesetIsLocal) {
+    console.warn(
+      "MTMeasure: this tileset is in local coordinates and anchoring is off — " +
+        "the camera controls will barely respond. Drop anchor=off to fix it.",
+    );
+  } else if (
+    anchorParam !== null &&
+    anchorParam !== "" &&
+    anchorParam !== "off"
+  ) {
+    console.warn(
+      `MTMeasure: ignoring anchor=${anchorParam} — this tileset is already georeferenced ` +
+        "and is left where it is.",
+    );
+  }
+
   scene.primitives.add(tileset);
 
   let tileLoads = 0;
@@ -270,7 +414,7 @@ async function main() {
     isMT
       ? `${epochKeys.length} epochs (${tileset.resolvedMTLayout ?? "layout unknown"})`
       : "single epoch"
-  }`;
+  }${anchor === null ? "" : ` — local frame, anchored at ${anchorLabel(anchor)}`}`;
 
   // -------------------------------------------------------------------------
   // Camera path. Either a recorded JSON (path=<url>) or a traverse generated from the
@@ -368,6 +512,27 @@ async function main() {
     ) {
       throw new Error(
         "camera path JSON needs a waypoints array with at least one entry",
+      );
+    }
+    // Waypoint positions are ECEF, so a path recorded on an anchored tileset only means
+    // anything at that same anchor. A mismatch would otherwise fly the camera through empty
+    // space with no complaint, so it is refused here instead.
+    const pathAnchor = Array.isArray(json.anchor)
+      ? anchorLabel({
+          lon: json.anchor[0],
+          lat: json.anchor[1],
+          height: json.anchor.length === 3 ? json.anchor[2] : 0.0,
+        })
+      : null;
+    const runAnchor = anchorLabel(anchor);
+    if (pathAnchor !== runAnchor) {
+      throw new Error(
+        `this path was recorded ${
+          pathAnchor === null ? "without an anchor" : `at anchor ${pathAnchor}`
+        }, but the run is ${
+          runAnchor === null ? "not anchored" : `anchored at ${runAnchor}`
+        }. Its ECEF positions do not describe this scene — re-record the path, pass a ` +
+          `matching anchor=lon,lat[,height], or pass anchor=off.`,
       );
     }
     const waypoints = json.waypoints.map((wp, index) => {
@@ -665,6 +830,7 @@ async function main() {
     "cacheMB",
     "prefetchWindow",
     "retainedHistory",
+    "anchor",
     "fps",
     "settled",
     "tileFailures",
@@ -750,6 +916,7 @@ async function main() {
       cacheMB: Math.round(tileset.cacheBytes / (1024 * 1024)),
       prefetchWindow: isMT ? tileset.mtPrefetchWindow : null,
       retainedHistory: isMT ? tileset.mtRetainedHistory : null,
+      anchor: anchorLabel(anchor),
       fps: Math.round(fps * 10) / 10,
       settled: lastSettled,
       tileFailures: tileFailures,
@@ -1003,7 +1170,15 @@ async function main() {
         download(
           `camera_path_${name}.json`,
           JSON.stringify(
-            { name: name, speed: DEFAULT_SPEED, waypoints: recorded },
+            {
+              name: name,
+              speed: DEFAULT_SPEED,
+              // Only meaningful together with the anchor the poses were recorded at.
+              ...(anchor === null
+                ? {}
+                : { anchor: [anchor.lon, anchor.lat, anchor.height] }),
+              waypoints: recorded,
+            },
             null,
             2,
           ),
