@@ -47,6 +47,7 @@ import hasExtension from "./hasExtension.js";
 import ImplicitTileset from "./ImplicitTileset.js";
 import ImplicitTileCoordinates from "./ImplicitTileCoordinates.js";
 import LabelCollection from "./LabelCollection.js";
+import MTLayout from "./MTLayout.js";
 import oneTimeWarning from "../Core/oneTimeWarning.js";
 import PointCloudEyeDomeLighting from "./PointCloudEyeDomeLighting.js";
 import PointCloudShading from "./PointCloudShading.js";
@@ -226,6 +227,7 @@ function Cesium3DTileset(options) {
   this._selectedTilesToStyle = [];
   this._loadTimestamp = undefined;
   this._timestampKeys = undefined;
+  this._resolvedMTLayout = undefined;
   this._activeTimestamp = undefined;
   this._mtPrefetchWindow = MT_DEFAULT_PREFETCH_WINDOW;
   this._mtRetainedHistory = MT_DEFAULT_RETAINED_HISTORY;
@@ -1366,7 +1368,9 @@ Object.defineProperties(Cesium3DTileset.prototype, {
   /**
    * Gets the ordered timestamp keys of a multi-temporal tileset, or <code>undefined</code>
    * if the tileset is not multi-temporal. The order defines the epoch sequence used by the
-   * prefetch window and by {@link Cesium3DTileset#activeTimestamp}.
+   * prefetch window and by {@link Cesium3DTileset#activeTimestamp}. The keys mean the same
+   * thing in both multi-temporal layouts; use {@link Cesium3DTileset#resolvedMTLayout} to
+   * tell the layouts apart.
    *
    * @memberof Cesium3DTileset.prototype
    * @type {string[]|undefined}
@@ -1376,6 +1380,28 @@ Object.defineProperties(Cesium3DTileset.prototype, {
   timestampKeys: {
     get: function () {
       return this._timestampKeys;
+    },
+  },
+
+  /**
+   * Gets the resolved multi-temporal tileset layout: <code>"shared_tree"</code> when every
+   * timestamp is a content of one shared tile hierarchy, or
+   * <code>"referenced_tilesets"</code> when each timestamp is a separate tileset referenced
+   * by key. <code>undefined</code> if the tileset is not multi-temporal.
+   * <p>
+   * Tilesets produced before the extension declared its layout have it inferred from their
+   * keyed content URIs, so legacy multi-temporal data reads as <code>"shared_tree"</code>
+   * rather than <code>undefined</code>.
+   * </p>
+   *
+   * @memberof Cesium3DTileset.prototype
+   * @type {string|undefined}
+   * @readonly
+   * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
+   */
+  resolvedMTLayout: {
+    get: function () {
+      return this._resolvedMTLayout;
     },
   },
 
@@ -1437,7 +1463,9 @@ Object.defineProperties(Cesium3DTileset.prototype, {
    * For a multi-temporal tileset, the number of neighboring timestamps on each
    * side of the active one to prefetch and keep resident (a symmetric ±N window
    * over the ordered {@link Cesium3DTileset#timestampKeys}). Read live, so it can
-   * be changed at runtime. Ignored for non-multi-temporal tilesets.
+   * be changed at runtime. Ignored for non-multi-temporal tilesets, and for the
+   * <code>"referenced_tilesets"</code> layout, which keeps only the active timestamp
+   * resident (see {@link Cesium3DTileset#resolvedMTLayout}).
    *
    * @memberof Cesium3DTileset.prototype
    * @type {number}
@@ -1460,7 +1488,9 @@ Object.defineProperties(Cesium3DTileset.prototype, {
    * For a multi-temporal tileset, how many recently-selected timestamps (the ones
    * the user switched away from) to keep resident even when they fall outside the
    * prefetch window, so jumping back to a recent epoch is instant. Read live.
-   * Ignored for non-multi-temporal tilesets.
+   * Ignored for non-multi-temporal tilesets, and for the
+   * <code>"referenced_tilesets"</code> layout, which keeps only the active timestamp
+   * resident (see {@link Cesium3DTileset#resolvedMTLayout}).
    *
    * @memberof Cesium3DTileset.prototype
    * @type {number}
@@ -2364,6 +2394,111 @@ Cesium3DTileset.fromIonAssetId = async function (assetId, options) {
 };
 
 /**
+ * Find the URI of the first keyed content (an entry of the form
+ * <code>{key, content:{uri}}</code>) in a tileset JSON. The URI tells the two
+ * multi-temporal layouts apart: shared-tree keys select this tile's own payloads
+ * (<code>.pnts</code>), referenced-tilesets keys select external tilesets
+ * (<code>.json</code>).
+ * <p>
+ * LEGACY ONLY: this is needed for data produced before the extension declared its
+ * layout. Delete it together with the missing-layout branch of
+ * {@link resolveMTLayout} once every dataset has been re-converted.
+ * </p>
+ *
+ * @param {object} tilesetJson The tileset JSON.
+ * @returns {string|undefined} The first keyed content URI, or undefined if there is none.
+ * @private
+ */
+function findFirstKeyedContentUri(tilesetJson) {
+  const stack = [tilesetJson.root];
+  while (stack.length > 0) {
+    const tileJson = stack.pop();
+    if (!defined(tileJson)) {
+      continue;
+    }
+
+    const contents = tileJson.contents;
+    if (defined(contents)) {
+      for (let i = 0; i < contents.length; ++i) {
+        const uri = contents[i].content?.uri;
+        if (defined(uri)) {
+          return uri;
+        }
+      }
+    }
+
+    const children = tileJson.children;
+    if (defined(children)) {
+      for (let i = 0; i < children.length; ++i) {
+        stack.push(children[i]);
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Whether a content URI points at an external tileset rather than a tile payload.
+ *
+ * @param {string} uri The content URI.
+ * @returns {boolean} True if the URI's path ends in <code>.json</code>.
+ * @private
+ */
+function isExternalTilesetUri(uri) {
+  const path = uri.split("?")[0].split("#")[0];
+  return path.toLowerCase().endsWith(".json");
+}
+
+/**
+ * Resolve the layout declared by the multi-temporal extension to one of the
+ * {@link MTLayout} values, which is what selects the
+ * per-tile content type. A declared, recognized layout always wins. Data produced
+ * before the layout field existed has it inferred from the first keyed content URI.
+ * An unrecognized layout warns and falls back to shared-tree, unless the keyed
+ * contents prove that fallback wrong, in which case it throws rather than render
+ * an empty scene.
+ *
+ * @param {string|undefined} layout The layout declared in the extension, if any.
+ * @param {object} tilesetJson The tileset JSON, used for the legacy inference.
+ * @returns {string} The resolved layout.
+ * @exception {RuntimeError} When the layout is unrecognized and the tileset's keyed contents reference external tilesets.
+ * @private
+ */
+function resolveMTLayout(layout, tilesetJson) {
+  if (
+    layout === MTLayout.SHARED_TREE ||
+    layout === MTLayout.REFERENCED_TILESETS
+  ) {
+    return layout;
+  }
+
+  const uri = findFirstKeyedContentUri(tilesetJson);
+  const inferred =
+    defined(uri) && isExternalTilesetUri(uri)
+      ? MTLayout.REFERENCED_TILESETS
+      : MTLayout.SHARED_TREE;
+
+  if (!defined(layout)) {
+    // Produced before the layout field existed; the URIs are the only evidence.
+    return inferred;
+  }
+
+  oneTimeWarning(
+    "tileset-unknown-mt-layout",
+    `Unknown ${MTExtension} layout "${layout}". Assuming "${MTLayout.SHARED_TREE}".`,
+  );
+
+  if (inferred === MTLayout.REFERENCED_TILESETS) {
+    throw new RuntimeError(
+      `Unsupported ${MTExtension} layout "${layout}": the tileset's keyed contents reference external tilesets, which the "${MTLayout.SHARED_TREE}" fallback cannot render.`,
+    );
+  }
+
+  return MTLayout.SHARED_TREE;
+}
+
+/**
  * Creates a {@link https://github.com/CesiumGS/3d-tiles/tree/main/specification|3D Tiles tileset},
  * used for streaming massive heterogeneous 3D geospatial datasets.
  *
@@ -2459,12 +2594,25 @@ Cesium3DTileset.fromUrl = async function (url, options) {
   tileset._extensionsUsed = tilesetJson.extensionsUsed;
   tileset._extensions = tilesetJson.extensions;
 
-  const mtExtension = tileset._extensions?.[MTExtension];
+  let mtExtension = tileset._extensions?.[MTExtension];
+  const mtExtension_legacy = tileset._extensions?.[MTExtension_Legacy];
+
+  if (defined(mtExtension_legacy) && !defined(mtExtension)) {
+    mtExtension = mtExtension_legacy;
+  }
+
   const timestampDimension = mtExtension?.dimensions?.find(
     (dimension) => dimension.name === "timestamp",
   );
   tileset._timestampKeys = timestampDimension?.keySet;
   tileset._activeTimestamp = tileset._timestampKeys?.[0];
+
+  if (defined(mtExtension)) {
+    tileset._resolvedMTLayout = resolveMTLayout(
+      mtExtension.layout,
+      tilesetJson,
+    );
+  }
 
   tileset._modelUpAxis = modelUpAxis;
   tileset._modelForwardAxis = modelForwardAxis;
@@ -2943,6 +3091,16 @@ function cancelOutOfViewRequests(tileset, frameState) {
   let removeCount = 0;
   for (let i = 0; i < requestedTilesInFlight.length; ++i) {
     const tile = requestedTilesInFlight[i];
+
+    if (tile.isDestroyed()) {
+      // The tile was destroyed while its request was still in flight, so every property
+      // access below would throw. This happens whenever a subtree is torn down mid-load —
+      // routinely for multi-temporal referenced-tileset switches, and for content expiry.
+      // The request itself is reconciled by the fetch handlers' own isDestroyed checks;
+      // here it is enough to stop tracking the tile. Mirrors filterProcessingQueue.
+      ++removeCount;
+      continue;
+    }
 
     // NOTE: This is framerate dependant so make sure the threshold check is small
     const outOfView = frameState.frameNumber - tile._touchedFrame >= 1;
@@ -3501,6 +3659,14 @@ function unloadTile(tileset, tile) {
  * @param {Cesium3DTile} tile
  */
 function destroyTile(tileset, tile) {
+  // A tile destroyed while its content is still being processed never reaches the
+  // contentReady branch of processTiles that decrements this counter, and
+  // filterProcessingQueue drops it silently, so release it here. Multi-temporal
+  // referenced-tileset switching destroys whole subtrees mid-load routinely, which would
+  // otherwise inflate numberOfTilesProcessing without bound.
+  if (tile._contentState === Cesium3DTileContentState.PROCESSING) {
+    --tileset._statistics.numberOfTilesProcessing;
+  }
   tileset._cache.unloadTile(tileset, tile, unloadTile);
   tile.destroy();
 }
@@ -3913,7 +4079,11 @@ Cesium3DTileset.prototype.destroy = function () {
   return destroyObject(this);
 };
 
-export const MTExtension = "3DTILES_xxx";
+export const MTExtension = "3DTILES_temporal";
+export const MTExtension_Legacy = "3DTILES_xxx";
+
+// The layout values themselves live in MTLayout.js, so Cesium3DTile.js can read them
+// without importing this module (which would create a cycle).
 
 // Multi-temporal prefetch/retention defaults (single source of truth for the
 // tileset's mtPrefetchWindow / mtRetainedHistory tunables). See MTContent.js.
@@ -3930,6 +4100,7 @@ Cesium3DTileset.supportedExtensions = {
   "3DTILES_batch_table_hierarchy": true,
   "3DTILES_draco_point_compression": true,
   [MTExtension]: true,
+  [MTExtension_Legacy]: true,
   MAXAR_content_geojson: true,
 };
 

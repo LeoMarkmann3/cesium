@@ -12,13 +12,15 @@
   </head>
   <body>
     <div class="viewers">
+      <!-- Both labels are filled at load time with the side keys the active dataset
+           declares in DATASETS, so the viewers always name what they are showing. -->
       <div class="viewerCell">
         <div id="leftContainer" class="cesium"></div>
-        <div class="viewerLabel">Ours (py3dtiles)</div>
+        <div id="leftLabel" class="viewerLabel"></div>
       </div>
       <div class="viewerCell">
         <div id="rightContainer" class="cesium"></div>
-        <div class="viewerLabel">Cesium Ion (reference)</div>
+        <div id="rightLabel" class="viewerLabel"></div>
       </div>
     </div>
 
@@ -27,6 +29,12 @@
 
       <div class="abRow" id="datasetRow">
         <label>Dataset:</label>
+      </div>
+
+      <!-- Only shown when at least one side of the active dataset is multi-temporal.
+           Filled with one button per timestamp key. -->
+      <div class="abRow" id="epochRow" style="display: none">
+        <label>Epoch:</label>
       </div>
 
       <div class="abRow">
@@ -77,7 +85,17 @@
       </div>
 
       <div class="abRow">
+        <label
+          ><input type="checkbox" id="settleToggle" checked /> Settle before
+          capture</label
+        >
+      </div>
+
+      <div class="abRow">
         <button id="captureBtn">Capture</button>
+        <button id="switchSweepBtn" style="display: none">
+          Measure every epoch switch
+        </button>
         <button id="downloadCsvBtn">Download CSV</button>
         <button id="downloadJsonBtn">Download JSON</button>
         <button id="clearBtn">Clear</button>

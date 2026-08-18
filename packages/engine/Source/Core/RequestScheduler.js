@@ -130,7 +130,7 @@ RequestScheduler._onRequestReceived = undefined;
  * @default undefined
  * @public
  */
-RequestScheduler._onRequestReceived = undefined;
+RequestScheduler._onRequestCancelled = undefined;
 
 Object.defineProperties(RequestScheduler, {
   /**
@@ -226,18 +226,18 @@ function issueRequest(request) {
 }
 
 function getRequestReceivedFunction(request) {
-    return function (results) {
-        if (RequestScheduler._onRequestReceived) {
-            RequestScheduler._onRequestReceived(request, performance.now());
-        }
+  return function (results) {
+    if (RequestScheduler._onRequestReceived) {
+      RequestScheduler._onRequestReceived(request, performance.now());
+    }
 
-        if (request.state === RequestState.CANCELLED) {
-            // If the data request comes back but the request is cancelled, ignore it.
-            return;
-        }
+    if (request.state === RequestState.CANCELLED) {
+      // If the data request comes back but the request is cancelled, ignore it.
+      return;
+    }
 
-        // explicitly set to undefined to ensure GC of request response data. See #8843
-        const deferred = request.deferred;
+    // explicitly set to undefined to ensure GC of request response data. See #8843
+    const deferred = request.deferred;
 
     --statistics.numberOfActiveRequests;
     --numberOfActiveRequestsByServer[request.serverKey];
@@ -250,61 +250,64 @@ function getRequestReceivedFunction(request) {
 }
 
 function getRequestFailedFunction(request) {
-    return function (error) {
-        if (RequestScheduler._onRequestReceived) {
-            RequestScheduler._onRequestReceived(request, performance.now());
-        }
+  return function (error) {
+    if (RequestScheduler._onRequestReceived) {
+      RequestScheduler._onRequestReceived(request, performance.now());
+    }
 
-        if (request.state === RequestState.CANCELLED) {
-            // If the data request comes back but the request is cancelled, ignore it.
-            return;
-        }
+    if (request.state === RequestState.CANCELLED) {
+      // If the data request comes back but the request is cancelled, ignore it.
+      return;
+    }
 
-        ++statistics.numberOfFailedRequests;
-        --statistics.numberOfActiveRequests;
-        --numberOfActiveRequestsByServer[request.serverKey];
-        requestCompletedEvent.raiseEvent(error);
-        request.state = RequestState.FAILED;
-        request.deferred.reject(error);
-    };
+    ++statistics.numberOfFailedRequests;
+    --statistics.numberOfActiveRequests;
+    --numberOfActiveRequestsByServer[request.serverKey];
+    requestCompletedEvent.raiseEvent(error);
+    request.state = RequestState.FAILED;
+    request.deferred.reject(error);
+  };
 }
 
 function startRequest(request) {
-    const promise = issueRequest(request);
-    request.state = RequestState.ACTIVE;
-    activeRequests.push(request);
-    ++statistics.numberOfActiveRequests;
-    ++statistics.numberOfActiveRequestsEver;
-    ++numberOfActiveRequestsByServer[request.serverKey];
+  const promise = issueRequest(request);
+  request.state = RequestState.ACTIVE;
+  activeRequests.push(request);
+  ++statistics.numberOfActiveRequests;
+  ++statistics.numberOfActiveRequestsEver;
+  ++numberOfActiveRequestsByServer[request.serverKey];
 
-    if (RequestScheduler._onRequestSent) {
-        RequestScheduler._onRequestSent(request, performance.now());
-    }
+  if (RequestScheduler._onRequestSent) {
+    RequestScheduler._onRequestSent(request, performance.now());
+  }
 
-    request
-        .requestFunction()
-        .then(getRequestReceivedFunction(request))
-        .catch(getRequestFailedFunction(request));
+  request
+    .requestFunction()
+    .then(getRequestReceivedFunction(request))
+    .catch(getRequestFailedFunction(request));
 
-    return promise;
+  return promise;
 }
 
 function cancelRequest(request) {
-    const active = request.state === RequestState.ACTIVE;
-    request.state = RequestState.CANCELLED;
-    ++statistics.numberOfCancelledRequests;
+  const active = request.state === RequestState.ACTIVE;
+  request.state = RequestState.CANCELLED;
+  ++statistics.numberOfCancelledRequests;
 
-    if (RequestScheduler._onRequestCancelled) {
-        RequestScheduler._onRequestCancelled(request, performance.now());
-    }
+  if (RequestScheduler._onRequestCancelled) {
+    RequestScheduler._onRequestCancelled(request, performance.now());
+  }
 
-    // check that deferred has not been cleared since cancelRequest can be called
-    // on a finished request, e.g. by clearForSpecs during tests
-    if (defined(request.deferred)) {
-        const deferred = request.deferred;
-        request.deferred = undefined;
-        deferred.reject();
-    }
+  // If the request has resolved, request.deferred should now be undefined
+  // If it's in progress, fail the promise immediately and discard it, but ensure the failure is handled so the failure does not bubble up, e.g. by clearForSpecs during tests
+  if (defined(request.deferred)) {
+    const deferred = request.deferred;
+    deferred.promise.catch(() => {
+      // noop fallback handler
+    });
+    request.deferred = undefined;
+    deferred.reject(new RuntimeError(`Request cancelled: "${request.url}"`));
+  }
 
   if (active) {
     --statistics.numberOfActiveRequests;

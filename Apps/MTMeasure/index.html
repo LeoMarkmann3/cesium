@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <title>MTMeasure — multi-temporal point-cloud measurement</title>
+    <link rel="stylesheet" href="MTMeasure.css" media="screen" />
+  </head>
+  <body>
+    <div id="cesiumContainer"></div>
+    <div id="loadingIndicator" class="loadingIndicator">Loading…</div>
+
+    <div id="mtPanel" class="mtPanel">
+      <div class="mtTitle">MTMeasure</div>
+      <div class="mtRow">
+        Status: <span id="mtStatus" class="mtStatus">idle</span>
+      </div>
+      <div class="mtRow" id="mtInfo"></div>
+      <div class="mtRow" id="mtProgress"></div>
+      <div class="mtRow" id="mtPose"></div>
+      <div class="mtRow" id="mtRecordHelp" style="display: none">
+        <span class="mtHelp">
+          Record mode — <b>w</b> append waypoint, <b>u</b> undo last,
+          <b>d</b> download path JSON.
+        </span>
+      </div>
+      <div class="mtRow" id="mtButtons" style="display: none">
+        <button id="downloadCsvBtn">Download CSV</button>
+        <button id="downloadJsonBtn">Download JSON</button>
+      </div>
+    </div>
+
+    <div id="mtWaypoints" class="mtWaypoints">
+      <b>Waypoints</b>
+      <ol id="mtWaypointList"></ol>
+    </div>
+
+    <div id="mtUsage" class="mtUsage">
+      <h2>MTMeasure — usage</h2>
+      <div>
+        Measurement app for multi-temporal 3D Tiles point clouds. It has exactly
+        two modes: <code>auto=1</code> runs the measurement protocol and
+        downloads two CSVs, <code>record=1</code> records a camera path. Without
+        either it just shows this page.
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Default</th>
+            <th>Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>tileset</code></td>
+            <td>— (required)</td>
+            <td>Tileset URL, absolute or relative to this page.</td>
+          </tr>
+          <tr>
+            <td><code>name</code></td>
+            <td>last path segment</td>
+            <td>Label used in rows and in the CSV filenames.</td>
+          </tr>
+          <tr>
+            <td><code>path</code></td>
+            <td>generated</td>
+            <td>
+              URL of a camera-path JSON. Without it, a three-waypoint traverse
+              is generated from the tileset's bounding sphere.
+            </td>
+          </tr>
+          <tr>
+            <td><code>speed</code></td>
+            <td>path JSON, else 15</td>
+            <td>Camera speed in m/s along the path (URL wins over JSON).</td>
+          </tr>
+          <tr>
+            <td><code>laps</code></td>
+            <td>2</td>
+            <td>Sequential epoch-sweep laps per waypoint.</td>
+          </tr>
+          <tr>
+            <td><code>randomSwitches</code></td>
+            <td>epoch count</td>
+            <td>Seeded-random epoch switches per waypoint, after the laps.</td>
+          </tr>
+          <tr>
+            <td><code>seed</code></td>
+            <td>42</td>
+            <td>
+              PRNG seed for the random switch order; recorded in every row.
+            </td>
+          </tr>
+          <tr>
+            <td><code>sse</code></td>
+            <td>Cesium default</td>
+            <td><code>maximumScreenSpaceError</code> override.</td>
+          </tr>
+          <tr>
+            <td><code>cacheMB</code></td>
+            <td>Cesium default</td>
+            <td><code>cacheBytes</code> override, in MB.</td>
+          </tr>
+          <tr>
+            <td><code>auto</code></td>
+            <td>off</td>
+            <td>
+              <code>auto=1</code>: run the protocol, then download
+              <code>mtmeasure_&lt;name&gt;.csv</code> and
+              <code>perf_&lt;name&gt;.csv</code>.
+            </td>
+          </tr>
+          <tr>
+            <td><code>record</code></td>
+            <td>off</td>
+            <td>
+              <code>record=1</code>: record a camera path (mutually exclusive
+              with <code>auto</code>).
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mtTableWrap" id="mtTableWrap">
+      <table id="captureTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <script src="MTMeasure.js" type="module"></script>
+  </body>
+</html>

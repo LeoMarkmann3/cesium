@@ -449,6 +449,12 @@ class MTContent {
   /**
    * Evict a resident epoch: decrement the tileset load statistics, destroy its
    * content, and return the slot to UNLOADED so it can be reloaded on demand.
+   * <p>
+   * Counted in {@link Cesium3DTilesetStatistics#numberOfEpochsEvicted}, which is the only
+   * observable signal that an epoch left memory. The tile itself stays resident, so
+   * <code>tileset.tileUnload</code> is deliberately not raised — that event's contract is
+   * "tile leaving the cache".
+   * </p>
    *
    * @param {number} index The local epoch index.
    * @private
@@ -461,6 +467,7 @@ class MTContent {
         this._tileset.statistics.decrementLoadCounts(content);
         this._loadCounted[index] = false;
       }
+      ++this._tileset.statistics.numberOfEpochsEvicted;
       content.destroy();
     }
     entry.content = undefined;

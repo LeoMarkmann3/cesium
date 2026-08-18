@@ -251,16 +251,16 @@ async function main() {
   // const analyzer = new StaticTilesetAnalyzer();
   // await analyzer.startAnalyze(tileset._resource);
 
-  function waitUntil(conditionFn, interval = 100) {
-    return new Promise((resolve) => {
-      const handle = setInterval(() => {
-        if (conditionFn()) {
-          clearInterval(handle);
-          resolve();
-        }
-      }, interval);
-    });
-  }
+  // function waitUntil(conditionFn, interval = 100) {
+  //   return new Promise((resolve) => {
+  //     const handle = setInterval(() => {
+  //       if (conditionFn()) {
+  //         clearInterval(handle);
+  //         resolve();
+  //       }
+  //     }, interval);
+  //   });
+  // }
 
   const screenshotConfigs = [
     { time: 5.1, area: "full" },
@@ -307,12 +307,12 @@ async function main() {
   async function takeScreenshot(time, area) {
     console.log("Taking screenshot at t =", time);
 
-    // Warten bis Szene stabil ist
-    await waitUntil(
-      () =>
-        viewer.scene.globe.tilesLoaded &&
-        tileset._statistics.numberOfPendingRequests === 0,
-    );
+    // // Warten bis Szene stabil ist
+    // await waitUntil(
+    //   () =>
+    //     viewer.scene.globe.tilesLoaded &&
+    //     tileset._statistics.numberOfPendingRequests === 0,
+    // );
 
     // Render erzwingen
     viewer.render();
