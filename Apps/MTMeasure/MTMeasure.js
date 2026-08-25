@@ -344,6 +344,19 @@ async function main() {
   }
   tileset.debugShowStatistics = true;
 
+  // Fetched before anchoring because a recorded path may carry the localCentre that was
+  // subtracted when it was recorded, and that centre decides where the data is planted.
+  const pathUrl = params.get("path");
+  let pathJson;
+  if (defined(pathUrl) && pathUrl !== "") {
+    try {
+      pathJson = await Resource.fetchJson({ url: pathUrl });
+    } catch (error) {
+      fail(`could not use the camera path ${pathUrl}\n\n${error}`);
+      return;
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Local-coordinate tilesets. A convert without an output CRS leaves the data near the
   // geocentre, thousands of kilometres inside the WGS84 ellipsoid — and since Cesium's camera
@@ -357,10 +370,35 @@ async function main() {
   // Note the cost: a recorded path's positions are ECEF, hence only valid for the anchor they
   // were recorded at. The anchor therefore goes into the path JSON, into every CSV row, and is
   // checked on replay (see parsePathJson) rather than being allowed to fail silently.
-  const localCentre = Cartesian3.clone(
+  const ownCentre = Cartesian3.clone(
     tileset.boundingSphere.center,
     new Cartesian3(),
   );
+  // A recorded localCentre wins over this tileset's own: the poses were taken with the data
+  // planted by that centre, so reusing it is what keeps one path valid across every
+  // conversion of a site. Without it the same path measures a different flight per subset.
+  const recordedCentre =
+    Array.isArray(pathJson?.localCentre) &&
+    pathJson.localCentre.length === 3 &&
+    pathJson.localCentre.every(Number.isFinite)
+      ? Cartesian3.fromArray(pathJson.localCentre)
+      : null;
+  const localCentre = recordedCentre ?? ownCentre;
+  if (recordedCentre !== null) {
+    const drift = Cartesian3.distance(recordedCentre, ownCentre);
+    const message =
+      `MTMeasure: using the path's recorded localCentre, ${drift.toFixed(1)} m from ` +
+      `this tileset's own bounding-sphere centre`;
+    if (drift > 1.0) {
+      console.warn(
+        `${message}. The poses still describe this scene, but this is a different ` +
+          `conversion of the site than the one the path was recorded on, so the ` +
+          `framing may differ.`,
+      );
+    } else {
+      console.log(`${message} — same placement as when it was recorded.`);
+    }
+  }
   const localRadius = tileset.boundingSphere.radius;
   const tilesetIsLocal = isLocalFrame(tileset.boundingSphere);
   let anchor = null;
@@ -368,8 +406,8 @@ async function main() {
     anchor = anchorRequest;
     tileset.modelMatrix = anchorMatrix(anchor, localCentre);
     console.log(
-      `MTMeasure: local-coordinate tileset (centre ${Cartesian3.magnitude(
-        localCentre,
+      `MTMeasure: local-coordinate tileset (own centre ${Cartesian3.magnitude(
+        ownCentre,
       ).toFixed(
         1,
       )} m from the geocentre, radius ${localRadius.toFixed(1)} m) ` +
@@ -574,11 +612,9 @@ async function main() {
   }
 
   let path;
-  const pathUrl = params.get("path");
-  if (defined(pathUrl) && pathUrl !== "") {
+  if (defined(pathJson)) {
     try {
-      const json = await Resource.fetchJson({ url: pathUrl });
-      path = parsePathJson(json);
+      path = parsePathJson(pathJson);
     } catch (error) {
       fail(`could not use the camera path ${pathUrl}\n\n${error}`);
       return;
@@ -1241,9 +1277,17 @@ async function main() {
               name: name,
               speed: DEFAULT_SPEED,
               // Only meaningful together with the anchor the poses were recorded at.
+              // localCentre is what anchoring actually subtracted: the bounding-sphere
+              // centre of *this* tileset. Another conversion of the same site (a
+              // different epoch subset, shared vs referenced) has a different centre
+              // and would slide out from under these poses, so recording it lets
+              // replay reproduce the placement instead of recomputing a different one.
               ...(anchor === null
                 ? {}
-                : { anchor: [anchor.lon, anchor.lat, anchor.height] }),
+                : {
+                    anchor: [anchor.lon, anchor.lat, anchor.height],
+                    localCentre: [localCentre.x, localCentre.y, localCentre.z],
+                  }),
               waypoints: recorded,
             },
             null,

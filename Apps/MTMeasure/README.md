@@ -63,6 +63,7 @@ With `path=<url>`, a JSON of this shape (positions in **ECEF metres**, angles in
   "name": "ofental",
   "speed": 15,
   "anchor": [0.0, 0.0, 0.0],
+  "localCentre": [-258.675, -0.493, -34.584],
   "waypoints": [
     {
       "label": "start",
@@ -84,7 +85,10 @@ With `path=<url>`, a JSON of this shape (positions in **ECEF metres**, angles in
 
 At least one waypoint is required; a single waypoint means no flight, just the protocol at
 that pose. Malformed input alerts and stops. `anchor` is written only for a tileset that was
-anchored (see below) and must match the run's anchor.
+anchored (see below) and must match the run's anchor. `localCentre` is written alongside it
+and is the bounding-sphere centre that anchoring subtracted; on replay it **overrides** the
+loaded tileset's own centre, which is what keeps one path valid across every conversion of a
+site. It is optional — a path without it anchors on the tileset's own centre, as before.
 
 Without `path`, a three-waypoint traverse is **generated** from the tileset's bounding
 sphere in its local ENU frame — in from the south-west at (−1 r, −1 r, +0.6 r), over the
@@ -188,6 +192,16 @@ therefore goes into the recorded JSON (`"anchor": [lon, lat, height]`), into the
 column of every row, and onto the info line — and a path whose anchor disagrees with the run's
 is **refused with an explanation** rather than silently flying the camera through empty space.
 Use `anchor=off` to keep the old, unanchored behaviour.
+
+**The anchor alone is not enough, hence `localCentre`.** Anchoring plants the _bounding-sphere
+centre_ on the anchor, so the placement depends on that centre — and two conversions of one
+site have different centres whenever their extents differ: a different epoch subset, a shared
+tree versus referenced tilesets, one epoch versus a union of two thousand. The anchor label is
+identical in all those cases, so the anchor check cannot see the difference, and the data
+quietly slides out from under the recorded poses. The recorded `localCentre` closes that: it is
+the centre that was subtracted when the path was recorded, and replay uses it in preference to
+the loaded tileset's own. When the two differ by more than a metre the console says by how
+much, so a path being replayed against a different conversion is visible rather than silent.
 
 Anchoring changes nothing about geometric error, so a local tileset that also needs a low
 `sse` still needs one.
