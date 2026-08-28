@@ -38,6 +38,8 @@ const DEFAULT_LAPS = 2;
 // the schedule is a property of the path, not of how fast a tileset renders.
 const DEFAULT_SWITCH_EVERY_SECONDS = 4;
 const DEFAULT_SEED = 42;
+// Share of random jumps that should land inside the jump window (see drawJump).
+const DEFAULT_JUMP_INSIDE_FRAC = 0.9;
 const PERF_SAMPLE_MS = 100; // fixed, as in Apps/ComparisonTest
 const SETTLE_TIMEOUT_MS = 2000;
 const SWITCH_TIMEOUT_MS = 2000;
@@ -236,7 +238,10 @@ async function main() {
     tilesetUrl.split("?")[0].split("/").filter(Boolean).slice(-2, -1)[0] ??
     "tileset";
   const seed = numberParam(params, "seed", DEFAULT_SEED);
-  const laps = Math.max(1, numberParam(params, "laps", DEFAULT_LAPS));
+  // 0 is allowed: a jump-only session (laps=0, randomSwitches=N) measures the random arm on
+  // its own, from a cold start. sequentialTotal then falls to 0 and the switch loop goes
+  // straight to the random branch.
+  const laps = Math.max(0, numberParam(params, "laps", DEFAULT_LAPS));
   const sseParam =
     params.get("sse") === null ? null : numberParam(params, "sse", null);
   const cacheMBParam =
@@ -255,6 +260,19 @@ async function main() {
     params.get("retainedHistory") === null
       ? null
       : numberParam(params, "retainedHistory", null);
+  // The windowed-jump experiment (see drawJump): which band of the key order counts as
+  // "inside" for a random jump, and what share of jumps should land there. jumpWindow is
+  // deliberately its own parameter rather than a reading of the engine's prefetch window,
+  // because that knob is inert in the referenced-tilesets layout.
+  const jumpWindowParam =
+    params.get("jumpWindow") === null
+      ? null
+      : Math.max(0, Math.round(numberParam(params, "jumpWindow", 0)));
+  const jumpInsideFrac = CesiumMath.clamp(
+    numberParam(params, "jumpInsideFrac", DEFAULT_JUMP_INSIDE_FRAC),
+    0.0,
+    1.0,
+  );
 
   // Where to plant a local-coordinate tileset: "off" leaves it where it is, "lon,lat[,height]"
   // overrides the default spot. Only ever applied to a tileset that is certainly local.
@@ -456,6 +474,9 @@ async function main() {
     epochKeys.length < 2
       ? 0
       : Math.max(0, numberParam(params, "randomSwitches", epochKeys.length));
+  // Falls back to the engine's prefetch window — which is the prefetchWindow parameter when
+  // one was passed, and the engine default otherwise.
+  const jumpWindow = jumpWindowParam ?? tileset.mtPrefetchWindow;
 
   infoElement.innerHTML = `${name} — ${
     isMT
@@ -965,6 +986,11 @@ async function main() {
     "unloadsDuring",
     "epochsEvictedDuring",
     "attemptedDuring",
+    // Random-jump columns, appended so the existing column order is untouched. Filled on
+    // random switch rows only; empty on sequential switch rows and on state rows.
+    "jumpWindow",
+    "jumpDistance",
+    "jumpClass",
   ];
 
   const rows = [];
@@ -1076,7 +1102,7 @@ async function main() {
    * @param {number} lap Lap number, or the 1-based random draw index.
    * @returns {Promise<object>} The measured values.
    */
-  async function switchEpoch(key, mode, lap) {
+  async function switchEpoch(key, mode, lap, jump) {
     const baselinePoints = tileset.statistics.numberOfPointsSelected;
     const before = {
       loads: tileLoads,
@@ -1136,6 +1162,9 @@ async function main() {
       epochsEvictedDuring:
         tileset.statistics.numberOfEpochsEvicted - before.evicted,
       attemptedDuring: attemptedDuring,
+      jumpWindow: defined(jump) ? jump.window : null,
+      jumpDistance: defined(jump) ? jump.distance : null,
+      jumpClass: defined(jump) ? jump.jumpClass : null,
     };
     pushRow("switch", measured);
     return measured;
@@ -1309,6 +1338,83 @@ async function main() {
   controller.enableInputs = false;
 
   const random = mulberry32(seed);
+
+  let jumpFallbackWarned = false;
+
+  /**
+   * Draw one random epoch jump, split by whether it lands inside the jump window.
+   * <p>
+   * The prefetch window keeps the active epoch's +-W neighbours resident, so a jump inside
+   * that band should be near-instant and one outside it should pay the full load cost. A
+   * uniform draw cannot show that: over hundreds or thousands of epochs almost every draw
+   * lands outside any plausible window, and the prefetch benefit averages into invisibility.
+   * So the class is drawn first (jumpInsideFrac of jumps inside) and the target second,
+   * uniformly within that class.
+   * </p><p>
+   * The band is measured in GLOBAL KEY-ORDER INDEX DISTANCE and is deliberately NOT read off
+   * the engine's effective window: mtPrefetchWindow is inert in the referenced-tilesets
+   * layout, so deriving the distribution from it would make the two layouts incomparable.
+   * jumpWindow drives the draw identically in both, which is what lets one seed produce one
+   * sequence everywhere.
+   * </p><p>
+   * Exactly TWO random() values are consumed per jump, always in this order — class, then
+   * target. Skipping or reordering them conditionally would desynchronise the stream and the
+   * sequence would stop being reproducible across runs.
+   * </p>
+   *
+   * @param {number} activeIndex Index of the active epoch in the key order.
+   * @returns {object|undefined} <code>{ key, window, distance, jumpClass }</code>, or
+   * undefined when there is no epoch to jump to at all.
+   */
+  function drawJump(activeIndex) {
+    const inside = [];
+    const outside = [];
+    for (let j = 0; j < epochKeys.length; ++j) {
+      const distance = Math.abs(j - activeIndex);
+      if (distance === 0) {
+        // The active epoch is not a jump: a same-epoch switch is a no-op that would corrupt
+        // the first-render measurement.
+        continue;
+      }
+      if (distance <= jumpWindow) {
+        inside.push(j);
+      } else {
+        outside.push(j);
+      }
+    }
+
+    const wantInside = random() < jumpInsideFrac;
+    let candidates = wantInside ? inside : outside;
+    let jumpClass = wantInside ? "inside" : "outside";
+    if (candidates.length === 0) {
+      // Reachable: a window as wide as the key set leaves nothing outside it — Boreas at
+      // W=25 spans all 30 epochs, where most active positions have no outside epoch at all.
+      // Fall back to the other class and record the class ACTUALLY used, so jumpClass can
+      // never claim something jumpDistance contradicts.
+      candidates = wantInside ? outside : inside;
+      jumpClass = wantInside ? "outside" : "inside";
+      if (!jumpFallbackWarned) {
+        jumpFallbackWarned = true;
+        console.warn(
+          `MTMeasure: no epoch ${wantInside ? "inside" : "outside"} a jumpWindow of ` +
+            `${jumpWindow} at this position — falling back to the other class and recording ` +
+            `the class actually used. Check jumpClass counts before reading the split.`,
+        );
+      }
+    }
+    if (candidates.length === 0) {
+      return undefined;
+    }
+
+    const index = candidates[Math.floor(random() * candidates.length)];
+    return {
+      key: epochKeys[index],
+      window: jumpWindow,
+      distance: Math.abs(index - activeIndex),
+      jumpClass: jumpClass,
+    };
+  }
+
   const measurer = new PerformanceMeasurer(
     PERF_SAMPLE_MS,
     Number.MAX_SAFE_INTEGER,
@@ -1393,16 +1499,15 @@ async function main() {
     let key;
     let mode;
     let lap;
+    let jump;
     if (switchIndex < sequentialTotal) {
       const activeIndex = epochKeys.indexOf(tileset.activeTimestamp);
       key = epochKeys[(activeIndex + 1) % epochKeys.length];
       mode = "sequential";
       lap = Math.floor(switchIndex / epochKeys.length) + 1;
     } else {
-      const candidates = epochKeys.filter(
-        (candidate) => candidate !== tileset.activeTimestamp,
-      );
-      if (candidates.length === 0) {
+      jump = drawJump(epochKeys.indexOf(tileset.activeTimestamp));
+      if (!defined(jump)) {
         // Unreachable: randomSwitches is 0 unless there are at least two epochs. If it ever
         // did happen the schedule could not be fulfilled, so end rather than leave a stop
         // that carries a state row but no switch.
@@ -1411,14 +1516,19 @@ async function main() {
         );
         break;
       }
-      key = candidates[Math.floor(random() * candidates.length)];
+      key = jump.key;
       mode = "random";
       randomDraw++;
       lap = randomDraw;
     }
     switchIndex++;
-    setProgress(`stop ${stop + 1}/${stopCount} — ${mode} switch → ${key}`);
-    await switchEpoch(key, mode, lap);
+    const jumpNote = defined(jump)
+      ? ` (${jump.jumpClass}, d=${jump.distance})`
+      : "";
+    setProgress(
+      `stop ${stop + 1}/${stopCount} — ${mode} switch → ${key}${jumpNote}`,
+    );
+    await switchEpoch(key, mode, lap, jump);
   }
 
   // An MT run is over the moment its schedule is: the closing state row is taken at the last

@@ -34,23 +34,25 @@ Without `auto` or `record` the page shows a usage overlay and loads nothing.
 
 ## URL parameters
 
-| Param             | Default                        | Meaning                                                                                        |
-| ----------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `tileset`         | — (required)                   | Tileset URL, absolute or relative to the page. Alerts and stops if missing or unloadable.      |
-| `name`            | second-to-last path segment    | Label used in rows and in both CSV filenames.                                                  |
-| `path`            | generated (see below)          | URL of a camera-path JSON.                                                                     |
-| `speed`           | path JSON's `speed`, else `15` | Camera speed in m/s along the path. The URL wins over the JSON.                                |
-| `switchEvery`     | `4`                            | Seconds of **flight** between measurement stops, i.e. one stop per `speed × switchEvery` m.    |
-| `laps`            | `2`                            | How many of the run's switches sweep the epochs in order before the random draws start.        |
-| `randomSwitches`  | epoch count                    | Seeded-random switches after the sequential laps. `0` allowed; forced to 0 for one epoch.      |
-| `seed`            | `42`                           | Seed of the PRNG driving the random switch order. Recorded in every row.                       |
-| `sse`             | Cesium default (16)            | `maximumScreenSpaceError` override. Recorded either way.                                       |
-| `cacheMB`         | Cesium default                 | `cacheBytes` override in MB. Recorded either way.                                              |
-| `prefetchWindow`  | fork default                   | `mtPrefetchWindow` override. `0` protects no epoch from eviction. Recorded either way.         |
-| `retainedHistory` | fork default                   | `mtRetainedHistory` override. Recorded either way.                                             |
-| `anchor`          | `0,0,0`                        | Where to plant a **local-coordinate** tileset: `lon,lat[,height]`, or `off` to leave it alone. |
-| `auto`            | off                            | `auto=1`: run the protocol, download both CSVs, set `window.MTMEASURE_DONE`.                   |
-| `record`          | off                            | `record=1`: record a camera path. Mutually exclusive with `auto`.                              |
+| Param             | Default                        | Meaning                                                                                                          |
+| ----------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `tileset`         | — (required)                   | Tileset URL, absolute or relative to the page. Alerts and stops if missing or unloadable.                        |
+| `name`            | second-to-last path segment    | Label used in rows and in both CSV filenames.                                                                    |
+| `path`            | generated (see below)          | URL of a camera-path JSON.                                                                                       |
+| `speed`           | path JSON's `speed`, else `15` | Camera speed in m/s along the path. The URL wins over the JSON.                                                  |
+| `switchEvery`     | `4`                            | Seconds of **flight** between measurement stops, i.e. one stop per `speed × switchEvery` m.                      |
+| `laps`            | `2`                            | How many of the run's switches sweep the epochs in order before the random draws start. `0` = jump-only session. |
+| `randomSwitches`  | epoch count                    | Seeded-random switches after the sequential laps. `0` allowed; forced to 0 for one epoch.                        |
+| `seed`            | `42`                           | Seed of the PRNG driving the random switch order. Recorded in every row.                                         |
+| `sse`             | Cesium default (16)            | `maximumScreenSpaceError` override. Recorded either way.                                                         |
+| `cacheMB`         | Cesium default                 | `cacheBytes` override in MB. Recorded either way.                                                                |
+| `prefetchWindow`  | fork default                   | `mtPrefetchWindow` override. `0` protects no epoch from eviction. Recorded either way.                           |
+| `jumpWindow`      | `prefetchWindow`, else 2       | Half-width, in key-order index distance, of the band a random jump counts as **inside**.                         |
+| `jumpInsideFrac`  | `0.9`                          | Share of random jumps that should land inside that band.                                                         |
+| `retainedHistory` | fork default                   | `mtRetainedHistory` override. Recorded either way.                                                               |
+| `anchor`          | `0,0,0`                        | Where to plant a **local-coordinate** tileset: `lon,lat[,height]`, or `off` to leave it alone.                   |
+| `auto`            | off                            | `auto=1`: run the protocol, download both CSVs, set `window.MTMEASURE_DONE`.                                     |
+| `record`          | off                            | `record=1`: record a camera path. Mutually exclusive with `auto`.                                                |
 
 The `PerformanceMeasurer` sample rate is fixed at 100 ms, as in `Apps/ComparisonTest`.
 
@@ -115,8 +117,12 @@ schedule, not the path, ends the run:**
 
 ```text
 switches = laps × epochCount   (sequential, in timestampKeys order)
-         + randomSwitches      (seeded-random draws, never the active epoch)
+         + randomSwitches      (windowed random jumps, never the active epoch)
 ```
+
+`laps=0` is allowed and gives a **jump-only** session; `randomSwitches=0` gives a
+sequential-only one. Running the two arms as separate sessions is the intended shape for the
+prefetch-window experiment (see below).
 
 1. Load the tileset, start the `PerformanceMeasurer`, place the camera at the path start.
 2. At every stop: settle → capture a `state` row → (if multi-temporal) measure **one** epoch
@@ -165,6 +171,43 @@ The switch window is **2000 ms** (`SWITCH_TIMEOUT_MS`), and the settle gate the 
 that exceeds it leaves `settleMs` **empty rather than large**, so treat an empty `settleMs` as
 right-censored at 2 s and report how many were censored — averaging only the populated values
 silently drops the slow switches and flatters the slower layout.
+
+## Windowed random jumps
+
+`mtPrefetchWindow` keeps the active epoch's ±N neighbours resident, so a switch inside that
+band should be near-instant while one outside it pays the full load cost. A **uniform** draw
+cannot show that: over hundreds or thousands of epochs almost every draw lands outside any
+plausible window, and the prefetch benefit averages into invisibility.
+
+So a random jump is drawn in two steps — the class first, the target second:
+
+- **inside** = `{ j : 0 < |j − a| ≤ jumpWindow }` where `a` is the active epoch's index; it
+  excludes the active epoch and is naturally clipped at the ends of the key order.
+- **outside** = `{ j : |j − a| > jumpWindow }`.
+- `jumpInsideFrac` of jumps take the inside set, the rest the outside set; the target is then
+  uniform within the chosen set.
+
+**`jumpWindow` is deliberately not read off the engine's window.** `mtPrefetchWindow` is inert
+in the referenced-tilesets layout (`MTTilesetContent` has no prefetch and no eviction), so
+deriving the distribution from it would make the two layouts incomparable. `jumpWindow` drives
+the draw identically in both, which is what lets one seed produce one sequence everywhere;
+`prefetchWindow` keeps its own meaning of setting the engine knob. The pipeline sends both with
+the same value.
+
+Exactly **two** values are consumed from the single seeded stream per jump, always in that
+order — class, then target. Skipping or reordering them conditionally would desynchronise the
+stream and the sequence would stop being reproducible.
+
+**Empty-set fallback.** If the chosen set is empty the draw takes the other set and records the
+class **actually used**, so `jumpClass` never contradicts `jumpDistance`; it warns once per
+run. This is reachable whenever the window spans the whole key set — 30 epochs at
+`jumpWindow=25` leaves most active positions with nothing outside the window.
+
+**A jump-only session starts cold**, so the first handful of jumps run before the prefetcher
+has populated ±W. That transient is identical in every variant and `lap` numbers the draws
+(1, 2, 3 …), so discard the first few in the analysis. There is deliberately no warm-up loop:
+it would reintroduce exactly the cache residue that running the two arms as separate sessions
+exists to avoid.
 
 ## Local-coordinate tilesets
 
@@ -231,7 +274,7 @@ layout, epoch, activePoints, residentEpochsMin, residentEpochsMean, residentEpoc
 totalMemoryUsageInBytes, geometryByteLength, texturesByteLength, batchTableByteLength,
 tileLoads, tileUnloads, epochsEvicted,
 firstRenderMs, settleMs, dippedToZero, loadsDuring, unloadsDuring, epochsEvictedDuring,
-attemptedDuring
+attemptedDuring, jumpWindow, jumpDistance, jumpClass
 ```
 
 Notes on a few of them:
@@ -271,6 +314,11 @@ Notes on a few of them:
   swaps the content _inside_ already-loaded tiles, so no tile-level `tileLoad` fires. Read
   `epochsEvictedDuring` and the memory columns for that layout, and `loadsDuring` /
   `unloadsDuring` for referenced-tilesets, where whole subtrees come and go.
+- `jumpWindow`, `jumpDistance` and `jumpClass` are filled on **random** switch rows only and
+  are empty on sequential switch rows and on state rows. `jumpDistance` is `|j − a|` in
+  key-order indices; `jumpClass` is `inside` or `outside` and always reports the class the draw
+  actually used, fallback included. They are appended at the end of the row so the earlier
+  column order is untouched.
 - The on-page table shows a readable subset; the CSV always carries every column.
 
 ## Gotchas
